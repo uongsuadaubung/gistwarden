@@ -1,26 +1,31 @@
 import { type Component, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
-import { View, type VaultItem } from "@/shared/types.ts";
+import { View, type VaultItem, VaultItemType } from "@/shared/types.ts";
 import { POPUP_WIDTH, POPOUT_HEIGHT } from "@/shared/constants.ts";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/shared/totp-utils.ts";
-import { CopyIcon, ExternalLinkIcon, LockIcon, PlusIcon, SearchIcon, SyncIcon, HeartFilledIcon } from "@/icons/svg/index.ts";
+import { CopyIcon, ExternalLinkIcon, LockIcon, PlusIcon, SearchIcon, SyncIcon, HeartFilledIcon, NoteIcon } from "@/icons/svg/index.ts";
 import { Input } from "./Input.tsx";
 
 export const Vault: Component = () => {
   const [search, setSearch] = createSignal("");
   const [activeMenuId, setActiveMenuId] = createSignal("");
   const [currentTabDomain, setCurrentTabDomain] = createSignal("");
+  const [showAddMenu, setShowAddMenu] = createSignal(false);
 
   onMount(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target;
       if (target instanceof Element) {
+        if (target.closest(".add-new-header-btn") || target.closest(".add-dropdown")) {
+          return;
+        }
         if (target.closest(".action-btn") || target.closest(".copy-dropdown")) {
           return;
         }
       }
       setActiveMenuId("");
+      setShowAddMenu(false);
     };
     document.addEventListener("click", handleGlobalClick);
     onCleanup(() => {
@@ -51,7 +56,7 @@ export const Vault: Component = () => {
     if (!domain) return false;
     const d = domain.toLowerCase();
     if (item.name.toLowerCase().includes(d)) return true;
-    if (item.login?.uris) {
+    if (item.type === VaultItemType.Login && item.login?.uris) {
       return item.login.uris.some((u) => u.uri.toLowerCase().includes(d));
     }
     return false;
@@ -68,8 +73,8 @@ export const Vault: Component = () => {
     if (q) {
       return store.vaultItems.filter((item) => {
         const nameMatch = item.name.toLowerCase().includes(q);
-        const usernameMatch = item.login?.username?.toLowerCase().includes(q);
-        const uriMatch = item.login?.uris?.some((u) => u.uri.toLowerCase().includes(q));
+        const usernameMatch = item.type === VaultItemType.Login && item.login?.username?.toLowerCase().includes(q);
+        const uriMatch = item.type === VaultItemType.Login && item.login?.uris?.some((u) => u.uri.toLowerCase().includes(q));
         return nameMatch || usernameMatch || uriMatch;
       });
     }
@@ -94,7 +99,7 @@ export const Vault: Component = () => {
 
   const handleCopyTotpDirect = async (item: VaultItem, e: MouseEvent) => {
     e.stopPropagation();
-    const rawSecret = item.login?.totp || "";
+    const rawSecret = item.type === VaultItemType.Login ? (item.login?.totp || "") : "";
     if (!rawSecret.trim()) return;
 
     try {
@@ -120,10 +125,10 @@ export const Vault: Component = () => {
     }
   };
 
-  const handleAddNewItem = () => {
+  const handleAddNewLogin = () => {
     storeActions.selectItem({
       id: "",
-      type: 1, // Login
+      type: VaultItemType.Login,
       name: "",
       notes: "",
       favorite: false,
@@ -136,6 +141,19 @@ export const Vault: Component = () => {
       },
     });
     storeActions.navigate(View.ItemEdit);
+    setShowAddMenu(false);
+  };
+
+  const handleAddNewNote = () => {
+    storeActions.selectItem({
+      id: "",
+      type: VaultItemType.SecureNote,
+      name: "",
+      notes: "",
+      favorite: false,
+    });
+    storeActions.navigate(View.ItemEdit);
+    setShowAddMenu(false);
   };
 
   const handleLock = () => {
@@ -185,49 +203,67 @@ export const Vault: Component = () => {
     return (
       <div class="vault-item-row" onClick={() => storeActions.selectItem(item)}>
         <div class="item-info">
-          <div class="item-name" style="display: flex; align-items: center; gap: 6px;">
-            {item.name}
-            <Show when={item.favorite}>
-              <HeartFilledIcon style="width: 12px; height: 12px; color: #ff4e63; flex-shrink: 0;" />
-            </Show>
-          </div>
-          <div class="item-sub">
-            <Show when={item.login?.fido2Credentials && item.login.fido2Credentials.length > 0}>
-              <span class="passkey-badge">PASSKEY</span>
-            </Show>
-            {item.login?.username || "Không có tên đăng nhập"}
-          </div>
+          <Show when={item.type === VaultItemType.SecureNote} fallback={
+            <>
+              <div class="item-name" style="display: flex; align-items: center; gap: 6px;">
+                {item.name}
+                <Show when={item.favorite}>
+                  <HeartFilledIcon style="width: 12px; height: 12px; color: #ff4e63; flex-shrink: 0;" />
+                </Show>
+              </div>
+              <div class="item-sub">
+                <Show when={item.type === VaultItemType.Login && item.login?.fido2Credentials && item.login.fido2Credentials.length > 0}>
+                  <span class="passkey-badge">PASSKEY</span>
+                </Show>
+                {(item.type === VaultItemType.Login && item.login?.username) || "Không có tên đăng nhập"}
+              </div>
+            </>
+          }>
+            <div class="item-name" style="display: flex; align-items: center; gap: 8px;">
+              <NoteIcon style="width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0;" />
+              {item.name}
+              <Show when={item.favorite}>
+                <HeartFilledIcon style="width: 12px; height: 12px; color: #ff4e63; flex-shrink: 0;" />
+              </Show>
+            </div>
+          </Show>
         </div>
         
         {/* Options Copy Dropdown Button */}
         <div class="item-actions pos-relative">
           <button
             class="action-btn"
-            title="Lựa chọn sao chép"
-            onClick={(e) => handleToggleMenu(item.id, e)}
+            title={item.type === VaultItemType.SecureNote ? "Sao chép ghi chú" : "Lựa chọn sao chép"}
+            onClick={(e) => {
+              if (item.type === VaultItemType.SecureNote) {
+                handleCopyText(item.notes || "", "ghi chú", e);
+              } else {
+                handleToggleMenu(item.id, e);
+              }
+            }}
           >
             <CopyIcon />
           </button>
 
           {/* Dropdown overlay */}
-          <Show when={activeMenuId() === item.id}>
+          <Show when={item.type !== VaultItemType.SecureNote && activeMenuId() === item.id}>
             <div class="copy-dropdown" onClick={(e) => e.stopPropagation()}>
-              <Show when={item.login?.username}>
-                <div class="dropdown-item" onClick={(e) => handleCopyText(item.login!.username!, "tên đăng nhập", e)}>
+              <Show when={item.type === VaultItemType.Login && item.login?.username}>
+                <div class="dropdown-item" onClick={(e) => handleCopyText(item.type === VaultItemType.Login && item.login?.username || "", "tên đăng nhập", e)}>
                   Sao chép Tên đăng nhập
                 </div>
               </Show>
-              <Show when={item.login?.password}>
-                <div class="dropdown-item" onClick={(e) => handleCopyText(item.login!.password!, "mật khẩu", e)}>
+              <Show when={item.type === VaultItemType.Login && item.login?.password}>
+                <div class="dropdown-item" onClick={(e) => handleCopyText(item.type === VaultItemType.Login && item.login?.password || "", "mật khẩu", e)}>
                   Sao chép Mật khẩu
                 </div>
               </Show>
-              <Show when={item.login?.totp}>
+              <Show when={item.type === VaultItemType.Login && item.login?.totp}>
                 <div class="dropdown-item" onClick={(e) => handleCopyTotpDirect(item, e)}>
                   Sao chép Mã TOTP
                 </div>
               </Show>
-              <Show when={!item.login?.username && !item.login?.password && !item.login?.totp}>
+              <Show when={item.type !== VaultItemType.Login || (!item.login?.username && !item.login?.password && !item.login?.totp)}>
                 <div class="dropdown-item disabled">Không có gì để sao chép</div>
               </Show>
             </div>
@@ -243,6 +279,31 @@ export const Vault: Component = () => {
       <header class="app-header">
         <span>Gistwarden</span>
         <div class="header-actions">
+          {/* Add New dropdown */}
+          <div class="add-menu-container">
+            <button
+              class="add-new-header-btn"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAddMenu(!showAddMenu());
+              }}
+            >
+              <PlusIcon style="width: 12px; height: 12px; margin-right: 4px; fill: currentColor;" />
+              Thêm mới
+            </button>
+            <Show when={showAddMenu()}>
+              <div class="add-dropdown" onClick={(e) => e.stopPropagation()}>
+                <div class="dropdown-item" onClick={handleAddNewLogin}>
+                  Mật khẩu
+                </div>
+                <div class="dropdown-item" onClick={handleAddNewNote}>
+                  Ghi chú
+                </div>
+              </div>
+            </Show>
+          </div>
+
           {/* Popout Button */}
           <Show when={!isPopout()}>
             <ExternalLinkIcon onClick={handlePopout} title="Mở cửa sổ riêng" />
@@ -336,10 +397,6 @@ export const Vault: Component = () => {
           </Show>
         </div>
 
-        {/* Add Button FAB */}
-        <div class="fab" onClick={handleAddNewItem} title="Thêm tài khoản mới">
-          <PlusIcon />
-        </div>
       </div>
 
     </div>

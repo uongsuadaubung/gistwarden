@@ -10,7 +10,7 @@ import {
   type GithubUser,
 } from "./storage.ts";
 import { deriveKey, encryptData, decryptData, generateSalt } from "./crypto.ts";
-import { View, type VaultItem } from "./types.ts";
+import { View, type VaultItem, type LoginVaultItem, type SecureNoteVaultItem, VaultItemType } from "./types.ts";
 export { View };
 
 // Zod schemas for validation
@@ -40,13 +40,18 @@ export const VaultFieldSchema = z.object({
   value: z.string().or(z.null()).optional().transform((v) => v || ""),
 });
 
-const VaultItemSchema = z.object({
+const BaseVaultItemSchema = z.object({
   id: z.string(),
-  type: z.number().default(1),
   name: z.string(),
   notes: z.string().optional(),
   favorite: z.boolean().optional(),
   fields: z.array(VaultFieldSchema).optional(),
+  creationDate: z.string().optional(),
+  revisionDate: z.string().optional(),
+});
+
+const LoginVaultItemSchema = BaseVaultItemSchema.extend({
+  type: z.literal(VaultItemType.Login),
   login: z.object({
     username: z.string().optional(),
     password: z.string().optional(),
@@ -54,14 +59,22 @@ const VaultItemSchema = z.object({
     uris: z.array(LoginUriSchema).optional(),
     fido2Credentials: z.array(Fido2CredentialSchema).optional(),
   }).optional(),
-  creationDate: z.string().optional(),
-  revisionDate: z.string().optional(),
 });
+
+const SecureNoteVaultItemSchema = BaseVaultItemSchema.extend({
+  type: z.literal(VaultItemType.SecureNote),
+});
+
+const VaultItemSchema = z.discriminatedUnion("type", [
+  LoginVaultItemSchema,
+  SecureNoteVaultItemSchema,
+]);
 
 const VaultListSchema = z.array(VaultItemSchema);
 
 // Schema for raw import validation
 const ImportItemSchema = z.object({
+  type: z.number().nullish(),
   name: z.string().min(1, "Tên tài khoản không được để trống"),
   notes: z.string().nullish(),
   favorite: z.boolean().nullish(),
@@ -414,35 +427,68 @@ export const storeActions = {
         // Edit
         updatedList = store.vaultItems.map((v) => {
           if (v.id === item.id) {
-            const updated: VaultItem = {
-              id: v.id,
-              type: item.type !== undefined ? item.type : v.type,
-              name: item.name !== undefined ? item.name : v.name,
-              notes: item.notes !== undefined ? item.notes : v.notes,
-              favorite: item.favorite !== undefined ? item.favorite : v.favorite,
-              fields: item.fields !== undefined ? item.fields : v.fields,
-              login: item.login !== undefined ? item.login : v.login,
-              creationDate: v.creationDate,
-              revisionDate: now,
-            };
-            return updated;
+            const targetType = item.type !== undefined ? item.type : v.type;
+            if (targetType === VaultItemType.SecureNote) {
+              const updated: SecureNoteVaultItem = {
+                id: v.id,
+                type: VaultItemType.SecureNote,
+                name: item.name !== undefined ? item.name : v.name,
+                notes: item.notes !== undefined ? item.notes : v.notes,
+                favorite: item.favorite !== undefined ? item.favorite : v.favorite,
+                fields: item.fields !== undefined ? item.fields : v.fields,
+                creationDate: v.creationDate,
+                revisionDate: now,
+              };
+              return updated;
+            } else {
+              const itemLogin = "login" in item ? item.login : undefined;
+              const vLogin = "login" in v ? v.login : undefined;
+              const updated: LoginVaultItem = {
+                id: v.id,
+                type: VaultItemType.Login,
+                name: item.name !== undefined ? item.name : v.name,
+                notes: item.notes !== undefined ? item.notes : v.notes,
+                favorite: item.favorite !== undefined ? item.favorite : v.favorite,
+                fields: item.fields !== undefined ? item.fields : v.fields,
+                login: itemLogin !== undefined ? itemLogin : vLogin,
+                creationDate: v.creationDate,
+                revisionDate: now,
+              };
+              return updated;
+            }
           }
           return v;
         });
       } else {
         // New
-        const newItem: VaultItem = {
-          id: crypto.randomUUID(),
-          type: item.type || 1,
-          name: item.name || "Chưa đặt tên",
-          notes: item.notes,
-          favorite: item.favorite || false,
-          fields: item.fields || [],
-          login: item.login,
-          creationDate: now,
-          revisionDate: now,
-        };
-        updatedList = [...store.vaultItems, newItem];
+        const targetType = item.type || VaultItemType.Login;
+        if (targetType === VaultItemType.SecureNote) {
+          const newItem: SecureNoteVaultItem = {
+            id: crypto.randomUUID(),
+            type: VaultItemType.SecureNote,
+            name: item.name || "Chưa đặt tên",
+            notes: item.notes,
+            favorite: item.favorite || false,
+            fields: item.fields || [],
+            creationDate: now,
+            revisionDate: now,
+          };
+          updatedList = [...store.vaultItems, newItem];
+        } else {
+          const itemLogin = "login" in item ? item.login : undefined;
+          const newItem: LoginVaultItem = {
+            id: crypto.randomUUID(),
+            type: VaultItemType.Login,
+            name: item.name || "Chưa đặt tên",
+            notes: item.notes,
+            favorite: item.favorite || false,
+            fields: item.fields || [],
+            login: itemLogin,
+            creationDate: now,
+            revisionDate: now,
+          };
+          updatedList = [...store.vaultItems, newItem];
+        }
       }
 
       // Validate via Zod
@@ -653,27 +699,46 @@ export const storeActions = {
           rawFidoData: rawFido
         });
         
-        return {
-          id: crypto.randomUUID(),
-          type: 1, // Login
-          name: item.name,
-          notes: item.notes || "",
-          favorite: !!item.favorite,
-          fields: item.fields?.map((f) => ({
-            type: f.type ?? 0,
-            name: f.name || "",
-            value: f.value || "",
-          })) || [],
-          login: {
-            username: item.login?.username || "",
-            password: item.login?.password || "",
-            totp: item.login?.totp || "",
-            uris: item.login?.uris?.map((u) => ({ uri: u.uri })) || [],
-            fido2Credentials: item.login?.fido2Credentials || [],
-          },
-          creationDate: now,
-          revisionDate: now,
-        };
+        const resolvedType = item.type === VaultItemType.SecureNote ? VaultItemType.SecureNote : VaultItemType.Login;
+
+        if (resolvedType === VaultItemType.SecureNote) {
+          return {
+            id: crypto.randomUUID(),
+            type: VaultItemType.SecureNote,
+            name: item.name,
+            notes: item.notes || "",
+            favorite: !!item.favorite,
+            fields: item.fields?.map((f) => ({
+              type: f.type ?? 0,
+              name: f.name || "",
+              value: f.value || "",
+            })) || [],
+            creationDate: now,
+            revisionDate: now,
+          };
+        } else {
+          return {
+            id: crypto.randomUUID(),
+            type: VaultItemType.Login,
+            name: item.name,
+            notes: item.notes || "",
+            favorite: !!item.favorite,
+            fields: item.fields?.map((f) => ({
+              type: f.type ?? 0,
+              name: f.name || "",
+              value: f.value || "",
+            })) || [],
+            login: {
+              username: item.login?.username || "",
+              password: item.login?.password || "",
+              totp: item.login?.totp || "",
+              uris: item.login?.uris?.map((u) => ({ uri: u.uri })) || [],
+              fido2Credentials: item.login?.fido2Credentials || [],
+            },
+            creationDate: now,
+            revisionDate: now,
+          };
+        }
       });
 
       console.log("[Gistwarden Import] Bat dau kiem tra va luu vao danh sach chung...");

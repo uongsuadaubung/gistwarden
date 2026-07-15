@@ -1,6 +1,6 @@
 import { createSignal, onMount, type Component, Show, For } from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
-import { type VaultItem, type Fido2Credential, type VaultField } from "@/shared/types.ts";
+import { type Fido2Credential, type VaultField, type LoginVaultItem, type SecureNoteVaultItem, VaultItemType } from "@/shared/types.ts";
 import Button from "./Button.tsx";
 import Input from "./Input.tsx";
 import { ArrowLeftIcon, CopyIcon, DragIcon, EditIcon, EyeIcon, EyeOffIcon, TrashIcon, QrIcon, HeartFilledIcon, HeartOutlineIcon } from "@/icons/svg/index.ts";
@@ -69,19 +69,31 @@ export const ItemEdit: Component = () => {
   // Drag and drop states
   const [draggedIndex, setDraggedIndex] = createSignal<number | null>(null);
 
+  const [itemType, setItemType] = createSignal<VaultItemType>(VaultItemType.Login);
+
   onMount(() => {
     const item = store.selectedItem;
     if (item) {
       setName(item.name || "");
-      setUsername(item.login?.username || "");
-      setPassword(item.login?.password || "");
-      setUri(item.login?.uris?.[0]?.uri || "");
-      setTotpSecret(item.login?.totp || "");
+      setItemType(item.type || VaultItemType.Login);
+      if (item.type === VaultItemType.SecureNote) {
+        setUsername("");
+        setPassword("");
+        setUri("");
+        setTotpSecret("");
+        setFidoCredentials([]);
+      } else {
+        setUsername(item.login?.username || "");
+        setPassword(item.login?.password || "");
+        setUri(item.login?.uris?.[0]?.uri || "");
+        setTotpSecret(item.login?.totp || "");
+        setFidoCredentials(item.login?.fido2Credentials || []);
+      }
       setNotes(item.notes || "");
       setFavorite(item.favorite || false);
-      setFidoCredentials(item.login?.fido2Credentials || []);
       setFields(item.fields || []);
     } else {
+      setItemType(VaultItemType.Login);
       setFields([]);
     }
   });
@@ -162,7 +174,7 @@ export const ItemEdit: Component = () => {
     e.preventDefault();
     if (saving()) return;
     if (!name().trim()) {
-      setError("Vui lòng nhập tên tài khoản");
+      setError(itemType() === VaultItemType.SecureNote ? "Vui lòng nhập tên ghi chú" : "Vui lòng nhập tên tài khoản");
       return;
     }
 
@@ -170,24 +182,42 @@ export const ItemEdit: Component = () => {
     setSaving(true);
 
     try {
-      const itemData: Partial<VaultItem> = {
-        id: store.selectedItem?.id || undefined,
-        name: name().trim(),
-        notes: notes().trim(),
-        favorite: favorite(),
-        fields: fields().map(f => ({
-          type: f.type,
-          name: f.name.trim(),
-          value: f.value.trim()
-        })),
-        login: {
-          username: username().trim(),
-          password: password().trim(),
-          totp: totpSecret().trim(),
-          uris: uri().trim() ? [{ uri: uri().trim() }] : [],
-          fido2Credentials: fidoCredentials(),
-        },
-      };
+      let itemData: Partial<LoginVaultItem> | Partial<SecureNoteVaultItem>;
+
+      if (itemType() === VaultItemType.SecureNote) {
+        itemData = {
+          id: store.selectedItem?.id || undefined,
+          type: VaultItemType.SecureNote,
+          name: name().trim(),
+          notes: notes().trim(),
+          favorite: favorite(),
+          fields: fields().map(f => ({
+            type: f.type,
+            name: f.name.trim(),
+            value: f.value.trim()
+          })),
+        };
+      } else {
+        itemData = {
+          id: store.selectedItem?.id || undefined,
+          type: VaultItemType.Login,
+          name: name().trim(),
+          notes: notes().trim(),
+          favorite: favorite(),
+          fields: fields().map(f => ({
+            type: f.type,
+            name: f.name.trim(),
+            value: f.value.trim()
+          })),
+          login: {
+            username: username().trim(),
+            password: password().trim(),
+            totp: totpSecret().trim(),
+            uris: uri().trim() ? [{ uri: uri().trim() }] : [],
+            fido2Credentials: fidoCredentials(),
+          },
+        };
+      }
 
       const res = await storeActions.saveItem(itemData);
       if (res.success) {
@@ -228,7 +258,9 @@ export const ItemEdit: Component = () => {
             <ArrowLeftIcon class="icon-inline-large" />
           </div>
           <div class="detail-title detail-header-title">
-            {isEdit() ? "Chỉnh sửa tài khoản" : "Thêm tài khoản"}
+            {isEdit()
+              ? (itemType() === VaultItemType.SecureNote ? "Chỉnh sửa ghi chú" : "Chỉnh sửa tài khoản")
+              : (itemType() === VaultItemType.SecureNote ? "Thêm ghi chú" : "Thêm tài khoản")}
           </div>
         </div>
         <button
@@ -252,134 +284,158 @@ export const ItemEdit: Component = () => {
           </Show>
 
           <div class="form-group">
+            <label for="item-type">Loại</label>
+            <select
+              id="item-type"
+              class="input-control"
+              value={itemType()}
+              disabled={isEdit()}
+              onChange={(e) => {
+                const val = parseInt(e.currentTarget.value);
+                if (val === VaultItemType.SecureNote) {
+                  setItemType(VaultItemType.SecureNote);
+                } else {
+                  setItemType(VaultItemType.Login);
+                }
+              }}
+              style="height: 38px; border-radius: 8px; font-size: 13px;"
+            >
+              <option value={VaultItemType.Login}>Mật khẩu</option>
+              <option value={VaultItemType.SecureNote}>Ghi chú an toàn</option>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label for="item-name">Tên</label>
             <Input
               id="item-name"
               type="text"
               value={name()}
               onInput={(e) => setName(e.currentTarget.value)}
-              placeholder="Ví dụ: Google, Facebook..."
+              placeholder={itemType() === VaultItemType.SecureNote ? "Ví dụ: Mã khẩn cấp, Cấu hình..." : "Ví dụ: Google, Facebook..."}
             />
           </div>
 
-          <div class="form-group">
-            <label for="item-username">Tên đăng nhập</label>
-            <Input
-              id="item-username"
-              type="text"
-              value={username()}
-              onInput={(e) => setUsername(e.currentTarget.value)}
-              placeholder="Username hoặc email..."
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="item-password">Mật khẩu</label>
-            <div class="pos-relative">
+          <Show when={itemType() !== VaultItemType.SecureNote}>
+            <div class="form-group">
+              <label for="item-username">Tên đăng nhập</label>
               <Input
-                id="item-password"
-                type={showPassword() ? "text" : "password"}
-                class="password-font pr-68"
-                value={password()}
-                onInput={(e) => setPassword(e.currentTarget.value)}
-                placeholder="Mật khẩu..."
+                id="item-username"
+                type="text"
+                value={username()}
+                onInput={(e) => setUsername(e.currentTarget.value)}
+                placeholder="Username hoặc email..."
               />
-              <div class="input-right-actions">
-                <button
-                  type="button"
-                  class="action-btn input-action-btn"
-                  onClick={() => setShowPassword(!showPassword())}
-                >
-                  <Show when={showPassword()} fallback={
-                    <EyeIcon class="icon-inline" />
-                  }>
-                    <EyeOffIcon class="icon-inline" />
-                  </Show>
-                </button>
-                <button
-                  type="button"
-                  class="action-btn input-action-btn"
-                  onClick={() => handleCopy(password(), "mật khẩu")}
-                >
-                  <CopyIcon class="icon-inline" />
-                </button>
+            </div>
+
+            <div class="form-group">
+              <label for="item-password">Mật khẩu</label>
+              <div class="pos-relative">
+                <Input
+                  id="item-password"
+                  type={showPassword() ? "text" : "password"}
+                  class="password-font pr-68"
+                  value={password()}
+                  onInput={(e) => setPassword(e.currentTarget.value)}
+                  placeholder="Mật khẩu..."
+                />
+                <div class="input-right-actions">
+                  <button
+                    type="button"
+                    class="action-btn input-action-btn"
+                    onClick={() => setShowPassword(!showPassword())}
+                  >
+                    <Show when={showPassword()} fallback={
+                      <EyeIcon class="icon-inline" />
+                    }>
+                      <EyeOffIcon class="icon-inline" />
+                    </Show>
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn input-action-btn"
+                    onClick={() => handleCopy(password(), "mật khẩu")}
+                  >
+                    <CopyIcon class="icon-inline" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Passkeys list in Edit Mode */}
-          <Show when={fidoCredentials().length > 0}>
-            <div class="detail-section-title">Passkey đã liên kết</div>
-            <div class="card p-8 mb-12">
-              <For each={fidoCredentials()}>
-                {(cred) => (
-                  <div class="fido2-cred-row">
-                    <div>
-                      <strong>{cred.userName || "Không có tên"}</strong>
-                      <span class="card-sub-text">RP: {cred.rpId}</span>
+            {/* Passkeys list in Edit Mode */}
+            <Show when={fidoCredentials().length > 0}>
+              <div class="detail-section-title">Passkey đã liên kết</div>
+              <div class="card p-8 mb-12">
+                <For each={fidoCredentials()}>
+                  {(cred) => (
+                    <div class="fido2-cred-row">
+                      <div>
+                        <strong>{cred.userName || "Không có tên"}</strong>
+                        <span class="card-sub-text">RP: {cred.rpId}</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        class="action-btn fido2-delete-btn" 
+                        onClick={() => handleDeleteFidoCredential(cred.credentialId)} 
+                        title="Xóa Passkey"
+                      >
+                        <TrashIcon class="icon-inline" />
+                      </button>
                     </div>
-                    <button 
-                      type="button" 
-                      class="action-btn fido2-delete-btn" 
-                      onClick={() => handleDeleteFidoCredential(cred.credentialId)} 
-                      title="Xóa Passkey"
-                    >
-                      <TrashIcon class="icon-inline" />
-                    </button>
-                  </div>
-                )}
-              </For>
+                  )}
+                </For>
+              </div>
+            </Show>
+
+            {/* TOTP Section */}
+            <div class="form-group mb-20">
+              <label for="item-totp">Khóa xác thực TOTP (Secret Key)</label>
+              <div class="pos-relative mb-8">
+                <Input
+                  id="item-totp"
+                  type={showTotpSecret() ? "text" : "password"}
+                  class="password-font pr-68"
+                  value={totpSecret()}
+                  onInput={(e) => setTotpSecret(e.currentTarget.value)}
+                  placeholder="Secret key (Base32)..."
+                />
+                <div class="input-right-actions">
+                  <button
+                    type="button"
+                    class="action-btn input-action-btn"
+                    onClick={() => setShowTotpSecret(!showTotpSecret())}
+                    title={showTotpSecret() ? "Ẩn khóa TOTP" : "Hiển thị khóa TOTP"}
+                  >
+                    <Show when={showTotpSecret()} fallback={
+                      <EyeIcon class="icon-inline" />
+                    }>
+                      <EyeOffIcon class="icon-inline" />
+                    </Show>
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn input-action-btn"
+                    title="Quét mã QR trên màn hình"
+                    onClick={handleScanQr}
+                    disabled={scanning()}
+                  >
+                    <QrIcon class={scanning() ? "spinning icon-inline" : "icon-inline"} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="item-uri">URI (Trang web)</label>
+              <Input
+                id="item-uri"
+                type="text"
+                value={uri()}
+                onInput={(e) => setUri(e.currentTarget.value)}
+                placeholder="https://example.com"
+              />
             </div>
           </Show>
-
-          {/* TOTP Section */}
-          <div class="form-group mb-20">
-            <label for="item-totp">Khóa xác thực TOTP (Secret Key)</label>
-            <div class="pos-relative mb-8">
-              <Input
-                id="item-totp"
-                type={showTotpSecret() ? "text" : "password"}
-                class="password-font pr-68"
-                value={totpSecret()}
-                onInput={(e) => setTotpSecret(e.currentTarget.value)}
-                placeholder="Secret key (Base32)..."
-              />
-              <div class="input-right-actions">
-                <button
-                  type="button"
-                  class="action-btn input-action-btn"
-                  onClick={() => setShowTotpSecret(!showTotpSecret())}
-                  title={showTotpSecret() ? "Ẩn khóa TOTP" : "Hiển thị khóa TOTP"}
-                >
-                  <Show when={showTotpSecret()} fallback={
-                    <EyeIcon class="icon-inline" />
-                  }>
-                    <EyeOffIcon class="icon-inline" />
-                  </Show>
-                </button>
-                <button
-                  type="button"
-                  class="action-btn input-action-btn"
-                  title="Quét mã QR trên màn hình"
-                  onClick={handleScanQr}
-                  disabled={scanning()}
-                >
-                  <QrIcon class={scanning() ? "spinning icon-inline" : "icon-inline"} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="item-uri">URI (Trang web)</label>
-            <Input
-              id="item-uri"
-              type="text"
-              value={uri()}
-              onInput={(e) => setUri(e.currentTarget.value)}
-              placeholder="https://example.com"
-            />
-          </div>
 
           {/* Custom Fields in Edit Mode */}
           <Show when={fields().length > 0}>

@@ -9,7 +9,7 @@ import {
   generateAssertionSignature,
   getRawCredentialId,
 } from "@/shared/passkey-crypto.ts";
-import { type Fido2Credential, type VaultItem } from "@/shared/types.ts";
+import { type Fido2Credential, type VaultItem, type LoginVaultItem, VaultItemType } from "@/shared/types.ts";
 import Button from "./Button.tsx";
 import Input from "./Input.tsx";
 import { ShieldIcon, InfoIcon, QuestionIcon, LockIcon } from "@/icons/svg/index.ts";
@@ -55,7 +55,7 @@ export const Fido2Prompt: Component = () => {
   const [selectedCredIndex, setSelectedCredIndex] = createSignal(0);
 
   // List of matching accounts found in vault for registration (create)
-  const [matchingAccounts, setMatchingAccounts] = createSignal<VaultItem[]>([]);
+  const [matchingAccounts, setMatchingAccounts] = createSignal<LoginVaultItem[]>([]);
   const [selectedAccountIndex, setSelectedAccountIndex] = createSignal<number | null>(null);
 
   onMount(async () => {
@@ -79,8 +79,8 @@ export const Fido2Prompt: Component = () => {
     const originHost = getDomainFromUrl(origin);
     const usernameNormalized = userName.toLowerCase().trim();
 
-    const matches = store.vaultItems.filter(item => {
-      if (item.type !== 1 || !item.login) return false;
+    const matches = store.vaultItems.filter((item): item is LoginVaultItem => {
+      if (item.type !== VaultItemType.Login || !item.login) return false;
       
       // Match username (must match)
       const itemUser = (item.login.username || "").toLowerCase().trim();
@@ -158,13 +158,14 @@ export const Fido2Prompt: Component = () => {
     console.log("[Gistwarden FIDO2] So luong tai khoan trong ket sat:", store.vaultItems.length);
     
     store.vaultItems.forEach((item) => {
+      if (item.type !== VaultItemType.Login) return;
       console.log(`[Gistwarden FIDO2] Kiem tra tai khoan "${item.name}":`, {
         hasLogin: !!item.login,
         fido2CredentialsCount: item.login?.fido2Credentials?.length || 0,
         fido2Credentials: item.login?.fido2Credentials
       });
       if (item.login?.fido2Credentials) {
-        item.login.fido2Credentials.forEach((cred) => {
+        item.login.fido2Credentials.forEach((cred: Fido2Credential) => {
           console.log(`[Gistwarden FIDO2] So sanh rpId: "${cred.rpId}" voi "${rpId}"`);
           if (cred.rpId?.trim().toLowerCase() === rpId?.trim().toLowerCase()) {
             console.log("[Gistwarden FIDO2] KHOP THANH CONG!");
@@ -255,8 +256,9 @@ export const Fido2Prompt: Component = () => {
       const idx = selectedAccountIndex();
       if (idx !== null && matchingAccounts()[idx]) {
         const existingItem = matchingAccounts()[idx];
-        const updatedItem: Partial<VaultItem> = {
+        const updatedItem: Partial<LoginVaultItem> = {
           id: existingItem.id,
+          type: VaultItemType.Login,
           login: {
             ...existingItem.login,
             fido2Credentials: [newCred],
@@ -365,13 +367,16 @@ export const Fido2Prompt: Component = () => {
       };
 
       const originalItem = store.vaultItems.find(v => v.id === selected.vaultItemId);
-      if (!originalItem || !originalItem.login) throw new Error("Vault item not found");
-
-      const updatedItem: VaultItem = {
+      if (!originalItem || originalItem.type !== VaultItemType.Login || !originalItem.login) {
+        throw new Error("Vault item not found");
+      }
+      
+      const updatedItem: LoginVaultItem = {
         ...originalItem,
+        type: VaultItemType.Login,
         login: {
           ...originalItem.login,
-          fido2Credentials: originalItem.login.fido2Credentials?.map(c => 
+          fido2Credentials: (originalItem.login.fido2Credentials || []).map((c: Fido2Credential) => 
             c.credentialId === cred.credentialId ? updatedCred : c
           ),
         },

@@ -25,4 +25,5 @@ export { default as DragIcon } from "./DragIcon.tsx";
 export { default as EditIcon } from "./EditIcon.tsx";
 export { default as HeartFilledIcon } from "./HeartFilledIcon.tsx";
 export { default as HeartOutlineIcon } from "./HeartOutlineIcon.tsx";
+export { default as NoteIcon } from "./NoteIcon.tsx";
 export * from "./types.ts";

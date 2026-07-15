@@ -34,13 +34,23 @@ export interface VaultField {
   value: string;
 }
 
-export interface VaultItem {
+export enum VaultItemType {
+  Login = 1,
+  SecureNote = 2,
+}
+
+export interface BaseVaultItem {
   id: string; // UUID
-  type: number; // 1 = Login, 2 = SecureNote, etc. We support Login mainly
   name: string;
   notes?: string;
   favorite?: boolean;
   fields?: VaultField[];
+  creationDate?: string;
+  revisionDate?: string;
+}
+
+export interface LoginVaultItem extends BaseVaultItem {
+  type: VaultItemType.Login;
   login?: {
     username?: string;
     password?: string;
@@ -48,6 +58,10 @@ export interface VaultItem {
     uris?: LoginUri[];
     fido2Credentials?: Fido2Credential[];
   };
-  creationDate?: string;
-  revisionDate?: string;
 }
+
+export interface SecureNoteVaultItem extends BaseVaultItem {
+  type: VaultItemType.SecureNote;
+}
+
+export type VaultItem = LoginVaultItem | SecureNoteVaultItem;

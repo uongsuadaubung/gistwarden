@@ -1439,7 +1439,7 @@ html.mode-responsive #root {
 .card-section-title { font-weight: 600; font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
 .card-list-item { font-size: 13px; padding: 4px 0; }
 .card-sub-text { font-size: 11px; color: var(--text-muted); display: block; }
-.notes-display { font-size: 13px; white-space: pre-wrap; line-height: 1.4; color: var(--text); }
+.notes-display { font-size: 13px; white-space: pre-wrap; word-break: break-all; line-height: 1.4; color: var(--text); }
 .pos-relative { position: relative; }
 .pr-68 { padding-right: 68px; }
 .input-right-actions { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; }
@@ -1587,4 +1587,74 @@ body.light-theme {
 @keyframes scale-up {
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* Header Add New Button and Dropdown */
+.add-new-header-btn {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 26px;
+  transition: background-color 0.2s, transform 0.1s;
+  
+  &:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.add-menu-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.add-dropdown {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px var(--shadow-dropdown);
+  z-index: 100;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+
+  .dropdown-item {
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+    transition: background-color 0.2s, color 0.2s;
+
+    &:hover {
+      background-color: var(--hover-bg);
+      color: var(--primary);
+    }
+  }
+}
+
+.note-badge {
+  background: var(--fido2-bg-warning);
+  color: var(--white);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9px;
+  margin-right: 6px;
+  font-weight: 600;
 }

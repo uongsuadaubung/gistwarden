@@ -1,6 +1,6 @@
 import { createSignal, onMount, onCleanup, type Component, Show, For } from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
-import { type Fido2Credential, type VaultField } from "@/shared/types.ts";
+import { type Fido2Credential, type VaultField, VaultItemType } from "@/shared/types.ts";
 import Button from "./Button.tsx";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/shared/totp-utils.ts";
@@ -39,13 +39,21 @@ export const ItemDetail: Component = () => {
     const item = store.selectedItem;
     if (item) {
       setName(item.name || "");
-      setUsername(item.login?.username || "");
-      setPassword(item.login?.password || "");
-      setUri(item.login?.uris?.[0]?.uri || "");
-      setTotpSecret(item.login?.totp || "");
+      if (item.type === VaultItemType.Login) {
+        setUsername(item.login?.username || "");
+        setPassword(item.login?.password || "");
+        setUri(item.login?.uris?.[0]?.uri || "");
+        setTotpSecret(item.login?.totp || "");
+        setFidoCredentials(item.login?.fido2Credentials || []);
+      } else {
+        setUsername("");
+        setPassword("");
+        setUri("");
+        setTotpSecret("");
+        setFidoCredentials([]);
+      }
       setNotes(item.notes || "");
       setFavorite(item.favorite || false);
-      setFidoCredentials(item.login?.fido2Credentials || []);
       setFields(item.fields || []);
     }
 
@@ -143,7 +151,9 @@ export const ItemDetail: Component = () => {
           <div class="back-btn detail-back-btn" onClick={handleBackToVault}>
             <ArrowLeftIcon class="icon-inline-large" />
           </div>
-          <div class="detail-title detail-header-title">Chi tiết tài khoản</div>
+          <div class="detail-title detail-header-title">
+            {store.selectedItem?.type === VaultItemType.SecureNote ? "Chi tiết ghi chú" : "Chi tiết tài khoản"}
+          </div>
         </div>
         <button
           type="button"
@@ -169,118 +179,121 @@ export const ItemDetail: Component = () => {
             <div class="detail-view-name">{name() || "Không có tên"}</div>
           </div>
 
-          {/* Card 1: Login Credentials */}
-          <div class="detail-section-title" style="margin-top: 0;">Thông tin đăng nhập</div>
-          <div class="card mb-16">
-            {/* Username Field */}
-            <div class="detail-row">
-              <div class="field-content">
-                <div class="field-label">Tên đăng nhập</div>
-                <div class="field-value">{username() || "Không có"}</div>
-              </div>
-              <Show when={username()}>
-                <button type="button" class="action-btn" onClick={() => handleCopy(username(), "tên đăng nhập")} title="Sao chép tên đăng nhập">
-                  <CopyIcon />
-                </button>
-              </Show>
-            </div>
-
-            {/* Password Field */}
-            <div class="detail-row">
-              <div class="field-content">
-                <div class="field-label">Mật khẩu</div>
-                <div class="field-value password-font">
-                  {showPassword() ? password() : "••••••••••••"}
+          {/* Card 1, 2, 3: Login Credentials */}
+          <Show when={store.selectedItem?.type !== VaultItemType.SecureNote}>
+            {/* Card 1: Login Credentials */}
+            <div class="detail-section-title" style="margin-top: 0;">Thông tin đăng nhập</div>
+            <div class="card mb-16">
+              {/* Username Field */}
+              <div class="detail-row">
+                <div class="field-content">
+                  <div class="field-label">Tên đăng nhập</div>
+                  <div class="field-value">{username() || "Không có"}</div>
                 </div>
-              </div>
-              <div class="field-actions">
-                <button type="button" class="action-btn" onClick={() => setShowPassword(!showPassword())} title={showPassword() ? "Ẩn mật khẩu" : "Hiển thị mật khẩu"}>
-                  <Show when={showPassword()} fallback={
-                    <EyeIcon class="icon-inline" />
-                  }>
-                    <EyeOffIcon class="icon-inline" />
-                  </Show>
-                </button>
-                <Show when={password()}>
-                  <button type="button" class="action-btn" onClick={() => handleCopy(password(), "mật khẩu")} title="Sao chép mật khẩu">
+                <Show when={username()}>
+                  <button type="button" class="action-btn" onClick={() => handleCopy(username(), "tên đăng nhập")} title="Sao chép tên đăng nhập">
                     <CopyIcon />
                   </button>
                 </Show>
               </div>
-            </div>
-          </div>
 
-          {/* Card 2: Security & OTP */}
-          <Show when={totpCode() || fidoCredentials().length > 0}>
-            <div class="detail-section-title">Bảo mật & OTP</div>
-            <div class="card mb-16">
-              {/* Rolling TOTP Display */}
-              <Show when={totpCode()}>
-                <div class="totp-row" onClick={() => handleCopy(totpCode().replace(/\s/g, ""), "mã TOTP")} title="Nhấp để sao chép mã TOTP">
-                  <div class="totp-content">
-                    <div class="totp-label">Mã xác thực hiện tại (TOTP)</div>
-                    <div class="totp-code">{totpCode()}</div>
-                  </div>
-                  {/* Countdown ring */}
-                  <div class="totp-timer">
-                    <svg class="timer-ring">
-                      <circle cx="12" cy="12" r={radius} />
-                      <circle
-                        class="progress"
-                        cx="12"
-                        cy="12"
-                        r={radius}
-                        stroke-dasharray={String(circumference)}
-                        stroke-dashoffset={String(strokeDashoffset())}
-                      />
-                    </svg>
-                    <span class="timer-text">{totpRemaining()}</span>
+              {/* Password Field */}
+              <div class="detail-row">
+                <div class="field-content">
+                  <div class="field-label">Mật khẩu</div>
+                  <div class="field-value password-font">
+                    {showPassword() ? password() : "••••••••••••"}
                   </div>
                 </div>
-              </Show>
-              {/* Passkeys list */}
-              <Show when={fidoCredentials().length > 0}>
-                <For each={fidoCredentials()}>
-                  {(cred) => (
-                    <div class="detail-row">
-                      <div class="field-content">
-                        <div class="field-label">Passkey đã liên kết</div>
-                        <div class="field-value">
-                          <strong>{cred.userName || "Không có tên"}</strong> (RP: {cred.rpId})
+                <div class="field-actions">
+                  <button type="button" class="action-btn" onClick={() => setShowPassword(!showPassword())} title={showPassword() ? "Ẩn mật khẩu" : "Hiển thị mật khẩu"}>
+                    <Show when={showPassword()} fallback={
+                      <EyeIcon class="icon-inline" />
+                    }>
+                      <EyeOffIcon class="icon-inline" />
+                    </Show>
+                  </button>
+                  <Show when={password()}>
+                    <button type="button" class="action-btn" onClick={() => handleCopy(password(), "mật khẩu")} title="Sao chép mật khẩu">
+                      <CopyIcon />
+                    </button>
+                  </Show>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Security & OTP */}
+            <Show when={totpCode() || fidoCredentials().length > 0}>
+              <div class="detail-section-title">Bảo mật & OTP</div>
+              <div class="card mb-16">
+                {/* Rolling TOTP Display */}
+                <Show when={totpCode()}>
+                  <div class="totp-row" onClick={() => handleCopy(totpCode().replace(/\s/g, ""), "mã TOTP")} title="Nhấp để sao chép mã TOTP">
+                    <div class="totp-content">
+                      <div class="totp-label">Mã xác thực hiện tại (TOTP)</div>
+                      <div class="totp-code">{totpCode()}</div>
+                    </div>
+                    {/* Countdown ring */}
+                    <div class="totp-timer">
+                      <svg class="timer-ring">
+                        <circle cx="12" cy="12" r={radius} />
+                        <circle
+                          class="progress"
+                          cx="12"
+                          cy="12"
+                          r={radius}
+                          stroke-dasharray={String(circumference)}
+                          stroke-dashoffset={String(strokeDashoffset())}
+                        />
+                      </svg>
+                      <span class="timer-text">{totpRemaining()}</span>
+                    </div>
+                  </div>
+                </Show>
+                {/* Passkeys list */}
+                <Show when={fidoCredentials().length > 0}>
+                  <For each={fidoCredentials()}>
+                    {(cred) => (
+                      <div class="detail-row">
+                        <div class="field-content">
+                          <div class="field-label">Passkey đã liên kết</div>
+                          <div class="field-value">
+                            <strong>{cred.userName || "Không có tên"}</strong> (RP: {cred.rpId})
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </For>
-              </Show>
+                    )}
+                  </For>
+                </Show>
+              </div>
+            </Show>
+
+            {/* Card 3: Auto-fill Options */}
+            <div class="detail-section-title">Tùy chọn tự động điền</div>
+            <div class="card mb-16">
+              {/* URI Field */}
+              <div class="detail-row">
+                <div class="field-content">
+                  <div class="field-label">Trang web (URI)</div>
+                  <div class="field-value">{uri() || "Không có"}</div>
+                </div>
+                <Show when={uri()}>
+                  <div class="field-actions">
+                    <button type="button" class="action-btn" onClick={() => window.open(uri(), "_blank")} title="Truy cập trang web">
+                      <ExternalLinkIcon class="icon-inline" />
+                    </button>
+                    <button type="button" class="action-btn" onClick={() => handleCopy(uri(), "địa chỉ URI")} title="Sao chép trang web">
+                      <CopyIcon />
+                    </button>
+                  </div>
+                </Show>
+              </div>
             </div>
           </Show>
 
-          {/* Card 3: Auto-fill Options */}
-          <div class="detail-section-title">Tùy chọn tự động điền</div>
-          <div class="card mb-16">
-            {/* URI Field */}
-            <div class="detail-row">
-              <div class="field-content">
-                <div class="field-label">Trang web (URI)</div>
-                <div class="field-value">{uri() || "Không có"}</div>
-              </div>
-              <Show when={uri()}>
-                <div class="field-actions">
-                  <button type="button" class="action-btn" onClick={() => window.open(uri(), "_blank")} title="Truy cập trang web">
-                    <ExternalLinkIcon class="icon-inline" />
-                  </button>
-                  <button type="button" class="action-btn" onClick={() => handleCopy(uri(), "địa chỉ URI")} title="Sao chép trang web">
-                    <CopyIcon />
-                  </button>
-                </div>
-              </Show>
-            </div>
-          </div>
-
           {/* Card 4: Custom Fields */}
           <Show when={fields().length > 0}>
-            <div class="detail-section-title">Trường tùy chỉnh</div>
+            <div class="detail-section-title" style={{ "margin-top": store.selectedItem?.type === VaultItemType.SecureNote ? "0" : "16px" }}>Trường tùy chỉnh</div>
             <div class="card mb-16">
                <For each={fields()}>
                 {(field, index) => (
@@ -332,7 +345,7 @@ export const ItemDetail: Component = () => {
 
           {/* Card 5: Notes display */}
           <Show when={notes()}>
-            <div class="detail-section-title">Ghi chú</div>
+            <div class="detail-section-title" style={{ "margin-top": (store.selectedItem?.type === VaultItemType.SecureNote && fields().length === 0) ? "0" : "16px" }}>Ghi chú</div>
             <div class="card mb-16">
               <div style="padding: 8px 12px;">
                 <div class="notes-display">{notes()}</div>
