@@ -17,6 +17,7 @@ interface ChromeMessage {
   token?: string;
   result?: unknown;
   error?: string;
+  data?: unknown;
 }
 
 let pendingFido2Request: PendingRequest | null = null;
@@ -27,7 +28,7 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender: chrome.run
 
   switch (message.type) {
     case "UPLOAD_TO_GIST":
-      uploadToGist(message.content).then(sendResponse);
+      uploadToGist(message.content || "").then(sendResponse);
       return true; // Keep channel open
 
     case "DOWNLOAD_FROM_GIST":
@@ -35,7 +36,7 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender: chrome.run
       return true;
 
     case "VALIDATE_TOKEN":
-      validateToken(message.token).then(sendResponse);
+      validateToken(message.token || "").then(sendResponse);
       return true;
 
     case "SCAN_QR_CODE":
@@ -145,7 +146,7 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender: chrome.run
 async function captureAndDecodeQr(): Promise<{ success: boolean; secret?: string; error?: string }> {
   try {
     // 1. Capture the visible tab as a PNG data URL
-    const screenshot = await chrome.tabs.captureVisibleTab(null, { format: "png" });
+    const screenshot = await chrome.tabs.captureVisibleTab({ format: "png" });
     if (!screenshot) {
       return { success: false, error: "Failed to capture screenshot of tab" };
     }

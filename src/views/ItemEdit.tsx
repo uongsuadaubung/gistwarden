@@ -3,8 +3,6 @@ import { store, storeActions, View } from "@/shared/store.ts";
 import { type VaultItem, type Fido2Credential, type VaultField } from "@/shared/types.ts";
 import Button from "./Button.tsx";
 import Input from "./Input.tsx";
-import * as OTPAuth from "otpauth";
-import { parseTotpSecret } from "@/shared/totp-utils.ts";
 import { ArrowLeftIcon, CopyIcon, DragIcon, EditIcon, EyeIcon, EyeOffIcon, TrashIcon, QrIcon, HeartFilledIcon, HeartOutlineIcon } from "@/icons/svg/index.ts";
 
 export const ItemEdit: Component = () => {
@@ -20,17 +18,13 @@ export const ItemEdit: Component = () => {
   const [favorite, setFavorite] = createSignal(false);
   const [fidoCredentials, setFidoCredentials] = createSignal<Fido2Credential[]>([]);
   const [fields, setFields] = createSignal<VaultField[]>([]);
-  const [visibleFields, setVisibleFields] = createSignal<Record<number, boolean>>({});
-
-  const toggleFieldVisibility = (index: number) => {
-    setVisibleFields(prev => ({ ...prev, [index]: !prev[index] }));
-  };
 
   // UI state
   const [showPassword, setShowPassword] = createSignal(false);
   const [showTotpSecret, setShowTotpSecret] = createSignal(false);
   const [scanning, setScanning] = createSignal(false);
   const [error, setError] = createSignal("");
+  const [saving, setSaving] = createSignal(false);
 
   // Add field modal states
   const [showAddFieldModal, setShowAddFieldModal] = createSignal(false);
@@ -91,12 +85,6 @@ export const ItemEdit: Component = () => {
       setFields([]);
     }
   });
-
-  const handleFieldChange = (index: number, key: "name" | "value" | "type", val: string | number) => {
-    setFields(
-      fields().map((f, i) => (i === index ? { ...f, [key]: val } : f))
-    );
-  };
 
   const handleDragStart = (index: number, e: DragEvent) => {
     setDraggedIndex(index);
@@ -172,48 +160,54 @@ export const ItemEdit: Component = () => {
 
   const handleSave = async (e: Event) => {
     e.preventDefault();
+    if (saving()) return;
     if (!name().trim()) {
       setError("Vui lòng nhập tên tài khoản");
       return;
     }
 
     setError("");
+    setSaving(true);
 
-    const itemData: Partial<VaultItem> = {
-      id: store.selectedItem?.id || undefined,
-      name: name().trim(),
-      notes: notes().trim(),
-      favorite: favorite(),
-      fields: fields().map(f => ({
-        type: f.type,
-        name: f.name.trim(),
-        value: f.value.trim()
-      })),
-      login: {
-        username: username().trim(),
-        password: password().trim(),
-        totp: totpSecret().trim(),
-        uris: uri().trim() ? [{ uri: uri().trim() }] : [],
-        fido2Credentials: fidoCredentials(),
-      },
-    };
+    try {
+      const itemData: Partial<VaultItem> = {
+        id: store.selectedItem?.id || undefined,
+        name: name().trim(),
+        notes: notes().trim(),
+        favorite: favorite(),
+        fields: fields().map(f => ({
+          type: f.type,
+          name: f.name.trim(),
+          value: f.value.trim()
+        })),
+        login: {
+          username: username().trim(),
+          password: password().trim(),
+          totp: totpSecret().trim(),
+          uris: uri().trim() ? [{ uri: uri().trim() }] : [],
+          fido2Credentials: fidoCredentials(),
+        },
+      };
 
-    const res = await storeActions.saveItem(itemData);
-    if (res.success) {
-      // If was editing, return to detail view, else go back to vault
-      if (isEdit()) {
-        // Update selectedItem locally so the detail view shows updated content immediately
-        const savedItem = store.vaultItems.find(v => v.id === store.selectedItem?.id);
-        if (savedItem) {
-          storeActions.selectItem(savedItem);
+      const res = await storeActions.saveItem(itemData);
+      if (res.success) {
+        // If was editing, return to detail view, else go back to vault
+        if (isEdit()) {
+          // Update selectedItem locally so the detail view shows updated content immediately
+          const savedItem = store.vaultItems.find(v => v.id === store.selectedItem?.id);
+          if (savedItem) {
+            storeActions.selectItem(savedItem);
+          } else {
+            storeActions.navigate(View.Vault);
+          }
         } else {
           storeActions.navigate(View.Vault);
         }
       } else {
-        storeActions.navigate(View.Vault);
+        setError(res.error || "Lỗi lưu tài khoản");
       }
-    } else {
-      setError(res.error || "Lỗi lưu tài khoản");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -525,8 +519,12 @@ export const ItemEdit: Component = () => {
 
         {/* Footer */}
         <div class="detail-footer-bar">
-          <Button type="button" variant="secondary" onClick={handleCancel}>Hủy</Button>
-          <Button type="submit" variant="primary" class="min-w-100">Lưu</Button>
+          <Button type="button" variant="secondary" onClick={handleCancel} disabled={saving()}>Hủy</Button>
+          <Button type="submit" variant="primary" class="min-w-100" disabled={saving()}>
+            <Show when={saving()} fallback="Lưu">
+              Đang lưu...
+            </Show>
+          </Button>
         </div>
       </form>
 

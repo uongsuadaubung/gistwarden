@@ -15,6 +15,9 @@
       authenticatorData?: string;
       signature?: string;
       userHandle?: string | null;
+      authData?: string;
+      publicKey?: string;
+      publicKeyAlgorithm?: number;
     };
   }
 
@@ -42,8 +45,10 @@
   }
 
   // Buffer to Base64URL helper
-  function bufferToBase64Url(buffer: ArrayBuffer | Uint8Array): string {
-    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  function bufferToBase64Url(buffer: BufferSource): string {
+    const bytes = ArrayBuffer.isView(buffer)
+      ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+      : new Uint8Array(buffer);
     let binary = "";
     for (let i = 0; i < bytes.byteLength; i++) {
       binary += String.fromCharCode(bytes[i]);
@@ -131,9 +136,24 @@
         response: {
           clientDataJSON: base64UrlToBuffer(response.response.clientDataJSON),
           attestationObject: base64UrlToBuffer(response.response.attestationObject || ""),
+          getAuthenticatorData: () => base64UrlToBuffer(response.response.authData || ""),
+          getPublicKey: () => base64UrlToBuffer(response.response.publicKey || ""),
+          getPublicKeyAlgorithm: () => response.response.publicKeyAlgorithm || -7,
           getTransports: () => ["internal"],
         },
         getClientExtensionResults: () => ({}),
+        toJSON: () => ({
+          id: response.id,
+          rawId: response.rawId,
+          type: "public-key",
+          response: {
+            clientDataJSON: response.response.clientDataJSON,
+            attestationObject: response.response.attestationObject,
+            transports: ["internal"],
+          },
+          authenticatorAttachment: "platform",
+          clientExtensionResults: {},
+        }),
       };
 
       // Set prototype after properties are written to the instance
@@ -184,6 +204,19 @@
           userHandle: response.response.userHandle ? base64UrlToBuffer(response.response.userHandle) : null,
         },
         getClientExtensionResults: () => ({}),
+        toJSON: () => ({
+          id: response.id,
+          rawId: response.rawId,
+          type: "public-key",
+          response: {
+            clientDataJSON: response.response.clientDataJSON,
+            authenticatorData: response.response.authenticatorData,
+            signature: response.response.signature,
+            userHandle: response.response.userHandle || null,
+          },
+          authenticatorAttachment: "platform",
+          clientExtensionResults: {},
+        }),
       };
 
       // Set prototype after properties are written to the instance

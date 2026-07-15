@@ -18,7 +18,7 @@ const GistSchema = z.object({
   id: z.string(),
   description: z.string().nullable(),
   updated_at: z.string(),
-  files: z.record(GistFileSchema),
+  files: z.record(z.string(), GistFileSchema),
 });
 
 const GistArraySchema = z.array(GistSchema);
