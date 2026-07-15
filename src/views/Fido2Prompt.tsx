@@ -419,9 +419,19 @@ export const Fido2Prompt: Component = () => {
 
       const signature = await generateAssertionSignature(authData, clientDataHash, privateKey);
 
-      // Phai bieu dien credentialId ve dang raw bytes va ma hoa Base64URL de trinh duyet nhan dien dung
-      const rawCredId = getRawCredentialId(cred.credentialId);
-      const credIdBase64Url = bufferToBase64Url(rawCredId);
+      // Tu dong tuong thich nguoc: Kiem tra xem trang web dang yeu cau dinh dang ID nao
+      // - Neu yeu cau chuoi ASCII UUID 36 ky tu (co che cu), chung ta tra ve dinh dang do.
+      // - Mac dinh dung 16-byte raw UUID (co che moi chuan WebAuthn).
+      const b64_36 = bufferToBase64Url(new TextEncoder().encode(cred.credentialId));
+
+      const useOld36ByteFormat = (options.allowCredentials || []).some(
+        (allowed: { id: string }) => allowed.id === b64_36
+      );
+
+      const rawCredId = useOld36ByteFormat
+        ? new TextEncoder().encode(cred.credentialId)
+        : getRawCredentialId(cred.credentialId);
+      const credIdBase64Url = useOld36ByteFormat ? b64_36 : bufferToBase64Url(rawCredId);
 
       const result = {
         id: credIdBase64Url,
