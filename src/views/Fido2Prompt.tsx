@@ -259,10 +259,7 @@ export const Fido2Prompt: Component = () => {
           id: existingItem.id,
           login: {
             ...existingItem.login,
-            fido2Credentials: [
-              ...(existingItem.login?.fido2Credentials || []),
-              newCred,
-            ],
+            fido2Credentials: [newCred],
           },
         };
         saveRes = await storeActions.saveItem(updatedItem);
