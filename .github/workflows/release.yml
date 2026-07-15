@@ -1,0 +1,83 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Bump version and commit
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          deno task bump-version
+          
+          if [ -n "$(git status --porcelain src/manifest.json)" ]; then
+            git add src/manifest.json
+            VERSION=$(jq -r '.version' src/manifest.json)
+            git commit -m "chore: bump version to $VERSION [skip ci]"
+            git push
+          else
+            echo "No version bump needed."
+          fi
+
+      - name: Create Release and Upload packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Read version from src/manifest.json
+          VERSION=$(jq -r '.version' src/manifest.json)
+          TAG_NAME="v$VERSION"
+
+          # Check if the release/tag already exists on GitHub
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release $TAG_NAME already exists. Skipping build and release creation."
+            exit 0
+          fi
+
+          echo "New version detected: $TAG_NAME. Building extension packages..."
+          deno task build
+
+          # Create and rename output files
+          CHROME_FILE="gistwarden-chrome-${TAG_NAME}.zip"
+          FIREFOX_FILE="gistwarden-firefox-${TAG_NAME}.zip"
+
+          cp dist/chrome.zip "$CHROME_FILE"
+          cp dist/firefox.zip "$FIREFOX_FILE"
+
+          echo "Creating release $TAG_NAME and uploading packages..."
+          gh release create "$TAG_NAME" "$CHROME_FILE" "$FIREFOX_FILE" --title "$TAG_NAME" --generate-notes
+
+      - name: Cleanup old releases and workflow runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Cleaning up old releases (keeping 20 most recent)..."
+          gh release list --limit 100 --json tagName --jq '.[20:].[] | .tagName' | while read -r tag; do
+            if [ -n "$tag" ]; then
+              echo "Deleting old release and tag: $tag"
+              gh release delete "$tag" --yes --cleanup-tag || true
+            fi
+          done
+
+          echo "Cleaning up old workflow runs (keeping 20 most recent)..."
+          gh run list --limit 100 --json databaseId --jq '.[20:].[] | .databaseId' | while read -r run_id; do
+            if [ -n "$run_id" ]; then
+              echo "Deleting old workflow run: $run_id"
+              gh run delete "$run_id" || true
+            fi
+          done
