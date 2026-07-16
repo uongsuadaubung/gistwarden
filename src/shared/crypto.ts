@@ -88,3 +88,26 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   }
   return bytes.buffer;
 }
+
+let derivedCryptoKey: CryptoKey | null = null;
+
+export function clearDerivedKey(): void {
+  derivedCryptoKey = null;
+}
+
+export function setDerivedKey(key: CryptoKey | null): void {
+  derivedCryptoKey = key;
+}
+
+export async function getOrDeriveKey(
+  password: string,
+  saltBase64: string,
+): Promise<CryptoKey> {
+  if (derivedCryptoKey) return derivedCryptoKey;
+
+  const saltBuffer = base64ToArrayBuffer(saltBase64);
+  const salt = new Uint8Array(saltBuffer);
+
+  derivedCryptoKey = await deriveKey(password, salt);
+  return derivedCryptoKey;
+}

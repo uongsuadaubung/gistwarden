@@ -49,6 +49,7 @@ export default {
   login_error_unlock_fail: "Unlock failed",
   login_forgot_password_title: "Forgot Master Password",
   login_forgot_password_msg: "Gistwarden uses end-to-end encryption (Zero-Knowledge). The Master Password is never sent or stored on any server, hence there is <strong style='color: var(--error);'>NO WAY</strong> to recover or reset it.<br/><br/>To start over, the system will <strong>LOG OUT</strong> and <strong>CLEAR LOCAL DATA</strong>.<br/><br/>If you want to continue using this GitHub account, the system will open the GitHub Gist page containing the old vault so you can <strong>BACK UP</strong> the data or <strong style='color: var(--error);'>MANUALLY DELETE</strong> this Gist on GitHub before logging in again.<br/><br/>Are you sure you want to log out and open the old Gist page?",
+  app_loading: "Loading Gistwarden...",
 
   // Vault Page
   vault_search_placeholder: "Search accounts...",
@@ -72,6 +73,14 @@ export default {
   vault_item_note: "Secure Note",
   vault_syncing: "Syncing...",
   vault_sync_error: "Sync Error",
+  vault_no_username: "No username",
+  vault_copy_notes: "Copy Secure Note",
+  vault_copy_options: "Copy Options",
+  vault_menu_unfavorite: "Remove from Favorites",
+  vault_menu_more: "More options",
+  vault_importing: "Importing vault data...",
+  btn_clone: "Clone",
+  vault_item_clone_suffix: "Copy",
 
   // Item Edit / Add Page
   edit_title_add_login: "Add Login",
@@ -90,6 +99,8 @@ export default {
   edit_placeholder_website: "https://example.com",
   edit_label_notes: "Notes",
   edit_placeholder_notes: "Enter notes here...",
+  edit_section_additional_options: "Additional options",
+  edit_section_item_details: "Item details",
   edit_label_fields: "Custom Fields",
   edit_field_type_text: "Text",
   edit_field_type_hidden: "Hidden",
@@ -137,6 +148,7 @@ export default {
   detail_title_login: "Login Details",
   detail_title_note: "Secure Note Details",
   detail_totp_copied: "TOTP code copied",
+  detail_totp_error: "ERROR CODE",
   detail_copy_username: "Copy username",
   detail_copy_password: "Copy password",
   detail_copy_totp: "Copy TOTP code",

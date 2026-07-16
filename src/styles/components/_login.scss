@@ -1,0 +1,125 @@
+/* Login Component Styles */
+.justify-center {
+  justify-content: center;
+}
+
+.login {
+  &-header-logo {
+    width: 48px;
+    height: 48px;
+    fill: var(--primary);
+    margin: 0 auto 12px;
+  }
+
+  &-brand-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  &-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  &-tab-btn {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    transition: all 0.2s;
+
+    &.active {
+      border-bottom-color: var(--primary);
+      color: var(--text);
+    }
+  }
+
+  &-subtitle {
+    margin: 6px 0 0 0;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  &-pat-help {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  &-oauth-help {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+
+  &-oauth-config-footer {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: 16px;
+  }
+
+  &-config-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  &-config-input {
+    font-size: 11px;
+    padding: 6px;
+  }
+
+  &-config-save-btn {
+    font-size: 10px;
+    padding: 6px;
+  }
+}
+
+.github-btn-icon {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  margin-right: 8px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.oauth-config {
+  &-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  &-box {
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    background: var(--black-translucent-2);
+  }
+
+  &-chevron {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    transition: transform 0.2s;
+    &.open {
+      transform: rotate(180deg);
+    }
+  }
+}

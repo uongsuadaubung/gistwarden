@@ -1,0 +1,76 @@
+/* Generator View Settings */
+.generator {
+  &-output {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: center;
+    position: relative;
+
+    .output-value {
+      font-size: 18px;
+      font-weight: 600;
+      word-break: break-all;
+      font-family: monospace;
+      min-height: 26px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .output-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+  }
+
+  &-title {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+}
+
+.range-slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+
+  input[type="range"] {
+    flex: 1;
+    accent-color: var(--primary);
+  }
+
+  .slider-val {
+    width: 32px;
+    text-align: right;
+    font-weight: 600;
+  }
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+
+  input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
+  &-divider {
+    margin-top: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+}

@@ -1,0 +1,84 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 13px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.2s, transform 0.1s;
+  gap: 8px;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &-primary {
+    background-color: var(--primary);
+    color: var(--white);
+    &:hover {
+      background-color: var(--primary-hover);
+    }
+  }
+
+  &-secondary {
+    background-color: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    &:hover {
+      background-color: var(--btn-secondary-hover-bg);
+    }
+  }
+
+  &-danger {
+    background-color: var(--error);
+    color: var(--white);
+    &:hover {
+      background-color: var(--btn-danger-hover);
+    }
+  }
+
+  &-block {
+    width: 100%;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    &:active {
+      transform: none;
+    }
+  }
+}
+
+.action-btn {
+  padding: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background-color 0.2s;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+
+  &:hover {
+    color: var(--text);
+    background-color: var(--hover-bg);
+  }
+
+  &.copied {
+    color: var(--success);
+  }
+}

@@ -1,0 +1,112 @@
+/* Bottom Slide-up Panel Modal (Custom Field Modal) */
+.modal-overlay.bottom-slide {
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.modal-slide-panel {
+  background-color: var(--surface);
+  border-top: 1px solid var(--border);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  width: 100%;
+  max-height: 85%;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-sizing: border-box;
+
+  .modal-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    .modal-panel-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+      
+      &:hover {
+        color: var(--text);
+      }
+    }
+  }
+
+  .modal-panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+    overflow-y: auto;
+  }
+
+  .modal-panel-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-start;
+    
+    button {
+      flex: none;
+      min-width: 90px;
+    }
+  }
+}
+
+.modal-overlay.bottom-slide.is-closing {
+  animation: fadeOut 0.25s ease-in forwards;
+
+  .modal-slide-panel {
+    animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,248 @@
+/* FIDO2 Prompt View - Redesigned to look exactly like Bitwarden */
+.fido2 {
+  &-prompt-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-family);
+
+    .fido2-header {
+      display: flex;
+      align-items: center;
+      background-color: var(--primary); // Bitwarden Primary Blue
+      color: var(--white);
+      padding: 14px 20px;
+      height: 48px;
+      box-sizing: border-box;
+      box-shadow: 0 2px 4px var(--shadow-2);
+
+      .fido2-logo {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+        fill: var(--white);
+      }
+
+      .fido2-header-title {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+    }
+
+    .fido2-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+
+      .prompt-content {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+      }
+
+      .prompt-icon-wrapper {
+        display: flex;
+        justify-content: center;
+        margin: 10px 0 16px;
+
+        .fido2-large-icon {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 10px var(--shadow-large);
+
+          svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--white);
+          }
+
+          &.bg-primary {
+            background-color: var(--primary);
+          }
+          &.bg-success {
+            background-color: var(--fido2-bg-success);
+          }
+          &.bg-warning {
+            background-color: var(--fido2-bg-warning);
+          }
+        }
+      }
+
+      .prompt-title {
+        font-size: 18px;
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+
+      .prompt-subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        text-align: center;
+        margin-bottom: 20px;
+        line-height: 1.5;
+        padding: 0 10px;
+
+        strong {
+          color: var(--text);
+        }
+
+        &.error-msg {
+          color: var(--error);
+        }
+      }
+
+      /* Passkey selectable list (Bitwarden style) */
+      .passkey-list {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+        max-height: 180px;
+        overflow-y: auto;
+        padding: 2px;
+
+        .passkey-item {
+          display: flex;
+          align-items: center;
+          background-color: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          padding: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &:hover {
+            border-color: var(--primary);
+            background-color: var(--primary-translucent-4);
+          }
+
+          &.active {
+            border-color: var(--primary);
+            background-color: var(--primary-translucent-8);
+            box-shadow: 0 0 0 2px var(--primary-translucent-15);
+          }
+
+          .passkey-item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--primary-translucent-10);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+
+            svg {
+              width: 18px;
+              height: 18px;
+              fill: var(--primary);
+            }
+          }
+
+          .passkey-item-details {
+            flex: 1;
+            text-align: left;
+
+            .passkey-username {
+              font-size: 13.5px;
+              font-weight: 600;
+              color: var(--text);
+            }
+
+            .passkey-vault-name {
+              font-size: 11.5px;
+              color: var(--text-muted);
+              margin-top: 2px;
+            }
+          }
+
+          .passkey-checkbox {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .circle-check {
+              width: 18px;
+              height: 18px;
+              border-radius: 50%;
+              border: 2px solid var(--border);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-sizing: border-box;
+
+              .check-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background-color: var(--primary);
+              }
+            }
+          }
+
+          &.active .passkey-checkbox .circle-check {
+            border-color: var(--primary);
+          }
+        }
+      }
+
+      .prompt-footer {
+        display: flex;
+        gap: 12px;
+        margin-top: auto;
+        padding-top: 15px;
+
+        button {
+          flex: 1;
+          height: 38px;
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        &.single-btn {
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
+
+  /* FIDO2 Component Styles & Utilities */
+  &-component {
+    .alert-prompt-compact {
+      margin-bottom: 12px;
+      padding: 6px 8px;
+      font-size: 11px;
+    }
+  }
+
+  &-cred-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}

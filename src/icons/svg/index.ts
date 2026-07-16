@@ -29,4 +29,6 @@ export { default as HeartOutlineIcon } from "./HeartOutlineIcon.tsx";
 export { default as NoteIcon } from "./NoteIcon.tsx";
 export { default as ChevronRightIcon } from "./ChevronRightIcon.tsx";
 export { default as DownloadIcon } from "./DownloadIcon.tsx";
+export { default as GlobeIcon } from "./GlobeIcon.tsx";
+export { default as MoreVerticalIcon } from "./MoreVerticalIcon.tsx";
 export * from "./types.ts";

@@ -8,11 +8,16 @@ import {
   subscribeToSettings,
   updateSettings,
 } from "./storage.ts";
-import { decryptData, deriveKey, encryptData, generateSalt } from "./crypto.ts";
 import {
-  ImportArraySchema,
-  type ImportItem,
-  ImportObjectSchema,
+  clearDerivedKey,
+  decryptData,
+  deriveKey,
+  encryptData,
+  generateSalt,
+  getOrDeriveKey,
+  setDerivedKey,
+} from "./crypto.ts";
+import {
   type LoginVaultItem,
   type SecureNoteVaultItem,
   type VaultItem,
@@ -20,7 +25,8 @@ import {
   VaultListSchema,
   View,
 } from "./types.ts";
-import { setLanguage, SupportLanguage } from "./i18n.ts";
+import { setLanguage, SupportLanguage, t } from "./i18n.ts";
+import { parseAndValidateImportJson } from "./import-export.ts";
 export { View };
 
 export interface AppStore {
@@ -56,6 +62,8 @@ export interface AppStore {
   };
   transitionClass: string;
   theme: "dark" | "light";
+  globalLoading: boolean;
+  globalLoadingText: string;
 }
 
 const [store, setStore] = createStore<AppStore>({
@@ -89,31 +97,13 @@ const [store, setStore] = createStore<AppStore>({
   },
   transitionClass: "",
   theme: "dark",
+  globalLoading: false,
+  globalLoadingText: "",
 });
 
 export { store };
 
 let toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
-
-// Derived cryptokey helper
-let derivedCryptoKey: CryptoKey | null = null;
-
-async function getOrDeriveKey(
-  password: string,
-  saltBase64: string,
-): Promise<CryptoKey> {
-  if (derivedCryptoKey) return derivedCryptoKey;
-
-  // Convert salt from base64
-  const binaryString = atob(saltBase64);
-  const salt = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    salt[i] = binaryString.charCodeAt(i);
-  }
-
-  derivedCryptoKey = await deriveKey(password, salt);
-  return derivedCryptoKey;
-}
 
 function isLoginVaultItem(item: VaultItem): item is LoginVaultItem {
   return item.type === VaultItemType.Login;
@@ -281,7 +271,7 @@ export const storeActions = {
         }
       }
 
-      derivedCryptoKey = null; // Reset
+      clearDerivedKey(); // Reset
 
       // 2. Nếu vẫn không có salt (cả cục bộ và trên GitHub Gist đều không có), tạo két sắt mới hoàn toàn
       if (!saltBase64) {
@@ -372,7 +362,7 @@ export const storeActions = {
       return { success: true };
     } catch (err) {
       console.error("[Store] Unlock failed:", err);
-      derivedCryptoKey = null;
+      clearDerivedKey();
       const errMsg = err instanceof Error ? err.message : String(err);
       return { success: false, error: errMsg || "Mật khẩu Master không đúng" };
     }
@@ -415,7 +405,7 @@ export const storeActions = {
 
   async lock() {
     await clearMasterPassword();
-    derivedCryptoKey = null;
+    clearDerivedKey();
     setStore({
       vaultItems: [],
       isLocked: true,
@@ -425,7 +415,7 @@ export const storeActions = {
 
   async logout() {
     await clearMasterPassword();
-    derivedCryptoKey = null;
+    clearDerivedKey();
     if (typeof chrome !== "undefined" && chrome.storage) {
       await chrome.storage.local.clear();
     }
@@ -444,6 +434,7 @@ export const storeActions = {
   async saveItem(
     item: Partial<VaultItem>,
   ): Promise<{ success: boolean; error?: string }> {
+    storeActions.setGlobalLoading(true);
     try {
       const password = await getMasterPassword();
       if (!password || !store.salt) throw new Error("Vault is locked");
@@ -578,10 +569,13 @@ export const storeActions = {
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       return { success: false, error: errMsg || "Lỗi lưu tài khoản" };
+    } finally {
+      storeActions.setGlobalLoading(false);
     }
   },
 
   async deleteItem(id: string): Promise<{ success: boolean; error?: string }> {
+    storeActions.setGlobalLoading(true);
     try {
       const password = await getMasterPassword();
       if (!password || !store.salt) throw new Error("Vault is locked");
@@ -616,6 +610,8 @@ export const storeActions = {
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       return { success: false, error: errMsg || "Lỗi xóa tài khoản" };
+    } finally {
+      storeActions.setGlobalLoading(false);
     }
   },
 
@@ -623,6 +619,7 @@ export const storeActions = {
     currentPass: string,
     newPass: string,
   ): Promise<{ success: boolean; error?: string }> {
+    storeActions.setGlobalLoading(true);
     try {
       const activePass = await getMasterPassword();
       if (currentPass !== activePass) {
@@ -668,7 +665,7 @@ export const storeActions = {
       }
 
       // 5. Update local state, session, and settings
-      derivedCryptoKey = newKey; // Update in-memory key reference
+      setDerivedKey(newKey); // Update in-memory key reference
       await setMasterPassword(newPass);
       await updateSettings({ salt: newSaltBase64 });
       setStore({
@@ -680,10 +677,13 @@ export const storeActions = {
       console.error("[Store] Change Master Password failed:", err);
       const errMsg = err instanceof Error ? err.message : String(err);
       return { success: false, error: errMsg || "Lỗi đổi mật khẩu" };
+    } finally {
+      storeActions.setGlobalLoading(false);
     }
   },
 
   async clearVault(): Promise<{ success: boolean; error?: string }> {
+    storeActions.setGlobalLoading(true);
     try {
       const gistId = store.gistId;
       if (gistId) {
@@ -713,12 +713,15 @@ export const storeActions = {
       console.error("[Store] Clear vault failed:", err);
       const errMsg = err instanceof Error ? err.message : String(err);
       return { success: false, error: errMsg || "Lỗi xóa toàn bộ tài khoản" };
+    } finally {
+      storeActions.setGlobalLoading(false);
     }
   },
 
   async syncVault(): Promise<{ success: boolean; error?: string }> {
     setStore("syncing", true);
     setStore("syncError", "");
+    storeActions.setGlobalLoading(true, t("vault_syncing"));
     try {
       const password = await getMasterPassword();
       if (!password || !store.salt) throw new Error("Vault is locked");
@@ -746,117 +749,29 @@ export const storeActions = {
       const errMsg = err instanceof Error ? err.message : String(err);
       setStore("syncError", errMsg || "Lỗi đồng bộ");
       return { success: false, error: errMsg || "Lỗi đồng bộ" };
+    } finally {
+      storeActions.setGlobalLoading(false);
     }
   },
 
   async importJsonData(
     jsonString: string,
   ): Promise<{ success: boolean; importedCount?: number; error?: string }> {
+    storeActions.setGlobalLoading(true, t("vault_importing"));
     try {
-      console.log("[Gistwarden Import] Bat dau doc file JSON...");
-      const parsed = JSON.parse(jsonString);
-      let itemsToImport: ImportItem[] = [];
-
-      // Validate structure using Zod
-      console.log("[Gistwarden Import] Thu parse dang Array...");
-      const parseArray = ImportArraySchema.safeParse(parsed);
-      if (parseArray.success) {
-        console.log("[Gistwarden Import] Parse dang Array thanh cong!");
-        itemsToImport = parseArray.data;
-      } else {
-        console.log(
-          "[Gistwarden Import] Parse dang Array that bai:",
-          parseArray.error.issues,
-        );
-        console.log(
-          "[Gistwarden Import] Thu parse dang Object ({ items: [...] })...",
-        );
-        const parseObject = ImportObjectSchema.safeParse(parsed);
-        if (parseObject.success) {
-          console.log("[Gistwarden Import] Parse dang Object thanh cong!");
-          itemsToImport = parseObject.data.items;
-        } else {
-          console.log(
-            "[Gistwarden Import] Parse dang Object that bai:",
-            parseObject.error.issues,
-          );
-          const errorMsg = parseArray.error
-            ? parseArray.error.issues[0].message
-            : "Dinh dang JSON khong hop le";
-          throw new Error(`Xac thuc Zod that bai: ${errorMsg}`);
-        }
+      const importRes = parseAndValidateImportJson(jsonString, store.vaultItems);
+      if (!importRes.success) {
+        throw new Error(importRes.error);
       }
-
-      console.log(
-        `[Gistwarden Import] Da tim thay ${itemsToImport.length} tai khoan can import.`,
-      );
-
-      // Convert imported items to VaultItems
-      const now = new Date().toISOString();
-      const newVaultItems: VaultItem[] = itemsToImport.map((item, index) => {
-        const isLogin = item.type === VaultItemType.Login;
-        const loginData = isLogin ? item.login : undefined;
-        const rawFido = loginData?.fido2Credentials;
-        console.log(
-          `[Gistwarden Import] Tai khoan thu ${index + 1} ("${item.name}"):`,
-          {
-            hasLogin: !!loginData,
-            rawFidoCredentialsCount: rawFido?.length || 0,
-            rawFidoData: rawFido,
-          },
-        );
-
-        if (item.type === VaultItemType.SecureNote) {
-          return {
-            id: crypto.randomUUID(),
-            type: VaultItemType.SecureNote,
-            name: item.name,
-            notes: item.notes || "",
-            favorite: item.favorite,
-            fields: item.fields?.map((f) => ({
-              type: f.type ?? 0,
-              name: f.name || "",
-              value: f.value || "",
-            })) || [],
-            creationDate: now,
-            revisionDate: now,
-          };
-        } else {
-          return {
-            id: crypto.randomUUID(),
-            type: VaultItemType.Login,
-            name: item.name,
-            notes: item.notes || "",
-            favorite: item.favorite,
-            fields: item.fields?.map((f) => ({
-              type: f.type ?? 0,
-              name: f.name || "",
-              value: f.value || "",
-            })) || [],
-            login: {
-              username: item.login.username || "",
-              password: item.login.password || "",
-              totp: item.login.totp || "",
-              uris: item.login.uris?.map((u) => ({ uri: u.uri })) || [],
-              fido2Credentials: item.login.fido2Credentials || [],
-            },
-            creationDate: now,
-            revisionDate: now,
-          };
-        }
-      });
-
-      console.log(
-        "[Gistwarden Import] Bat dau kiem tra va luu vao danh sach chung...",
-      );
-      const combinedItems = [...store.vaultItems, ...newVaultItems];
-      const validatedList = VaultListSchema.parse(combinedItems);
 
       const password = await getMasterPassword();
       if (!password || !store.salt) throw new Error("Vault is locked");
       const key = await getOrDeriveKey(password, store.salt);
 
-      const encrypted = await encryptData(JSON.stringify(validatedList), key);
+      const encrypted = await encryptData(
+        JSON.stringify(importRes.combinedItems),
+        key,
+      );
       const payload = JSON.stringify({
         salt: store.salt,
         iv: encrypted.iv,
@@ -877,13 +792,15 @@ export const storeActions = {
         throw new Error(uploadRes.error || "Loi dong bo len Gist");
       }
 
-      setStore("vaultItems", validatedList);
+      setStore("vaultItems", importRes.combinedItems);
       console.log("[Gistwarden Import] Import HOAN TAT thanh cong!");
-      return { success: true, importedCount: newVaultItems.length };
+      return { success: true, importedCount: importRes.importedCount };
     } catch (err) {
       console.error("[Gistwarden Import] Loi import:", err);
       const errMsg = err instanceof Error ? err.message : String(err);
       return { success: false, error: errMsg || "Loi nhap file JSON" };
+    } finally {
+      storeActions.setGlobalLoading(false);
     }
   },
 
@@ -940,6 +857,10 @@ export const storeActions = {
     toastTimeoutId = setTimeout(() => {
       setStore("toastMessage", "");
     }, 2000);
+  },
+
+  setGlobalLoading(val: boolean, text = "") {
+    setStore({ globalLoading: val, globalLoadingText: text });
   },
 
   confirm(

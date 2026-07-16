@@ -1,3 +1,5 @@
+import type { Fido2Credential } from "./types.ts";
+
 // Utility functions to convert P1363 ECDSA signature to ASN.1 DER format
 function getParamSize(keySize: number) {
   return ((keySize / 8) | 0) + (keySize % 8 === 0 ? 0 : 1);
@@ -338,4 +340,199 @@ export function getRawCredentialId(credId: string): Uint8Array {
   } catch (_e) {
     return new TextEncoder().encode(clean);
   }
+}
+
+export interface PasskeyRegisterOptions {
+  rp: {
+    id?: string;
+    name: string;
+  };
+  user: {
+    id: string;
+    name: string;
+    displayName?: string;
+  };
+  challenge: string;
+}
+
+export interface PasskeyAssertOptions {
+  challenge: string;
+  rpId?: string;
+  userVerification?: "required" | "preferred" | "discouraged";
+  allowCredentials?: Array<{
+    id: string;
+    type: string;
+  }>;
+}
+
+export async function generatePasskeyRegisterResponse(
+  options: PasskeyRegisterOptions,
+  origin: string,
+): Promise<{ newCred: Fido2Credential; result: Record<string, unknown> }> {
+  // 1. Create ECDSA keypair
+  const keyPair = await createPasskeyKeyPair();
+
+  // 2. Export private key in pkcs8 format to store in Vault
+  const pkcs8KeyBuffer = await crypto.subtle.exportKey(
+    "pkcs8",
+    keyPair.privateKey,
+  );
+  const pkcs8Base64Url = bufferToBase64Url(new Uint8Array(pkcs8KeyBuffer));
+
+  // 3. Export public key in spki format
+  const spkiKeyBuffer = await crypto.subtle.exportKey(
+    "spki",
+    keyPair.publicKey,
+  );
+  const spkiBase64Url = bufferToBase64Url(new Uint8Array(spkiKeyBuffer));
+
+  // 4. Generate credentialId (standard random UUID)
+  const credentialIdStr = crypto.randomUUID();
+  const credentialIdBytes = getRawCredentialId(credentialIdStr);
+  const credIdBase64Url = bufferToBase64Url(credentialIdBytes);
+
+  const creationDate = new Date().toISOString();
+
+  // 5. Build Gistwarden Fido2Credential object
+  const newCred: Fido2Credential = {
+    credentialId: credentialIdStr,
+    keyType: "public-key",
+    keyAlgorithm: "ECDSA",
+    keyCurve: "P-256",
+    keyValue: pkcs8Base64Url,
+    rpId: options.rp.id || options.rp.name,
+    userHandle: options.user.id,
+    userName: options.user.name,
+    counter: 0,
+    rpName: options.rp.name,
+    userDisplayName: options.user.displayName,
+    discoverable: true,
+    creationDate,
+  };
+
+  // 6. Generate authData and CBOR attestationObject
+  const authData = await generateAuthData({
+    rpId: options.rp.id || options.rp.name,
+    credentialId: credentialIdBytes,
+    counter: 0,
+    userPresent: true,
+    userVerified: true,
+    publicKey: keyPair.publicKey,
+  });
+
+  const clientDataJSON = JSON.stringify({
+    type: "webauthn.create",
+    challenge: options.challenge,
+    origin,
+    crossOrigin: false,
+  });
+
+  const result = {
+    id: credIdBase64Url,
+    rawId: credIdBase64Url,
+    response: {
+      clientDataJSON: bufferToBase64Url(
+        new TextEncoder().encode(clientDataJSON),
+      ),
+      attestationObject: bufferToBase64Url(packAttestationObject(authData)),
+      publicKey: spkiBase64Url,
+      publicKeyAlgorithm: -7, // ES256
+      authData: bufferToBase64Url(authData),
+    },
+  };
+
+  return { newCred, result };
+}
+
+export async function generatePasskeyAssertResponse(
+  options: PasskeyAssertOptions,
+  origin: string,
+  cred: Fido2Credential,
+  nextCounter: number,
+): Promise<{ result: Record<string, unknown> }> {
+  // 1. Import ECDSA private key from base64url PKCS#8 stored in Vault
+  const pkcs8KeyBuffer = base64UrlToBuffer(cred.keyValue);
+  const keyData = pkcs8KeyBuffer.buffer;
+  if (!(keyData instanceof ArrayBuffer)) {
+    throw new Error("Expected ArrayBuffer for key data");
+  }
+  const privateKey = await crypto.subtle.importKey(
+    "pkcs8",
+    keyData,
+    {
+      name: "ECDSA",
+      namedCurve: "P-256",
+    },
+    true,
+    ["sign"],
+  );
+
+  // 2. Construct assertion data
+  const clientDataJSON = JSON.stringify({
+    type: "webauthn.get",
+    challenge: options.challenge,
+    origin,
+    crossOrigin: false,
+  });
+
+  const clientDataJSONBytes = new TextEncoder().encode(clientDataJSON);
+  const clientDataHash = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", clientDataJSONBytes),
+  );
+
+  // Lay tuy chon yeu cau xac thuc tu options. Mac dinh la true do nguoi dung da mo khoa bang Master Password
+  const userVerified = options.userVerification !== "discouraged";
+
+  let rpId = options.rpId;
+  if (!rpId) {
+    try {
+      rpId = new URL(origin).hostname;
+    } catch (_) {
+      rpId = origin;
+    }
+  }
+
+  const authData = await generateAuthData({
+    rpId,
+    counter: nextCounter,
+    userPresent: true,
+    userVerified,
+  });
+
+  const signature = await generateAssertionSignature(
+    authData,
+    clientDataHash,
+    privateKey,
+  );
+
+  // Tu dong tuong thich nguoc: Kiem tra xem trang web dang yeu cau dinh dang ID nao
+  // - Neu yeu cau chuoi ASCII UUID 36 ky tu (co che cu), chung ta tra ve dinh dang do.
+  // - Mac dinh dung 16-byte raw UUID (co che moi chuan WebAuthn).
+  const b64_36 = bufferToBase64Url(
+    new TextEncoder().encode(cred.credentialId),
+  );
+
+  const useOld36ByteFormat = (options.allowCredentials || []).some(
+    (allowed: { id: string }) => allowed.id === b64_36,
+  );
+
+  const rawCredId = useOld36ByteFormat
+    ? new TextEncoder().encode(cred.credentialId)
+    : getRawCredentialId(cred.credentialId);
+  const credIdBase64Url = useOld36ByteFormat
+    ? b64_36
+    : bufferToBase64Url(rawCredId);
+
+  const result = {
+    id: credIdBase64Url,
+    rawId: credIdBase64Url,
+    response: {
+      clientDataJSON: bufferToBase64Url(clientDataJSONBytes),
+      authenticatorData: bufferToBase64Url(authData),
+      signature: bufferToBase64Url(signature),
+      userHandle: cred.userHandle || null,
+    },
+  };
+
+  return { result };
 }

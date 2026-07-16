@@ -8,7 +8,7 @@ import {
 } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
 import { type VaultItem, VaultItemType, View } from "@/shared/types.ts";
-import { POPOUT_HEIGHT, POPUP_WIDTH } from "@/shared/constants.ts";
+import { isPopout, handlePopout } from "@/shared/popout-utils.ts";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/shared/totp-utils.ts";
 import {
@@ -25,6 +25,7 @@ import { t } from "@/shared/i18n.ts";
 export const Vault: Component = () => {
   const [search, setSearch] = createSignal("");
   const [activeMenuId, setActiveMenuId] = createSignal("");
+  const [activeOptionsMenuId, setActiveOptionsMenuId] = createSignal("");
   const [currentTabDomain, setCurrentTabDomain] = createSignal("");
   const [showAddMenu, setShowAddMenu] = createSignal(false);
 
@@ -38,11 +39,16 @@ export const Vault: Component = () => {
         ) {
           return;
         }
-        if (target.closest(".action-btn") || target.closest(".copy-dropdown")) {
+        if (
+          target.closest(".action-btn") ||
+          target.closest(".copy-dropdown") ||
+          target.closest(".options-dropdown")
+        ) {
           return;
         }
       }
       setActiveMenuId("");
+      setActiveOptionsMenuId("");
       setShowAddMenu(false);
     };
     document.addEventListener("click", handleGlobalClick);
@@ -80,16 +86,27 @@ export const Vault: Component = () => {
     return false;
   };
 
+  const sortByName = (items: VaultItem[]) => {
+    return [...items].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, {
+        sensitivity: "base",
+        numeric: true,
+      })
+    );
+  };
+
   const matchingItems = () => {
     const domain = currentTabDomain();
     if (!domain) return [];
-    return store.vaultItems.filter((item) => isMatchingDomain(item, domain));
+    const filtered = store.vaultItems.filter((item) => isMatchingDomain(item, domain));
+    return sortByName(filtered);
   };
 
   const allItems = () => {
     const q = search().toLowerCase().trim();
+    let list = store.vaultItems;
     if (q) {
-      return store.vaultItems.filter((item) => {
+      list = store.vaultItems.filter((item) => {
         const nameMatch = item.name.toLowerCase().includes(q);
         const usernameMatch = item.type === VaultItemType.Login &&
           item.login.username?.toLowerCase().includes(q);
@@ -98,7 +115,7 @@ export const Vault: Component = () => {
         return nameMatch || usernameMatch || uriMatch;
       });
     }
-    return store.vaultItems;
+    return sortByName(list);
   };
 
   const favoriteItems = () => {
@@ -140,10 +157,75 @@ export const Vault: Component = () => {
 
   const handleToggleMenu = (itemId: string, e: MouseEvent) => {
     e.stopPropagation();
+    setActiveOptionsMenuId(""); // Close options menu
     if (activeMenuId() === itemId) {
       setActiveMenuId("");
     } else {
       setActiveMenuId(itemId);
+    }
+  };
+
+  const handleToggleOptionsMenu = (itemId: string, e: MouseEvent) => {
+    e.stopPropagation();
+    setActiveMenuId(""); // Close copy dropdown
+    if (activeOptionsMenuId() === itemId) {
+      setActiveOptionsMenuId("");
+    } else {
+      setActiveOptionsMenuId(itemId);
+    }
+  };
+
+  const handleFavoriteItem = async (item: VaultItem, e: MouseEvent) => {
+    e.stopPropagation();
+    const updated = {
+      ...item,
+      favorite: !item.favorite,
+    };
+    const res = await storeActions.saveItem(updated);
+    if (res.success) {
+      storeActions.showToast(t("toast_success"), "success");
+    } else {
+      storeActions.showToast(res.error || t("toast_error"), "error");
+    }
+    setActiveOptionsMenuId(""); // Close options dropdown
+  };
+
+  const handleCloneItem = async (item: VaultItem, e: MouseEvent) => {
+    e.stopPropagation();
+    
+    // Omit ID to force saveItem into the "New" creation path
+    const { id: _id, name, ...rest } = item;
+    
+    const cloned = {
+      ...rest,
+      name: `${name} - ${t("vault_item_clone_suffix")}`,
+    };
+    
+    const res = await storeActions.saveItem(cloned);
+    if (res.success) {
+      storeActions.showToast(t("toast_success"), "success");
+    } else {
+      storeActions.showToast(res.error || t("toast_error"), "error");
+    }
+    setActiveOptionsMenuId(""); // Close options dropdown
+  };
+
+  const handleDeleteItem = async (item: VaultItem, e: MouseEvent) => {
+    e.stopPropagation();
+    setActiveOptionsMenuId(""); // Close options dropdown immediately
+    
+    const confirmed = await storeActions.confirm(
+      t("edit_confirm_delete_title"),
+      t("edit_confirm_delete_msg", { name: item.name }),
+      "danger",
+    );
+    if (confirmed) {
+      const res = await storeActions.deleteItem(item.id);
+      if (res.success) {
+        storeActions.showToast(t("toast_success"), "success");
+      } else {
+        storeActions.showToast(res.error || t("toast_error"), "error");
+      }
     }
   };
 
@@ -193,44 +275,7 @@ export const Vault: Component = () => {
     await storeActions.syncVault();
   };
 
-  const isPopout = () => {
-    return new URLSearchParams(window.location.search).get("mode") === "tab";
-  };
 
-  const handlePopout = () => {
-    if (typeof chrome !== "undefined" && chrome.windows) {
-      chrome.windows.getLastFocused((parentWindow) => {
-        let left: number | undefined;
-        let top: number | undefined;
-
-        if (parentWindow) {
-          const offsetRight = 20;
-          const offsetTop = 80;
-          if (
-            parentWindow.left !== undefined && parentWindow.width !== undefined
-          ) {
-            left = Math.round(
-              parentWindow.left + parentWindow.width - POPUP_WIDTH -
-                offsetRight,
-            );
-          }
-          if (parentWindow.top !== undefined) {
-            top = Math.round(parentWindow.top + offsetTop);
-          }
-        }
-
-        chrome.windows.create({
-          url: chrome.runtime.getURL("popup.html?mode=tab"),
-          type: "popup",
-          width: POPUP_WIDTH,
-          height: POPOUT_HEIGHT,
-          left,
-          top,
-        });
-        window.close();
-      });
-    }
-  };
 
   return (
     <div class="app-container">
@@ -265,16 +310,18 @@ export const Vault: Component = () => {
 
           {/* Popout Button */}
           <Show when={!isPopout()}>
-            <ExternalLinkIcon onClick={handlePopout} title={t("vault_popout_title")} />
+            <span style="display: inline-flex; cursor: pointer;" onClick={handlePopout} title={t("vault_popout_title")}>
+              <ExternalLinkIcon />
+            </span>
           </Show>
           {/* Sync Button */}
-          <SyncIcon
-            onClick={handleSync}
-            class={store.syncing ? "spinning" : ""}
-            title={t("vault_btn_sync")}
-          />
+          <span style="display: inline-flex; cursor: pointer;" onClick={handleSync} title={t("vault_btn_sync")}>
+            <SyncIcon class={store.syncing ? "spinning" : ""} />
+          </span>
           {/* Lock Button */}
-          <LockIcon onClick={handleLock} title={t("vault_lock_title")} />
+          <span style="display: inline-flex; cursor: pointer;" onClick={handleLock} title={t("vault_lock_title")}>
+            <LockIcon />
+          </span>
         </div>
       </header>
 
@@ -315,9 +362,14 @@ export const Vault: Component = () => {
                 <VaultItemRow
                   item={item}
                   activeMenuId={activeMenuId()}
+                  activeOptionsMenuId={activeOptionsMenuId()}
                   onToggleMenu={handleToggleMenu}
+                  onToggleOptionsMenu={handleToggleOptionsMenu}
                   onCopyText={handleCopyText}
                   onCopyTotpDirect={handleCopyTotpDirect}
+                  onFavoriteItem={handleFavoriteItem}
+                  onCloneItem={handleCloneItem}
+                  onDeleteItem={handleDeleteItem}
                 />
               )}
             </For>
@@ -339,9 +391,14 @@ export const Vault: Component = () => {
                 <VaultItemRow
                   item={item}
                   activeMenuId={activeMenuId()}
+                  activeOptionsMenuId={activeOptionsMenuId()}
                   onToggleMenu={handleToggleMenu}
+                  onToggleOptionsMenu={handleToggleOptionsMenu}
                   onCopyText={handleCopyText}
                   onCopyTotpDirect={handleCopyTotpDirect}
+                  onFavoriteItem={handleFavoriteItem}
+                  onCloneItem={handleCloneItem}
+                  onDeleteItem={handleDeleteItem}
                 />
               )}
             </For>
@@ -377,9 +434,14 @@ export const Vault: Component = () => {
                 <VaultItemRow
                   item={item}
                   activeMenuId={activeMenuId()}
+                  activeOptionsMenuId={activeOptionsMenuId()}
                   onToggleMenu={handleToggleMenu}
+                  onToggleOptionsMenu={handleToggleOptionsMenu}
                   onCopyText={handleCopyText}
                   onCopyTotpDirect={handleCopyTotpDirect}
+                  onFavoriteItem={handleFavoriteItem}
+                  onCloneItem={handleCloneItem}
+                  onDeleteItem={handleDeleteItem}
                 />
               )}
             </For>

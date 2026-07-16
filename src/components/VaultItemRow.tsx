@@ -1,19 +1,27 @@
 import { type Component, createSignal, type JSX, Show } from "solid-js";
-import { type VaultItem, VaultItemType } from "@/shared/types.ts";
+import { type VaultItem, VaultItemType, View } from "@/shared/types.ts";
 import {
   CopyIcon,
   HeartFilledIcon,
   KeyIcon,
   NoteIcon,
+  ExternalLinkIcon,
+  MoreVerticalIcon,
 } from "@/icons/svg/index.ts";
 import { storeActions } from "@/shared/store.ts";
+import { t } from "@/shared/i18n.ts";
 
 interface VaultItemRowProps {
   item: VaultItem;
   activeMenuId: string;
+  activeOptionsMenuId: string;
   onToggleMenu: (itemId: string, e: MouseEvent) => void;
+  onToggleOptionsMenu: (itemId: string, e: MouseEvent) => void;
   onCopyText: (text: string, type: string, e: MouseEvent) => void;
   onCopyTotpDirect: (item: VaultItem, e: MouseEvent) => void;
+  onFavoriteItem: (item: VaultItem, e: MouseEvent) => void;
+  onCloneItem: (item: VaultItem, e: MouseEvent) => void;
+  onDeleteItem: (item: VaultItem, e: MouseEvent) => void;
 }
 
 const getDomain = (item: VaultItem): string | null => {
@@ -24,18 +32,13 @@ const getDomain = (item: VaultItem): string | null => {
     return null;
   }
   const uri = item.login.uris[0].uri;
-  if (!uri) return null;
   try {
-    let urlStr = uri.trim();
-    if (!/^https?:\/\//i.test(urlStr)) {
-      urlStr = "https://" + urlStr;
+    let hostname = uri;
+    if (!/^https?:\/\//i.test(hostname)) {
+      hostname = "http://" + hostname;
     }
-    const url = new URL(urlStr);
-    let hostname = url.hostname;
-    if (hostname.startsWith("www.")) {
-      hostname = hostname.slice(4);
-    }
-    return hostname;
+    const url = new URL(hostname);
+    return url.hostname;
   } catch (_e) {
     return null;
   }
@@ -59,6 +62,18 @@ const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (
 export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
   const domain = () => getDomain(props.item);
 
+  const getUri = (): string | null => {
+    if (
+      props.item.type === VaultItemType.Login &&
+      props.item.login.uris &&
+      props.item.login.uris.length > 0 &&
+      props.item.login.uris[0].uri
+    ) {
+      return props.item.login.uris[0].uri;
+    }
+    return null;
+  };
+
   return (
     <div
       class="vault-item-row"
@@ -81,6 +96,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
         </Show>
       </div>
 
+      {/* Info Container */}
       <div class="item-info">
         <Show
           when={props.item.type === VaultItemType.SecureNote}
@@ -104,7 +120,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
                   <span class="passkey-badge">PASSKEY</span>
                 </Show>
                 {(props.item.type === VaultItemType.Login &&
-                  props.item.login.username) || "Không có tên đăng nhập"}
+                  props.item.login.username) || t("vault_no_username")}
               </div>
             </>
           }
@@ -123,20 +139,51 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
 
       {/* Options Copy Dropdown Button */}
       <div class="item-actions pos-relative">
+        <Show when={getUri()}>
+          {(uri) => (
+            <button
+              class="action-btn"
+              title={t("detail_visit_website")}
+              onClick={(e) => {
+                e.stopPropagation();
+                let url = uri();
+                if (!/^https?:\/\//i.test(url)) {
+                  url = "https://" + url;
+                }
+                if (typeof chrome !== "undefined" && chrome.tabs) {
+                  chrome.tabs.create({ url });
+                } else {
+                  window.open(url, "_blank");
+                }
+              }}
+            >
+              <ExternalLinkIcon />
+            </button>
+          )}
+        </Show>
+
         <button
           class="action-btn"
           title={props.item.type === VaultItemType.SecureNote
-            ? "Sao chép ghi chú"
-            : "Lựa chọn sao chép"}
+            ? t("vault_copy_notes")
+            : t("vault_copy_options")}
           onClick={(e) => {
             if (props.item.type === VaultItemType.SecureNote) {
-              props.onCopyText(props.item.notes || "", "ghi chú", e);
+              props.onCopyText(props.item.notes || "", t("edit_type_note"), e);
             } else {
               props.onToggleMenu(props.item.id, e);
             }
           }}
         >
           <CopyIcon />
+        </button>
+
+        <button
+          class="action-btn"
+          title={t("vault_menu_more")}
+          onClick={(e) => props.onToggleOptionsMenu(props.item.id, e)}
+        >
+          <MoreVerticalIcon />
         </button>
 
         {/* Dropdown overlay */}
@@ -155,11 +202,11 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
                   props.onCopyText(
                     props.item.type === VaultItemType.Login &&
                         props.item.login.username || "",
-                    "tên đăng nhập",
+                    t("edit_label_username"),
                     e,
                   )}
               >
-                Sao chép Tên đăng nhập
+                {t("detail_copy_username")}
               </div>
             </Show>
             <Show
@@ -172,11 +219,11 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
                   props.onCopyText(
                     props.item.type === VaultItemType.Login &&
                         props.item.login.password || "",
-                    "mật khẩu",
+                    t("edit_label_password"),
                     e,
                   )}
               >
-                Sao chép Mật khẩu
+                {t("detail_copy_password")}
               </div>
             </Show>
             <Show
@@ -187,21 +234,46 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
                 class="dropdown-item"
                 onClick={(e) => props.onCopyTotpDirect(props.item, e)}
               >
-                Sao chép Mã TOTP
+                {t("detail_copy_totp")}
               </div>
             </Show>
-            <Show
-              when={props.item.type !== VaultItemType.Login ||
-                (!props.item.login.username && !props.item.login.password &&
-                  !props.item.login.totp)}
+          </div>
+        </Show>
+
+        {/* Options Dropdown overlay */}
+        <Show when={props.activeOptionsMenuId === props.item.id}>
+          <div class="options-dropdown" onClick={(e) => e.stopPropagation()}>
+            <div
+              class="dropdown-item"
+              onClick={(e) => props.onFavoriteItem(props.item, e)}
             >
-              <div class="dropdown-item disabled">Không có gì để sao chép</div>
-            </Show>
+              {props.item.favorite ? t("vault_menu_unfavorite") : t("vault_menu_favorites")}
+            </div>
+            <div
+              class="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                storeActions.selectItem(props.item);
+                storeActions.navigate(View.ItemEdit);
+              }}
+            >
+              {t("btn_edit")}
+            </div>
+            <div
+              class="dropdown-item"
+              onClick={(e) => props.onCloneItem(props.item, e)}
+            >
+              {t("btn_clone")}
+            </div>
+            <div
+              class="dropdown-item text-danger"
+              onClick={(e) => props.onDeleteItem(props.item, e)}
+            >
+              {t("btn_delete")}
+            </div>
           </div>
         </Show>
       </div>
     </div>
   );
 };
-
-export default VaultItemRow;

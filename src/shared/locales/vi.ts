@@ -49,6 +49,7 @@ export default {
   login_error_unlock_fail: "Lỗi mở khóa",
   login_forgot_password_title: "Quên mật khẩu Master",
   login_forgot_password_msg: "Gistwarden sử dụng cơ chế mã hóa đầu-cuối (Zero-Knowledge). Mật khẩu Master không bao giờ được gửi đi hay lưu trữ trên máy chủ, do đó <strong style='color: var(--error);'>KHÔNG CÓ CÁCH NÀO</strong> để khôi phục hoặc đặt lại.<br/><br/>Để bắt đầu lại, hệ thống sẽ <strong>ĐĂNG XUẤT</strong> và <strong>XÓA DỮ LIỆU CỤC BỘ</strong>.<br/><br/>Nếu bạn muốn tiếp tục sử dụng tài khoản GitHub này, hệ thống sẽ mở trang GitHub Gist chứa két sắt cũ để bạn có thể <strong>SAO LƯU</strong> dữ liệu hoặc tiến hành <strong style='color: var(--error);'>XÓA THỦ CÔNG</strong> Gist này trên GitHub trước khi đăng nhập lại.<br/><br/>Bạn có chắc chắn muốn đăng xuất và mở trang Gist cũ không?",
+  app_loading: "Đang tải Gistwarden...",
 
   // Vault Page
   vault_search_placeholder: "Tìm kiếm tài khoản...",
@@ -72,6 +73,14 @@ export default {
   vault_item_note: "Ghi chú",
   vault_syncing: "Đang đồng bộ...",
   vault_sync_error: "Lỗi đồng bộ",
+  vault_no_username: "Không có tên đăng nhập",
+  vault_copy_notes: "Sao chép ghi chú",
+  vault_copy_options: "Lựa chọn sao chép",
+  vault_menu_unfavorite: "Bỏ yêu thích",
+  vault_menu_more: "Tùy chọn khác",
+  vault_importing: "Đang nhập dữ liệu...",
+  btn_clone: "Nhân bản",
+  vault_item_clone_suffix: "Bản sao",
 
   // Item Edit / Add Page
   edit_title_add_login: "Thêm tài khoản",
@@ -90,6 +99,8 @@ export default {
   edit_placeholder_website: "https://example.com",
   edit_label_notes: "Ghi chú",
   edit_placeholder_notes: "Nhập ghi chú tại đây...",
+  edit_section_additional_options: "Tùy chọn bổ sung",
+  edit_section_item_details: "Chi tiết mục",
   edit_label_fields: "Các trường tùy chỉnh",
   edit_field_type_text: "Văn bản",
   edit_field_type_hidden: "Ẩn",
@@ -137,6 +148,7 @@ export default {
   detail_title_login: "Chi tiết Đăng nhập",
   detail_title_note: "Chi tiết Ghi chú",
   detail_totp_copied: "Đã sao chép mã OTP",
+  detail_totp_error: "MÃ LỖI",
   detail_copy_username: "Sao chép tên đăng nhập",
   detail_copy_password: "Sao chép mật khẩu",
   detail_copy_totp: "Sao chép mã OTP",

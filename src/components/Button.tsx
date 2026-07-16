@@ -1,4 +1,5 @@
 import { type Component, type JSX, splitProps } from "solid-js";
+import { t } from "@/shared/i18n.ts";
 
 interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger";
@@ -36,7 +37,7 @@ export const Button: Component<ButtonProps> = (props) => {
       onClick={local.onClick}
       {...others}
     >
-      {local.loading ? (local.loadingText || "Đang tải...") : local.children}
+      {local.loading ? (local.loadingText || t("dialog_loading")) : local.children}
     </button>
   );
 };

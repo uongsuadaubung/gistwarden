@@ -54,6 +54,7 @@ const LangSchema = z.object({
   login_error_unlock_fail: z.string(),
   login_forgot_password_title: z.string(),
   login_forgot_password_msg: z.string(),
+  app_loading: z.string(),
 
   // Vault Page
   vault_search_placeholder: z.string(),
@@ -77,6 +78,14 @@ const LangSchema = z.object({
   vault_item_note: z.string(),
   vault_syncing: z.string(),
   vault_sync_error: z.string(),
+  vault_no_username: z.string(),
+  vault_copy_notes: z.string(),
+  vault_copy_options: z.string(),
+  vault_menu_unfavorite: z.string(),
+  vault_menu_more: z.string(),
+  vault_importing: z.string(),
+  btn_clone: z.string(),
+  vault_item_clone_suffix: z.string(),
 
   // Item Edit / Add Page
   edit_title_add_login: z.string(),
@@ -95,6 +104,8 @@ const LangSchema = z.object({
   edit_placeholder_website: z.string(),
   edit_label_notes: z.string(),
   edit_placeholder_notes: z.string(),
+  edit_section_additional_options: z.string(),
+  edit_section_item_details: z.string(),
   edit_label_fields: z.string(),
   edit_field_type_text: z.string(),
   edit_field_type_hidden: z.string(),
@@ -142,6 +153,7 @@ const LangSchema = z.object({
   detail_title_login: z.string(),
   detail_title_note: z.string(),
   detail_totp_copied: z.string(),
+  detail_totp_error: z.string(),
   detail_copy_username: z.string(),
   detail_copy_password: z.string(),
   detail_copy_totp: z.string(),

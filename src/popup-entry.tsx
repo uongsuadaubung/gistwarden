@@ -52,7 +52,7 @@ const App: Component = () => {
               class="spinning"
               style="width: 28px; height: 28px; fill: var(--primary); margin: 0 auto 12px;"
             />
-            <div style="font-size: 13px;">Đang tải Gistwarden...</div>
+            <div style="font-size: 13px;">{t("app_loading")}</div>
           </div>
         </div>
       }
@@ -153,6 +153,18 @@ const App: Component = () => {
 
         {/* Reusable Confirmation Modal */}
         <ConfirmModal />
+
+        {/* Global Loading Overlay */}
+        <Show when={store.globalLoading}>
+          <div class="global-loading-overlay">
+            <div class="global-loading-content">
+              <SyncIcon class="spinning" />
+              <div class="global-loading-text">
+                {store.globalLoadingText || t("dialog_loading")}
+              </div>
+            </div>
+          </div>
+        </Show>
       </div>
     </Show>
   );

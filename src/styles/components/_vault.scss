@@ -1,0 +1,265 @@
+/* Vault List View & FAB */
+.search-container {
+  margin-bottom: 12px;
+  position: relative;
+
+  .input-control {
+    padding-left: 36px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    fill: currentColor;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+  }
+}
+
+.vault {
+  &-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  &-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 66px;
+    padding: 14px 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+
+    &:hover {
+      background-color: var(--hover-bg);
+      border-color: var(--primary);
+    }
+
+    .item-icon-container {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--hover-bg);
+      border-radius: 6px;
+      margin-right: 12px;
+      flex-shrink: 0;
+
+      img {
+        width: 18px;
+        height: 18px;
+        border-radius: 2px;
+        object-fit: contain;
+      }
+
+      svg {
+        width: 16px;
+        height: 16px;
+        color: var(--text-muted);
+        fill: currentColor;
+      }
+    }
+
+    .item-info {
+      flex: 1;
+      min-width: 0;
+
+      .item-name {
+        font-weight: 500;
+        font-size: 14px;
+        margin-bottom: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .item-sub {
+        font-size: 12px;
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+    }
+  }
+
+  /* Vault list section titles */
+  &-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+    margin-bottom: 6px;
+    text-align: left;
+    user-select: none;
+  }
+
+  &-section-divider {
+    margin: 12px 0;
+    border-top: 1px solid var(--border);
+    opacity: 0.8;
+  }
+}
+
+.fab {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  width: 44px;
+  height: 44px;
+  background-color: var(--primary);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px var(--shadow-4);
+  transition: background-color 0.2s, transform 0.1s;
+  z-index: 10;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+
+  &:hover {
+    background-color: var(--primary-hover);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.no-items {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 32px 16px;
+  font-size: 13px;
+}
+
+/* Header Add New Button and Dropdown */
+.add-new-header-btn {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 26px;
+  transition: background-color 0.2s, transform 0.1s;
+
+  &:hover {
+    background-color: var(--primary-hover);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.add-menu-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.add-dropdown {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px var(--shadow-dropdown);
+  z-index: 100;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+
+  .dropdown-item {
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+    transition: background-color 0.2s, color 0.2s;
+
+    &:hover {
+      background-color: var(--hover-bg);
+      color: var(--primary);
+    }
+  }
+}
+
+/* Badges shown in item rows */
+.passkey-badge {
+  background: var(--primary);
+  color: var(--white);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9px;
+  margin-right: 6px;
+  font-weight: 600;
+}
+
+.note-badge {
+  background: var(--fido2-bg-warning);
+  color: var(--white);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9px;
+  margin-right: 6px;
+  font-weight: 600;
+}
+
+/* Vault Component Styles & Utilities */
+.alert-compact {
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  font-size: 11px;
+}
+.font-weight-500 {
+  font-weight: 500;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  margin-bottom: 6px;
+}
+.section-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  user-select: none;
+  padding-right: 4px;
+}

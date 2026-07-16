@@ -9,6 +9,7 @@ import {
 } from "@/shared/types.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
+import CustomFieldModal from "@/components/CustomFieldModal.tsx";
 import {
   ArrowLeftIcon,
   CopyIcon,
@@ -16,8 +17,6 @@ import {
   EditIcon,
   EyeIcon,
   EyeOffIcon,
-  HeartFilledIcon,
-  HeartOutlineIcon,
   QrIcon,
   TrashIcon,
 } from "@/icons/svg/index.ts";
@@ -46,67 +45,36 @@ export const ItemEdit: Component = () => {
   const [error, setError] = createSignal("");
   const [saving, setSaving] = createSignal(false);
 
-  // Custom field modal states (reused for both adding and editing)
   const [showEditFieldModal, setShowEditFieldModal] = createSignal(false);
-  const [selectedFieldIndex, setSelectedFieldIndex] = createSignal<
-    number | null
-  >(null);
-  const [editFieldName, setEditFieldName] = createSignal("");
-  const [editFieldValue, setEditFieldValue] = createSignal("");
-  const [editFieldType, setEditFieldType] = createSignal(0);
+  const [selectedFieldIndex, setSelectedFieldIndex] = createSignal<number | null>(null);
+
+  const initialField = () => {
+    const idx = selectedFieldIndex();
+    return idx === null ? null : fields()[idx];
+  };
 
   const handleOpenAddField = () => {
     setSelectedFieldIndex(null);
-    setEditFieldType(0);
-    setEditFieldName("");
-    setEditFieldValue("");
     setShowEditFieldModal(true);
   };
 
   const handleOpenEditField = (index: number) => {
-    const field = fields()[index];
-    if (!field) return;
     setSelectedFieldIndex(index);
-    setEditFieldType(field.type);
-    setEditFieldName(field.name || "");
-    setEditFieldValue(field.value || "");
     setShowEditFieldModal(true);
   };
 
-  const handleSaveFieldEdit = () => {
-    const nameVal = editFieldName().trim();
-    if (!nameVal) {
-      alert(
-        editFieldType() === 2
-          ? t("edit_field_error_empty_divider")
-          : t("edit_field_error_empty_name"),
-      );
-      return;
-    }
+  const handleSaveFieldEdit = (field: { name: string; value: string; type: number }) => {
     const idx = selectedFieldIndex();
-
     if (idx === null) {
-      // Add Mode
-      setFields([...fields(), {
-        type: editFieldType(),
-        name: nameVal,
-        value: editFieldType() === 2 ? "" : editFieldValue().trim(),
-      }]);
+      setFields([...fields(), field]);
     } else {
-      // Edit Mode
-      setFields(
-        fields().map((f, i) =>
-          i === idx
-            ? {
-              type: editFieldType(),
-              name: nameVal,
-              value: editFieldType() === 2 ? "" : editFieldValue().trim(),
-            }
-            : f
-        ),
-      );
+      setFields(fields().map((f, i) => (i === idx ? field : f)));
     }
+    setShowEditFieldModal(false);
+    setSelectedFieldIndex(null);
+  };
 
+  const handleCloseFieldModal = () => {
     setShowEditFieldModal(false);
     setSelectedFieldIndex(null);
   };
@@ -354,22 +322,6 @@ export const ItemEdit: Component = () => {
                 : t("edit_title_add_login"))}
           </div>
         </div>
-        <button
-          type="button"
-          class="action-btn"
-          style="color: var(--white); cursor: pointer; display: flex; align-items: center; padding: 4px;"
-          onClick={() => setFavorite(!favorite())}
-          title={t("vault_menu_favorites")}
-        >
-          <Show
-            when={favorite()}
-            fallback={
-              <HeartOutlineIcon style="width: 20px; height: 20px; color: rgba(255, 255, 255, 0.7);" />
-            }
-          >
-            <HeartFilledIcon style="width: 20px; height: 20px; color: #ff4e63;" />
-          </Show>
-        </button>
       </div>
 
       <form onSubmit={handleSave} class="detail-form">
@@ -379,84 +331,70 @@ export const ItemEdit: Component = () => {
             <div class="alert alert-danger">{error()}</div>
           </Show>
 
-          <div class="form-group">
-            <label for="item-type">{t("edit_label_type")}</label>
-            <select
-              id="item-type"
-              class="input-control"
-              value={itemType()}
-              disabled={isEdit()}
-              onChange={(e) => {
-                const val = parseInt(e.currentTarget.value);
-                if (val === VaultItemType.SecureNote) {
-                  setItemType(VaultItemType.SecureNote);
-                } else {
-                  setItemType(VaultItemType.Login);
-                }
-              }}
-              style="height: 38px; border-radius: 8px; font-size: 13px;"
-            >
-              <option value={VaultItemType.Login}>{t("edit_type_login")}</option>
-              <option value={VaultItemType.SecureNote}>{t("edit_type_note")}</option>
-            </select>
+          <div class="detail-section-title" style="margin-top: 0;">
+            {t("edit_section_item_details")}
           </div>
-
-          <div class="form-group">
-            <label for="item-name">{t("edit_label_name")}</label>
-            <Input
-              id="item-name"
-              type="text"
-              value={name()}
-              onInput={(e) => setName(e.currentTarget.value)}
-              placeholder={itemType() === VaultItemType.SecureNote
-                ? t("edit_placeholder_name_note")
-                : t("edit_placeholder_name_login")}
-            />
+          <div class="card mb-16">
+            <div class="form-group">
+              <label for="item-name">{t("edit_label_name")}</label>
+              <Input
+                id="item-name"
+                type="text"
+                value={name()}
+                onInput={(e) => setName(e.currentTarget.value)}
+                placeholder={itemType() === VaultItemType.SecureNote
+                  ? t("edit_placeholder_name_note")
+                  : t("edit_placeholder_name_login")}
+              />
+            </div>
           </div>
 
           <Show when={itemType() !== VaultItemType.SecureNote}>
-            <div class="form-group">
-              <label for="item-username">{t("edit_label_username")}</label>
-              <Input
-                id="item-username"
-                type="text"
-                value={username()}
-                onInput={(e) => setUsername(e.currentTarget.value)}
-                placeholder={t("edit_placeholder_username")}
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="item-password">{t("edit_label_password")}</label>
-              <div class="pos-relative">
+            <div class="detail-section-title">{t("detail_section_login")}</div>
+            <div class="card mb-16">
+              <div class="form-group">
+                <label for="item-username">{t("edit_label_username")}</label>
                 <Input
-                  id="item-password"
-                  type={showPassword() ? "text" : "password"}
-                  class="password-font pr-68"
-                  value={password()}
-                  onInput={(e) => setPassword(e.currentTarget.value)}
-                  placeholder={t("edit_placeholder_password")}
+                  id="item-username"
+                  type="text"
+                  value={username()}
+                  onInput={(e) => setUsername(e.currentTarget.value)}
+                  placeholder={t("edit_placeholder_username")}
                 />
-                <div class="input-right-actions">
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    onClick={() => setShowPassword(!showPassword())}
-                  >
-                    <Show
-                      when={showPassword()}
-                      fallback={<EyeIcon class="icon-inline" />}
+              </div>
+
+              <div class="form-group">
+                <label for="item-password">{t("edit_label_password")}</label>
+                <div class="pos-relative">
+                  <Input
+                    id="item-password"
+                    type={showPassword() ? "text" : "password"}
+                    class="password-font pr-68"
+                    value={password()}
+                    onInput={(e) => setPassword(e.currentTarget.value)}
+                    placeholder={t("edit_placeholder_password")}
+                  />
+                  <div class="input-right-actions">
+                    <button
+                      type="button"
+                      class="action-btn input-action-btn"
+                      onClick={() => setShowPassword(!showPassword())}
                     >
-                      <EyeOffIcon class="icon-inline" />
-                    </Show>
-                  </button>
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    onClick={() => handleCopy(password(), "password")}
-                  >
-                    <CopyIcon class="icon-inline" />
-                  </button>
+                      <Show
+                        when={showPassword()}
+                        fallback={<EyeIcon class="icon-inline" />}
+                      >
+                        <EyeOffIcon class="icon-inline" />
+                      </Show>
+                    </button>
+                    <button
+                      type="button"
+                      class="action-btn input-action-btn"
+                      onClick={() => handleCopy(password(), "password")}
+                    >
+                      <CopyIcon class="icon-inline" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -464,7 +402,7 @@ export const ItemEdit: Component = () => {
             {/* Passkeys list in Edit Mode */}
             <Show when={fidoCredentials().length > 0}>
               <div class="detail-section-title">{t("detail_passkey_webauthn")}</div>
-              <div class="card p-8 mb-12">
+              <div class="card mb-12">
                 <For each={fidoCredentials()}>
                   {(cred) => (
                     <div class="fido2-cred-row">
@@ -488,64 +426,71 @@ export const ItemEdit: Component = () => {
             </Show>
 
             {/* TOTP Section */}
-            <div class="form-group mb-20">
-              <label for="item-totp">{t("edit_label_totp")}</label>
-              <div class="pos-relative mb-8">
-                <Input
-                  id="item-totp"
-                  type={showTotpSecret() ? "text" : "password"}
-                  class="password-font pr-68"
-                  value={totpSecret()}
-                  onInput={(e) => setTotpSecret(e.currentTarget.value)}
-                  placeholder={t("edit_placeholder_totp")}
-                />
-                <div class="input-right-actions">
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    onClick={() => setShowTotpSecret(!showTotpSecret())}
-                    title={t("edit_placeholder_totp")}
-                  >
-                    <Show
-                      when={showTotpSecret()}
-                      fallback={<EyeIcon class="icon-inline" />}
+            <div class="detail-section-title">{t("detail_section_security")}</div>
+            <div class="card mb-16">
+              <div class="form-group">
+                <label for="item-totp">{t("edit_label_totp")}</label>
+                <div class="pos-relative">
+                  <Input
+                    id="item-totp"
+                    type={showTotpSecret() ? "text" : "password"}
+                    class="password-font pr-68"
+                    value={totpSecret()}
+                    onInput={(e) => setTotpSecret(e.currentTarget.value)}
+                    placeholder={t("edit_placeholder_totp")}
+                  />
+                  <div class="input-right-actions">
+                    <button
+                      type="button"
+                      class="action-btn input-action-btn"
+                      onClick={() => setShowTotpSecret(!showTotpSecret())}
+                      title={t("edit_placeholder_totp")}
                     >
-                      <EyeOffIcon class="icon-inline" />
-                    </Show>
-                  </button>
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    title={t("edit_placeholder_totp")}
-                    onClick={handleScanQr}
-                    disabled={scanning()}
-                  >
-                    <QrIcon
-                      class={scanning()
-                        ? "spinning icon-inline"
-                        : "icon-inline"}
-                    />
-                  </button>
+                      <Show
+                        when={showTotpSecret()}
+                        fallback={<EyeIcon class="icon-inline" />}
+                      >
+                        <EyeOffIcon class="icon-inline" />
+                      </Show>
+                    </button>
+                    <button
+                      type="button"
+                      class="action-btn input-action-btn"
+                      title={t("edit_placeholder_totp")}
+                      onClick={handleScanQr}
+                      disabled={scanning()}
+                    >
+                      <QrIcon
+                        class={scanning()
+                          ? "spinning icon-inline"
+                          : "icon-inline"}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="item-uri">{t("edit_label_website")}</label>
-              <Input
-                id="item-uri"
-                type="text"
-                value={uri()}
-                onInput={(e) => setUri(e.currentTarget.value)}
-                placeholder="https://example.com"
-              />
+            {/* Website Section */}
+            <div class="detail-section-title">{t("detail_section_autofill")}</div>
+            <div class="card mb-16">
+              <div class="form-group">
+                <label for="item-uri">{t("edit_label_website")}</label>
+                <Input
+                  id="item-uri"
+                  type="text"
+                  value={uri()}
+                  onInput={(e) => setUri(e.currentTarget.value)}
+                  placeholder="https://example.com"
+                />
+              </div>
             </div>
           </Show>
 
           {/* Custom Fields in Edit Mode */}
           <Show when={fields().length > 0}>
             <div class="detail-section-title">{t("edit_label_fields")}</div>
-            <div class="card p-8 mb-12">
+            <div class="card mb-12">
               <For each={fields()}>
                 {(field, index) => (
                   <Show
@@ -671,16 +616,20 @@ export const ItemEdit: Component = () => {
             </button>
           </div>
 
-          <div class="form-group">
-            <label for="item-notes">{t("edit_label_notes")}</label>
-            <textarea
-              id="item-notes"
-              class="input-control resize-none"
-              value={notes()}
-              onInput={(e) => setNotes(e.currentTarget.value)}
-              placeholder={t("edit_placeholder_notes")}
-              rows="3"
-            />
+          {/* Notes Section */}
+          <div class="detail-section-title">{t("edit_section_additional_options")}</div>
+          <div class="card mb-16">
+            <div class="form-group">
+              <label for="item-notes">{t("edit_label_notes")}</label>
+              <textarea
+                id="item-notes"
+                class="input-control resize-none"
+                value={notes()}
+                onInput={(e) => setNotes(e.currentTarget.value)}
+                placeholder={t("edit_placeholder_notes")}
+                rows="5"
+              />
+            </div>
           </div>
         </div>
 
@@ -724,77 +673,13 @@ export const ItemEdit: Component = () => {
         </div>
       </form>
 
-      {/* Reusable Custom Field Modal Overlay (Add & Edit) */}
-      <Show when={showEditFieldModal()}>
-        <div class="modal-overlay">
-          <div class="modal-container">
-            <div class="modal-title">
-              {selectedFieldIndex() === null
-                ? t("edit_field_modal_title_add")
-                : t("edit_field_modal_title_edit")}
-            </div>
-
-            <div class="form-group">
-              <label>{t("edit_field_modal_label_type")}</label>
-              <select
-                class="input-control"
-                value={editFieldType()}
-                onChange={(e) =>
-                  setEditFieldType(parseInt(e.currentTarget.value))}
-                style="height: 38px; border-radius: 8px; font-size: 13px;"
-              >
-                <option value={0}>{t("edit_field_type_text")}</option>
-                <option value={1}>{t("edit_field_type_hidden")}</option>
-                <option value={2}>{t("edit_field_type_divider")}</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>{t("edit_field_name_placeholder")}</label>
-              <Input
-                type="text"
-                placeholder={editFieldType() === 2
-                  ? t("edit_field_modal_placeholder_divider")
-                  : t("edit_field_modal_placeholder_name")}
-                value={editFieldName()}
-                onInput={(e) => setEditFieldName(e.currentTarget.value)}
-              />
-            </div>
-
-            <Show when={editFieldType() !== 2}>
-              <div class="form-group">
-                <label>{t("edit_field_val_placeholder")}</label>
-                <Input
-                  type={editFieldType() === 1 ? "password" : "text"}
-                  placeholder={t("edit_field_val_placeholder") + "..."}
-                  value={editFieldValue()}
-                  onInput={(e) => setEditFieldValue(e.currentTarget.value)}
-                />
-              </div>
-            </Show>
-
-            <div class="modal-actions">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setShowEditFieldModal(false);
-                  setSelectedFieldIndex(null);
-                }}
-              >
-                {t("btn_cancel")}
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleSaveFieldEdit}
-              >
-                {selectedFieldIndex() === null ? t("btn_create") : t("btn_save")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Show>
+      <CustomFieldModal
+        isOpen={showEditFieldModal()}
+        isEdit={selectedFieldIndex() !== null}
+        initialField={initialField()}
+        onClose={handleCloseFieldModal}
+        onSave={handleSaveFieldEdit}
+      />
     </div>
   );
 };

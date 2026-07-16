@@ -1,13 +1,8 @@
 import { type Component, createSignal, For, onMount, Show } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
 import {
-  base64UrlToBuffer,
-  bufferToBase64Url,
-  createPasskeyKeyPair,
-  generateAssertionSignature,
-  generateAuthData,
-  getRawCredentialId,
-  packAttestationObject,
+  generatePasskeyAssertResponse,
+  generatePasskeyRegisterResponse,
 } from "@/shared/passkey-crypto.ts";
 import {
   type Fido2Credential,
@@ -255,51 +250,12 @@ export const Fido2Prompt: Component = () => {
     setError("");
 
     try {
-      const options = req.options;
-      const origin = req.origin;
-
-      // 1. Create ECDSA keypair
-      const keyPair = await createPasskeyKeyPair();
-
-      // 2. Export private key in pkcs8 format to store in Vault
-      const pkcs8KeyBuffer = await crypto.subtle.exportKey(
-        "pkcs8",
-        keyPair.privateKey,
+      const { newCred, result } = await generatePasskeyRegisterResponse(
+        req.options,
+        req.origin,
       );
-      const pkcs8Base64Url = bufferToBase64Url(new Uint8Array(pkcs8KeyBuffer));
 
-      // 3. Export public key in spki format
-      const spkiKeyBuffer = await crypto.subtle.exportKey(
-        "spki",
-        keyPair.publicKey,
-      );
-      const spkiBase64Url = bufferToBase64Url(new Uint8Array(spkiKeyBuffer));
-
-      // 4. Generate credentialId (standard random UUID)
-      const credentialIdStr = crypto.randomUUID();
-      const credentialIdBytes = getRawCredentialId(credentialIdStr);
-      const credIdBase64Url = bufferToBase64Url(credentialIdBytes);
-
-      const creationDate = new Date().toISOString();
-
-      // 5. Build Gistwarden Fido2Credential object
-      const newCred: Fido2Credential = {
-        credentialId: credentialIdStr,
-        keyType: "public-key",
-        keyAlgorithm: "ECDSA",
-        keyCurve: "P-256",
-        keyValue: pkcs8Base64Url,
-        rpId: options.rp.id || options.rp.name,
-        userHandle: options.user.id,
-        userName: options.user.name,
-        counter: 0,
-        rpName: options.rp.name,
-        userDisplayName: options.user.displayName,
-        discoverable: true,
-        creationDate,
-      };
-
-      // 6. Save new credential to Vault
+      // Save new credential to Vault
       let saveRes;
       const idx = selectedAccountIndex();
       if (idx !== null && matchingAccounts()[idx]) {
@@ -315,12 +271,12 @@ export const Fido2Prompt: Component = () => {
         saveRes = await storeActions.saveItem(updatedItem);
       } else {
         const newItem: Partial<VaultItem> = {
-          name: options.rp.name || options.rp.id,
+          name: req.options.rp.name || req.options.rp.id,
           type: 1, // Login
           login: {
-            username: options.user.name,
+            username: req.options.user.name,
             password: "",
-            uris: [{ uri: origin }],
+            uris: [{ uri: req.origin }],
             fido2Credentials: [newCred],
           },
         };
@@ -331,38 +287,7 @@ export const Fido2Prompt: Component = () => {
         throw new Error(saveRes.error || t("fido2_error_save_failed"));
       }
 
-      // 7. Generate authData and CBOR attestationObject
-      const authData = await generateAuthData({
-        rpId: options.rp.id || options.rp.name,
-        credentialId: credentialIdBytes,
-        counter: 0,
-        userPresent: true,
-        userVerified: true,
-        publicKey: keyPair.publicKey,
-      });
-
-      const clientDataJSON = JSON.stringify({
-        type: "webauthn.create",
-        challenge: options.challenge,
-        origin,
-        crossOrigin: false,
-      });
-
-      const result = {
-        id: credIdBase64Url,
-        rawId: credIdBase64Url,
-        response: {
-          clientDataJSON: bufferToBase64Url(
-            new TextEncoder().encode(clientDataJSON),
-          ),
-          attestationObject: bufferToBase64Url(packAttestationObject(authData)),
-          publicKey: spkiBase64Url,
-          publicKeyAlgorithm: -7, // ES256
-          authData: bufferToBase64Url(authData),
-        },
-      };
-
-      // 8. Resolve FIDO2 request in background
+      // Resolve FIDO2 request in background
       await chrome.runtime.sendMessage({
         type: "RESOLVE_FIDO2_REQUEST",
         result,
@@ -385,29 +310,8 @@ export const Fido2Prompt: Component = () => {
     try {
       const selected = matchingCredentials()[selectedCredIndex()];
       const cred = selected.credential;
-      const options = req.options;
-      const origin = req.origin;
 
-      // 1. Import ECDSA private key from base64url PKCS#8 stored in Vault
-      const pkcs8KeyBuffer = base64UrlToBuffer(cred.keyValue);
-      const keyData = pkcs8KeyBuffer.buffer;
-      if (!(keyData instanceof ArrayBuffer)) {
-        throw new Error("Expected ArrayBuffer for key data");
-      }
-      const privateKey = await crypto.subtle.importKey(
-        "pkcs8",
-        keyData,
-        {
-          name: "ECDSA",
-          namedCurve: "P-256",
-        },
-        true,
-        ["sign"],
-      );
-
-      // 2. Increment credential counter
-      // De tranh loi Replay Protection cua may chu (nhu GitHub) khi counter nhap khau bi thap hon counter thuc te tren server,
-      // chung ta gán counter toi thieu la 100,000.
+      // Increment credential counter
       const nextCounter = Math.max(cred.counter + 1, 100000);
 
       // Update item in Vault
@@ -444,74 +348,14 @@ export const Fido2Prompt: Component = () => {
         );
       }
 
-      // 3. Construct assertion data
-      const clientDataJSON = JSON.stringify({
-        type: "webauthn.get",
-        challenge: options.challenge,
-        origin,
-        crossOrigin: false,
-      });
-
-      const clientDataJSONBytes = new TextEncoder().encode(clientDataJSON);
-      const clientDataHash = new Uint8Array(
-        await crypto.subtle.digest("SHA-256", clientDataJSONBytes),
+      const { result } = await generatePasskeyAssertResponse(
+        req.options,
+        req.origin,
+        cred,
+        nextCounter,
       );
 
-      // Lay tuy chon yeu cau xac thuc tu options. Mac dinh la true do nguoi dung da mo khoa bang Master Password
-      const userVerified = options.userVerification !== "discouraged";
-
-      let rpId = options.rpId;
-      if (!rpId) {
-        try {
-          rpId = new URL(origin).hostname;
-        } catch (_) {
-          rpId = origin;
-        }
-      }
-
-      const authData = await generateAuthData({
-        rpId,
-        counter: nextCounter,
-        userPresent: true,
-        userVerified,
-      });
-
-      const signature = await generateAssertionSignature(
-        authData,
-        clientDataHash,
-        privateKey,
-      );
-
-      // Tu dong tuong thich nguoc: Kiem tra xem trang web dang yeu cau dinh dang ID nao
-      // - Neu yeu cau chuoi ASCII UUID 36 ky tu (co che cu), chung ta tra ve dinh dang do.
-      // - Mac dinh dung 16-byte raw UUID (co che moi chuan WebAuthn).
-      const b64_36 = bufferToBase64Url(
-        new TextEncoder().encode(cred.credentialId),
-      );
-
-      const useOld36ByteFormat = (options.allowCredentials || []).some(
-        (allowed: { id: string }) => allowed.id === b64_36,
-      );
-
-      const rawCredId = useOld36ByteFormat
-        ? new TextEncoder().encode(cred.credentialId)
-        : getRawCredentialId(cred.credentialId);
-      const credIdBase64Url = useOld36ByteFormat
-        ? b64_36
-        : bufferToBase64Url(rawCredId);
-
-      const result = {
-        id: credIdBase64Url,
-        rawId: credIdBase64Url,
-        response: {
-          clientDataJSON: bufferToBase64Url(clientDataJSONBytes),
-          authenticatorData: bufferToBase64Url(authData),
-          signature: bufferToBase64Url(signature),
-          userHandle: cred.userHandle || null,
-        },
-      };
-
-      // 4. Resolve FIDO2 request in background
+      // Resolve FIDO2 request in background
       await chrome.runtime.sendMessage({
         type: "RESOLVE_FIDO2_REQUEST",
         result,

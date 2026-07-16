@@ -11,6 +11,7 @@ import {
   ShieldIcon,
   ThemeIcon,
   TrashIcon,
+  GlobeIcon,
 } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
 
@@ -165,8 +166,13 @@ export const Settings: Component = () => {
                 {/* Language Settings */}
                 <div class="setting-row" onClick={() => storeActions.navigate(View.Language)}>
                   <div class="setting-row-left">
-                    <div style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--text);">🌐</div>
-                    <div class="setting-label" style="margin-left: 8px;">{t("settings_label_language")}</div>
+                    <GlobeIcon />
+                    <div>
+                      <div class="setting-label">{t("settings_label_language")}</div>
+                      <div class="setting-sub">
+                        {store.language === "vi" ? "Tiếng Việt" : "English"}
+                      </div>
+                    </div>
                   </div>
                   <ChevronRightIcon />
                 </div>
@@ -231,7 +237,6 @@ export const Settings: Component = () => {
                       <div class="setting-sub">{t("settings_lock_sub")}</div>
                     </div>
                   </div>
-                  <ChevronRightIcon />
                 </div>
 
                 {/* Clear Vault */}
@@ -247,7 +252,6 @@ export const Settings: Component = () => {
                       </div>
                     </div>
                   </div>
-                  <ChevronRightIcon style="color: var(--error);" />
                 </div>
 
                 {/* Disconnect/Logout */}
@@ -263,7 +267,6 @@ export const Settings: Component = () => {
                       </div>
                     </div>
                   </div>
-                  <ChevronRightIcon style="color: var(--error);" />
                 </div>
               </div>
             </>
