@@ -23,9 +23,9 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
+
           deno task bump-version
-          
+
           if [ -n "$(git status --porcelain src/manifest.json)" ]; then
             git add src/manifest.json
             VERSION=$(jq -r '.version' src/manifest.json)

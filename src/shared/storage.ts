@@ -15,7 +15,9 @@ export const SettingsSchema = z.object({
   lastSyncedHash: z.string().default(""),
   cachedGithubUser: GithubUserSchema.nullable().default(null),
   oauthClientId: z.string().default("Ov23liRxwWqLXD5AOkNW"),
-  oauthWorkerUrl: z.string().default("https://gistwarden.uongsuadaubung.workers.dev"),
+  oauthWorkerUrl: z.string().default(
+    "https://gistwarden.uongsuadaubung.workers.dev",
+  ),
 });
 
 export type AppSettings = z.infer<typeof SettingsSchema>;
@@ -23,7 +25,9 @@ export type AppSettings = z.infer<typeof SettingsSchema>;
 export const STORAGE_KEY = "gistwarden_settings";
 
 export async function getAllSettings(): Promise<AppSettings> {
-  if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local
+  ) {
     return SettingsSchema.parse({});
   }
   const result = await chrome.storage.local.get(STORAGE_KEY);
@@ -32,7 +36,9 @@ export async function getAllSettings(): Promise<AppSettings> {
 }
 
 export async function updateSettings(patch: Partial<AppSettings>) {
-  if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local
+  ) {
     return;
   }
   const current = await getAllSettings();
@@ -43,7 +49,9 @@ export async function updateSettings(patch: Partial<AppSettings>) {
 
 // Session Storage (Master Password in-memory only, cleared on browser close)
 export async function getMasterPassword(): Promise<string> {
-  if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session) {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
+  ) {
     return "";
   }
   try {
@@ -54,13 +62,17 @@ export async function getMasterPassword(): Promise<string> {
     }
     return "";
   } catch (_e) {
-    console.debug("[Storage] Failed to read from session storage (probably not supported yet)");
+    console.debug(
+      "[Storage] Failed to read from session storage (probably not supported yet)",
+    );
     return "";
   }
 }
 
 export async function setMasterPassword(password: string): Promise<void> {
-  if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session) {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
+  ) {
     return;
   }
   try {
@@ -71,7 +83,9 @@ export async function setMasterPassword(password: string): Promise<void> {
 }
 
 export async function clearMasterPassword(): Promise<void> {
-  if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session) {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
+  ) {
     return;
   }
   try {

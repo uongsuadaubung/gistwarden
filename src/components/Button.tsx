@@ -1,4 +1,4 @@
-import { type Component, splitProps, type JSX } from "solid-js";
+import { type Component, type JSX, splitProps } from "solid-js";
 
 interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger";

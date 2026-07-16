@@ -8,7 +8,7 @@ const paramBytes = getParamSize(256); // ES256 param bytes (32)
 function countPadding(
   buf: Uint8Array,
   start: number,
-  end: number
+  end: number,
 ): { padding: number; needs0x00: boolean } {
   let padding = 0;
   while (start + padding < end && buf[start + padding] === 0) {
@@ -22,15 +22,19 @@ export function p1363ToDer(signature: Uint8Array): Uint8Array {
   const signatureBytes = signature.length;
   if (signatureBytes !== paramBytes * 2) {
     throw new TypeError(
-      `ES256 signatures must be ${paramBytes * 2} bytes, saw ${signatureBytes}`
+      `ES256 signatures must be ${paramBytes * 2} bytes, saw ${signatureBytes}`,
     );
   }
 
-  const { padding: rPadding, needs0x00: rNeeds0x00 } = countPadding(signature, 0, paramBytes);
+  const { padding: rPadding, needs0x00: rNeeds0x00 } = countPadding(
+    signature,
+    0,
+    paramBytes,
+  );
   const { padding: sPadding, needs0x00: sNeeds0x00 } = countPadding(
     signature,
     paramBytes,
-    signature.length
+    signature.length,
   );
 
   const rActualLength = paramBytes - rPadding;
@@ -68,7 +72,13 @@ export function p1363ToDer(signature: Uint8Array): Uint8Array {
   if (sNeeds0x00) {
     dst[offset++] = 0;
   }
-  dst.set(signature.subarray(paramBytes + sPadding, paramBytes + sPadding + sActualLength), offset);
+  dst.set(
+    signature.subarray(
+      paramBytes + sPadding,
+      paramBytes + sPadding + sActualLength,
+    ),
+    offset,
+  );
 
   return dst;
 }
@@ -116,7 +126,7 @@ export async function createPasskeyKeyPair(): Promise<CryptoKeyPair> {
       namedCurve: "P-256",
     },
     true,
-    ["sign"]
+    ["sign"],
   );
 }
 
@@ -128,7 +138,7 @@ export function packAttestationObject(authData: Uint8Array): Uint8Array {
   const attStmtKey = [0x67, 0x61, 0x74, 0x74, 0x53, 0x74, 0x6d, 0x74]; // "attStmt"
   const attStmtVal = [0xa0]; // empty map {}
   const authDataKey = [0x68, 0x61, 0x75, 0x74, 0x68, 0x44, 0x61, 0x74, 0x61]; // "authData"
-  
+
   // authData byte string header
   let authDataHeader: number[];
   const len = authData.length;
@@ -138,20 +148,28 @@ export function packAttestationObject(authData: Uint8Array): Uint8Array {
     authDataHeader = [0x59, (len >> 8) & 0xff, len & 0xff];
   }
 
-  const totalLength = 1 + fmtKey.length + fmtVal.length + attStmtKey.length + attStmtVal.length + authDataKey.length + authDataHeader.length + authData.length;
+  const totalLength = 1 + fmtKey.length + fmtVal.length + attStmtKey.length +
+    attStmtVal.length + authDataKey.length + authDataHeader.length +
+    authData.length;
   const result = new Uint8Array(totalLength);
 
   let offset = 0;
   result[offset++] = 0xa3; // Map of 3 pairs
-  
-  result.set(fmtKey, offset); offset += fmtKey.length;
-  result.set(fmtVal, offset); offset += fmtVal.length;
-  
-  result.set(attStmtKey, offset); offset += attStmtKey.length;
-  result.set(attStmtVal, offset); offset += attStmtVal.length;
-  
-  result.set(authDataKey, offset); offset += authDataKey.length;
-  result.set(authDataHeader, offset); offset += authDataHeader.length;
+
+  result.set(fmtKey, offset);
+  offset += fmtKey.length;
+  result.set(fmtVal, offset);
+  offset += fmtVal.length;
+
+  result.set(attStmtKey, offset);
+  offset += attStmtKey.length;
+  result.set(attStmtVal, offset);
+  offset += attStmtVal.length;
+
+  result.set(authDataKey, offset);
+  offset += authDataKey.length;
+  result.set(authDataHeader, offset);
+  offset += authDataHeader.length;
   result.set(authData, offset);
 
   return result;
@@ -160,7 +178,22 @@ export function packAttestationObject(authData: Uint8Array): Uint8Array {
 // Generate AuthData
 // AAGUID of Gistwarden: 4c617a79-5061-7373-6b65-794769737431 (LazyPasskeyGist1)
 export const AAGUID = new Uint8Array([
-  0x4c, 0x61, 0x7a, 0x79, 0x50, 0x61, 0x73, 0x73, 0x6b, 0x65, 0x79, 0x47, 0x69, 0x73, 0x74, 0x31
+  0x4c,
+  0x61,
+  0x7a,
+  0x79,
+  0x50,
+  0x61,
+  0x73,
+  0x73,
+  0x6b,
+  0x65,
+  0x79,
+  0x47,
+  0x69,
+  0x73,
+  0x74,
+  0x31,
 ]);
 
 interface GenerateAuthDataParams {
@@ -172,12 +205,16 @@ interface GenerateAuthDataParams {
   publicKey?: CryptoKey;
 }
 
-export async function generateAuthData(params: GenerateAuthDataParams): Promise<Uint8Array> {
+export async function generateAuthData(
+  params: GenerateAuthDataParams,
+): Promise<Uint8Array> {
   const authData: number[] = [];
 
   // 1. rpIdHash (32 bytes)
   const rpIdBytes = new TextEncoder().encode(params.rpId);
-  const rpIdHash = new Uint8Array(await crypto.subtle.digest("SHA-256", rpIdBytes));
+  const rpIdHash = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", rpIdBytes),
+  );
   authData.push(...rpIdHash);
 
   // 2. flags (1 byte)
@@ -195,7 +232,7 @@ export async function generateAuthData(params: GenerateAuthDataParams): Promise<
     ((counter & 0xff000000) >> 24) & 0xff,
     ((counter & 0x00ff0000) >> 16) & 0xff,
     ((counter & 0x0000ff00) >> 8) & 0xff,
-    counter & 0x000000ff
+    counter & 0x000000ff,
   );
 
   // 4. attestedCredentialData (if public key is provided)
@@ -217,7 +254,10 @@ export async function generateAuthData(params: GenerateAuthDataParams): Promise<
     // Manually format public key in canonical CBOR COSE format for P-256:
     // Map with keys: 1 (kty: 2 = EC2), 3 (alg: -7 = ES256), -1 (crv: 1 = P-256), -2 (x), -3 (y)
     const coseBytes = new Uint8Array(77);
-    coseBytes.set([0xa5, 0x01, 0x02, 0x03, 0x26, 0x20, 0x01, 0x21, 0x58, 0x20], 0);
+    coseBytes.set(
+      [0xa5, 0x01, 0x02, 0x03, 0x26, 0x20, 0x01, 0x21, 0x58, 0x20],
+      0,
+    );
     coseBytes.set(keyX, 10);
     coseBytes.set([0x22, 0x58, 0x20], 10 + 32);
     coseBytes.set(keyY, 10 + 32 + 3);
@@ -232,7 +272,7 @@ export async function generateAuthData(params: GenerateAuthDataParams): Promise<
 export async function generateAssertionSignature(
   authData: Uint8Array,
   clientDataHash: Uint8Array,
-  privateKey: CryptoKey
+  privateKey: CryptoKey,
 ): Promise<Uint8Array> {
   const sigBase = new Uint8Array(authData.length + clientDataHash.length);
   sigBase.set(authData, 0);
@@ -245,8 +285,8 @@ export async function generateAssertionSignature(
         hash: { name: "SHA-256" },
       },
       privateKey,
-      sigBase
-    )
+      sigBase,
+    ),
   );
 
   return p1363ToDer(rawSignature);
@@ -259,7 +299,7 @@ export function getRawCredentialId(credId: string): Uint8Array {
     // Parse standard UUID format (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX) to 16 bytes raw array
     const raw = new Uint8Array(16);
     let v;
-    
+
     // Parse ########-....-....-....-............
     raw[0] = (v = parseInt(clean.slice(0, 8), 16)) >>> 24;
     raw[1] = (v >>> 16) & 0xff;
@@ -285,10 +325,10 @@ export function getRawCredentialId(credId: string): Uint8Array {
     raw[13] = (v >>> 16) & 0xff;
     raw[14] = (v >>> 8) & 0xff;
     raw[15] = v & 0xff;
-    
+
     return raw;
   }
-  
+
   if (clean.startsWith("b64.")) {
     return base64UrlToBuffer(clean.slice(4));
   }
@@ -299,4 +339,3 @@ export function getRawCredentialId(credId: string): Uint8Array {
     return new TextEncoder().encode(clean);
   }
 }
-

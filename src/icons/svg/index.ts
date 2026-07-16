@@ -1,5 +1,6 @@
 export { default as RefreshIcon } from "./RefreshIcon.tsx";
 export { default as LockIcon } from "./LockIcon.tsx";
+export { default as VaultIcon } from "./VaultIcon.tsx";
 export { default as GithubIcon } from "./GithubIcon.tsx";
 export { default as ChevronDownIcon } from "./ChevronDownIcon.tsx";
 export { default as ArrowLeftIcon } from "./ArrowLeftIcon.tsx";
@@ -26,4 +27,6 @@ export { default as EditIcon } from "./EditIcon.tsx";
 export { default as HeartFilledIcon } from "./HeartFilledIcon.tsx";
 export { default as HeartOutlineIcon } from "./HeartOutlineIcon.tsx";
 export { default as NoteIcon } from "./NoteIcon.tsx";
+export { default as ChevronRightIcon } from "./ChevronRightIcon.tsx";
+export { default as DownloadIcon } from "./DownloadIcon.tsx";
 export * from "./types.ts";

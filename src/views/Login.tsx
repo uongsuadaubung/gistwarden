@@ -1,8 +1,8 @@
-import { createSignal, type Component, Show, createEffect } from "solid-js";
+import { type Component, createEffect, createSignal, Show } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
-import Button from "./Button.tsx";
-import Input from "./Input.tsx";
-import { LockIcon, GithubIcon, ChevronDownIcon } from "@/icons/svg/index.ts";
+import Button from "@/components/Button.tsx";
+import Input from "@/components/Input.tsx";
+import { ChevronDownIcon, GithubIcon, LockIcon } from "@/icons/svg/index.ts";
 
 export const Login: Component = () => {
   const [token, setToken] = createSignal("");
@@ -47,7 +47,9 @@ export const Login: Component = () => {
     const wUrl = workerUrl().trim();
 
     if (!cId || !wUrl) {
-      setError("Vui lòng mở mục 'Cấu hình OAuth' để nhập Client ID và Worker URL trước khi đăng nhập.");
+      setError(
+        "Vui lòng mở mục 'Cấu hình OAuth' để nhập Client ID và Worker URL trước khi đăng nhập.",
+      );
       setShowConfig(true);
       return;
     }
@@ -59,11 +61,13 @@ export const Login: Component = () => {
       await storeActions.saveOauthConfig(cId, wUrl);
 
       // 2. Call background script to launch web auth flow
-      const oauthRes = await new Promise<{ success: boolean; token?: string; error?: string }>((resolve) => {
+      const oauthRes = await new Promise<
+        { success: boolean; token?: string; error?: string }
+      >((resolve) => {
         chrome.runtime.sendMessage({
           type: "START_GITHUB_OAUTH",
           content: cId,
-          token: wUrl
+          token: wUrl,
         }, resolve);
       });
 
@@ -113,13 +117,32 @@ export const Login: Component = () => {
     storeActions.logout();
   };
 
+  const handleForgotPassword = async () => {
+    const gistId = store.gistId;
+    const message =
+      "Gistwarden sử dụng cơ chế mã hóa đầu-cuối (Zero-Knowledge). Mật khẩu Master không bao giờ được gửi đi hay lưu trữ trên máy chủ, do đó <strong style='color: var(--error);'>KHÔNG CÓ CÁCH NÀO</strong> để khôi phục hoặc đặt lại.<br/><br/>" +
+      "Để bắt đầu lại, hệ thống sẽ <strong>ĐĂNG XUẤT</strong> và <strong>XÓA DỮ LIỆU CỤC BỘ</strong>.<br/><br/>" +
+      "Nếu bạn muốn tiếp tục sử dụng tài khoản GitHub này, hệ thống sẽ mở trang GitHub Gist chứa két sắt cũ để bạn có thể <strong>SAO LƯU</strong> dữ liệu hoặc tiến hành <strong style='color: var(--error);'>XÓA THỦ CÔNG</strong> Gist này trên GitHub trước khi đăng nhập lại.<br/><br/>" +
+      "Bạn có chắc chắn muốn đăng xuất và mở trang Gist cũ không?";
+
+    if (await storeActions.confirm("Quên mật khẩu Master", message, "danger")) {
+      if (gistId) {
+        window.open(`https://gist.github.com/${gistId}`, "_blank");
+      }
+      storeActions.logout();
+    }
+  };
+
   return (
     <div class="app-body justify-center h-full">
       <div class="text-center mb-24">
         <LockIcon class="login-header-logo" />
         <h2 class="login-brand-title">Gistwarden</h2>
         <p class="login-subtitle">
-          <Show when={store.githubToken} fallback="Cấu hình bộ lưu trữ đám mây GitHub Gist">
+          <Show
+            when={store.githubToken}
+            fallback="Cấu hình bộ lưu trữ đám mây GitHub Gist"
+          >
             Két sắt đang bị Khóa
           </Show>
         </p>
@@ -129,112 +152,158 @@ export const Login: Component = () => {
         <div class="alert alert-danger mb-16">{error()}</div>
       </Show>
 
-      <Show when={store.githubToken} fallback={
-        <div class="card mb-0 p-16">
-          {/* Method Tabs */}
-          <div class="tabs-container login-tabs mb-16">
-            <div 
-              onClick={() => setLoginMethod("oauth")} 
-              class={`login-tab-btn ${loginMethod() === "oauth" ? "active" : ""}`}
-            >
-              Đăng nhập GitHub (OAuth)
-            </div>
-            <div 
-              onClick={() => setLoginMethod("pat")} 
-              class={`login-tab-btn ${loginMethod() === "pat" ? "active" : ""}`}
-            >
-              Dùng Token (PAT)
-            </div>
-          </div>
-
-          <Show when={loginMethod() === "oauth"} fallback={
-            <form onSubmit={handleSaveToken} class="mb-0">
-              <div class="form-group">
-                <label for="github-token">GitHub Personal Access Token (PAT)</label>
-                <Input
-                  id="github-token"
-                  type="password"
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                  value={token()}
-                  onInput={(e) => setToken(e.currentTarget.value)}
-                  disabled={loading()}
-                />
-                <span class="login-pat-help">
-                  Token cần có quyền truy cập <strong>gist</strong>. Tiện ích sẽ tạo một Gist bí mật (secret gist) để lưu trữ két sắt đã mã hóa của bạn.
-                </span>
+      <Show
+        when={store.githubToken}
+        fallback={
+          <div class="card mb-0 p-16">
+            {/* Method Tabs */}
+            <div class="tabs-container login-tabs mb-16">
+              <div
+                onClick={() => setLoginMethod("oauth")}
+                class={`login-tab-btn ${
+                  loginMethod() === "oauth" ? "active" : ""
+                }`}
+              >
+                Đăng nhập GitHub (OAuth)
               </div>
-
-              <Button type="submit" variant="primary" block loading={loading()} loadingText="Đang xác thực...">
-                Kết nối GitHub (PAT)
-              </Button>
-            </form>
-          }>
-            <div>
-              <div class="text-center mb-16">
-                <p class="login-oauth-help">
-                  Kết nối tự động và an toàn với tài khoản GitHub của bạn để đồng bộ két sắt tự động qua Cloudflare Worker Proxy riêng tư của bạn.
-                </p>
-                
-                <Button variant="primary" block onClick={handleGithubOauth} loading={loading()} loadingText="Đang kết nối...">
-                  <GithubIcon class="github-btn-icon" />
-                  Đăng nhập bằng GitHub
-                </Button>
+              <div
+                onClick={() => setLoginMethod("pat")}
+                class={`login-tab-btn ${
+                  loginMethod() === "pat" ? "active" : ""
+                }`}
+              >
+                Dùng Token (PAT)
               </div>
-              
-              <div class="login-oauth-config-footer">
-                <div 
-                  onClick={() => setShowConfig(!showConfig())} 
-                  class="oauth-config-toggle"
-                >
-                  <span>{showConfig() ? "Ẩn cấu hình OAuth" : "Hiện cấu hình OAuth"}</span>
-                  <ChevronDownIcon class={`oauth-config-chevron ${showConfig() ? "open" : ""}`} />
-                </div>
-                
-                <Show when={showConfig()}>
-                  <div class="oauth-config-box">
-                    <div class="form-group mb-8 text-left">
-                      <label for="oauth-client-id" class="login-config-label">Client ID của GitHub App</label>
-                      <Input
-                        id="oauth-client-id"
-                        type="text"
-                        class="login-config-input"
-                        placeholder="Nhập Client ID..."
-                        value={clientId()}
-                        onInput={(e) => setClientId(e.currentTarget.value)}
-                        disabled={loading()}
-                      />
-                    </div>
-                    <div class="form-group mb-12 text-left">
-                      <label for="oauth-worker-url" class="login-config-label">URL Cloudflare Worker Proxy</label>
-                      <Input
-                        id="oauth-worker-url"
-                        type="text"
-                        class="login-config-input"
-                        placeholder="https://xxx.workers.dev"
-                        value={workerUrl()}
-                        onInput={(e) => setWorkerUrl(e.currentTarget.value)}
-                        disabled={loading()}
-                      />
-                    </div>
-                    <Button 
-                      variant="secondary" 
-                      block 
-                      class="login-config-save-btn"
-                      onClick={() => {
-                        storeActions.saveOauthConfig(clientId().trim(), workerUrl().trim());
-                        alert("Đã lưu thông số cấu hình OAuth!");
-                      }}
+            </div>
+
+            <Show
+              when={loginMethod() === "oauth"}
+              fallback={
+                <form onSubmit={handleSaveToken} class="mb-0">
+                  <div class="form-group">
+                    <label for="github-token">
+                      GitHub Personal Access Token (PAT)
+                    </label>
+                    <Input
+                      id="github-token"
+                      type="password"
+                      placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                      value={token()}
+                      onInput={(e) => setToken(e.currentTarget.value)}
                       disabled={loading()}
-                    >
-                      Lưu cấu hình
-                    </Button>
+                    />
+                    <span class="login-pat-help">
+                      Token cần có quyền truy cập{" "}
+                      <strong>gist</strong>. Tiện ích sẽ tạo một Gist bí mật
+                      (secret gist) để lưu trữ két sắt đã mã hóa của bạn.
+                    </span>
                   </div>
-                </Show>
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    block
+                    loading={loading()}
+                    loadingText="Đang xác thực..."
+                  >
+                    Kết nối GitHub (PAT)
+                  </Button>
+                </form>
+              }
+            >
+              <div>
+                <div class="text-center mb-16">
+                  <p class="login-oauth-help">
+                    Kết nối tự động và an toàn với tài khoản GitHub của bạn để
+                    đồng bộ két sắt tự động qua Cloudflare Worker Proxy riêng tư
+                    của bạn.
+                  </p>
+
+                  <Button
+                    variant="primary"
+                    block
+                    onClick={handleGithubOauth}
+                    loading={loading()}
+                    loadingText="Đang kết nối..."
+                  >
+                    <GithubIcon class="github-btn-icon" />
+                    Đăng nhập bằng GitHub
+                  </Button>
+                </div>
+
+                <div class="login-oauth-config-footer">
+                  <div
+                    onClick={() => setShowConfig(!showConfig())}
+                    class="oauth-config-toggle"
+                  >
+                    <span>
+                      {showConfig()
+                        ? "Ẩn cấu hình OAuth"
+                        : "Hiện cấu hình OAuth"}
+                    </span>
+                    <ChevronDownIcon
+                      class={`oauth-config-chevron ${
+                        showConfig() ? "open" : ""
+                      }`}
+                    />
+                  </div>
+
+                  <Show when={showConfig()}>
+                    <div class="oauth-config-box">
+                      <div class="form-group mb-8 text-left">
+                        <label for="oauth-client-id" class="login-config-label">
+                          Client ID của GitHub App
+                        </label>
+                        <Input
+                          id="oauth-client-id"
+                          type="text"
+                          class="login-config-input"
+                          placeholder="Nhập Client ID..."
+                          value={clientId()}
+                          onInput={(e) => setClientId(e.currentTarget.value)}
+                          disabled={loading()}
+                        />
+                      </div>
+                      <div class="form-group mb-12 text-left">
+                        <label
+                          for="oauth-worker-url"
+                          class="login-config-label"
+                        >
+                          URL Cloudflare Worker Proxy
+                        </label>
+                        <Input
+                          id="oauth-worker-url"
+                          type="text"
+                          class="login-config-input"
+                          placeholder="https://xxx.workers.dev"
+                          value={workerUrl()}
+                          onInput={(e) => setWorkerUrl(e.currentTarget.value)}
+                          disabled={loading()}
+                        />
+                      </div>
+                      <Button
+                        variant="secondary"
+                        block
+                        class="login-config-save-btn"
+                        onClick={() => {
+                          storeActions.saveOauthConfig(
+                            clientId().trim(),
+                            workerUrl().trim(),
+                          );
+                          alert("Đã lưu thông số cấu hình OAuth!");
+                        }}
+                        disabled={loading()}
+                      >
+                        Lưu cấu hình
+                      </Button>
+                    </div>
+                  </Show>
+                </div>
               </div>
-            </div>
-          </Show>
-        </div>
-      }>
+            </Show>
+          </div>
+        }
+      >
         <form onSubmit={handleUnlock} class="card mb-0">
           <div class="form-group">
             <label for="master-password">Mật khẩu Master</label>
@@ -249,13 +318,39 @@ export const Login: Component = () => {
             />
           </div>
 
-          <Button type="submit" variant="primary" block loading={loading()} loadingText="Đang mở khóa..." class="mb-12">
+          <Button
+            type="submit"
+            variant="primary"
+            block
+            loading={loading()}
+            loadingText="Đang mở khóa..."
+            class="mb-12"
+          >
             Mở khóa
           </Button>
 
-          <Button type="button" variant="secondary" block onClick={handleResetToken} disabled={loading()}>
+          <Button
+            type="button"
+            variant="secondary"
+            block
+            onClick={handleResetToken}
+            disabled={loading()}
+          >
             Đổi tài khoản GitHub
           </Button>
+
+          <div style="margin-top: 16px; text-align: center;">
+            <a
+              href="#"
+              style="color: var(--text-muted); font-size: 11.5px; text-decoration: underline;"
+              onClick={(e) => {
+                e.preventDefault();
+                handleForgotPassword();
+              }}
+            >
+              Quên mật khẩu Master?
+            </a>
+          </div>
         </form>
       </Show>
     </div>

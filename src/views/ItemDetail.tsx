@@ -1,10 +1,30 @@
-import { createSignal, onMount, onCleanup, type Component, Show, For } from "solid-js";
+import {
+  type Component,
+  createSignal,
+  For,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
-import { type Fido2Credential, type VaultField, VaultItemType } from "@/shared/types.ts";
-import Button from "./Button.tsx";
+import {
+  type Fido2Credential,
+  type VaultField,
+  VaultItemType,
+} from "@/shared/types.ts";
+import Button from "@/components/Button.tsx";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/shared/totp-utils.ts";
-import { ArrowLeftIcon, CopyIcon, EyeIcon, EyeOffIcon, ExternalLinkIcon, TrashIcon, HeartFilledIcon, HeartOutlineIcon } from "@/icons/svg/index.ts";
+import {
+  ArrowLeftIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  EyeIcon,
+  EyeOffIcon,
+  HeartFilledIcon,
+  HeartOutlineIcon,
+  TrashIcon,
+} from "@/icons/svg/index.ts";
 
 export const ItemDetail: Component = () => {
   // Local view states
@@ -15,9 +35,13 @@ export const ItemDetail: Component = () => {
   const [totpSecret, setTotpSecret] = createSignal("");
   const [notes, setNotes] = createSignal("");
   const [favorite, setFavorite] = createSignal(false);
-  const [fidoCredentials, setFidoCredentials] = createSignal<Fido2Credential[]>([]);
+  const [fidoCredentials, setFidoCredentials] = createSignal<Fido2Credential[]>(
+    [],
+  );
   const [fields, setFields] = createSignal<VaultField[]>([]);
-  const [visibleFields, setVisibleFields] = createSignal<Record<number, boolean>>({});
+  const [visibleFields, setVisibleFields] = createSignal<
+    Record<number, boolean>
+  >({});
 
   // UI state
   const [showPassword, setShowPassword] = createSignal(false);
@@ -40,11 +64,11 @@ export const ItemDetail: Component = () => {
     if (item) {
       setName(item.name || "");
       if (item.type === VaultItemType.Login) {
-        setUsername(item.login?.username || "");
-        setPassword(item.login?.password || "");
-        setUri(item.login?.uris?.[0]?.uri || "");
-        setTotpSecret(item.login?.totp || "");
-        setFidoCredentials(item.login?.fido2Credentials || []);
+        setUsername(item.login.username || "");
+        setPassword(item.login.password || "");
+        setUri(item.login.uris?.[0]?.uri || "");
+        setTotpSecret(item.login.totp || "");
+        setFidoCredentials(item.login.fido2Credentials || []);
       } else {
         setUsername("");
         setPassword("");
@@ -80,7 +104,7 @@ export const ItemDetail: Component = () => {
 
     try {
       const totp = new OTPAuth.TOTP({
-        secret: OTPAuth.Secret.fromBase32(secret)
+        secret: OTPAuth.Secret.fromBase32(secret),
       });
       const rawCode = totp.generate();
       // Format code as "123 456"
@@ -93,7 +117,7 @@ export const ItemDetail: Component = () => {
   };
 
   const toggleFieldVisibility = (index: number) => {
-    setVisibleFields(prev => ({ ...prev, [index]: !prev[index] }));
+    setVisibleFields((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
   const handleCopy = async (text: string, type: string) => {
@@ -104,7 +128,15 @@ export const ItemDetail: Component = () => {
 
   const handleDelete = async () => {
     if (!store.selectedItem?.id) return;
-    if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này?")) return;
+    if (
+      !(await storeActions.confirm(
+        "Xóa tài khoản",
+        "Bạn có chắc chắn muốn xóa tài khoản này?",
+        "danger",
+      ))
+    ) {
+      return;
+    }
 
     setError("");
     const res = await storeActions.deleteItem(store.selectedItem.id);
@@ -137,9 +169,15 @@ export const ItemDetail: Component = () => {
     const res = await storeActions.saveItem(itemData);
     if (!res.success) {
       setFavorite(!nextFavorite);
-      storeActions.showToast(res.error || "Lỗi cập nhật trạng thái yêu thích", "error");
+      storeActions.showToast(
+        res.error || "Lỗi cập nhật trạng thái yêu thích",
+        "error",
+      );
     } else {
-      storeActions.showToast(nextFavorite ? "Đã thêm vào mục Yêu thích!" : "Đã bỏ Yêu thích!", "success");
+      storeActions.showToast(
+        nextFavorite ? "Đã thêm vào mục Yêu thích!" : "Đã bỏ Yêu thích!",
+        "success",
+      );
     }
   };
 
@@ -152,7 +190,9 @@ export const ItemDetail: Component = () => {
             <ArrowLeftIcon class="icon-inline-large" />
           </div>
           <div class="detail-title detail-header-title">
-            {store.selectedItem?.type === VaultItemType.SecureNote ? "Chi tiết ghi chú" : "Chi tiết tài khoản"}
+            {store.selectedItem?.type === VaultItemType.SecureNote
+              ? "Chi tiết ghi chú"
+              : "Chi tiết tài khoản"}
           </div>
         </div>
         <button
@@ -162,7 +202,12 @@ export const ItemDetail: Component = () => {
           onClick={handleToggleFavorite}
           title={favorite() ? "Bỏ yêu thích" : "Yêu thích"}
         >
-          <Show when={favorite()} fallback={<HeartOutlineIcon style="width: 20px; height: 20px; color: rgba(255, 255, 255, 0.7);" />}>
+          <Show
+            when={favorite()}
+            fallback={
+              <HeartOutlineIcon style="width: 20px; height: 20px; color: rgba(255, 255, 255, 0.7);" />
+            }
+          >
             <HeartFilledIcon style="width: 20px; height: 20px; color: #ff4e63;" />
           </Show>
         </button>
@@ -182,7 +227,9 @@ export const ItemDetail: Component = () => {
           {/* Card 1, 2, 3: Login Credentials */}
           <Show when={store.selectedItem?.type !== VaultItemType.SecureNote}>
             {/* Card 1: Login Credentials */}
-            <div class="detail-section-title" style="margin-top: 0;">Thông tin đăng nhập</div>
+            <div class="detail-section-title" style="margin-top: 0;">
+              Thông tin đăng nhập
+            </div>
             <div class="card mb-16">
               {/* Username Field */}
               <div class="detail-row">
@@ -191,7 +238,12 @@ export const ItemDetail: Component = () => {
                   <div class="field-value">{username() || "Không có"}</div>
                 </div>
                 <Show when={username()}>
-                  <button type="button" class="action-btn" onClick={() => handleCopy(username(), "tên đăng nhập")} title="Sao chép tên đăng nhập">
+                  <button
+                    type="button"
+                    class="action-btn"
+                    onClick={() => handleCopy(username(), "tên đăng nhập")}
+                    title="Sao chép tên đăng nhập"
+                  >
                     <CopyIcon />
                   </button>
                 </Show>
@@ -206,15 +258,26 @@ export const ItemDetail: Component = () => {
                   </div>
                 </div>
                 <div class="field-actions">
-                  <button type="button" class="action-btn" onClick={() => setShowPassword(!showPassword())} title={showPassword() ? "Ẩn mật khẩu" : "Hiển thị mật khẩu"}>
-                    <Show when={showPassword()} fallback={
-                      <EyeIcon class="icon-inline" />
-                    }>
+                  <button
+                    type="button"
+                    class="action-btn"
+                    onClick={() => setShowPassword(!showPassword())}
+                    title={showPassword() ? "Ẩn mật khẩu" : "Hiển thị mật khẩu"}
+                  >
+                    <Show
+                      when={showPassword()}
+                      fallback={<EyeIcon class="icon-inline" />}
+                    >
                       <EyeOffIcon class="icon-inline" />
                     </Show>
                   </button>
                   <Show when={password()}>
-                    <button type="button" class="action-btn" onClick={() => handleCopy(password(), "mật khẩu")} title="Sao chép mật khẩu">
+                    <button
+                      type="button"
+                      class="action-btn"
+                      onClick={() => handleCopy(password(), "mật khẩu")}
+                      title="Sao chép mật khẩu"
+                    >
                       <CopyIcon />
                     </button>
                   </Show>
@@ -228,7 +291,12 @@ export const ItemDetail: Component = () => {
               <div class="card mb-16">
                 {/* Rolling TOTP Display */}
                 <Show when={totpCode()}>
-                  <div class="totp-row" onClick={() => handleCopy(totpCode().replace(/\s/g, ""), "mã TOTP")} title="Nhấp để sao chép mã TOTP">
+                  <div
+                    class="totp-row"
+                    onClick={() =>
+                      handleCopy(totpCode().replace(/\s/g, ""), "mã TOTP")}
+                    title="Nhấp để sao chép mã TOTP"
+                  >
                     <div class="totp-content">
                       <div class="totp-label">Mã xác thực hiện tại (TOTP)</div>
                       <div class="totp-code">{totpCode()}</div>
@@ -258,7 +326,9 @@ export const ItemDetail: Component = () => {
                         <div class="field-content">
                           <div class="field-label">Passkey đã liên kết</div>
                           <div class="field-value">
-                            <strong>{cred.userName || "Không có tên"}</strong> (RP: {cred.rpId})
+                            <strong>{cred.userName || "Không có tên"}</strong>
+                            {" "}
+                            (RP: {cred.rpId})
                           </div>
                         </div>
                       </div>
@@ -279,10 +349,20 @@ export const ItemDetail: Component = () => {
                 </div>
                 <Show when={uri()}>
                   <div class="field-actions">
-                    <button type="button" class="action-btn" onClick={() => window.open(uri(), "_blank")} title="Truy cập trang web">
+                    <button
+                      type="button"
+                      class="action-btn"
+                      onClick={() => window.open(uri(), "_blank")}
+                      title="Truy cập trang web"
+                    >
                       <ExternalLinkIcon class="icon-inline" />
                     </button>
-                    <button type="button" class="action-btn" onClick={() => handleCopy(uri(), "địa chỉ URI")} title="Sao chép trang web">
+                    <button
+                      type="button"
+                      class="action-btn"
+                      onClick={() => handleCopy(uri(), "địa chỉ URI")}
+                      title="Sao chép trang web"
+                    >
                       <CopyIcon />
                     </button>
                   </div>
@@ -293,46 +373,72 @@ export const ItemDetail: Component = () => {
 
           {/* Card 4: Custom Fields */}
           <Show when={fields().length > 0}>
-            <div class="detail-section-title" style={{ "margin-top": store.selectedItem?.type === VaultItemType.SecureNote ? "0" : "16px" }}>Trường tùy chỉnh</div>
+            <div
+              class="detail-section-title"
+              style={{
+                "margin-top":
+                  store.selectedItem?.type === VaultItemType.SecureNote
+                    ? "0"
+                    : "16px",
+              }}
+            >
+              Trường tùy chỉnh
+            </div>
             <div class="card mb-16">
-               <For each={fields()}>
+              <For each={fields()}>
                 {(field, index) => (
-                  <Show when={field.type === 2} fallback={
-                    <div class="detail-row">
-                      <div class="field-content">
-                        <div class="field-label">{field.name || "Trường tùy chỉnh"}</div>
-                        <div class="field-value">
-                          {field.type === 1 
-                            ? (visibleFields()[index()] ? field.value : "••••••••••••") 
-                            : field.value || "Trống"}
+                  <Show
+                    when={field.type === 2}
+                    fallback={
+                      <div class="detail-row">
+                        <div class="field-content">
+                          <div class="field-label">
+                            {field.name || "Trường tùy chỉnh"}
+                          </div>
+                          <div class="field-value">
+                            {field.type === 1
+                              ? (visibleFields()[index()]
+                                ? field.value
+                                : "••••••••••••")
+                              : field.value || "Trống"}
+                          </div>
+                        </div>
+                        <div class="field-actions">
+                          <Show when={field.type === 1}>
+                            <button
+                              type="button"
+                              class="action-btn"
+                              onClick={() => toggleFieldVisibility(index())}
+                              title={visibleFields()[index()]
+                                ? "Ẩn giá trị"
+                                : "Hiển thị giá trị"}
+                            >
+                              <Show
+                                when={visibleFields()[index()]}
+                                fallback={<EyeIcon class="icon-inline" />}
+                              >
+                                <EyeOffIcon class="icon-inline" />
+                              </Show>
+                            </button>
+                          </Show>
+                          <Show when={field.value}>
+                            <button
+                              type="button"
+                              class="action-btn"
+                              onClick={() =>
+                                handleCopy(
+                                  field.value,
+                                  field.name || "giá trị",
+                                )}
+                              title={`Sao chép ${field.name || "giá trị"}`}
+                            >
+                              <CopyIcon />
+                            </button>
+                          </Show>
                         </div>
                       </div>
-                      <div class="field-actions">
-                        <Show when={field.type === 1}>
-                          <button 
-                            type="button" 
-                            class="action-btn" 
-                            onClick={() => toggleFieldVisibility(index())}
-                            title={visibleFields()[index()] ? "Ẩn giá trị" : "Hiển thị giá trị"}
-                          >
-                            <Show when={visibleFields()[index()]} fallback={<EyeIcon class="icon-inline" />}>
-                              <EyeOffIcon class="icon-inline" />
-                            </Show>
-                          </button>
-                        </Show>
-                        <Show when={field.value}>
-                          <button 
-                            type="button" 
-                            class="action-btn" 
-                            onClick={() => handleCopy(field.value, field.name || "giá trị")} 
-                            title={`Sao chép ${field.name || "giá trị"}`}
-                          >
-                            <CopyIcon />
-                          </button>
-                        </Show>
-                      </div>
-                    </div>
-                  }>
+                    }
+                  >
                     {/* Divider row */}
                     <div class="custom-field-divider">
                       <span>{field.name || "Phân cách"}</span>
@@ -345,7 +451,18 @@ export const ItemDetail: Component = () => {
 
           {/* Card 5: Notes display */}
           <Show when={notes()}>
-            <div class="detail-section-title" style={{ "margin-top": (store.selectedItem?.type === VaultItemType.SecureNote && fields().length === 0) ? "0" : "16px" }}>Ghi chú</div>
+            <div
+              class="detail-section-title"
+              style={{
+                "margin-top":
+                  (store.selectedItem?.type === VaultItemType.SecureNote &&
+                      fields().length === 0)
+                    ? "0"
+                    : "16px",
+              }}
+            >
+              Ghi chú
+            </div>
             <div class="card mb-16">
               <div style="padding: 8px 12px;">
                 <div class="notes-display">{notes()}</div>
@@ -356,6 +473,14 @@ export const ItemDetail: Component = () => {
 
         {/* Footer: Sửa và Xóa */}
         <div class="detail-footer-bar">
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleGoToEdit}
+            class="min-w-100"
+          >
+            Sửa
+          </Button>
           <button
             type="button"
             class="detail-delete-btn"
@@ -364,7 +489,6 @@ export const ItemDetail: Component = () => {
           >
             <TrashIcon class="icon-inline-large" />
           </button>
-          <Button type="button" variant="primary" onClick={handleGoToEdit} class="min-w-100">Sửa</Button>
         </div>
       </div>
     </div>

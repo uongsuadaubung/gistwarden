@@ -13,7 +13,10 @@ try {
 // Forward messages between main-world (page-script) and extension-world (background)
 window.addEventListener("message", (event) => {
   // Only handle messages coming from our own page script
-  if (event.source !== window || !event.data || event.data.source !== "gistwarden-page-script") {
+  if (
+    event.source !== window || !event.data ||
+    event.data.source !== "gistwarden-page-script"
+  ) {
     return;
   }
 
@@ -28,9 +31,10 @@ window.addEventListener("message", (event) => {
           source: "gistwarden-content-script",
           requestId,
           success: false,
-          error: chrome.runtime.lastError.message || "Background worker unavailable",
+          error: chrome.runtime.lastError.message ||
+            "Background worker unavailable",
         },
-        "*"
+        "*",
       );
       return;
     }
@@ -44,7 +48,7 @@ window.addEventListener("message", (event) => {
         result: response?.result,
         error: response?.error,
       },
-      "*"
+      "*",
     );
   });
 });

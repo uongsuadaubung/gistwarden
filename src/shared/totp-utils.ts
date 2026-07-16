@@ -4,7 +4,9 @@
  */
 export function parseTotpSecret(rawSecret: string): string {
   let secret = rawSecret.trim();
-  if (secret.toLowerCase().startsWith("otpauth:") || secret.includes("secret=")) {
+  if (
+    secret.toLowerCase().startsWith("otpauth:") || secret.includes("secret=")
+  ) {
     try {
       const parseableUrl = secret.replace(/^otpauth:/i, "http:");
       const url = new URL(parseableUrl);

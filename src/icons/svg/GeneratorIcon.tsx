@@ -4,8 +4,9 @@ import { type IconProps } from "./types.ts";
 export const GeneratorIcon: Component<IconProps> = (props) => {
   return (
     <svg viewBox="0 0 24 24" {...props}>
-      <path d="M7 17H5v-2h2v2zm10-10h-2v2h2V7zm-2 4h-2v2h2v-2zm-4 4H9v2h2v-2zm-2-4H7v2h2v-2zm8 4h-2v2h2v-2zm2-8H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H5V9h14v12z"/>
+      <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z M12 8.5l1.35 2.73 3.01.44-2.18 2.12.51 3-2.69-1.42-2.69 1.42.51-3-2.18-2.12 3.01-.44L12 8.5z" />
     </svg>
   );
 };
+
 export default GeneratorIcon;

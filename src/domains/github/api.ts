@@ -27,7 +27,7 @@ export type GistType = z.infer<typeof GistSchema>;
 
 async function githubRequest(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<unknown> {
   const settings = await getAllSettings();
   const token = settings.githubToken;
@@ -57,10 +57,18 @@ async function githubRequest(
     throw new Error(errMsg);
   }
 
+  if (response.status === 204) {
+    return null;
+  }
+
   return response.json();
 }
 
-export async function validateToken(token: string): Promise<{ success: boolean; username?: string; avatarUrl?: string; error?: string }> {
+export async function validateToken(
+  token: string,
+): Promise<
+  { success: boolean; username?: string; avatarUrl?: string; error?: string }
+> {
   try {
     const response = await fetch(`${GITHUB_API_BASE}/user`, {
       cache: "no-store",
@@ -92,7 +100,7 @@ export async function findGistId(): Promise<string> {
   const raw = await githubRequest("/gists");
   const gists = GistArraySchema.parse(raw);
   const target = gists.find(
-    (g) => g.description === GIST_DESCRIPTION && GIST_FILE_NAME in g.files
+    (g) => g.description === GIST_DESCRIPTION && GIST_FILE_NAME in g.files,
   );
   return target ? target.id : "";
 }
@@ -113,7 +121,10 @@ export async function createGist(content: string): Promise<GistType> {
   return GistSchema.parse(raw);
 }
 
-export async function updateGist(gistId: string, content: string): Promise<unknown> {
+export async function updateGist(
+  gistId: string,
+  content: string,
+): Promise<unknown> {
   return await githubRequest(`/gists/${gistId}`, {
     method: "PATCH",
     body: JSON.stringify({
@@ -127,7 +138,9 @@ export async function updateGist(gistId: string, content: string): Promise<unkno
   });
 }
 
-export async function uploadToGist(content: string): Promise<{ success: boolean; error?: string }> {
+export async function uploadToGist(
+  content: string,
+): Promise<{ success: boolean; error?: string }> {
   try {
     const settings = await getAllSettings();
     let gistId = settings.gistId;
@@ -153,7 +166,9 @@ export async function uploadToGist(content: string): Promise<{ success: boolean;
   }
 }
 
-export async function downloadFromGist(): Promise<{ success: boolean; content?: string; updatedAt?: number; error?: string }> {
+export async function downloadFromGist(): Promise<
+  { success: boolean; content?: string; updatedAt?: number; error?: string }
+> {
   try {
     const settings = await getAllSettings();
     let gistId = settings.gistId;
@@ -161,7 +176,10 @@ export async function downloadFromGist(): Promise<{ success: boolean; content?: 
     if (!gistId) {
       gistId = await findGistId();
       if (!gistId) {
-        return { success: false, error: "Gistwarden vault not found on GitHub" };
+        return {
+          success: false,
+          error: "Gistwarden vault not found on GitHub",
+        };
       }
       await updateSettings({ gistId });
     }
@@ -182,6 +200,22 @@ export async function downloadFromGist(): Promise<{ success: boolean; content?: 
       content,
       updatedAt,
     };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export async function deleteGist(
+  gistId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await githubRequest(`/gists/${gistId}`, {
+      method: "DELETE",
+    });
+    return { success: true };
   } catch (error) {
     return {
       success: false,

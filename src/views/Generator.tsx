@@ -1,5 +1,5 @@
-import { createSignal, onMount, type Component, Show } from "solid-js";
-import Button from "./Button.tsx";
+import { type Component, createSignal, onMount, Show } from "solid-js";
+import Button from "@/components/Button.tsx";
 import { RefreshIcon } from "@/icons/svg/index.ts";
 
 export const Generator: Component = () => {

@@ -1,26 +1,41 @@
-import { assertEquals, assertNotEquals, assertRejects } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { deriveKey, encryptData, decryptData, generateSalt } from "./crypto.ts";
 import {
-  createPasskeyKeyPair,
-  p1363ToDer,
-  bufferToBase64Url,
+  assertEquals,
+  assertNotEquals,
+  assertRejects,
+} from "https://deno.land/std@0.224.0/assert/mod.ts";
+import {
+  decryptData,
+  deriveKey,
+  encryptData,
+  generateSalt,
+} from "@/shared/crypto.ts";
+import {
   base64UrlToBuffer,
+  bufferToBase64Url,
+  createPasskeyKeyPair,
   getRawCredentialId,
-} from "./passkey-crypto.ts";
+  p1363ToDer,
+} from "@/shared/passkey-crypto.ts";
+import { parseTotpSecret } from "@/shared/totp-utils.ts";
+import { Fido2CredentialSchema } from "@/shared/types.ts";
+import { ImportItemSchema } from "@/shared/types.ts";
 
 Deno.test("Crypto - Key derivation, Encryption and Decryption", async () => {
   const password = "SuperSecretPassword123";
   const salt = generateSalt();
-  
+
   // 1. Derive key
   const key = await deriveKey(password, salt);
   assertEquals(key instanceof CryptoKey, true);
   assertEquals(key.algorithm.name, "AES-GCM");
 
   // 2. Encrypt
-  const secretText = JSON.stringify({ message: "Hello Gistwarden!", secrets: [1, 2, 3] });
+  const secretText = JSON.stringify({
+    message: "Hello Gistwarden!",
+    secrets: [1, 2, 3],
+  });
   const encrypted = await encryptData(secretText, key);
-  
+
   assertEquals(typeof encrypted.iv, "string");
   assertEquals(typeof encrypted.ciphertext, "string");
   assertNotEquals(encrypted.ciphertext, secretText);
@@ -59,8 +74,10 @@ Deno.test("Passkey Crypto - Keypair and base64url conversion", async () => {
 Deno.test("Passkey Crypto - signature conversion and validation", async () => {
   // 1. Generate signature components (R and S)
   const keyPair = await createPasskeyKeyPair();
-  const testMessage = new TextEncoder().encode("webauthn authentication challenge data");
-  
+  const testMessage = new TextEncoder().encode(
+    "webauthn authentication challenge data",
+  );
+
   const rawSignature = new Uint8Array(
     await crypto.subtle.sign(
       {
@@ -68,8 +85,8 @@ Deno.test("Passkey Crypto - signature conversion and validation", async () => {
         hash: { name: "SHA-256" },
       },
       keyPair.privateKey,
-      testMessage
-    )
+      testMessage,
+    ),
   );
 
   // Raw signature is P1363 (64 bytes for ES256)
@@ -87,7 +104,7 @@ Deno.test("Passkey Crypto - signature conversion and validation", async () => {
     spkiBytes,
     { name: "ECDSA", namedCurve: "P-256" },
     true,
-    ["verify"]
+    ["verify"],
   );
 
   const verified = await crypto.subtle.verify(
@@ -97,17 +114,16 @@ Deno.test("Passkey Crypto - signature conversion and validation", async () => {
     },
     verifyKey,
     rawSignature,
-    testMessage
+    testMessage,
   );
   assertEquals(verified, true);
 });
 
-import { parseTotpSecret } from "./totp-utils.ts";
-
 Deno.test("TOTP - parseTotpSecret utility", () => {
   const secret1 = "RA226YVGYO3SYFWO";
   const secret2 = "  ra226yvgyo3syfwo  ";
-  const secret3 = "otpauth://totp/pam.insmart.com.vn:abc?secret=RA226YVGYO3SYFWO&issuer=pam.insmart.com.vn";
+  const secret3 =
+    "otpauth://totp/pam.insmart.com.vn:abc?secret=RA226YVGYO3SYFWO&issuer=pam.insmart.com.vn";
   const secret4 = "otpauth://totp/Test?secret=ra226yvgyo3syfwo";
 
   assertEquals(parseTotpSecret(secret1), "RA226YVGYO3SYFWO");
@@ -115,8 +131,6 @@ Deno.test("TOTP - parseTotpSecret utility", () => {
   assertEquals(parseTotpSecret(secret3), "RA226YVGYO3SYFWO");
   assertEquals(parseTotpSecret(secret4), "RA226YVGYO3SYFWO");
 });
-
-import { Fido2CredentialSchema } from "./store.ts";
 
 Deno.test("FIDO2 Schema - parse Bitwarden exported credentials format", () => {
   const bitwardenFormat = {
@@ -128,11 +142,11 @@ Deno.test("FIDO2 Schema - parse Bitwarden exported credentials format", () => {
     rpId: "github.com",
     userHandle: "dXNlci1pZC0xMjM=",
     userName: "testuser",
-    counter: "15",              // String counter in Bitwarden export
+    counter: "15", // String counter in Bitwarden export
     rpName: "GitHub",
     userDisplayName: "Test User",
-    discoverable: "true",       // String boolean in Bitwarden export
-    creationDate: "2026-07-15T03:00:00.000Z"
+    discoverable: "true", // String boolean in Bitwarden export
+    creationDate: "2026-07-15T03:00:00.000Z",
   };
 
   const parsed = Fido2CredentialSchema.parse(bitwardenFormat);
@@ -147,7 +161,22 @@ Deno.test("Passkey Crypto - getRawCredentialId format parsing", () => {
   // Test UUID format (e.g. "bc7cdc36-1657-44a4-aa04-e4cecf774343")
   const uuid = "bc7cdc36-1657-44a4-aa04-e4cecf774343";
   const expectedBytes = new Uint8Array([
-    0xbc, 0x7c, 0xdc, 0x36, 0x16, 0x57, 0x44, 0xa4, 0xaa, 0x04, 0xe4, 0xce, 0xcf, 0x77, 0x43, 0x43
+    0xbc,
+    0x7c,
+    0xdc,
+    0x36,
+    0x16,
+    0x57,
+    0x44,
+    0xa4,
+    0xaa,
+    0x04,
+    0xe4,
+    0xce,
+    0xcf,
+    0x77,
+    0x43,
+    0x43,
   ]);
   const parsedUuidBytes = getRawCredentialId(uuid);
   assertEquals(parsedUuidBytes, expectedBytes);
@@ -161,4 +190,64 @@ Deno.test("Passkey Crypto - getRawCredentialId format parsing", () => {
   const b64prefixed = "b64.vHzcNhZXRKSqBOTOz3dDQw";
   const parsedPrefixedBytes = getRawCredentialId(b64prefixed);
   assertEquals(parsedPrefixedBytes, expectedBytes);
+});
+
+Deno.test("FIDO2 Schema - parse empty fields (name and counter) like struct.json", () => {
+  const fidoFormat = {
+    credentialId: "",
+    keyType: "",
+    keyAlgorithm: "",
+    keyCurve: "",
+    keyValue: "",
+    rpId: "",
+    userHandle: "",
+    userName: "",
+    counter: "", // Empty string counter
+    rpName: "",
+    userDisplayName: "",
+    discoverable: "", // Empty string discoverable
+    creationDate: "",
+  };
+
+  const parsed = Fido2CredentialSchema.parse(fidoFormat);
+  assertEquals(parsed.counter, 0); // Transformed empty string to 0
+  assertEquals(parsed.discoverable, false); // Transformed empty string to false
+  assertEquals(parsed.credentialId, "");
+});
+
+Deno.test("Import Schema - validate Login and SecureNote separately", () => {
+  const rawLogin = {
+    type: 1,
+    name: "",
+    favorite: false,
+    notes: "",
+    fields: [],
+    login: {
+      uris: [{ uri: "" }],
+      fido2Credentials: [],
+      username: "",
+      password: "",
+    },
+  };
+
+  const rawNote = {
+    type: 2,
+    name: "",
+    favorite: false,
+    notes: "",
+    fields: [],
+    secureNote: {
+      type: 0,
+    },
+  };
+
+  // Validate Login item passes
+  const parsedLogin = ImportItemSchema.parse(rawLogin);
+  assertEquals(parsedLogin.type, 1);
+  assertEquals(parsedLogin.name, "");
+
+  // Validate SecureNote item passes
+  const parsedNote = ImportItemSchema.parse(rawNote);
+  assertEquals(parsedNote.type, 2);
+  assertEquals(parsedNote.name, "");
 });

@@ -5,8 +5,8 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
-  writeFileSync,
   statSync,
+  writeFileSync,
 } from "fs";
 import { join } from "path";
 import { build, context, type PluginBuild } from "esbuild";
@@ -176,12 +176,14 @@ async function runBuild() {
     await firefoxCtx.watch();
 
     console.log("Watching for file changes. Press Ctrl+C to stop.");
-    
+
     // Simple watch loop for SCSS and assets
     const watcher = Deno.watchFs(srcDir);
     for await (const event of watcher) {
-      const hasScssChange = event.paths.some(p => p.endsWith(".scss"));
-      const hasAssetChange = event.paths.some(p => p.endsWith(".json") || p.endsWith(".html") || p.includes("icons"));
+      const hasScssChange = event.paths.some((p) => p.endsWith(".scss"));
+      const hasAssetChange = event.paths.some((p) =>
+        p.endsWith(".json") || p.endsWith(".html") || p.includes("icons")
+      );
       if (hasScssChange) {
         compileSCSS();
       }

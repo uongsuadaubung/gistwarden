@@ -1,9 +1,18 @@
-import { createSignal, onMount, type Component, Show } from "solid-js";
-import { store, storeActions } from "@/shared/store.ts";
+import { type Component, createSignal, onMount, Show } from "solid-js";
+import { store, storeActions, View } from "@/shared/store.ts";
 import { z } from "zod";
-import Button from "./Button.tsx";
-import Input from "./Input.tsx";
-import { ThemeIcon, SyncIcon, KeyIcon, UploadIcon, LockIcon, TrashIcon, LogoutIcon, ArrowLeftIcon } from "@/icons/svg/index.ts";
+import Button from "@/components/Button.tsx";
+import Input from "@/components/Input.tsx";
+import {
+  ArrowLeftIcon,
+  KeyIcon,
+  LockIcon,
+  LogoutIcon,
+  ThemeIcon,
+  TrashIcon,
+  ShieldIcon,
+  ChevronRightIcon,
+} from "@/icons/svg/index.ts";
 
 const ThemeStorageSchema = z.object({
   gistwarden_theme: z.string().optional(),
@@ -20,14 +29,14 @@ export const Settings: Component = () => {
   const [newPassword, setNewPassword] = createSignal("");
   const [confirmPassword, setConfirmPassword] = createSignal("");
 
-  let fileInputRef: HTMLInputElement | undefined;
-
   onMount(async () => {
     // Load theme from storage
     if (typeof chrome !== "undefined" && chrome.storage) {
       const res = await chrome.storage.local.get("gistwarden_theme");
       const parsed = ThemeStorageSchema.safeParse(res);
-      const currentTheme = parsed.success ? (parsed.data.gistwarden_theme || "dark") : "dark";
+      const currentTheme = parsed.success
+        ? (parsed.data.gistwarden_theme || "dark")
+        : "dark";
       setTheme(currentTheme);
       applyTheme(currentTheme);
     }
@@ -50,70 +59,39 @@ export const Settings: Component = () => {
     }
   };
 
-  const handleSync = async () => {
-    setLoading(true);
-    setError("");
-    const res = await storeActions.syncVault();
-    setLoading(false);
-    if (res.success) {
-      storeActions.showToast("Đồng bộ dữ liệu thành công!", "success");
-    } else {
-      setError(res.error || "Lỗi đồng bộ");
-    }
-  };
-
-  const handleImportClick = () => {
-    fileInputRef?.click();
-  };
-
-  const handleFileChange = (e: Event) => {
-    const target = e.target;
-    if (!(target instanceof HTMLInputElement)) return;
-    const file = target.files?.[0];
-    if (!file) return;
-
-    setLoading(true);
-    setError("");
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const result = event.target?.result;
-      if (typeof result !== "string") return;
-      const text = result;
-      try {
-        const res = await storeActions.importJsonData(text);
-        if (res.success) {
-          storeActions.showToast(`Nhập thành công ${res.importedCount} tài khoản! Két sắt đã được đồng bộ lên Gist.`, "success");
-        } else {
-          setError(res.error || "Định dạng file không hợp lệ hoặc xác thực thất bại");
-        }
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        setError(errMsg || "Lỗi nhập file JSON");
-      } finally {
-        setLoading(false);
-        // Reset file input
-        if (fileInputRef) fileInputRef.value = "";
-      }
-    };
-    reader.readAsText(file);
-  };
-
   const handleLock = () => {
     storeActions.lock();
   };
 
-  const handleLogout = () => {
-    if (confirm("Bạn có chắc chắn muốn ngắt kết nối tài khoản GitHub? Thao tác này sẽ xóa toàn bộ cấu hình cục bộ.")) {
+  const handleLogout = async () => {
+    if (
+      await storeActions.confirm(
+        "Đăng xuất",
+        "Bạn có chắc chắn muốn ngắt kết nối tài khoản GitHub? Thao tác này sẽ xóa toàn bộ cấu hình cục bộ.",
+        "warning",
+      )
+    ) {
       storeActions.logout();
     }
   };
 
   const handleClearVault = async () => {
-    if (!confirm("Bạn có chắc chắn muốn xóa TOÀN BỘ tài khoản trong két sắt? Hành động này không thể hoàn tác và toàn bộ dữ liệu trên Gist sẽ bị xóa sạch.")) {
+    if (
+      !(await storeActions.confirm(
+        "Xóa toàn bộ tài khoản",
+        "Bạn có chắc chắn muốn xóa TOÀN BỘ tài khoản trong két sắt? Hành động này không thể hoàn tác và toàn bộ dữ liệu trên Gist sẽ bị xóa sạch.",
+        "danger",
+      ))
+    ) {
       return;
     }
-    if (!confirm("XÁC NHẬN LẦN CUỐI: Xóa vĩnh viễn toàn bộ dữ liệu tài khoản?")) {
+    if (
+      !(await storeActions.confirm(
+        "Xác nhận xóa vĩnh viễn",
+        "XÁC NHẬN LẦN CUỐI: Xóa vĩnh viễn toàn bộ dữ liệu tài khoản?",
+        "danger",
+      ))
+    ) {
       return;
     }
 
@@ -122,7 +100,10 @@ export const Settings: Component = () => {
     try {
       const res = await storeActions.clearVault();
       if (res.success) {
-        storeActions.showToast("Đã xóa toàn bộ tài khoản trong két sắt thành công!", "success");
+        storeActions.showToast(
+          "Đã xóa toàn bộ tài khoản trong két sắt thành công!",
+          "success",
+        );
       } else {
         setError(res.error || "Lỗi xóa két sắt");
       }
@@ -148,9 +129,15 @@ export const Settings: Component = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await storeActions.changeMasterPassword(currentPassword(), newPassword());
+      const res = await storeActions.changeMasterPassword(
+        currentPassword(),
+        newPassword(),
+      );
       if (res.success) {
-        storeActions.showToast("Đã đổi Mật khẩu Master và đồng bộ thành công!", "success");
+        storeActions.showToast(
+          "Đã đổi Mật khẩu Master và đồng bộ thành công!",
+          "success",
+        );
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
@@ -175,116 +162,161 @@ export const Settings: Component = () => {
   return (
     <div class="app-container">
       <div class="app-body">
-        <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 15px; font-weight: 600;">Cài đặt</h3>
+        <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 15px; font-weight: 600;">
+          Cài đặt
+        </h3>
 
         <Show when={error()}>
           <div class="alert alert-danger">{error()}</div>
         </Show>
 
-        <Show when={isChangingPassword()} fallback={
-          <>
-            {/* User profile */}
-            <Show when={store.cachedGithubUser}>
-              <div class="user-panel">
-                <img class="avatar" src={store.cachedGithubUser?.avatar_url} alt="avatar" />
-                <div class="user-info">
-                  <div
-                    class="username"
-                    style="cursor: pointer; color: var(--primary); text-decoration: underline;"
-                    onClick={handleOpenGist}
-                    title="Mở Gist lưu trữ trên GitHub"
-                  >
-                    @{store.cachedGithubUser?.login}
+        <Show
+          when={isChangingPassword()}
+          fallback={
+            <>
+              {/* User profile */}
+              <Show when={store.cachedGithubUser}>
+                <div class="user-panel">
+                  <img
+                    class="avatar"
+                    src={store.cachedGithubUser?.avatar_url}
+                    alt="avatar"
+                  />
+                  <div class="user-info">
+                    <div
+                      class="username"
+                      style="cursor: pointer; color: var(--primary); text-decoration: underline;"
+                      onClick={handleOpenGist}
+                      title="Mở Gist lưu trữ trên GitHub"
+                    >
+                      @{store.cachedGithubUser?.login}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Show>
+              </Show>
 
-            {/* Settings options list */}
-            <div class="card" style="padding: 0 16px;">
-              {/* Toggle Theme */}
-              <div class="setting-row" onClick={handleToggleTheme}>
-                <div>
-                  <div class="setting-label">Giao diện</div>
-                  <div class="setting-sub">Hiện tại: {theme() === "dark" ? "Tối" : "Sáng"}</div>
-                </div>
-                <ThemeIcon />
-              </div>
-
-              {/* Sync */}
-              <div class="setting-row" onClick={handleSync}>
-                <div>
-                  <div class="setting-label">Đồng bộ thủ công</div>
-                  <div class="setting-sub">
-                    Lần cuối: {store.lastSync ? new Date(store.lastSync).toLocaleTimeString() : "Chưa đồng bộ"}
+              {/* Settings options list */}
+              <div class="card" style="padding: 0 16px;">
+                {/* Toggle Theme */}
+                <div class="setting-row" onClick={handleToggleTheme}>
+                  <div class="setting-row-left">
+                    <ThemeIcon />
+                    <div>
+                      <div class="setting-label">Giao diện</div>
+                      <div class="setting-sub">
+                        Hiện tại: {theme() === "dark" ? "Tối" : "Sáng"}
+                      </div>
+                    </div>
                   </div>
+                  <ChevronRightIcon />
                 </div>
-                <SyncIcon class={loading() ? "spinning" : ""} />
-              </div>
 
-              {/* Change Master Password */}
-              <div class="setting-row" onClick={() => { setIsChangingPassword(true); setError(""); }}>
-                <div>
-                  <div class="setting-label">Đổi mật khẩu Master</div>
-                  <div class="setting-sub">Mã hóa lại két sắt bằng mật khẩu mới</div>
+                {/* Vault Options */}
+                <div
+                  class="setting-row"
+                  onClick={() => storeActions.navigate(View.VaultOptions)}
+                >
+                  <div class="setting-row-left">
+                    <ShieldIcon />
+                    <div>
+                      <div class="setting-label">Tùy chọn két sắt</div>
+                      <div class="setting-sub">
+                        Đồng bộ, nhập và xuất dữ liệu
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRightIcon />
                 </div>
-                <KeyIcon />
-              </div>
 
-              {/* Import JSON */}
-              <div class="setting-row" onClick={handleImportClick}>
-                <div>
-                  <div class="setting-label">Nhập tài khoản (Import JSON)</div>
-                  <div class="setting-sub">Hỗ trợ file accounts.json hoặc xuất từ Bitwarden</div>
+                {/* Change Master Password */}
+                <div
+                  class="setting-row"
+                  onClick={() => {
+                    setIsChangingPassword(true);
+                    setError("");
+                  }}
+                >
+                  <div class="setting-row-left">
+                    <KeyIcon />
+                    <div>
+                      <div class="setting-label">Đổi mật khẩu Master</div>
+                      <div class="setting-sub">
+                        Mã hóa lại két sắt bằng mật khẩu mới
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRightIcon />
                 </div>
-                <UploadIcon />
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept=".json"
-                  style="display: none;"
-                  onChange={handleFileChange}
-                />
-              </div>
 
-              {/* Lock Vault */}
-              <div class="setting-row" onClick={handleLock}>
-                <div>
-                  <div class="setting-label">Khóa két sắt</div>
-                  <div class="setting-sub">Mở lại bằng Mật khẩu Master</div>
+                {/* Lock Vault */}
+                <div class="setting-row" onClick={handleLock}>
+                  <div class="setting-row-left">
+                    <LockIcon />
+                    <div>
+                      <div class="setting-label">Khóa két sắt</div>
+                      <div class="setting-sub">Mở lại bằng Mật khẩu Master</div>
+                    </div>
+                  </div>
+                  <ChevronRightIcon />
                 </div>
-                <LockIcon />
-              </div>
 
-              {/* Clear Vault */}
-              <div class="setting-row" onClick={handleClearVault}>
-                <div>
-                  <div class="setting-label" style="color: var(--error);">Xóa toàn bộ tài khoản</div>
-                  <div class="setting-sub">Xóa vĩnh viễn mọi dữ liệu trong két sắt</div>
+                {/* Clear Vault */}
+                <div class="setting-row" onClick={handleClearVault}>
+                  <div class="setting-row-left">
+                    <TrashIcon style="color: var(--error);" />
+                    <div>
+                      <div class="setting-label" style="color: var(--error);">
+                        Xóa toàn bộ tài khoản
+                      </div>
+                      <div class="setting-sub">
+                        Xóa vĩnh viễn mọi dữ liệu trong két sắt
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRightIcon style="color: var(--error);" />
                 </div>
-                <TrashIcon style="color: var(--error);" />
-              </div>
 
-              {/* Disconnect/Logout */}
-              <div class="setting-row" onClick={handleLogout}>
-                <div>
-                  <div class="setting-label" style="color: var(--error);">Đăng xuất</div>
-                  <div class="setting-sub">Ngắt kết nối và xóa cấu hình Gist</div>
+                {/* Disconnect/Logout */}
+                <div class="setting-row" onClick={handleLogout}>
+                  <div class="setting-row-left">
+                    <LogoutIcon style="color: var(--error);" />
+                    <div>
+                      <div class="setting-label" style="color: var(--error);">
+                        Đăng xuất
+                      </div>
+                      <div class="setting-sub">
+                        Ngắt kết nối và xóa cấu hình Gist
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRightIcon style="color: var(--error);" />
                 </div>
-                <LogoutIcon style="color: var(--error);" />
               </div>
-            </div>
-          </>
-        }>
+            </>
+          }
+        >
           {/* Change Password Form View */}
-          <div class="detail-header" style="margin-top: 6px; margin-bottom: 16px;">
-            <div class="back-btn" onClick={() => { setIsChangingPassword(false); setError(""); }}>
+          <div
+            class="detail-header"
+            style="margin-top: 6px; margin-bottom: 16px;"
+          >
+            <div
+              class="back-btn"
+              onClick={() => {
+                setIsChangingPassword(false);
+                setError("");
+              }}
+            >
               <ArrowLeftIcon />
             </div>
             <div class="detail-title">Đổi mật khẩu Master</div>
           </div>
 
-          <form onSubmit={handleChangePassword} class="card" style="padding: 16px; margin-bottom: 0;">
+          <form
+            onSubmit={handleChangePassword}
+            class="card"
+            style="padding: 16px; margin-bottom: 0;"
+          >
             <div class="form-group">
               <label for="current-pass">Mật khẩu hiện tại</label>
               <Input
@@ -329,7 +361,10 @@ export const Settings: Component = () => {
                 type="button"
                 variant="secondary"
                 block
-                onClick={() => { setIsChangingPassword(false); setError(""); }}
+                onClick={() => {
+                  setIsChangingPassword(false);
+                  setError("");
+                }}
                 disabled={loading()}
               >
                 Hủy

@@ -1,99 +1,26 @@
 import { createStore } from "solid-js/store";
-import { z } from "zod";
 import {
-  getAllSettings,
-  updateSettings,
-  getMasterPassword,
-  setMasterPassword,
   clearMasterPassword,
-  subscribeToSettings,
+  getAllSettings,
+  getMasterPassword,
   type GithubUser,
+  setMasterPassword,
+  subscribeToSettings,
+  updateSettings,
 } from "./storage.ts";
-import { deriveKey, encryptData, decryptData, generateSalt } from "./crypto.ts";
-import { View, type VaultItem, type LoginVaultItem, type SecureNoteVaultItem, VaultItemType } from "./types.ts";
+import { decryptData, deriveKey, encryptData, generateSalt } from "./crypto.ts";
+import {
+  ImportArraySchema,
+  type ImportItem,
+  ImportObjectSchema,
+  type LoginVaultItem,
+  type SecureNoteVaultItem,
+  type VaultItem,
+  VaultItemType,
+  VaultListSchema,
+  View,
+} from "./types.ts";
 export { View };
-
-// Zod schemas for validation
-const LoginUriSchema = z.object({
-  uri: z.string(),
-});
-
-export const Fido2CredentialSchema = z.object({
-  credentialId: z.string(),
-  keyType: z.string(),
-  keyAlgorithm: z.string(),
-  keyCurve: z.string(),
-  keyValue: z.string(),
-  rpId: z.string(),
-  userHandle: z.string().or(z.null()).optional(),
-  userName: z.string().or(z.null()).optional(),
-  counter: z.number().or(z.string()).transform((v) => typeof v === "string" ? parseInt(v) : v),
-  rpName: z.string().or(z.null()).optional(),
-  userDisplayName: z.string().or(z.null()).optional(),
-  discoverable: z.boolean().or(z.string()).transform((v) => typeof v === "string" ? v === "true" : v).optional(),
-  creationDate: z.string().or(z.date()).transform((v) => v instanceof Date ? v.toISOString() : v).optional(),
-});
-
-export const VaultFieldSchema = z.object({
-  type: z.number().default(0),
-  name: z.string().or(z.null()).optional().transform((v) => v || ""),
-  value: z.string().or(z.null()).optional().transform((v) => v || ""),
-});
-
-const BaseVaultItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  notes: z.string().optional(),
-  favorite: z.boolean().optional(),
-  fields: z.array(VaultFieldSchema).optional(),
-  creationDate: z.string().optional(),
-  revisionDate: z.string().optional(),
-});
-
-const LoginVaultItemSchema = BaseVaultItemSchema.extend({
-  type: z.literal(VaultItemType.Login),
-  login: z.object({
-    username: z.string().optional(),
-    password: z.string().optional(),
-    totp: z.string().optional(),
-    uris: z.array(LoginUriSchema).optional(),
-    fido2Credentials: z.array(Fido2CredentialSchema).optional(),
-  }).optional(),
-});
-
-const SecureNoteVaultItemSchema = BaseVaultItemSchema.extend({
-  type: z.literal(VaultItemType.SecureNote),
-});
-
-const VaultItemSchema = z.discriminatedUnion("type", [
-  LoginVaultItemSchema,
-  SecureNoteVaultItemSchema,
-]);
-
-const VaultListSchema = z.array(VaultItemSchema);
-
-// Schema for raw import validation
-const ImportItemSchema = z.object({
-  type: z.number().nullish(),
-  name: z.string().min(1, "Tên tài khoản không được để trống"),
-  notes: z.string().nullish(),
-  favorite: z.boolean().nullish(),
-  fields: z.array(VaultFieldSchema).nullish(),
-  login: z.object({
-    username: z.string().nullish(),
-    password: z.string().nullish(),
-    totp: z.string().nullish(),
-    uris: z.array(z.object({ uri: z.string() })).nullish(),
-    fido2Credentials: z.array(Fido2CredentialSchema).nullish(),
-  }).nullish(),
-});
-
-const ImportArraySchema = z.array(ImportItemSchema);
-const ImportObjectSchema = z.object({
-  items: z.array(ImportItemSchema),
-});
-
-type ImportItem = z.infer<typeof ImportItemSchema>;
 
 export interface AppStore {
   githubToken: string;
@@ -103,19 +30,28 @@ export interface AppStore {
   lastSync: number;
   oauthClientId: string;
   oauthWorkerUrl: string;
-  
+
   isLoaded: boolean;
   isLocked: boolean;
   view: View;
   vaultItems: VaultItem[];
   selectedItem: VaultItem | null;
-  
+
   syncing: boolean;
   syncError: string;
 
   // Global Toast States
   toastMessage: string;
   toastType: "success" | "error" | "info";
+
+  // Reusable Confirmation Modal States
+  confirmModal: {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "info" | "warning" | "danger";
+    resolve: ((value: boolean) => void) | null;
+  };
 }
 
 const [store, setStore] = createStore<AppStore>({
@@ -126,18 +62,26 @@ const [store, setStore] = createStore<AppStore>({
   lastSync: 0,
   oauthClientId: "Ov23liRxwWqLXD5AOkNW",
   oauthWorkerUrl: "https://gistwarden.uongsuadaubung.workers.dev",
-  
+
   isLoaded: false,
   isLocked: true,
   view: View.Login,
   vaultItems: [],
   selectedItem: null,
-  
+
   syncing: false,
   syncError: "",
 
   toastMessage: "",
   toastType: "success",
+
+  confirmModal: {
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info",
+    resolve: null,
+  },
 });
 
 export { store };
@@ -147,9 +91,12 @@ let toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
 // Derived cryptokey helper
 let derivedCryptoKey: CryptoKey | null = null;
 
-async function getOrDeriveKey(password: string, saltBase64: string): Promise<CryptoKey> {
+async function getOrDeriveKey(
+  password: string,
+  saltBase64: string,
+): Promise<CryptoKey> {
   if (derivedCryptoKey) return derivedCryptoKey;
-  
+
   // Convert salt from base64
   const binaryString = atob(saltBase64);
   const salt = new Uint8Array(binaryString.length);
@@ -159,6 +106,10 @@ async function getOrDeriveKey(password: string, saltBase64: string): Promise<Cry
 
   derivedCryptoKey = await deriveKey(password, salt);
   return derivedCryptoKey;
+}
+
+function isLoginVaultItem(item: VaultItem): item is LoginVaultItem {
+  return item.type === VaultItemType.Login;
 }
 
 export const storeActions = {
@@ -188,13 +139,19 @@ export const storeActions = {
     if (settings.githubToken && masterPassword && settings.salt) {
       try {
         const key = await getOrDeriveKey(masterPassword, settings.salt);
-        const res = await new Promise<{ success: boolean; content?: string }>((resolve) => {
-          chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
-        });
+        const res = await new Promise<{ success: boolean; content?: string }>(
+          (resolve) => {
+            chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
+          },
+        );
 
         if (res && res.success && res.content) {
           const payload = JSON.parse(res.content);
-          const decrypted = await decryptData(payload.ciphertext, payload.iv, key);
+          const decrypted = await decryptData(
+            payload.ciphertext,
+            payload.iv,
+            key,
+          );
           const items = VaultListSchema.parse(JSON.parse(decrypted));
           setStore({
             vaultItems: items,
@@ -234,7 +191,9 @@ export const storeActions = {
     setStore("isLoaded", true);
   },
 
-  async unlock(password: string): Promise<{ success: boolean; error?: string }> {
+  async unlock(
+    password: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const settings = await getAllSettings();
       if (!settings.githubToken) {
@@ -247,7 +206,9 @@ export const storeActions = {
 
       // 1. Nếu salt cục bộ bị trống (ví dụ sau khi logout), tải Gist từ GitHub về để trích xuất salt cũ
       if (!saltBase64) {
-        const downloadRes = await new Promise<{ success: boolean; content?: string; error?: string }>((resolve) => {
+        const downloadRes = await new Promise<
+          { success: boolean; content?: string; error?: string }
+        >((resolve) => {
           chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
         });
 
@@ -267,7 +228,9 @@ export const storeActions = {
         }
       } else {
         // Nếu đã có salt cục bộ, tải dữ liệu két sắt từ Gist về bình thường
-        const downloadRes = await new Promise<{ success: boolean; content?: string; error?: string }>((resolve) => {
+        const downloadRes = await new Promise<
+          { success: boolean; content?: string; error?: string }
+        >((resolve) => {
           chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
         });
         if (downloadRes.success && downloadRes.content) {
@@ -293,9 +256,14 @@ export const storeActions = {
           ciphertext: encrypted.ciphertext,
         });
 
-        const res = await new Promise<{ success: boolean; error?: string }>((resolve) => {
-          chrome.runtime.sendMessage({ type: "UPLOAD_TO_GIST", content: payload }, resolve);
-        });
+        const res = await new Promise<{ success: boolean; error?: string }>(
+          (resolve) => {
+            chrome.runtime.sendMessage({
+              type: "UPLOAD_TO_GIST",
+              content: payload,
+            }, resolve);
+          },
+        );
 
         if (!res.success) {
           throw new Error(res.error || "Không thể tạo Gist trên GitHub");
@@ -322,12 +290,20 @@ export const storeActions = {
           ciphertext: encrypted.ciphertext,
         });
 
-        const uploadRes = await new Promise<{ success: boolean; error?: string }>((resolve) => {
-          chrome.runtime.sendMessage({ type: "UPLOAD_TO_GIST", content: payload }, resolve);
+        const uploadRes = await new Promise<
+          { success: boolean; error?: string }
+        >((resolve) => {
+          chrome.runtime.sendMessage({
+            type: "UPLOAD_TO_GIST",
+            content: payload,
+          }, resolve);
         });
 
         if (!uploadRes.success) {
-          return { success: false, error: uploadRes.error || "Lỗi tải két sắt từ Gist" };
+          return {
+            success: false,
+            error: uploadRes.error || "Lỗi tải két sắt từ Gist",
+          };
         }
 
         await setMasterPassword(password);
@@ -360,8 +336,17 @@ export const storeActions = {
     }
   },
 
-  async setupGithub(token: string): Promise<{ success: boolean; error?: string }> {
-    const res = await new Promise<{ success: boolean; username?: string; avatarUrl?: string; error?: string }>((resolve) => {
+  async setupGithub(
+    token: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    const res = await new Promise<
+      {
+        success: boolean;
+        username?: string;
+        avatarUrl?: string;
+        error?: string;
+      }
+    >((resolve) => {
       chrome.runtime.sendMessage({ type: "VALIDATE_TOKEN", token }, resolve);
     });
 
@@ -414,7 +399,9 @@ export const storeActions = {
     });
   },
 
-  async saveItem(item: Partial<VaultItem>): Promise<{ success: boolean; error?: string }> {
+  async saveItem(
+    item: Partial<VaultItem>,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const password = await getMasterPassword();
       if (!password || !store.salt) throw new Error("Vault is locked");
@@ -426,38 +413,57 @@ export const storeActions = {
       if (item.id) {
         // Edit
         updatedList = store.vaultItems.map((v) => {
-          if (v.id === item.id) {
-            const targetType = item.type !== undefined ? item.type : v.type;
-            if (targetType === VaultItemType.SecureNote) {
-              const updated: SecureNoteVaultItem = {
-                id: v.id,
-                type: VaultItemType.SecureNote,
-                name: item.name !== undefined ? item.name : v.name,
-                notes: item.notes !== undefined ? item.notes : v.notes,
-                favorite: item.favorite !== undefined ? item.favorite : v.favorite,
-                fields: item.fields !== undefined ? item.fields : v.fields,
-                creationDate: v.creationDate,
-                revisionDate: now,
-              };
-              return updated;
-            } else {
-              const itemLogin = "login" in item ? item.login : undefined;
-              const vLogin = "login" in v ? v.login : undefined;
-              const updated: LoginVaultItem = {
-                id: v.id,
-                type: VaultItemType.Login,
-                name: item.name !== undefined ? item.name : v.name,
-                notes: item.notes !== undefined ? item.notes : v.notes,
-                favorite: item.favorite !== undefined ? item.favorite : v.favorite,
-                fields: item.fields !== undefined ? item.fields : v.fields,
-                login: itemLogin !== undefined ? itemLogin : vLogin,
-                creationDate: v.creationDate,
-                revisionDate: now,
-              };
-              return updated;
-            }
+          if (v.id !== item.id) return v;
+
+          const targetType = item.type !== undefined ? item.type : v.type;
+          if (targetType === VaultItemType.SecureNote) {
+            return {
+              id: v.id,
+              type: VaultItemType.SecureNote,
+              name: item.name !== undefined ? item.name : v.name,
+              notes: item.notes !== undefined ? item.notes : v.notes,
+              favorite: item.favorite !== undefined ? item.favorite : v.favorite,
+              fields: item.fields !== undefined ? item.fields : v.fields,
+              creationDate: v.creationDate,
+              revisionDate: now,
+            };
           }
-          return v;
+
+          const itemLogin = "login" in item ? item.login : undefined;
+
+          // If changing type from SecureNote to Login, or v is not typed as Login yet
+          if (!isLoginVaultItem(v)) {
+            return {
+              id: v.id,
+              type: VaultItemType.Login,
+              name: item.name !== undefined ? item.name : v.name,
+              notes: item.notes !== undefined ? item.notes : v.notes,
+              favorite: item.favorite !== undefined ? item.favorite : v.favorite,
+              fields: item.fields !== undefined ? item.fields : v.fields,
+              login: itemLogin || {
+                username: "",
+                password: "",
+                totp: "",
+                uris: [],
+                fido2Credentials: [],
+              },
+              creationDate: v.creationDate,
+              revisionDate: now,
+            };
+          }
+
+          // v is safely narrowed to LoginVaultItem, so v.login is guaranteed to exist
+          return {
+            id: v.id,
+            type: VaultItemType.Login,
+            name: item.name !== undefined ? item.name : v.name,
+            notes: item.notes !== undefined ? item.notes : v.notes,
+            favorite: item.favorite !== undefined ? item.favorite : v.favorite,
+            fields: item.fields !== undefined ? item.fields : v.fields,
+            login: itemLogin !== undefined ? itemLogin : v.login,
+            creationDate: v.creationDate,
+            revisionDate: now,
+          };
         });
       } else {
         // New
@@ -483,7 +489,13 @@ export const storeActions = {
             notes: item.notes,
             favorite: item.favorite || false,
             fields: item.fields || [],
-            login: itemLogin,
+            login: itemLogin || {
+              username: "",
+              password: "",
+              totp: "",
+              uris: [],
+              fido2Credentials: [],
+            },
             creationDate: now,
             revisionDate: now,
           };
@@ -502,9 +514,14 @@ export const storeActions = {
         ciphertext: encrypted.ciphertext,
       });
 
-      const res = await new Promise<{ success: boolean; error?: string }>((resolve) => {
-        chrome.runtime.sendMessage({ type: "UPLOAD_TO_GIST", content: payload }, resolve);
-      });
+      const res = await new Promise<{ success: boolean; error?: string }>(
+        (resolve) => {
+          chrome.runtime.sendMessage({
+            type: "UPLOAD_TO_GIST",
+            content: payload,
+          }, resolve);
+        },
+      );
 
       if (!res.success) {
         throw new Error(res.error || "Lỗi đồng bộ lên GitHub Gist");
@@ -535,9 +552,14 @@ export const storeActions = {
         ciphertext: encrypted.ciphertext,
       });
 
-      const res = await new Promise<{ success: boolean; error?: string }>((resolve) => {
-        chrome.runtime.sendMessage({ type: "UPLOAD_TO_GIST", content: payload }, resolve);
-      });
+      const res = await new Promise<{ success: boolean; error?: string }>(
+        (resolve) => {
+          chrome.runtime.sendMessage({
+            type: "UPLOAD_TO_GIST",
+            content: payload,
+          }, resolve);
+        },
+      );
 
       if (!res.success) {
         throw new Error(res.error || "Lỗi đồng bộ lên GitHub Gist");
@@ -551,14 +573,20 @@ export const storeActions = {
     }
   },
 
-  async changeMasterPassword(currentPass: string, newPass: string): Promise<{ success: boolean; error?: string }> {
+  async changeMasterPassword(
+    currentPass: string,
+    newPass: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const activePass = await getMasterPassword();
       if (currentPass !== activePass) {
         return { success: false, error: "Mật khẩu Master hiện tại không đúng" };
       }
       if (!newPass.trim()) {
-        return { success: false, error: "Mật khẩu Master mới không được để trống" };
+        return {
+          success: false,
+          error: "Mật khẩu Master mới không được để trống",
+        };
       }
 
       // 1. Generate a new salt
@@ -569,7 +597,10 @@ export const storeActions = {
       const newKey = await deriveKey(newPass, rawSalt);
 
       // 3. Encrypt existing vault items with the new key
-      const encrypted = await encryptData(JSON.stringify(store.vaultItems), newKey);
+      const encrypted = await encryptData(
+        JSON.stringify(store.vaultItems),
+        newKey,
+      );
       const payload = JSON.stringify({
         salt: newSaltBase64,
         iv: encrypted.iv,
@@ -577,9 +608,14 @@ export const storeActions = {
       });
 
       // 4. Upload to Gist
-      const res = await new Promise<{ success: boolean; error?: string }>((resolve) => {
-        chrome.runtime.sendMessage({ type: "UPLOAD_TO_GIST", content: payload }, resolve);
-      });
+      const res = await new Promise<{ success: boolean; error?: string }>(
+        (resolve) => {
+          chrome.runtime.sendMessage({
+            type: "UPLOAD_TO_GIST",
+            content: payload,
+          }, resolve);
+        },
+      );
 
       if (!res.success) {
         throw new Error(res.error || "Lỗi đồng bộ mật khẩu mới lên Gist");
@@ -601,27 +637,29 @@ export const storeActions = {
 
   async clearVault(): Promise<{ success: boolean; error?: string }> {
     try {
-      const password = await getMasterPassword();
-      if (!password || !store.salt) throw new Error("Vault is locked");
-      const key = await getOrDeriveKey(password, store.salt);
+      const gistId = store.gistId;
+      if (gistId) {
+        const res = await new Promise<{ success: boolean; error?: string }>(
+          (resolve) => {
+            chrome.runtime.sendMessage({
+              type: "DELETE_GIST",
+              content: gistId,
+            }, resolve);
+          },
+        );
 
-      // Encrypt empty list
-      const encrypted = await encryptData(JSON.stringify([]), key);
-      const payload = JSON.stringify({
-        salt: store.salt,
-        iv: encrypted.iv,
-        ciphertext: encrypted.ciphertext,
-      });
-
-      const res = await new Promise<{ success: boolean; error?: string }>((resolve) => {
-        chrome.runtime.sendMessage({ type: "UPLOAD_TO_GIST", content: payload }, resolve);
-      });
-
-      if (!res.success) {
-        throw new Error(res.error || "Lỗi đồng bộ xóa két sắt lên Gist");
+        if (!res.success) {
+          throw new Error(res.error || "Lỗi xóa Gist trên GitHub");
+        }
       }
 
-      setStore("vaultItems", []);
+      // Reset local settings
+      await updateSettings({ gistId: "", lastSync: 0 });
+      setStore({
+        gistId: "",
+        vaultItems: [],
+        lastSync: 0,
+      });
       return { success: true };
     } catch (err) {
       console.error("[Store] Clear vault failed:", err);
@@ -638,7 +676,9 @@ export const storeActions = {
       if (!password || !store.salt) throw new Error("Vault is locked");
       const key = await getOrDeriveKey(password, store.salt);
 
-      const res = await new Promise<{ success: boolean; content?: string; error?: string }>((resolve) => {
+      const res = await new Promise<
+        { success: boolean; content?: string; error?: string }
+      >((resolve) => {
         chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
       });
 
@@ -661,7 +701,9 @@ export const storeActions = {
     }
   },
 
-  async importJsonData(jsonString: string): Promise<{ success: boolean; importedCount?: number; error?: string }> {
+  async importJsonData(
+    jsonString: string,
+  ): Promise<{ success: boolean; importedCount?: number; error?: string }> {
     try {
       console.log("[Gistwarden Import] Bat dau doc file JSON...");
       const parsed = JSON.parse(jsonString);
@@ -674,40 +716,55 @@ export const storeActions = {
         console.log("[Gistwarden Import] Parse dang Array thanh cong!");
         itemsToImport = parseArray.data;
       } else {
-        console.log("[Gistwarden Import] Parse dang Array that bai:", parseArray.error.issues);
-        console.log("[Gistwarden Import] Thu parse dang Object ({ items: [...] })...");
+        console.log(
+          "[Gistwarden Import] Parse dang Array that bai:",
+          parseArray.error.issues,
+        );
+        console.log(
+          "[Gistwarden Import] Thu parse dang Object ({ items: [...] })...",
+        );
         const parseObject = ImportObjectSchema.safeParse(parsed);
         if (parseObject.success) {
           console.log("[Gistwarden Import] Parse dang Object thanh cong!");
           itemsToImport = parseObject.data.items;
         } else {
-          console.log("[Gistwarden Import] Parse dang Object that bai:", parseObject.error.issues);
-          const errorMsg = parseArray.error ? parseArray.error.issues[0].message : "Dinh dang JSON khong hop le";
+          console.log(
+            "[Gistwarden Import] Parse dang Object that bai:",
+            parseObject.error.issues,
+          );
+          const errorMsg = parseArray.error
+            ? parseArray.error.issues[0].message
+            : "Dinh dang JSON khong hop le";
           throw new Error(`Xac thuc Zod that bai: ${errorMsg}`);
         }
       }
 
-      console.log(`[Gistwarden Import] Da tim thay ${itemsToImport.length} tai khoan can import.`);
+      console.log(
+        `[Gistwarden Import] Da tim thay ${itemsToImport.length} tai khoan can import.`,
+      );
 
       // Convert imported items to VaultItems
       const now = new Date().toISOString();
       const newVaultItems: VaultItem[] = itemsToImport.map((item, index) => {
-        const rawFido = item.login?.fido2Credentials;
-        console.log(`[Gistwarden Import] Tai khoan thu ${index + 1} ("${item.name}"):`, {
-          hasLogin: !!item.login,
-          rawFidoCredentialsCount: rawFido?.length || 0,
-          rawFidoData: rawFido
-        });
-        
-        const resolvedType = item.type === VaultItemType.SecureNote ? VaultItemType.SecureNote : VaultItemType.Login;
+        const isLogin = item.type === VaultItemType.Login;
+        const loginData = isLogin ? item.login : undefined;
+        const rawFido = loginData?.fido2Credentials;
+        console.log(
+          `[Gistwarden Import] Tai khoan thu ${index + 1} ("${item.name}"):`,
+          {
+            hasLogin: !!loginData,
+            rawFidoCredentialsCount: rawFido?.length || 0,
+            rawFidoData: rawFido,
+          },
+        );
 
-        if (resolvedType === VaultItemType.SecureNote) {
+        if (item.type === VaultItemType.SecureNote) {
           return {
             id: crypto.randomUUID(),
             type: VaultItemType.SecureNote,
             name: item.name,
             notes: item.notes || "",
-            favorite: !!item.favorite,
+            favorite: item.favorite,
             fields: item.fields?.map((f) => ({
               type: f.type ?? 0,
               name: f.name || "",
@@ -722,18 +779,18 @@ export const storeActions = {
             type: VaultItemType.Login,
             name: item.name,
             notes: item.notes || "",
-            favorite: !!item.favorite,
+            favorite: item.favorite,
             fields: item.fields?.map((f) => ({
               type: f.type ?? 0,
               name: f.name || "",
               value: f.value || "",
             })) || [],
             login: {
-              username: item.login?.username || "",
-              password: item.login?.password || "",
-              totp: item.login?.totp || "",
-              uris: item.login?.uris?.map((u) => ({ uri: u.uri })) || [],
-              fido2Credentials: item.login?.fido2Credentials || [],
+              username: item.login.username || "",
+              password: item.login.password || "",
+              totp: item.login.totp || "",
+              uris: item.login.uris?.map((u) => ({ uri: u.uri })) || [],
+              fido2Credentials: item.login.fido2Credentials || [],
             },
             creationDate: now,
             revisionDate: now,
@@ -741,7 +798,9 @@ export const storeActions = {
         }
       });
 
-      console.log("[Gistwarden Import] Bat dau kiem tra va luu vao danh sach chung...");
+      console.log(
+        "[Gistwarden Import] Bat dau kiem tra va luu vao danh sach chung...",
+      );
       const combinedItems = [...store.vaultItems, ...newVaultItems];
       const validatedList = VaultListSchema.parse(combinedItems);
 
@@ -757,9 +816,14 @@ export const storeActions = {
       });
 
       console.log("[Gistwarden Import] Dang tai len Gist...");
-      const uploadRes = await new Promise<{ success: boolean; error?: string }>((resolve) => {
-        chrome.runtime.sendMessage({ type: "UPLOAD_TO_GIST", content: payload }, resolve);
-      });
+      const uploadRes = await new Promise<{ success: boolean; error?: string }>(
+        (resolve) => {
+          chrome.runtime.sendMessage({
+            type: "UPLOAD_TO_GIST",
+            content: payload,
+          }, resolve);
+        },
+      );
 
       if (!uploadRes.success) {
         throw new Error(uploadRes.error || "Loi dong bo len Gist");
@@ -805,5 +869,35 @@ export const storeActions = {
     toastTimeoutId = setTimeout(() => {
       setStore("toastMessage", "");
     }, 2000);
+  },
+
+  confirm(
+    title: string,
+    message: string,
+    type: "info" | "warning" | "danger" = "info",
+  ): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      setStore("confirmModal", {
+        isOpen: true,
+        title,
+        message,
+        type,
+        resolve,
+      });
+    });
+  },
+
+  resolveConfirm(result: boolean) {
+    const modal = store.confirmModal;
+    if (modal.resolve) {
+      modal.resolve(result);
+    }
+    setStore("confirmModal", {
+      isOpen: false,
+      title: "",
+      message: "",
+      type: "info",
+      resolve: null,
+    });
   },
 };

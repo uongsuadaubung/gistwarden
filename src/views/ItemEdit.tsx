@@ -1,9 +1,26 @@
-import { createSignal, onMount, type Component, Show, For } from "solid-js";
+import { type Component, createSignal, For, onMount, Show } from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
-import { type Fido2Credential, type VaultField, type LoginVaultItem, type SecureNoteVaultItem, VaultItemType } from "@/shared/types.ts";
-import Button from "./Button.tsx";
-import Input from "./Input.tsx";
-import { ArrowLeftIcon, CopyIcon, DragIcon, EditIcon, EyeIcon, EyeOffIcon, TrashIcon, QrIcon, HeartFilledIcon, HeartOutlineIcon } from "@/icons/svg/index.ts";
+import {
+  type Fido2Credential,
+  type LoginVaultItem,
+  type SecureNoteVaultItem,
+  type VaultField,
+  VaultItemType,
+} from "@/shared/types.ts";
+import Button from "@/components/Button.tsx";
+import Input from "@/components/Input.tsx";
+import {
+  ArrowLeftIcon,
+  CopyIcon,
+  DragIcon,
+  EditIcon,
+  EyeIcon,
+  EyeOffIcon,
+  HeartFilledIcon,
+  HeartOutlineIcon,
+  QrIcon,
+  TrashIcon,
+} from "@/icons/svg/index.ts";
 
 export const ItemEdit: Component = () => {
   const isEdit = () => !!store.selectedItem?.id;
@@ -16,7 +33,9 @@ export const ItemEdit: Component = () => {
   const [totpSecret, setTotpSecret] = createSignal("");
   const [notes, setNotes] = createSignal("");
   const [favorite, setFavorite] = createSignal(false);
-  const [fidoCredentials, setFidoCredentials] = createSignal<Fido2Credential[]>([]);
+  const [fidoCredentials, setFidoCredentials] = createSignal<Fido2Credential[]>(
+    [],
+  );
   const [fields, setFields] = createSignal<VaultField[]>([]);
 
   // UI state
@@ -26,17 +45,22 @@ export const ItemEdit: Component = () => {
   const [error, setError] = createSignal("");
   const [saving, setSaving] = createSignal(false);
 
-  // Add field modal states
-  const [showAddFieldModal, setShowAddFieldModal] = createSignal(false);
-  const [newFieldName, setNewFieldName] = createSignal("");
-  const [newFieldType, setNewFieldType] = createSignal(0);
-
-  // Edit field modal states
+  // Custom field modal states (reused for both adding and editing)
   const [showEditFieldModal, setShowEditFieldModal] = createSignal(false);
-  const [selectedFieldIndex, setSelectedFieldIndex] = createSignal<number | null>(null);
+  const [selectedFieldIndex, setSelectedFieldIndex] = createSignal<
+    number | null
+  >(null);
   const [editFieldName, setEditFieldName] = createSignal("");
   const [editFieldValue, setEditFieldValue] = createSignal("");
   const [editFieldType, setEditFieldType] = createSignal(0);
+
+  const handleOpenAddField = () => {
+    setSelectedFieldIndex(null);
+    setEditFieldType(0);
+    setEditFieldName("");
+    setEditFieldValue("");
+    setShowEditFieldModal(true);
+  };
 
   const handleOpenEditField = (index: number) => {
     const field = fields()[index];
@@ -51,17 +75,37 @@ export const ItemEdit: Component = () => {
   const handleSaveFieldEdit = () => {
     const nameVal = editFieldName().trim();
     if (!nameVal) {
-      alert(editFieldType() === 2 ? "Vui lòng nhập tên nhóm phân cách" : "Vui lòng nhập tên trường");
+      alert(
+        editFieldType() === 2
+          ? "Vui lòng nhập tên nhóm phân cách"
+          : "Vui lòng nhập tên trường",
+      );
       return;
     }
     const idx = selectedFieldIndex();
-    if (idx === null) return;
-
-    setFields(fields().map((f, i) => i === idx ? {
-      type: editFieldType(),
-      name: nameVal,
-      value: editFieldType() === 2 ? "" : editFieldValue().trim()
-    } : f));
+    
+    if (idx === null) {
+      // Add Mode
+      setFields([...fields(), {
+        type: editFieldType(),
+        name: nameVal,
+        value: editFieldType() === 2 ? "" : editFieldValue().trim(),
+      }]);
+    } else {
+      // Edit Mode
+      setFields(
+        fields().map((f, i) =>
+          i === idx
+            ? {
+              type: editFieldType(),
+              name: nameVal,
+              value: editFieldType() === 2 ? "" : editFieldValue().trim(),
+            }
+            : f
+        ),
+      );
+    }
+    
     setShowEditFieldModal(false);
     setSelectedFieldIndex(null);
   };
@@ -69,7 +113,9 @@ export const ItemEdit: Component = () => {
   // Drag and drop states
   const [draggedIndex, setDraggedIndex] = createSignal<number | null>(null);
 
-  const [itemType, setItemType] = createSignal<VaultItemType>(VaultItemType.Login);
+  const [itemType, setItemType] = createSignal<VaultItemType>(
+    VaultItemType.Login,
+  );
 
   onMount(() => {
     const item = store.selectedItem;
@@ -83,11 +129,11 @@ export const ItemEdit: Component = () => {
         setTotpSecret("");
         setFidoCredentials([]);
       } else {
-        setUsername(item.login?.username || "");
-        setPassword(item.login?.password || "");
-        setUri(item.login?.uris?.[0]?.uri || "");
-        setTotpSecret(item.login?.totp || "");
-        setFidoCredentials(item.login?.fido2Credentials || []);
+        setUsername(item.login.username || "");
+        setPassword(item.login.password || "");
+        setUri(item.login.uris?.[0]?.uri || "");
+        setTotpSecret(item.login.totp || "");
+        setFidoCredentials(item.login.fido2Credentials || []);
       }
       setNotes(item.notes || "");
       setFavorite(item.favorite || false);
@@ -121,17 +167,7 @@ export const ItemEdit: Component = () => {
     setDraggedIndex(null);
   };
 
-  const handleAddConfirm = () => {
-    const nameVal = newFieldName().trim();
-    if (!nameVal) {
-      alert(newFieldType() === 2 ? "Vui lòng nhập tên nhóm phân cách" : "Vui lòng nhập tên trường");
-      return;
-    }
-    setFields([...fields(), { type: newFieldType(), name: nameVal, value: "" }]);
-    setShowAddFieldModal(false);
-    setNewFieldName("");
-    setNewFieldType(0);
-  };
+
 
   const handleRemoveField = (index: number) => {
     setFields(fields().filter((_, i) => i !== index));
@@ -147,15 +183,23 @@ export const ItemEdit: Component = () => {
     setScanning(true);
     setError("");
     try {
-      const res = await new Promise<{ success: boolean; secret?: string; error?: string }>((resolve) => {
+      const res = await new Promise<
+        { success: boolean; secret?: string; error?: string }
+      >((resolve) => {
         chrome.runtime.sendMessage({ type: "SCAN_QR_CODE" }, resolve);
       });
 
       if (res && res.success && res.secret) {
         setTotpSecret(res.secret);
-        storeActions.showToast("Đã tìm thấy và điền mã QR thành công!", "success");
+        storeActions.showToast(
+          "Đã tìm thấy và điền mã QR thành công!",
+          "success",
+        );
       } else {
-        setError(res.error || "Không tìm thấy mã QR nào trên màn hình. Hãy đảm bảo mã QR đang hiển thị trên trang web phía sau.");
+        setError(
+          res.error ||
+            "Không tìm thấy mã QR nào trên màn hình. Hãy đảm bảo mã QR đang hiển thị trên trang web phía sau.",
+        );
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
@@ -165,16 +209,54 @@ export const ItemEdit: Component = () => {
     }
   };
 
-  const handleDeleteFidoCredential = (credId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa Passkey này? Việc này sẽ hủy liên kết đăng nhập bằng Passkey của tài khoản này.")) return;
-    setFidoCredentials(fidoCredentials().filter(c => c.credentialId !== credId));
+  const handleDelete = async () => {
+    if (!store.selectedItem?.id) return;
+    if (
+      !(await storeActions.confirm(
+        "Xóa tài khoản",
+        "Bạn có chắc chắn muốn xóa tài khoản này?",
+        "danger",
+      ))
+    ) {
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      const res = await storeActions.deleteItem(store.selectedItem.id);
+      if (res.success) {
+        storeActions.navigate(View.Vault);
+      } else {
+        setError(res.error || "Lỗi xóa tài khoản");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteFidoCredential = async (credId: string) => {
+    if (
+      !(await storeActions.confirm(
+        "Xóa Passkey",
+        "Bạn có chắc chắn muốn xóa Passkey này? Việc này sẽ hủy liên kết đăng nhập bằng Passkey của tài khoản này.",
+        "danger",
+      ))
+    ) return;
+    setFidoCredentials(
+      fidoCredentials().filter((c) => c.credentialId !== credId),
+    );
   };
 
   const handleSave = async (e: Event) => {
     e.preventDefault();
     if (saving()) return;
     if (!name().trim()) {
-      setError(itemType() === VaultItemType.SecureNote ? "Vui lòng nhập tên ghi chú" : "Vui lòng nhập tên tài khoản");
+      setError(
+        itemType() === VaultItemType.SecureNote
+          ? "Vui lòng nhập tên ghi chú"
+          : "Vui lòng nhập tên tài khoản",
+      );
       return;
     }
 
@@ -191,10 +273,10 @@ export const ItemEdit: Component = () => {
           name: name().trim(),
           notes: notes().trim(),
           favorite: favorite(),
-          fields: fields().map(f => ({
+          fields: fields().map((f) => ({
             type: f.type,
             name: f.name.trim(),
-            value: f.value.trim()
+            value: f.value.trim(),
           })),
         };
       } else {
@@ -204,10 +286,10 @@ export const ItemEdit: Component = () => {
           name: name().trim(),
           notes: notes().trim(),
           favorite: favorite(),
-          fields: fields().map(f => ({
+          fields: fields().map((f) => ({
             type: f.type,
             name: f.name.trim(),
-            value: f.value.trim()
+            value: f.value.trim(),
           })),
           login: {
             username: username().trim(),
@@ -221,10 +303,17 @@ export const ItemEdit: Component = () => {
 
       const res = await storeActions.saveItem(itemData);
       if (res.success) {
+        const msg = isEdit()
+          ? (itemType() === VaultItemType.SecureNote ? "Đã cập nhật ghi chú!" : "Đã cập nhật tài khoản!")
+          : (itemType() === VaultItemType.SecureNote ? "Đã tạo ghi chú thành công!" : "Đã tạo tài khoản thành công!");
+        storeActions.showToast(msg, "success");
+
         // If was editing, return to detail view, else go back to vault
         if (isEdit()) {
           // Update selectedItem locally so the detail view shows updated content immediately
-          const savedItem = store.vaultItems.find(v => v.id === store.selectedItem?.id);
+          const savedItem = store.vaultItems.find((v) =>
+            v.id === store.selectedItem?.id
+          );
           if (savedItem) {
             storeActions.selectItem(savedItem);
           } else {
@@ -259,8 +348,12 @@ export const ItemEdit: Component = () => {
           </div>
           <div class="detail-title detail-header-title">
             {isEdit()
-              ? (itemType() === VaultItemType.SecureNote ? "Chỉnh sửa ghi chú" : "Chỉnh sửa tài khoản")
-              : (itemType() === VaultItemType.SecureNote ? "Thêm ghi chú" : "Thêm tài khoản")}
+              ? (itemType() === VaultItemType.SecureNote
+                ? "Chỉnh sửa ghi chú"
+                : "Chỉnh sửa tài khoản")
+              : (itemType() === VaultItemType.SecureNote
+                ? "Thêm ghi chú"
+                : "Thêm tài khoản")}
           </div>
         </div>
         <button
@@ -270,7 +363,12 @@ export const ItemEdit: Component = () => {
           onClick={() => setFavorite(!favorite())}
           title={favorite() ? "Bỏ yêu thích" : "Yêu thích"}
         >
-          <Show when={favorite()} fallback={<HeartOutlineIcon style="width: 20px; height: 20px; color: rgba(255, 255, 255, 0.7);" />}>
+          <Show
+            when={favorite()}
+            fallback={
+              <HeartOutlineIcon style="width: 20px; height: 20px; color: rgba(255, 255, 255, 0.7);" />
+            }
+          >
             <HeartFilledIcon style="width: 20px; height: 20px; color: #ff4e63;" />
           </Show>
         </button>
@@ -312,7 +410,9 @@ export const ItemEdit: Component = () => {
               type="text"
               value={name()}
               onInput={(e) => setName(e.currentTarget.value)}
-              placeholder={itemType() === VaultItemType.SecureNote ? "Ví dụ: Mã khẩn cấp, Cấu hình..." : "Ví dụ: Google, Facebook..."}
+              placeholder={itemType() === VaultItemType.SecureNote
+                ? "Ví dụ: Mã khẩn cấp, Cấu hình..."
+                : "Ví dụ: Google, Facebook..."}
             />
           </div>
 
@@ -345,9 +445,10 @@ export const ItemEdit: Component = () => {
                     class="action-btn input-action-btn"
                     onClick={() => setShowPassword(!showPassword())}
                   >
-                    <Show when={showPassword()} fallback={
-                      <EyeIcon class="icon-inline" />
-                    }>
+                    <Show
+                      when={showPassword()}
+                      fallback={<EyeIcon class="icon-inline" />}
+                    >
                       <EyeOffIcon class="icon-inline" />
                     </Show>
                   </button>
@@ -373,10 +474,11 @@ export const ItemEdit: Component = () => {
                         <strong>{cred.userName || "Không có tên"}</strong>
                         <span class="card-sub-text">RP: {cred.rpId}</span>
                       </div>
-                      <button 
-                        type="button" 
-                        class="action-btn fido2-delete-btn" 
-                        onClick={() => handleDeleteFidoCredential(cred.credentialId)} 
+                      <button
+                        type="button"
+                        class="action-btn fido2-delete-btn"
+                        onClick={() =>
+                          handleDeleteFidoCredential(cred.credentialId)}
                         title="Xóa Passkey"
                       >
                         <TrashIcon class="icon-inline" />
@@ -404,11 +506,14 @@ export const ItemEdit: Component = () => {
                     type="button"
                     class="action-btn input-action-btn"
                     onClick={() => setShowTotpSecret(!showTotpSecret())}
-                    title={showTotpSecret() ? "Ẩn khóa TOTP" : "Hiển thị khóa TOTP"}
+                    title={showTotpSecret()
+                      ? "Ẩn khóa TOTP"
+                      : "Hiển thị khóa TOTP"}
                   >
-                    <Show when={showTotpSecret()} fallback={
-                      <EyeIcon class="icon-inline" />
-                    }>
+                    <Show
+                      when={showTotpSecret()}
+                      fallback={<EyeIcon class="icon-inline" />}
+                    >
                       <EyeOffIcon class="icon-inline" />
                     </Show>
                   </button>
@@ -419,7 +524,11 @@ export const ItemEdit: Component = () => {
                     onClick={handleScanQr}
                     disabled={scanning()}
                   >
-                    <QrIcon class={scanning() ? "spinning icon-inline" : "icon-inline"} />
+                    <QrIcon
+                      class={scanning()
+                        ? "spinning icon-inline"
+                        : "icon-inline"}
+                    />
                   </button>
                 </div>
               </div>
@@ -443,58 +552,65 @@ export const ItemEdit: Component = () => {
             <div class="card p-8 mb-12">
               <For each={fields()}>
                 {(field, index) => (
-                  <Show when={field.type === 2} fallback={
-                    <div 
-                      draggable="true"
-                      onDragStart={(e) => handleDragStart(index(), e)}
-                      onDragOver={(e) => handleDragOver(index(), e)}
-                      onDragEnd={handleDragEnd}
-                      style={{
-                        display: "flex",
-                        "flex-direction": "column",
-                        gap: "6px",
-                        "margin-bottom": "12px",
-                        "padding-bottom": "12px",
-                        "border-bottom": "1px dashed var(--border)",
-                        opacity: draggedIndex() === index() ? 0.4 : 1,
-                        cursor: "move"
-                      }}
-                    >
-                      <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                          <div style="cursor: grab; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
-                            <DragIcon class="icon-inline" />
+                  <Show
+                    when={field.type === 2}
+                    fallback={
+                      <div
+                        draggable="true"
+                        onDragStart={(e) => handleDragStart(index(), e)}
+                        onDragOver={(e) => handleDragOver(index(), e)}
+                        onDragEnd={handleDragEnd}
+                        style={{
+                          display: "flex",
+                          "flex-direction": "column",
+                          gap: "6px",
+                          "margin-bottom": "12px",
+                          "padding-bottom": "12px",
+                          "border-bottom": "1px dashed var(--border)",
+                          opacity: draggedIndex() === index() ? 0.4 : 1,
+                          cursor: "move",
+                        }}
+                      >
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="cursor: grab; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                              <DragIcon class="icon-inline" />
+                            </div>
+                            <span style="font-weight: 600; font-size: 13px; color: var(--text);">
+                              {field.name}
+                            </span>
+                            <span style="font-size: 12px; color: var(--text-muted); margin-left: 8px; font-family: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
+                              {field.type === 1
+                                ? "••••••••"
+                                : (field.value || "Trống")}
+                            </span>
                           </div>
-                          <span style="font-weight: 600; font-size: 13px; color: var(--text);">{field.name}</span>
-                          <span style="font-size: 12px; color: var(--text-muted); margin-left: 8px; font-family: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
-                            {field.type === 1 ? "••••••••" : (field.value || "Trống")}
-                          </span>
-                        </div>
-                        <div style="display: flex; gap: 8px;">
-                          <button
-                            type="button"
-                            class="action-btn"
-                            style="padding: 4px; color: var(--text-muted);"
-                            onClick={() => handleOpenEditField(index())}
-                            title="Sửa trường"
-                          >
-                            <EditIcon class="icon-inline" />
-                          </button>
-                          <button
-                            type="button"
-                            class="action-btn"
-                            style="padding: 4px; color: var(--error);"
-                            onClick={() => handleRemoveField(index())}
-                            title="Xóa trường"
-                          >
-                            <TrashIcon class="icon-inline" />
-                          </button>
+                          <div style="display: flex; gap: 8px;">
+                            <button
+                              type="button"
+                              class="action-btn"
+                              style="padding: 4px; color: var(--text-muted);"
+                              onClick={() => handleOpenEditField(index())}
+                              title="Sửa trường"
+                            >
+                              <EditIcon class="icon-inline" />
+                            </button>
+                            <button
+                              type="button"
+                              class="action-btn"
+                              style="padding: 4px; color: var(--error);"
+                              onClick={() => handleRemoveField(index())}
+                              title="Xóa trường"
+                            >
+                              <TrashIcon class="icon-inline" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  }>
+                    }
+                  >
                     {/* Divider Edit Row */}
-                    <div 
+                    <div
                       draggable="true"
                       onDragStart={(e) => handleDragStart(index(), e)}
                       onDragOver={(e) => handleDragOver(index(), e)}
@@ -507,7 +623,7 @@ export const ItemEdit: Component = () => {
                         "padding-bottom": "12px",
                         "border-bottom": "1px dashed var(--border)",
                         opacity: draggedIndex() === index() ? 0.4 : 1,
-                        cursor: "move"
+                        cursor: "move",
                       }}
                     >
                       <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -553,7 +669,7 @@ export const ItemEdit: Component = () => {
               type="button"
               class="btn btn-secondary w-full"
               style="font-size: 12px; padding: 8px;"
-              onClick={() => setShowAddFieldModal(true)}
+              onClick={handleOpenAddField}
             >
               + Thêm trường tùy chỉnh
             </button>
@@ -570,74 +686,62 @@ export const ItemEdit: Component = () => {
               rows="3"
             />
           </div>
-
         </div>
 
         {/* Footer */}
         <div class="detail-footer-bar">
-          <Button type="button" variant="secondary" onClick={handleCancel} disabled={saving()}>Hủy</Button>
-          <Button type="submit" variant="primary" class="min-w-100" disabled={saving()}>
-            <Show when={saving()} fallback="Lưu">
-              Đang lưu...
-            </Show>
-          </Button>
+          <div style="display: flex; gap: 8px;">
+            <Button
+              type="submit"
+              variant="primary"
+              loading={saving()}
+              loadingText={store.selectedItem?.id ? "Đang lưu..." : "Đang tạo..."}
+            >
+              <Show when={saving()} fallback={store.selectedItem?.id ? "Lưu" : "Tạo"}>
+                Đang lưu...
+              </Show>
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleCancel}
+              disabled={saving()}
+            >
+              Hủy
+            </Button>
+          </div>
+
+          <Show when={isEdit()}>
+            <button
+              type="button"
+              class="detail-delete-btn"
+              onClick={handleDelete}
+              title="Xóa tài khoản"
+              disabled={saving()}
+            >
+              <TrashIcon class="icon-inline-large" />
+            </button>
+          </Show>
         </div>
       </form>
 
-      {/* Add Custom Field Modal Overlay */}
-      <Show when={showAddFieldModal()}>
-        <div class="modal-overlay">
-          <div class="modal-container">
-            <div class="modal-title">Thêm trường tùy chỉnh mới</div>
-            
-            <div class="form-group">
-              <label>Loại trường</label>
-              <select
-                class="input-control"
-                value={newFieldType()}
-                onChange={(e) => setNewFieldType(parseInt(e.currentTarget.value))}
-                style="height: 38px; border-radius: 8px; font-size: 13px;"
-              >
-                <option value={0}>Văn bản (Chữ)</option>
-                <option value={1}>Ẩn (Mật khẩu)</option>
-                <option value={2}>Phân cách (Divider)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Tên trường</label>
-              <Input
-                type="text"
-                placeholder={newFieldType() === 2 ? "Ví dụ: CAU HINH NET, APIS..." : "Ví dụ: device, pin, ip..."}
-                value={newFieldName()}
-                onInput={(e) => setNewFieldName(e.currentTarget.value)}
-              />
-            </div>
-
-            <div class="modal-actions">
-              <Button type="button" variant="secondary" onClick={() => { setShowAddFieldModal(false); setNewFieldName(""); }}>
-                Hủy
-              </Button>
-              <Button type="button" variant="primary" onClick={handleAddConfirm}>
-                Thêm
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Show>
-
-      {/* Edit Custom Field Modal Overlay */}
+      {/* Reusable Custom Field Modal Overlay (Add & Edit) */}
       <Show when={showEditFieldModal()}>
         <div class="modal-overlay">
           <div class="modal-container">
-            <div class="modal-title">Chỉnh sửa trường tùy chỉnh</div>
-            
+            <div class="modal-title">
+              {selectedFieldIndex() === null
+                ? "Thêm trường tùy chỉnh"
+                : "Chỉnh sửa trường tùy chỉnh"}
+            </div>
+
             <div class="form-group">
               <label>Loại trường</label>
               <select
                 class="input-control"
                 value={editFieldType()}
-                onChange={(e) => setEditFieldType(parseInt(e.currentTarget.value))}
+                onChange={(e) =>
+                  setEditFieldType(parseInt(e.currentTarget.value))}
                 style="height: 38px; border-radius: 8px; font-size: 13px;"
               >
                 <option value={0}>Văn bản (Chữ)</option>
@@ -650,7 +754,9 @@ export const ItemEdit: Component = () => {
               <label>Tên trường</label>
               <Input
                 type="text"
-                placeholder={editFieldType() === 2 ? "Ví dụ: CAU HINH NET, APIS..." : "Ví dụ: device, pin, ip..."}
+                placeholder={editFieldType() === 2
+                  ? "Ví dụ: CAU HINH NET, APIS..."
+                  : "Ví dụ: device, pin, ip..."}
                 value={editFieldName()}
                 onInput={(e) => setEditFieldName(e.currentTarget.value)}
               />
@@ -669,11 +775,22 @@ export const ItemEdit: Component = () => {
             </Show>
 
             <div class="modal-actions">
-              <Button type="button" variant="secondary" onClick={() => { setShowEditFieldModal(false); setSelectedFieldIndex(null); }}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowEditFieldModal(false);
+                  setSelectedFieldIndex(null);
+                }}
+              >
                 Hủy
               </Button>
-              <Button type="button" variant="primary" onClick={handleSaveFieldEdit}>
-                Lưu
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleSaveFieldEdit}
+              >
+                {selectedFieldIndex() === null ? "Thêm" : "Lưu"}
               </Button>
             </div>
           </div>

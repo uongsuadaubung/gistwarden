@@ -1,0 +1,3399 @@
+{
+  "encrypted": false,
+  "folders": [],
+  "items": [
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "notes": "",
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "notes": "",
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [
+        {
+          "password": "",
+          "lastUsedDate": ""
+        }
+      ],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [
+          {
+            "credentialId": "",
+            "keyType": "",
+            "keyAlgorithm": "",
+            "keyCurve": "",
+            "keyValue": "",
+            "rpId": "",
+            "counter": "",
+            "discoverable": "",
+            "creationDate": "",
+            "userHandle": "",
+            "userName": "",
+            "rpName": "",
+            "userDisplayName": ""
+          }
+        ],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [
+          {
+            "credentialId": "",
+            "keyType": "",
+            "keyAlgorithm": "",
+            "keyCurve": "",
+            "keyValue": "",
+            "rpId": "",
+            "counter": "",
+            "discoverable": "",
+            "creationDate": "",
+            "userHandle": "",
+            "userName": "",
+            "rpName": "",
+            "userDisplayName": ""
+          }
+        ],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "notes": "",
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [
+          {
+            "credentialId": "",
+            "keyType": "",
+            "keyAlgorithm": "",
+            "keyCurve": "",
+            "keyValue": "",
+            "rpId": "",
+            "counter": "",
+            "discoverable": "",
+            "creationDate": "",
+            "userHandle": "",
+            "userName": "",
+            "rpName": "",
+            "userDisplayName": ""
+          }
+        ],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [
+        {
+          "password": "",
+          "lastUsedDate": ""
+        }
+      ],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [
+        {
+          "password": "",
+          "lastUsedDate": ""
+        }
+      ],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [
+          {
+            "credentialId": "",
+            "keyType": "",
+            "keyAlgorithm": "",
+            "keyCurve": "",
+            "keyValue": "",
+            "rpId": "",
+            "counter": "",
+            "discoverable": "",
+            "creationDate": "",
+            "userHandle": "",
+            "userName": "",
+            "rpName": "",
+            "userDisplayName": ""
+          }
+        ],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [
+        {
+          "type": 1,
+          "name": "",
+          "value": ""
+        }
+      ],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [
+          {
+            "credentialId": "",
+            "keyType": "",
+            "keyAlgorithm": "",
+            "keyCurve": "",
+            "keyValue": "",
+            "rpId": "",
+            "counter": "",
+            "discoverable": "",
+            "creationDate": "",
+            "userHandle": "",
+            "userName": "",
+            "rpName": "",
+            "userDisplayName": ""
+          }
+        ],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [
+        {
+          "password": "",
+          "lastUsedDate": ""
+        }
+      ],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [
+        {
+          "password": "",
+          "lastUsedDate": ""
+        },
+        {
+          "password": "",
+          "lastUsedDate": ""
+        },
+        {
+          "password": "",
+          "lastUsedDate": ""
+        },
+        {
+          "password": "",
+          "lastUsedDate": ""
+        }
+      ],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [
+          {
+            "credentialId": "",
+            "keyType": "",
+            "keyAlgorithm": "",
+            "keyCurve": "",
+            "keyValue": "",
+            "rpId": "",
+            "counter": "",
+            "discoverable": "",
+            "creationDate": "",
+            "userHandle": "",
+            "userName": "",
+            "rpName": "",
+            "userDisplayName": ""
+          }
+        ],
+        "username": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [
+          {
+            "credentialId": "",
+            "keyType": "",
+            "keyAlgorithm": "",
+            "keyCurve": "",
+            "keyValue": "",
+            "rpId": "",
+            "counter": "",
+            "discoverable": "",
+            "creationDate": "",
+            "userHandle": "",
+            "userName": "",
+            "rpName": "",
+            "userDisplayName": ""
+          }
+        ],
+        "username": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [
+        {
+          "type": 0,
+          "name": "",
+          "value": ""
+        },
+        {
+          "type": 0,
+          "name": "",
+          "value": ""
+        },
+        {
+          "type": 1,
+          "name": "",
+          "value": ""
+        },
+        {
+          "type": 0,
+          "name": "",
+          "value": ""
+        },
+        {
+          "type": 1,
+          "name": "",
+          "value": ""
+        },
+        {
+          "type": 0,
+          "name": "",
+          "value": ""
+        },
+        {
+          "type": 1,
+          "name": "",
+          "value": ""
+        }
+      ],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [
+        {
+          "password": "",
+          "lastUsedDate": ""
+        },
+        {
+          "password": "",
+          "lastUsedDate": ""
+        }
+      ],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 2,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "notes": "",
+      "fields": [],
+      "secureNote": {
+        "type": 0
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [
+        {
+          "type": 1,
+          "name": "",
+          "value": ""
+        }
+      ],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [
+        {
+          "password": "",
+          "lastUsedDate": ""
+        }
+      ],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [
+          {
+            "credentialId": "",
+            "keyType": "",
+            "keyAlgorithm": "",
+            "keyCurve": "",
+            "keyValue": "",
+            "rpId": "",
+            "counter": "",
+            "discoverable": "",
+            "creationDate": "",
+            "userHandle": "",
+            "userName": "",
+            "rpName": "",
+            "userDisplayName": ""
+          }
+        ],
+        "username": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [
+        {
+          "password": "",
+          "lastUsedDate": ""
+        }
+      ],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": "",
+        "totp": ""
+      },
+      "passwordHistory": [
+        {
+          "password": "",
+          "lastUsedDate": ""
+        }
+      ],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    },
+    {
+      "type": 1,
+      "name": "",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "",
+      "collectionIds": null,
+      "fields": [],
+      "login": {
+        "uris": [
+          {
+            "uri": ""
+          }
+        ],
+        "fido2Credentials": [],
+        "username": "",
+        "password": ""
+      },
+      "passwordHistory": [],
+      "creationDate": "",
+      "revisionDate": ""
+    }
+  ]
+}

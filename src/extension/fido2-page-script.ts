@@ -30,10 +30,16 @@
   function base64UrlToBuffer(str: string): ArrayBuffer {
     let base64 = str.replace(/-/g, "+").replace(/_/g, "/");
     switch (base64.length % 4) {
-      case 0: break;
-      case 2: base64 += "=="; break;
-      case 3: base64 += "="; break;
-      default: throw new Error("Illegal base64url string!");
+      case 0:
+        break;
+      case 2:
+        base64 += "==";
+        break;
+      case 3:
+        base64 += "=";
+        break;
+      default:
+        throw new Error("Illegal base64url string!");
     }
     const binary = atob(base64);
     const buffer = new ArrayBuffer(binary.length);
@@ -60,11 +66,17 @@
   }
 
   // Request manager to map messages
-  const pendingRequests = new Map<string, { resolve: (val: Fido2Response) => void; reject: (err: Error) => void }>();
+  const pendingRequests = new Map<
+    string,
+    { resolve: (val: Fido2Response) => void; reject: (err: Error) => void }
+  >();
 
   // Listen to postMessage from content script
   window.addEventListener("message", (event) => {
-    if (event.source !== window || !event.data || event.data.source !== "gistwarden-content-script") {
+    if (
+      event.source !== window || !event.data ||
+      event.data.source !== "gistwarden-content-script"
+    ) {
       return;
     }
 
@@ -77,11 +89,16 @@
     if (success) {
       pending.resolve(result);
     } else {
-      pending.reject(new DOMException(error || "Request failed", "NotAllowedError"));
+      pending.reject(
+        new DOMException(error || "Request failed", "NotAllowedError"),
+      );
     }
   });
 
-  function sendToContentScript(type: string, data: unknown): Promise<Fido2Response> {
+  function sendToContentScript(
+    type: string,
+    data: unknown,
+  ): Promise<Fido2Response> {
     return new Promise((resolve, reject) => {
       const requestId = Math.random().toString(36).substring(2);
       pendingRequests.set(requestId, { resolve, reject });
@@ -93,13 +110,15 @@
           type,
           data,
         },
-        "*"
+        "*",
       );
     });
   }
 
   // Override create (Registration)
-  navigator.credentials.create = async function (options?: CredentialCreationOptions): Promise<Credential | null> {
+  navigator.credentials.create = async function (
+    options?: CredentialCreationOptions,
+  ): Promise<Credential | null> {
     if (!options || !options.publicKey) {
       return originalCredentials.create(options);
     }
@@ -125,8 +144,11 @@
     };
 
     try {
-      const response = await sendToContentScript("FIDO2_CREDENTIAL_CREATION_REQUEST", serializedOptions);
-      
+      const response = await sendToContentScript(
+        "FIDO2_CREDENTIAL_CREATION_REQUEST",
+        serializedOptions,
+      );
+
       // Reconstruct PublicKeyCredential response by creating plain object first to avoid getter collision
       const credential = {
         id: response.id,
@@ -135,10 +157,15 @@
         authenticatorAttachment: "platform",
         response: {
           clientDataJSON: base64UrlToBuffer(response.response.clientDataJSON),
-          attestationObject: base64UrlToBuffer(response.response.attestationObject || ""),
-          getAuthenticatorData: () => base64UrlToBuffer(response.response.authData || ""),
-          getPublicKey: () => base64UrlToBuffer(response.response.publicKey || ""),
-          getPublicKeyAlgorithm: () => response.response.publicKeyAlgorithm || -7,
+          attestationObject: base64UrlToBuffer(
+            response.response.attestationObject || "",
+          ),
+          getAuthenticatorData: () =>
+            base64UrlToBuffer(response.response.authData || ""),
+          getPublicKey: () =>
+            base64UrlToBuffer(response.response.publicKey || ""),
+          getPublicKeyAlgorithm: () =>
+            response.response.publicKeyAlgorithm || -7,
           getTransports: () => ["internal"],
         },
         getClientExtensionResults: () => ({}),
@@ -157,7 +184,10 @@
       };
 
       // Set prototype after properties are written to the instance
-      Object.setPrototypeOf(credential.response, AuthenticatorAttestationResponse.prototype);
+      Object.setPrototypeOf(
+        credential.response,
+        AuthenticatorAttestationResponse.prototype,
+      );
       Object.setPrototypeOf(credential, PublicKeyCredential.prototype);
 
       return credential;
@@ -170,7 +200,9 @@
   };
 
   // Override get (Assertion)
-  navigator.credentials.get = async function (options?: CredentialRequestOptions): Promise<Credential | null> {
+  navigator.credentials.get = async function (
+    options?: CredentialRequestOptions,
+  ): Promise<Credential | null> {
     if (!options || !options.publicKey) {
       return originalCredentials.get(options);
     }
@@ -189,7 +221,10 @@
     };
 
     try {
-      const response = await sendToContentScript("FIDO2_CREDENTIAL_GET_REQUEST", serializedOptions);
+      const response = await sendToContentScript(
+        "FIDO2_CREDENTIAL_GET_REQUEST",
+        serializedOptions,
+      );
 
       // Reconstruct PublicKeyCredential response by creating plain object first to avoid getter collision
       const credential = {
@@ -199,9 +234,13 @@
         authenticatorAttachment: "platform",
         response: {
           clientDataJSON: base64UrlToBuffer(response.response.clientDataJSON),
-          authenticatorData: base64UrlToBuffer(response.response.authenticatorData || ""),
+          authenticatorData: base64UrlToBuffer(
+            response.response.authenticatorData || "",
+          ),
           signature: base64UrlToBuffer(response.response.signature || ""),
-          userHandle: response.response.userHandle ? base64UrlToBuffer(response.response.userHandle) : null,
+          userHandle: response.response.userHandle
+            ? base64UrlToBuffer(response.response.userHandle)
+            : null,
         },
         getClientExtensionResults: () => ({}),
         toJSON: () => ({
@@ -220,7 +259,10 @@
       };
 
       // Set prototype after properties are written to the instance
-      Object.setPrototypeOf(credential.response, AuthenticatorAssertionResponse.prototype);
+      Object.setPrototypeOf(
+        credential.response,
+        AuthenticatorAssertionResponse.prototype,
+      );
       Object.setPrototypeOf(credential, PublicKeyCredential.prototype);
 
       return credential;

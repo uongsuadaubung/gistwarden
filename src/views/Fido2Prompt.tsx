@@ -1,18 +1,28 @@
-import { createSignal, onMount, type Component, Show, For } from "solid-js";
+import { type Component, createSignal, For, onMount, Show } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
 import {
-  createPasskeyKeyPair,
-  bufferToBase64Url,
   base64UrlToBuffer,
-  generateAuthData,
-  packAttestationObject,
+  bufferToBase64Url,
+  createPasskeyKeyPair,
   generateAssertionSignature,
+  generateAuthData,
   getRawCredentialId,
+  packAttestationObject,
 } from "@/shared/passkey-crypto.ts";
-import { type Fido2Credential, type VaultItem, type LoginVaultItem, VaultItemType } from "@/shared/types.ts";
-import Button from "./Button.tsx";
-import Input from "./Input.tsx";
-import { ShieldIcon, InfoIcon, QuestionIcon, LockIcon } from "@/icons/svg/index.ts";
+import {
+  type Fido2Credential,
+  type LoginVaultItem,
+  type VaultItem,
+  VaultItemType,
+} from "@/shared/types.ts";
+import Button from "@/components/Button.tsx";
+import Input from "@/components/Input.tsx";
+import {
+  InfoIcon,
+  LockIcon,
+  QuestionIcon,
+  ShieldIcon,
+} from "@/icons/svg/index.ts";
 
 interface Fido2Request {
   success: boolean;
@@ -49,14 +59,20 @@ export const Fido2Prompt: Component = () => {
   const [error, setError] = createSignal("");
   const [loading, setLoading] = createSignal(false);
   const [pendingReq, setPendingReq] = createSignal<Fido2Request | null>(null);
-  
+
   // List of matching passkeys found in vault for assertion (get)
-  const [matchingCredentials, setMatchingCredentials] = createSignal<MatchingPasskey[]>([]);
+  const [matchingCredentials, setMatchingCredentials] = createSignal<
+    MatchingPasskey[]
+  >([]);
   const [selectedCredIndex, setSelectedCredIndex] = createSignal(0);
 
   // List of matching accounts found in vault for registration (create)
-  const [matchingAccounts, setMatchingAccounts] = createSignal<LoginVaultItem[]>([]);
-  const [selectedAccountIndex, setSelectedAccountIndex] = createSignal<number | null>(null);
+  const [matchingAccounts, setMatchingAccounts] = createSignal<
+    LoginVaultItem[]
+  >([]);
+  const [selectedAccountIndex, setSelectedAccountIndex] = createSignal<
+    number | null
+  >(null);
 
   onMount(async () => {
     // If vault is already unlocked, load pending request immediately
@@ -74,14 +90,18 @@ export const Fido2Prompt: Component = () => {
     }
   };
 
-  const findMatchingAccounts = (rpId: string, origin: string, userName: string) => {
+  const findMatchingAccounts = (
+    rpId: string,
+    origin: string,
+    userName: string,
+  ) => {
     const rpIdNormalized = rpId.toLowerCase().trim();
     const originHost = getDomainFromUrl(origin);
     const usernameNormalized = userName.toLowerCase().trim();
 
     const matches = store.vaultItems.filter((item): item is LoginVaultItem => {
       if (item.type !== VaultItemType.Login || !item.login) return false;
-      
+
       // Match username (must match)
       const itemUser = (item.login.username || "").toLowerCase().trim();
       if (itemUser !== usernameNormalized) return false;
@@ -89,19 +109,21 @@ export const Fido2Prompt: Component = () => {
       // Match domain / RP ID
       // Check URIs
       if (item.login.uris) {
-        const hasMatchingUri = item.login.uris.some(u => {
+        const hasMatchingUri = item.login.uris.some((u) => {
           const uriHost = getDomainFromUrl(u.uri);
-          return uriHost.includes(rpIdNormalized) || 
-                 rpIdNormalized.includes(uriHost) ||
-                 uriHost.includes(originHost) ||
-                 originHost.includes(uriHost);
+          return uriHost.includes(rpIdNormalized) ||
+            rpIdNormalized.includes(uriHost) ||
+            uriHost.includes(originHost) ||
+            originHost.includes(uriHost);
         });
         if (hasMatchingUri) return true;
       }
 
       // Check name
       const itemName = item.name.toLowerCase().trim();
-      if (itemName.includes(rpIdNormalized) || rpIdNormalized.includes(itemName)) {
+      if (
+        itemName.includes(rpIdNormalized) || rpIdNormalized.includes(itemName)
+      ) {
         return true;
       }
 
@@ -118,8 +140,19 @@ export const Fido2Prompt: Component = () => {
 
   const loadPendingRequest = async () => {
     try {
-      const res = await new Promise<{ success: boolean; type?: "create" | "get"; options?: Fido2Request["options"]; origin?: string; error?: string }>((resolve) => {
-        chrome.runtime.sendMessage({ type: "GET_PENDING_FIDO2_REQUEST" }, resolve);
+      const res = await new Promise<
+        {
+          success: boolean;
+          type?: "create" | "get";
+          options?: Fido2Request["options"];
+          origin?: string;
+          error?: string;
+        }
+      >((resolve) => {
+        chrome.runtime.sendMessage(
+          { type: "GET_PENDING_FIDO2_REQUEST" },
+          resolve,
+        );
       });
 
       if (res && res.success && res.type && res.options && res.origin) {
@@ -154,19 +187,27 @@ export const Fido2Prompt: Component = () => {
 
   const findMatchingPasskeys = (rpId: string) => {
     const list: MatchingPasskey[] = [];
-    console.log("[Gistwarden FIDO2] Bat dau tim kiem Passkey khop voi rpId:", rpId);
-    console.log("[Gistwarden FIDO2] So luong tai khoan trong ket sat:", store.vaultItems.length);
-    
+    console.log(
+      "[Gistwarden FIDO2] Bat dau tim kiem Passkey khop voi rpId:",
+      rpId,
+    );
+    console.log(
+      "[Gistwarden FIDO2] So luong tai khoan trong ket sat:",
+      store.vaultItems.length,
+    );
+
     store.vaultItems.forEach((item) => {
       if (item.type !== VaultItemType.Login) return;
       console.log(`[Gistwarden FIDO2] Kiem tra tai khoan "${item.name}":`, {
-        hasLogin: !!item.login,
-        fido2CredentialsCount: item.login?.fido2Credentials?.length || 0,
-        fido2Credentials: item.login?.fido2Credentials
+        hasLogin: true,
+        fido2CredentialsCount: item.login.fido2Credentials?.length || 0,
+        fido2Credentials: item.login.fido2Credentials,
       });
-      if (item.login?.fido2Credentials) {
+      if (item.login.fido2Credentials) {
         item.login.fido2Credentials.forEach((cred: Fido2Credential) => {
-          console.log(`[Gistwarden FIDO2] So sanh rpId: "${cred.rpId}" voi "${rpId}"`);
+          console.log(
+            `[Gistwarden FIDO2] So sanh rpId: "${cred.rpId}" voi "${rpId}"`,
+          );
           if (cred.rpId?.trim().toLowerCase() === rpId?.trim().toLowerCase()) {
             console.log("[Gistwarden FIDO2] KHOP THANH CONG!");
             list.push({
@@ -220,11 +261,17 @@ export const Fido2Prompt: Component = () => {
       const keyPair = await createPasskeyKeyPair();
 
       // 2. Export private key in pkcs8 format to store in Vault
-      const pkcs8KeyBuffer = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+      const pkcs8KeyBuffer = await crypto.subtle.exportKey(
+        "pkcs8",
+        keyPair.privateKey,
+      );
       const pkcs8Base64Url = bufferToBase64Url(new Uint8Array(pkcs8KeyBuffer));
 
       // 3. Export public key in spki format
-      const spkiKeyBuffer = await crypto.subtle.exportKey("spki", keyPair.publicKey);
+      const spkiKeyBuffer = await crypto.subtle.exportKey(
+        "spki",
+        keyPair.publicKey,
+      );
       const spkiBase64Url = bufferToBase64Url(new Uint8Array(spkiKeyBuffer));
 
       // 4. Generate credentialId (standard random UUID)
@@ -304,7 +351,9 @@ export const Fido2Prompt: Component = () => {
         id: credIdBase64Url,
         rawId: credIdBase64Url,
         response: {
-          clientDataJSON: bufferToBase64Url(new TextEncoder().encode(clientDataJSON)),
+          clientDataJSON: bufferToBase64Url(
+            new TextEncoder().encode(clientDataJSON),
+          ),
           attestationObject: bufferToBase64Url(packAttestationObject(authData)),
           publicKey: spkiBase64Url,
           publicKeyAlgorithm: -7, // ES256
@@ -352,39 +401,46 @@ export const Fido2Prompt: Component = () => {
           namedCurve: "P-256",
         },
         true,
-        ["sign"]
+        ["sign"],
       );
 
       // 2. Increment credential counter
       // De tranh loi Replay Protection cua may chu (nhu GitHub) khi counter nhap khau bi thap hon counter thuc te tren server,
       // chung ta gán counter toi thieu la 100,000.
       const nextCounter = Math.max(cred.counter + 1, 100000);
-      
+
       // Update item in Vault
       const updatedCred: Fido2Credential = {
         ...cred,
         counter: nextCounter,
       };
 
-      const originalItem = store.vaultItems.find(v => v.id === selected.vaultItemId);
-      if (!originalItem || originalItem.type !== VaultItemType.Login || !originalItem.login) {
+      const originalItem = store.vaultItems.find((v) =>
+        v.id === selected.vaultItemId
+      );
+      if (
+        !originalItem || originalItem.type !== VaultItemType.Login ||
+        !originalItem.login
+      ) {
         throw new Error("Vault item not found");
       }
-      
+
       const updatedItem: LoginVaultItem = {
         ...originalItem,
         type: VaultItemType.Login,
         login: {
           ...originalItem.login,
-          fido2Credentials: (originalItem.login.fido2Credentials || []).map((c: Fido2Credential) => 
-            c.credentialId === cred.credentialId ? updatedCred : c
-          ),
+          fido2Credentials: (originalItem.login.fido2Credentials || []).map((
+            c: Fido2Credential,
+          ) => c.credentialId === cred.credentialId ? updatedCred : c),
         },
       };
 
       const saveRes = await storeActions.saveItem(updatedItem);
       if (!saveRes.success) {
-        throw new Error(saveRes.error || "Không thể cập nhật số lần sử dụng Passkey");
+        throw new Error(
+          saveRes.error || "Không thể cập nhật số lần sử dụng Passkey",
+        );
       }
 
       // 3. Construct assertion data
@@ -396,7 +452,9 @@ export const Fido2Prompt: Component = () => {
       });
 
       const clientDataJSONBytes = new TextEncoder().encode(clientDataJSON);
-      const clientDataHash = new Uint8Array(await crypto.subtle.digest("SHA-256", clientDataJSONBytes));
+      const clientDataHash = new Uint8Array(
+        await crypto.subtle.digest("SHA-256", clientDataJSONBytes),
+      );
 
       // Lay tuy chon yeu cau xac thuc tu options. Mac dinh la true do nguoi dung da mo khoa bang Master Password
       const userVerified = options.userVerification !== "discouraged";
@@ -417,21 +475,29 @@ export const Fido2Prompt: Component = () => {
         userVerified,
       });
 
-      const signature = await generateAssertionSignature(authData, clientDataHash, privateKey);
+      const signature = await generateAssertionSignature(
+        authData,
+        clientDataHash,
+        privateKey,
+      );
 
       // Tu dong tuong thich nguoc: Kiem tra xem trang web dang yeu cau dinh dang ID nao
       // - Neu yeu cau chuoi ASCII UUID 36 ky tu (co che cu), chung ta tra ve dinh dang do.
       // - Mac dinh dung 16-byte raw UUID (co che moi chuan WebAuthn).
-      const b64_36 = bufferToBase64Url(new TextEncoder().encode(cred.credentialId));
+      const b64_36 = bufferToBase64Url(
+        new TextEncoder().encode(cred.credentialId),
+      );
 
       const useOld36ByteFormat = (options.allowCredentials || []).some(
-        (allowed: { id: string }) => allowed.id === b64_36
+        (allowed: { id: string }) => allowed.id === b64_36,
       );
 
       const rawCredId = useOld36ByteFormat
         ? new TextEncoder().encode(cred.credentialId)
         : getRawCredentialId(cred.credentialId);
-      const credIdBase64Url = useOld36ByteFormat ? b64_36 : bufferToBase64Url(rawCredId);
+      const credIdBase64Url = useOld36ByteFormat
+        ? b64_36
+        : bufferToBase64Url(rawCredId);
 
       const result = {
         id: credIdBase64Url,
@@ -479,125 +545,68 @@ export const Fido2Prompt: Component = () => {
       </div>
 
       <div class="fido2-body">
-        <Show when={store.isLocked} fallback={
-          <div class="prompt-content">
-            <Show when={error()}>
-              <div class="alert alert-danger mb-16">{error()}</div>
-              <Button variant="secondary" block onClick={handleReject}>Đóng cửa sổ</Button>
-            </Show>
-
-            <Show when={pendingReq()}>
-              {/* 1. FIDO2 CREATE (Registration) */}
-              <Show when={pendingReq()?.type === "create"}>
-                <div class="prompt-icon-wrapper">
-                  <div class="fido2-large-icon bg-success">
-                    <InfoIcon fill="var(--white)" />
-                  </div>
-                </div>
-                
-                <h2 class="prompt-title">Đăng ký Passkey mới</h2>
-                
-                <Show when={matchingAccounts().length > 0} fallback={
-                  <div class="prompt-subtitle">
-                    Ứng dụng <strong>{pendingReq()?.options.rp.name}</strong> muốn lưu Passkey cho tài khoản <strong>{pendingReq()?.options.user.name}</strong>. Gistwarden sẽ tạo một tài khoản mới để lưu trữ Passkey này.
-                  </div>
-                }>
-                  <div class="prompt-subtitle">
-                    Chọn tài khoản để lưu trữ Passkey cho <strong>{pendingReq()?.options.user.name}</strong>:
-                  </div>
-
-                  <div class="passkey-list">
-                    <For each={matchingAccounts()}>
-                      {(item, idx) => (
-                        <div 
-                          class={`passkey-item ${selectedAccountIndex() === idx() ? 'active' : ''}`}
-                          onClick={() => setSelectedAccountIndex(idx())}
-                        >
-                          <div class="passkey-item-icon">
-                            <LockIcon />
-                          </div>
-                          <div class="passkey-item-details">
-                            <div class="passkey-username">{item.login?.username || "Không có tên đăng nhập"}</div>
-                            <div class="passkey-vault-name">{item.name}</div>
-                          </div>
-                          <div class="passkey-checkbox">
-                            <div class="circle-check">
-                              <Show when={selectedAccountIndex() === idx()}>
-                                <div class="check-dot"></div>
-                              </Show>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </For>
-
-                    {/* Option to create a new account */}
-                    <div 
-                      class={`passkey-item ${selectedAccountIndex() === null ? 'active' : ''}`}
-                      onClick={() => setSelectedAccountIndex(null)}
-                    >
-                      <div class="passkey-item-icon">
-                        <QuestionIcon />
-                      </div>
-                      <div class="passkey-item-details">
-                        <div class="passkey-username">Tạo tài khoản mới</div>
-                        <div class="passkey-vault-name">Lưu như một tài khoản riêng biệt</div>
-                      </div>
-                      <div class="passkey-checkbox">
-                        <div class="circle-check">
-                          <Show when={selectedAccountIndex() === null}>
-                            <div class="check-dot"></div>
-                          </Show>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Show>
-
-                <div class="prompt-footer">
-                  <Button variant="secondary" onClick={handleReject} disabled={loading()}>
-                    Hủy bỏ
-                  </Button>
-                  <Button variant="primary" onClick={handleConfirmRegister} loading={loading()} loadingText="Đang lưu...">
-                    Lưu Passkey
-                  </Button>
-                </div>
+        <Show
+          when={store.isLocked}
+          fallback={
+            <div class="prompt-content">
+              <Show when={error()}>
+                <div class="alert alert-danger mb-16">{error()}</div>
+                <Button variant="secondary" block onClick={handleReject}>
+                  Đóng cửa sổ
+                </Button>
               </Show>
 
-              {/* 2. FIDO2 GET (Assertion/Authentication) */}
-              <Show when={pendingReq()?.type === "get"}>
-                <div class="prompt-icon-wrapper">
-                  <div class="fido2-large-icon bg-primary">
-                    <ShieldIcon fill="var(--white)" />
+              <Show when={pendingReq()}>
+                {/* 1. FIDO2 CREATE (Registration) */}
+                <Show when={pendingReq()?.type === "create"}>
+                  <div class="prompt-icon-wrapper">
+                    <div class="fido2-large-icon bg-success">
+                      <InfoIcon fill="var(--white)" />
+                    </div>
                   </div>
-                </div>
 
-                <h2 class="prompt-title">Yêu cầu đăng nhập</h2>
-                
-                <Show when={matchingCredentials().length === 0} fallback={
-                  <>
+                  <h2 class="prompt-title">Đăng ký Passkey mới</h2>
+
+                  <Show
+                    when={matchingAccounts().length > 0}
+                    fallback={
+                      <div class="prompt-subtitle">
+                        Ứng dụng{" "}
+                        <strong>{pendingReq()?.options.rp.name}</strong>{" "}
+                        muốn lưu Passkey cho tài khoản{" "}
+                        <strong>{pendingReq()?.options.user.name}</strong>.
+                        Gistwarden sẽ tạo một tài khoản mới để lưu trữ Passkey
+                        này.
+                      </div>
+                    }
+                  >
                     <div class="prompt-subtitle">
-                      Chọn một tài khoản Passkey đã lưu cho <strong>{pendingReq()?.options.rpId}</strong> để đăng nhập:
+                      Chọn tài khoản để lưu trữ Passkey cho{" "}
+                      <strong>{pendingReq()?.options.user.name}</strong>:
                     </div>
 
-                    {/* Styled list of passkeys instead of select dropdown */}
                     <div class="passkey-list">
-                      <For each={matchingCredentials()}>
+                      <For each={matchingAccounts()}>
                         {(item, idx) => (
-                          <div 
-                             class={`passkey-item ${selectedCredIndex() === idx() ? 'active' : ''}`}
-                            onClick={() => setSelectedCredIndex(idx())}
+                          <div
+                            class={`passkey-item ${
+                              selectedAccountIndex() === idx() ? "active" : ""
+                            }`}
+                            onClick={() => setSelectedAccountIndex(idx())}
                           >
                             <div class="passkey-item-icon">
-                              <QuestionIcon />
+                              <LockIcon />
                             </div>
                             <div class="passkey-item-details">
-                              <div class="passkey-username">{item.credential.userName}</div>
-                              <div class="passkey-vault-name">{item.vaultItemName}</div>
+                              <div class="passkey-username">
+                                {item.login.username ||
+                                  "Không có tên đăng nhập"}
+                              </div>
+                              <div class="passkey-vault-name">{item.name}</div>
                             </div>
                             <div class="passkey-checkbox">
                               <div class="circle-check">
-                                <Show when={selectedCredIndex() === idx()}>
+                                <Show when={selectedAccountIndex() === idx()}>
                                   <div class="check-dot"></div>
                                 </Show>
                               </div>
@@ -605,31 +614,142 @@ export const Fido2Prompt: Component = () => {
                           </div>
                         )}
                       </For>
-                    </div>
 
-                    <div class="prompt-footer">
-                      <Button variant="secondary" onClick={handleReject} disabled={loading()}>
-                        Hủy bỏ
-                      </Button>
-                      <Button variant="primary" onClick={handleConfirmAssert} loading={loading()} loadingText="Đang xác thực...">
-                        Xác nhận đăng nhập
-                      </Button>
+                      {/* Option to create a new account */}
+                      <div
+                        class={`passkey-item ${
+                          selectedAccountIndex() === null ? "active" : ""
+                        }`}
+                        onClick={() => setSelectedAccountIndex(null)}
+                      >
+                        <div class="passkey-item-icon">
+                          <QuestionIcon />
+                        </div>
+                        <div class="passkey-item-details">
+                          <div class="passkey-username">Tạo tài khoản mới</div>
+                          <div class="passkey-vault-name">
+                            Lưu như một tài khoản riêng biệt
+                          </div>
+                        </div>
+                        <div class="passkey-checkbox">
+                          <div class="circle-check">
+                            <Show when={selectedAccountIndex() === null}>
+                              <div class="check-dot"></div>
+                            </Show>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </>
-                }>
-                  <div class="prompt-subtitle error-msg">
-                    Không tìm thấy Passkey nào khớp cho tên miền <strong>{pendingReq()?.options.rpId}</strong> trong két sắt của bạn.
-                  </div>
-                  <div class="prompt-footer single-btn">
-                    <Button variant="secondary" block onClick={handleReject}>
-                      Đóng cửa sổ
+                  </Show>
+
+                  <div class="prompt-footer">
+                    <Button
+                      variant="secondary"
+                      onClick={handleReject}
+                      disabled={loading()}
+                    >
+                      Hủy bỏ
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleConfirmRegister}
+                      loading={loading()}
+                      loadingText="Đang lưu..."
+                    >
+                      Lưu Passkey
                     </Button>
                   </div>
                 </Show>
+
+                {/* 2. FIDO2 GET (Assertion/Authentication) */}
+                <Show when={pendingReq()?.type === "get"}>
+                  <div class="prompt-icon-wrapper">
+                    <div class="fido2-large-icon bg-primary">
+                      <ShieldIcon fill="var(--white)" />
+                    </div>
+                  </div>
+
+                  <h2 class="prompt-title">Yêu cầu đăng nhập</h2>
+
+                  <Show
+                    when={matchingCredentials().length === 0}
+                    fallback={
+                      <>
+                        <div class="prompt-subtitle">
+                          Chọn một tài khoản Passkey đã lưu cho{" "}
+                          <strong>{pendingReq()?.options.rpId}</strong>{" "}
+                          để đăng nhập:
+                        </div>
+
+                        {/* Styled list of passkeys instead of select dropdown */}
+                        <div class="passkey-list">
+                          <For each={matchingCredentials()}>
+                            {(item, idx) => (
+                              <div
+                                class={`passkey-item ${
+                                  selectedCredIndex() === idx() ? "active" : ""
+                                }`}
+                                onClick={() => setSelectedCredIndex(idx())}
+                              >
+                                <div class="passkey-item-icon">
+                                  <QuestionIcon />
+                                </div>
+                                <div class="passkey-item-details">
+                                  <div class="passkey-username">
+                                    {item.credential.userName}
+                                  </div>
+                                  <div class="passkey-vault-name">
+                                    {item.vaultItemName}
+                                  </div>
+                                </div>
+                                <div class="passkey-checkbox">
+                                  <div class="circle-check">
+                                    <Show when={selectedCredIndex() === idx()}>
+                                      <div class="check-dot"></div>
+                                    </Show>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </For>
+                        </div>
+
+                        <div class="prompt-footer">
+                          <Button
+                            variant="secondary"
+                            onClick={handleReject}
+                            disabled={loading()}
+                          >
+                            Hủy bỏ
+                          </Button>
+                          <Button
+                            variant="primary"
+                            onClick={handleConfirmAssert}
+                            loading={loading()}
+                            loadingText="Đang xác thực..."
+                          >
+                            Xác nhận đăng nhập
+                          </Button>
+                        </div>
+                      </>
+                    }
+                  >
+                    <div class="prompt-subtitle error-msg">
+                      Không tìm thấy Passkey nào khớp cho tên miền{" "}
+                      <strong>{pendingReq()?.options.rpId}</strong>{" "}
+                      trong két sắt của bạn.
+                    </div>
+                    <div class="prompt-footer single-btn">
+                      <Button variant="secondary" block onClick={handleReject}>
+                        Đóng cửa sổ
+                      </Button>
+                    </div>
+                  </Show>
+                </Show>
               </Show>
-            </Show>
-          </div>
-        }>
+            </div>
+          }
+        >
           {/* Master password unlock inside FIDO2 window */}
           <div class="prompt-content">
             <div class="prompt-icon-wrapper">
@@ -637,12 +757,17 @@ export const Fido2Prompt: Component = () => {
                 <LockIcon fill="var(--white)" />
               </div>
             </div>
-            
+
             <h2 class="prompt-title">Két sắt đang Khóa</h2>
-            <p class="prompt-subtitle">Mở khóa Gistwarden bằng mật khẩu Master để tiếp tục xác thực Passkey.</p>
+            <p class="prompt-subtitle">
+              Mở khóa Gistwarden bằng mật khẩu Master để tiếp tục xác thực
+              Passkey.
+            </p>
 
             <Show when={error()}>
-              <div class="alert alert-danger alert-prompt-compact">{error()}</div>
+              <div class="alert alert-danger alert-prompt-compact">
+                {error()}
+              </div>
             </Show>
 
             <form onSubmit={handleUnlock}>
@@ -657,10 +782,20 @@ export const Fido2Prompt: Component = () => {
                 />
               </div>
               <div class="prompt-footer">
-                <Button type="button" variant="secondary" onClick={handleReject} disabled={loading()}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleReject}
+                  disabled={loading()}
+                >
                   Hủy bỏ
                 </Button>
-                <Button type="submit" variant="primary" loading={loading()} loadingText="Mở khóa...">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={loading()}
+                  loadingText="Mở khóa..."
+                >
                   Mở khóa
                 </Button>
               </div>
