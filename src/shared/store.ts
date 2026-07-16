@@ -20,6 +20,7 @@ import {
   VaultListSchema,
   View,
 } from "./types.ts";
+import { setLanguage, SupportLanguage } from "./i18n.ts";
 export { View };
 
 export interface AppStore {
@@ -30,6 +31,7 @@ export interface AppStore {
   lastSync: number;
   oauthClientId: string;
   oauthWorkerUrl: string;
+  language: "en" | "vi";
 
   isLoaded: boolean;
   isLocked: boolean;
@@ -52,6 +54,8 @@ export interface AppStore {
     type: "info" | "warning" | "danger";
     resolve: ((value: boolean) => void) | null;
   };
+  transitionClass: string;
+  theme: "dark" | "light";
 }
 
 const [store, setStore] = createStore<AppStore>({
@@ -62,6 +66,7 @@ const [store, setStore] = createStore<AppStore>({
   lastSync: 0,
   oauthClientId: "Ov23liRxwWqLXD5AOkNW",
   oauthWorkerUrl: "https://gistwarden.uongsuadaubung.workers.dev",
+  language: "en",
 
   isLoaded: false,
   isLocked: true,
@@ -82,6 +87,8 @@ const [store, setStore] = createStore<AppStore>({
     type: "info",
     resolve: null,
   },
+  transitionClass: "",
+  theme: "dark",
 });
 
 export { store };
@@ -112,11 +119,38 @@ function isLoginVaultItem(item: VaultItem): item is LoginVaultItem {
   return item.type === VaultItemType.Login;
 }
 
+const viewDepths: Record<View, number> = {
+  [View.Login]: 0,
+  [View.Vault]: 1,
+  [View.Generator]: 2,
+  [View.Settings]: 3,
+  [View.ItemDetail]: 2,
+  [View.ItemEdit]: 3,
+  [View.Language]: 4,
+  [View.VaultOptions]: 4,
+  [View.Theme]: 4,
+  [View.Fido2Prompt]: 5,
+};
+
+let transitionToggle = false;
+
 export const storeActions = {
   async init() {
     console.log("[Store] Initializing Gistwarden Store...");
     const settings = await getAllSettings();
     const masterPassword = await getMasterPassword();
+
+    let currentTheme: "dark" | "light" = "dark";
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      const res = await chrome.storage.local.get("gistwarden_theme");
+      currentTheme = res.gistwarden_theme === "light" ? "light" : "dark";
+    }
+
+    if (currentTheme === "light") {
+      document.body.classList.add("light-theme");
+    } else {
+      document.body.classList.remove("light-theme");
+    }
 
     setStore({
       githubToken: settings.githubToken,
@@ -126,7 +160,11 @@ export const storeActions = {
       lastSync: settings.lastSync,
       oauthClientId: settings.oauthClientId,
       oauthWorkerUrl: settings.oauthWorkerUrl,
+      language: settings.language,
+      theme: currentTheme,
     });
+
+    setLanguage(settings.language === "vi" ? SupportLanguage.Vi : SupportLanguage.En);
 
     // Check mode FIDO2 prompt
     const params = new URLSearchParams(window.location.search);
@@ -185,7 +223,11 @@ export const storeActions = {
         lastSync: newSettings.lastSync,
         oauthClientId: newSettings.oauthClientId,
         oauthWorkerUrl: newSettings.oauthWorkerUrl,
+        language: newSettings.language,
       });
+      if (newSettings.language !== store.language) {
+        setLanguage(newSettings.language === "vi" ? SupportLanguage.Vi : SupportLanguage.En);
+      }
     });
 
     setStore("isLoaded", true);
@@ -857,13 +899,36 @@ export const storeActions = {
   },
 
   navigate(newView: View) {
-    setStore("view", newView);
+    const oldView = store.view;
+    const oldDepth = viewDepths[oldView] ?? 0;
+    const newDepth = viewDepths[newView] ?? 0;
+    let direction: "forward" | "backward" | "none" = "none";
+    if (newDepth > oldDepth) {
+      direction = "forward";
+    } else if (newDepth < oldDepth) {
+      direction = "backward";
+    }
+    
+    // Toggle class suffix to force animation re-trigger
+    transitionToggle = !transitionToggle;
+    const suffix = transitionToggle ? "a" : "b";
+    const transitionClass = direction === "none" ? "" : `slide-${direction}-${suffix}`;
+
+    setStore({
+      view: newView,
+      transitionClass,
+    });
   },
 
   selectItem(item: VaultItem | null) {
     setStore("selectedItem", item);
     if (item) {
-      setStore("view", View.ItemDetail);
+      transitionToggle = !transitionToggle;
+      const suffix = transitionToggle ? "a" : "b";
+      setStore({
+        view: View.ItemDetail,
+        transitionClass: `slide-forward-${suffix}`,
+      });
     }
   },
 
@@ -905,5 +970,23 @@ export const storeActions = {
       type: "info",
       resolve: null,
     });
+  },
+
+  async updateLanguage(lang: "en" | "vi") {
+    setStore("language", lang);
+    setLanguage(lang === "vi" ? SupportLanguage.Vi : SupportLanguage.En);
+    await updateSettings({ language: lang });
+  },
+
+  async updateTheme(newTheme: "dark" | "light") {
+    setStore("theme", newTheme);
+    if (newTheme === "light") {
+      document.body.classList.add("light-theme");
+    } else {
+      document.body.classList.remove("light-theme");
+    }
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      await chrome.storage.local.set({ gistwarden_theme: newTheme });
+    }
   },
 };

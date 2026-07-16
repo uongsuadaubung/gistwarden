@@ -1,6 +1,7 @@
 import { type Component, Show } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
 import Button from "./Button.tsx";
+import { t } from "@/shared/i18n.ts";
 
 export const ConfirmModal: Component = () => {
   const boxClass = () => {
@@ -14,7 +15,7 @@ export const ConfirmModal: Component = () => {
       <div class="confirm-modal-backdrop">
         <div class={boxClass()}>
           <h4 class="confirm-modal-title">
-            {store.confirmModal.title || "Xác nhận"}
+            {store.confirmModal.title || t("confirm_title")}
           </h4>
           <p
             class="confirm-modal-message"
@@ -25,7 +26,7 @@ export const ConfirmModal: Component = () => {
               variant="secondary"
               onClick={() => storeActions.resolveConfirm(false)}
             >
-              Hủy
+              {t("btn_cancel")}
             </Button>
             <Button
               variant={store.confirmModal.type === "danger"
@@ -33,7 +34,7 @@ export const ConfirmModal: Component = () => {
                 : "primary"}
               onClick={() => storeActions.resolveConfirm(true)}
             >
-              Xác nhận
+              {t("confirm_title")}
             </Button>
           </div>
         </div>

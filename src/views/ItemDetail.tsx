@@ -25,6 +25,7 @@ import {
   HeartOutlineIcon,
   TrashIcon,
 } from "@/icons/svg/index.ts";
+import { t } from "@/shared/i18n.ts";
 
 export const ItemDetail: Component = () => {
   // Local view states
@@ -120,18 +121,18 @@ export const ItemDetail: Component = () => {
     setVisibleFields((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
-  const handleCopy = async (text: string, type: string) => {
+  const handleCopy = async (text: string, _type: string) => {
     if (!text) return;
     await navigator.clipboard.writeText(text);
-    storeActions.showToast(`Đã sao chép ${type}!`, "success");
+    storeActions.showToast(t("detail_copied"), "success");
   };
 
   const handleDelete = async () => {
     if (!store.selectedItem?.id) return;
     if (
       !(await storeActions.confirm(
-        "Xóa tài khoản",
-        "Bạn có chắc chắn muốn xóa tài khoản này?",
+        t("edit_confirm_delete_title"),
+        t("edit_confirm_delete_msg", { name: name() }),
         "danger",
       ))
     ) {
@@ -143,7 +144,7 @@ export const ItemDetail: Component = () => {
     if (res.success) {
       storeActions.navigate(View.Vault);
     } else {
-      setError(res.error || "Lỗi xóa tài khoản");
+      setError(res.error || t("edit_error_delete_failed"));
     }
   };
 
@@ -170,12 +171,12 @@ export const ItemDetail: Component = () => {
     if (!res.success) {
       setFavorite(!nextFavorite);
       storeActions.showToast(
-        res.error || "Lỗi cập nhật trạng thái yêu thích",
+        res.error || t("toast_error"),
         "error",
       );
     } else {
       storeActions.showToast(
-        nextFavorite ? "Đã thêm vào mục Yêu thích!" : "Đã bỏ Yêu thích!",
+        t("toast_success"),
         "success",
       );
     }
@@ -191,8 +192,8 @@ export const ItemDetail: Component = () => {
           </div>
           <div class="detail-title detail-header-title">
             {store.selectedItem?.type === VaultItemType.SecureNote
-              ? "Chi tiết ghi chú"
-              : "Chi tiết tài khoản"}
+              ? t("detail_title_note")
+              : t("detail_title_login")}
           </div>
         </div>
         <button
@@ -200,7 +201,7 @@ export const ItemDetail: Component = () => {
           class="action-btn"
           style="color: var(--white); cursor: pointer; display: flex; align-items: center; padding: 4px;"
           onClick={handleToggleFavorite}
-          title={favorite() ? "Bỏ yêu thích" : "Yêu thích"}
+          title={t("vault_menu_favorites")}
         >
           <Show
             when={favorite()}
@@ -221,28 +222,28 @@ export const ItemDetail: Component = () => {
           </Show>
 
           <div class="detail-view-header">
-            <div class="detail-view-name">{name() || "Không có tên"}</div>
+            <div class="detail-view-name">{name() || t("detail_no_value")}</div>
           </div>
 
           {/* Card 1, 2, 3: Login Credentials */}
           <Show when={store.selectedItem?.type !== VaultItemType.SecureNote}>
             {/* Card 1: Login Credentials */}
             <div class="detail-section-title" style="margin-top: 0;">
-              Thông tin đăng nhập
+              {t("detail_section_login")}
             </div>
-            <div class="card mb-16">
+            <div class="card p-8 mb-16">
               {/* Username Field */}
               <div class="detail-row">
                 <div class="field-content">
-                  <div class="field-label">Tên đăng nhập</div>
-                  <div class="field-value">{username() || "Không có"}</div>
+                  <div class="field-label">{t("edit_label_username")}</div>
+                  <div class="field-value">{username() || t("detail_no_value")}</div>
                 </div>
                 <Show when={username()}>
                   <button
                     type="button"
                     class="action-btn"
-                    onClick={() => handleCopy(username(), "tên đăng nhập")}
-                    title="Sao chép tên đăng nhập"
+                    onClick={() => handleCopy(username(), "username")}
+                    title={t("detail_copy_username")}
                   >
                     <CopyIcon />
                   </button>
@@ -252,7 +253,7 @@ export const ItemDetail: Component = () => {
               {/* Password Field */}
               <div class="detail-row">
                 <div class="field-content">
-                  <div class="field-label">Mật khẩu</div>
+                  <div class="field-label">{t("edit_label_password")}</div>
                   <div class="field-value password-font">
                     {showPassword() ? password() : "••••••••••••"}
                   </div>
@@ -262,7 +263,7 @@ export const ItemDetail: Component = () => {
                     type="button"
                     class="action-btn"
                     onClick={() => setShowPassword(!showPassword())}
-                    title={showPassword() ? "Ẩn mật khẩu" : "Hiển thị mật khẩu"}
+                    title={t("edit_label_password")}
                   >
                     <Show
                       when={showPassword()}
@@ -275,8 +276,8 @@ export const ItemDetail: Component = () => {
                     <button
                       type="button"
                       class="action-btn"
-                      onClick={() => handleCopy(password(), "mật khẩu")}
-                      title="Sao chép mật khẩu"
+                      onClick={() => handleCopy(password(), "password")}
+                      title={t("detail_copy_password")}
                     >
                       <CopyIcon />
                     </button>
@@ -287,18 +288,18 @@ export const ItemDetail: Component = () => {
 
             {/* Card 2: Security & OTP */}
             <Show when={totpCode() || fidoCredentials().length > 0}>
-              <div class="detail-section-title">Bảo mật & OTP</div>
-              <div class="card mb-16">
+              <div class="detail-section-title">{t("detail_section_security")}</div>
+              <div class="card p-8 mb-16">
                 {/* Rolling TOTP Display */}
                 <Show when={totpCode()}>
                   <div
                     class="totp-row"
                     onClick={() =>
-                      handleCopy(totpCode().replace(/\s/g, ""), "mã TOTP")}
-                    title="Nhấp để sao chép mã TOTP"
+                      handleCopy(totpCode().replace(/\s/g, ""), "totp")}
+                    title={t("detail_copy_totp")}
                   >
                     <div class="totp-content">
-                      <div class="totp-label">Mã xác thực hiện tại (TOTP)</div>
+                      <div class="totp-label">{t("detail_totp_label")}</div>
                       <div class="totp-code">{totpCode()}</div>
                     </div>
                     {/* Countdown ring */}
@@ -324,9 +325,9 @@ export const ItemDetail: Component = () => {
                     {(cred) => (
                       <div class="detail-row">
                         <div class="field-content">
-                          <div class="field-label">Passkey đã liên kết</div>
+                          <div class="field-label">{t("detail_passkey_webauthn")}</div>
                           <div class="field-value">
-                            <strong>{cred.userName || "Không có tên"}</strong>
+                            <strong>{cred.userName || t("detail_no_value")}</strong>
                             {" "}
                             (RP: {cred.rpId})
                           </div>
@@ -339,13 +340,13 @@ export const ItemDetail: Component = () => {
             </Show>
 
             {/* Card 3: Auto-fill Options */}
-            <div class="detail-section-title">Tùy chọn tự động điền</div>
-            <div class="card mb-16">
+            <div class="detail-section-title">{t("detail_section_autofill")}</div>
+            <div class="card p-8 mb-16">
               {/* URI Field */}
               <div class="detail-row">
                 <div class="field-content">
-                  <div class="field-label">Trang web (URI)</div>
-                  <div class="field-value">{uri() || "Không có"}</div>
+                  <div class="field-label">{t("edit_label_website")}</div>
+                  <div class="field-value">{uri() || t("detail_no_value")}</div>
                 </div>
                 <Show when={uri()}>
                   <div class="field-actions">
@@ -353,15 +354,15 @@ export const ItemDetail: Component = () => {
                       type="button"
                       class="action-btn"
                       onClick={() => window.open(uri(), "_blank")}
-                      title="Truy cập trang web"
+                      title={t("detail_visit_website")}
                     >
                       <ExternalLinkIcon class="icon-inline" />
                     </button>
                     <button
                       type="button"
                       class="action-btn"
-                      onClick={() => handleCopy(uri(), "địa chỉ URI")}
-                      title="Sao chép trang web"
+                      onClick={() => handleCopy(uri(), "website")}
+                      title={t("edit_label_website")}
                     >
                       <CopyIcon />
                     </button>
@@ -382,9 +383,9 @@ export const ItemDetail: Component = () => {
                     : "16px",
               }}
             >
-              Trường tùy chỉnh
+              {t("edit_label_fields")}
             </div>
-            <div class="card mb-16">
+            <div class="card p-8 mb-16">
               <For each={fields()}>
                 {(field, index) => (
                   <Show
@@ -393,14 +394,14 @@ export const ItemDetail: Component = () => {
                       <div class="detail-row">
                         <div class="field-content">
                           <div class="field-label">
-                            {field.name || "Trường tùy chỉnh"}
+                            {field.name || t("edit_label_fields")}
                           </div>
                           <div class="field-value">
                             {field.type === 1
                               ? (visibleFields()[index()]
                                 ? field.value
                                 : "••••••••••••")
-                              : field.value || "Trống"}
+                              : field.value || t("detail_no_value")}
                           </div>
                         </div>
                         <div class="field-actions">
@@ -409,9 +410,7 @@ export const ItemDetail: Component = () => {
                               type="button"
                               class="action-btn"
                               onClick={() => toggleFieldVisibility(index())}
-                              title={visibleFields()[index()]
-                                ? "Ẩn giá trị"
-                                : "Hiển thị giá trị"}
+                              title={t("edit_field_val_placeholder")}
                             >
                               <Show
                                 when={visibleFields()[index()]}
@@ -428,9 +427,9 @@ export const ItemDetail: Component = () => {
                               onClick={() =>
                                 handleCopy(
                                   field.value,
-                                  field.name || "giá trị",
+                                  field.name || "value",
                                 )}
-                              title={`Sao chép ${field.name || "giá trị"}`}
+                              title={t("btn_copy")}
                             >
                               <CopyIcon />
                             </button>
@@ -441,7 +440,7 @@ export const ItemDetail: Component = () => {
                   >
                     {/* Divider row */}
                     <div class="custom-field-divider">
-                      <span>{field.name || "Phân cách"}</span>
+                      <span>{field.name || "Divider"}</span>
                     </div>
                   </Show>
                 )}
@@ -461,9 +460,9 @@ export const ItemDetail: Component = () => {
                     : "16px",
               }}
             >
-              Ghi chú
+              {t("edit_label_notes")}
             </div>
-            <div class="card mb-16">
+            <div class="card p-8 mb-16">
               <div style="padding: 8px 12px;">
                 <div class="notes-display">{notes()}</div>
               </div>
@@ -479,13 +478,13 @@ export const ItemDetail: Component = () => {
             onClick={handleGoToEdit}
             class="min-w-100"
           >
-            Sửa
+            {t("btn_edit")}
           </Button>
           <button
             type="button"
             class="detail-delete-btn"
             onClick={handleDelete}
-            title="Xóa tài khoản"
+            title={t("btn_delete")}
           >
             <TrashIcon class="icon-inline-large" />
           </button>

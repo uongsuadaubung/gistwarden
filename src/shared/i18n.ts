@@ -1,0 +1,326 @@
+import { z } from "zod";
+import { createSignal } from "solid-js";
+import en from "./locales/en.ts";
+import vi from "./locales/vi.ts";
+
+const LangSchema = z.object({
+  // Common buttons & notifications
+  btn_save: z.string(),
+  btn_cancel: z.string(),
+  btn_delete: z.string(),
+  btn_edit: z.string(),
+  btn_create: z.string(),
+  btn_close: z.string(),
+  btn_copy: z.string(),
+  btn_copied: z.string(),
+  confirm_title: z.string(),
+  dialog_loading: z.string(),
+  toast_success: z.string(),
+  toast_error: z.string(),
+
+  // Login Page
+  login_title_locked: z.string(),
+  login_title_setup: z.string(),
+  login_method_oauth: z.string(),
+  login_method_pat: z.string(),
+  login_placeholder_pat: z.string(),
+  login_pat_help: z.string(),
+  login_oauth_help: z.string(),
+  login_oauth_hide: z.string(),
+  login_oauth_show: z.string(),
+  login_oauth_alert_save: z.string(),
+  login_loading_auth: z.string(),
+  login_loading_connect: z.string(),
+  login_loading_unlock: z.string(),
+  login_btn_save_token: z.string(),
+  login_btn_oauth: z.string(),
+  login_oauth_config: z.string(),
+  login_oauth_client_id: z.string(),
+  login_oauth_worker_url: z.string(),
+  login_btn_save_config: z.string(),
+  login_master_password: z.string(),
+  login_placeholder_mp: z.string(),
+  login_btn_unlock: z.string(),
+  login_forgot_password: z.string(),
+  login_reset_token: z.string(),
+  login_error_empty_pat: z.string(),
+  login_error_invalid_token: z.string(),
+  login_error_any: z.string(),
+  login_error_oauth_missing_config: z.string(),
+  login_error_oauth_no_token: z.string(),
+  login_error_oauth_fail: z.string(),
+  login_error_empty_mp: z.string(),
+  login_error_wrong_mp: z.string(),
+  login_error_unlock_fail: z.string(),
+  login_forgot_password_title: z.string(),
+  login_forgot_password_msg: z.string(),
+
+  // Vault Page
+  vault_search_placeholder: z.string(),
+  vault_empty_title: z.string(),
+  vault_empty_subtitle: z.string(),
+  vault_btn_sync: z.string(),
+  vault_btn_settings: z.string(),
+  vault_btn_generator: z.string(),
+  vault_btn_add: z.string(),
+  vault_popout_title: z.string(),
+  vault_lock_title: z.string(),
+  vault_suggested_items: z.string(),
+  vault_all_items: z.string(),
+  vault_search_results: z.string(),
+  vault_no_search_matches: z.string(),
+  vault_menu_all: z.string(),
+  vault_menu_logins: z.string(),
+  vault_menu_notes: z.string(),
+  vault_menu_favorites: z.string(),
+  vault_item_login: z.string(),
+  vault_item_note: z.string(),
+  vault_syncing: z.string(),
+  vault_sync_error: z.string(),
+
+  // Item Edit / Add Page
+  edit_title_add_login: z.string(),
+  edit_title_edit_login: z.string(),
+  edit_title_add_note: z.string(),
+  edit_title_edit_note: z.string(),
+  edit_label_name: z.string(),
+  edit_placeholder_name: z.string(),
+  edit_label_username: z.string(),
+  edit_placeholder_username: z.string(),
+  edit_label_password: z.string(),
+  edit_placeholder_password: z.string(),
+  edit_label_totp: z.string(),
+  edit_placeholder_totp: z.string(),
+  edit_label_website: z.string(),
+  edit_placeholder_website: z.string(),
+  edit_label_notes: z.string(),
+  edit_placeholder_notes: z.string(),
+  edit_label_fields: z.string(),
+  edit_field_type_text: z.string(),
+  edit_field_type_hidden: z.string(),
+  edit_field_name_placeholder: z.string(),
+  edit_field_val_placeholder: z.string(),
+  edit_btn_add_field: z.string(),
+  edit_label_passkeys: z.string(),
+  edit_passkey_creation_date: z.string(),
+  edit_passkey_counter: z.string(),
+  edit_passkey_rp_id: z.string(),
+  edit_passkey_username: z.string(),
+  edit_passkey_user_handle: z.string(),
+  edit_passkey_discoverable: z.string(),
+  edit_passkey_yes: z.string(),
+  edit_passkey_no: z.string(),
+  edit_error_empty_name: z.string(),
+  edit_error_save_failed: z.string(),
+  edit_confirm_delete_title: z.string(),
+  edit_confirm_delete_msg: z.string(),
+  edit_error_delete_failed: z.string(),
+  edit_label_type: z.string(),
+  edit_type_login: z.string(),
+  edit_type_note: z.string(),
+  edit_placeholder_name_note: z.string(),
+  edit_placeholder_name_login: z.string(),
+  edit_field_modal_title_add: z.string(),
+  edit_field_modal_title_edit: z.string(),
+  edit_field_modal_label_type: z.string(),
+  edit_field_type_divider: z.string(),
+  edit_field_modal_placeholder_name: z.string(),
+  edit_field_modal_placeholder_divider: z.string(),
+  edit_field_error_empty_divider: z.string(),
+  edit_field_error_empty_name: z.string(),
+  edit_qr_success: z.string(),
+  edit_qr_error_no_match: z.string(),
+  edit_qr_error_fail: z.string(),
+  edit_confirm_delete_passkey_title: z.string(),
+  edit_confirm_delete_passkey_msg: z.string(),
+  edit_toast_updated_note: z.string(),
+  edit_toast_updated_login: z.string(),
+  edit_toast_created_note: z.string(),
+  edit_toast_created_login: z.string(),
+
+  // Item Detail Page
+  detail_title_login: z.string(),
+  detail_title_note: z.string(),
+  detail_totp_copied: z.string(),
+  detail_copy_username: z.string(),
+  detail_copy_password: z.string(),
+  detail_copy_totp: z.string(),
+  detail_copied: z.string(),
+  detail_passkey_webauthn: z.string(),
+  detail_fields: z.string(),
+  detail_creation_date: z.string(),
+  detail_revision_date: z.string(),
+  detail_section_login: z.string(),
+  detail_no_value: z.string(),
+  detail_section_security: z.string(),
+  detail_totp_label: z.string(),
+  detail_section_autofill: z.string(),
+  detail_visit_website: z.string(),
+
+  // Settings Page
+  settings_header: z.string(),
+  settings_change_mp: z.string(),
+  settings_export: z.string(),
+  settings_clear_vault: z.string(),
+  settings_logout: z.string(),
+  settings_label_language: z.string(),
+  settings_lang_vi: z.string(),
+  settings_lang_en: z.string(),
+  settings_github_account: z.string(),
+  settings_connected_as: z.string(),
+  settings_gist_id: z.string(),
+  settings_last_sync: z.string(),
+  settings_sync_never: z.string(),
+  settings_label_oauth: z.string(),
+  settings_version: z.string(),
+  settings_theme_label: z.string(),
+  settings_theme_sub: z.string(),
+  settings_theme_dark: z.string(),
+  settings_theme_light: z.string(),
+  settings_vault_options_label: z.string(),
+  settings_vault_options_sub: z.string(),
+  settings_change_mp_title: z.string(),
+  settings_change_mp_sub: z.string(),
+  settings_lock_sub: z.string(),
+  settings_clear_vault_sub: z.string(),
+  settings_logout_sub: z.string(),
+  settings_open_gist_title: z.string(),
+  settings_change_mp_current: z.string(),
+  settings_change_mp_new: z.string(),
+  settings_change_mp_confirm: z.string(),
+  settings_change_mp_btn: z.string(),
+  settings_error_mp_wrong_current: z.string(),
+  settings_error_mp_empty_new: z.string(),
+  settings_error_mp_mismatch: z.string(),
+  settings_error_mp_fail: z.string(),
+  settings_error_fields_required: z.string(),
+  settings_mp_success: z.string(),
+  settings_export_title: z.string(),
+  settings_export_placeholder: z.string(),
+  settings_export_btn: z.string(),
+  settings_export_success: z.string(),
+  settings_clear_vault_title: z.string(),
+  settings_clear_vault_msg: z.string(),
+  settings_clear_vault_confirm_title: z.string(),
+  settings_clear_vault_confirm_msg: z.string(),
+  settings_clear_vault_placeholder: z.string(),
+  settings_clear_vault_btn: z.string(),
+  settings_clear_vault_success: z.string(),
+  settings_clear_vault_fail: z.string(),
+  settings_logout_title: z.string(),
+  settings_logout_msg: z.string(),
+  settings_logout_success: z.string(),
+  vault_sync_success: z.string(),
+  vault_import_success: z.string(),
+  vault_import_error_invalid: z.string(),
+  vault_import_error_fail: z.string(),
+  vault_export_error_fail: z.string(),
+  vault_options_sync_manual: z.string(),
+  vault_options_import: z.string(),
+  vault_options_import_sub: z.string(),
+  vault_options_export: z.string(),
+  vault_options_export_sub: z.string(),
+
+  // Password Generator View
+  gen_title: z.string(),
+  gen_label_length: z.string(),
+  gen_opt_uppercase: z.string(),
+  gen_opt_lowercase: z.string(),
+  gen_opt_numbers: z.string(),
+  gen_opt_symbols: z.string(),
+  gen_opt_avoid_ambiguous: z.string(),
+  gen_error_charset_empty: z.string(),
+  gen_btn_generate: z.string(),
+  gen_btn_copy: z.string(),
+
+  // FIDO2 Prompt View
+  fido2_title: z.string(),
+  fido2_rp: z.string(),
+  fido2_username: z.string(),
+  fido2_btn_approve: z.string(),
+  fido2_btn_deny: z.string(),
+  fido2_unlock_required: z.string(),
+  fido2_error_no_request: z.string(),
+  fido2_error_load_failed: z.string(),
+  fido2_error_save_failed: z.string(),
+  fido2_error_create_failed: z.string(),
+  fido2_error_counter_update_failed: z.string(),
+  fido2_error_assert_failed: z.string(),
+  fido2_register_title: z.string(),
+  fido2_register_subtitle_new: z.string(),
+  fido2_register_subtitle_choose: z.string(),
+  fido2_register_new_account: z.string(),
+  fido2_register_new_account_sub: z.string(),
+  fido2_btn_save: z.string(),
+  fido2_assert_title: z.string(),
+  fido2_assert_subtitle: z.string(),
+  fido2_assert_btn_confirm: z.string(),
+  fido2_assert_no_match: z.string(),
+  fido2_vault_locked_title: z.string(),
+  fido2_vault_locked_subtitle: z.string(),
+
+  // Navigation tabs
+  nav_vault: z.string(),
+  nav_generator: z.string(),
+  nav_settings: z.string(),
+});
+
+type Lang = z.infer<typeof LangSchema>;
+
+export enum SupportLanguage {
+  En = "en",
+  Vi = "vi",
+}
+
+export const SupportLanguageSchema = z.enum(["en", "vi"]);
+
+export type TranslationKey = keyof Lang;
+
+export function isTranslationKey(key: string): key is TranslationKey {
+  return key in LangSchema.shape;
+}
+
+const dictionaries: Record<SupportLanguage, unknown> = {
+  [SupportLanguage.En]: en,
+  [SupportLanguage.Vi]: vi,
+};
+
+const [translations, setTranslations] = createSignal<Partial<Lang>>({});
+const [currentLanguageCode, setCurrentLanguageCode] = createSignal<SupportLanguage>(SupportLanguage.En);
+
+export function setLanguage(code: SupportLanguage): void {
+  const raw = dictionaries[code];
+  setTranslations(LangSchema.parse(raw));
+  setCurrentLanguageCode(code);
+}
+
+export function t(key: TranslationKey, params?: Record<string, string | number>): string {
+  let msg = translations()[key] ?? key;
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      msg = msg.replace(`{${k}}`, String(v));
+    });
+  }
+  return msg;
+}
+
+/**
+ * Định dạng ngày giờ tự động dựa trên ngôn ngữ/khu vực hoạt động hiện tại.
+ */
+export function formatDateTime(dateInput: Date | number | string): string {
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return "";
+
+  const locale = currentLanguageCode() === SupportLanguage.Vi
+    ? "vi-VN"
+    : "en-US";
+  return d.toLocaleString(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}

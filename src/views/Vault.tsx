@@ -20,6 +20,7 @@ import {
 } from "@/icons/svg/index.ts";
 import { Input } from "@/components/Input.tsx";
 import { VaultItemRow } from "@/components/VaultItemRow.tsx";
+import { t } from "@/shared/i18n.ts";
 
 export const Vault: Component = () => {
   const [search, setSearch] = createSignal("");
@@ -108,11 +109,11 @@ export const Vault: Component = () => {
     return allItems().filter((item) => !item.favorite);
   };
 
-  const handleCopyText = async (text: string, type: string, e: MouseEvent) => {
+  const handleCopyText = async (text: string, _type: string, e: MouseEvent) => {
     e.stopPropagation();
     if (!text) return;
     await navigator.clipboard.writeText(text);
-    storeActions.showToast(`Đã sao chép ${type}!`, "success");
+    storeActions.showToast(t("detail_copied"), "success");
     setActiveMenuId(""); // Close menu
   };
 
@@ -129,10 +130,10 @@ export const Vault: Component = () => {
       });
       const code = totp.generate();
       await navigator.clipboard.writeText(code);
-      storeActions.showToast("Đã sao chép mã TOTP!", "success");
+      storeActions.showToast(t("detail_totp_copied"), "success");
     } catch (err) {
       console.error("[Gistwarden] Vault copy TOTP error:", err);
-      storeActions.showToast("Lỗi sinh mã TOTP!", "error");
+      storeActions.showToast(t("toast_error"), "error");
     }
     setActiveMenuId(""); // Close menu
   };
@@ -248,15 +249,15 @@ export const Vault: Component = () => {
               }}
             >
               <PlusIcon style="width: 12px; height: 12px; margin-right: 4px; fill: currentColor;" />
-              Thêm mới
+              {t("vault_btn_add")}
             </button>
             <Show when={showAddMenu()}>
               <div class="add-dropdown" onClick={(e) => e.stopPropagation()}>
                 <div class="dropdown-item" onClick={handleAddNewLogin}>
-                  Mật khẩu
+                  {t("vault_item_login")}
                 </div>
                 <div class="dropdown-item" onClick={handleAddNewNote}>
-                  Ghi chú
+                  {t("vault_item_note")}
                 </div>
               </div>
             </Show>
@@ -264,16 +265,16 @@ export const Vault: Component = () => {
 
           {/* Popout Button */}
           <Show when={!isPopout()}>
-            <ExternalLinkIcon onClick={handlePopout} title="Mở cửa sổ riêng" />
+            <ExternalLinkIcon onClick={handlePopout} title={t("vault_popout_title")} />
           </Show>
           {/* Sync Button */}
           <SyncIcon
             onClick={handleSync}
             class={store.syncing ? "spinning" : ""}
-            title="Đồng bộ ngay"
+            title={t("vault_btn_sync")}
           />
           {/* Lock Button */}
-          <LockIcon onClick={handleLock} title="Khóa két sắt" />
+          <LockIcon onClick={handleLock} title={t("vault_lock_title")} />
         </div>
       </header>
 
@@ -284,7 +285,7 @@ export const Vault: Component = () => {
           <SearchIcon class="search-icon" />
           <Input
             type="text"
-            placeholder="Tìm kiếm tài khoản..."
+            placeholder={t("vault_search_placeholder")}
             value={search()}
             onInput={(e) => setSearch(e.currentTarget.value)}
           />
@@ -303,7 +304,7 @@ export const Vault: Component = () => {
           <Show when={!search() && matchingItems().length > 0}>
             <div class="section-header">
               <div class="vault-section-title m-0">
-                Đề xuất cho trang web này
+                {t("vault_suggested_items")}
               </div>
               <span class="section-badge">
                 {matchingItems().length}
@@ -327,7 +328,7 @@ export const Vault: Component = () => {
           <Show when={favoriteItems().length > 0}>
             <div class="section-header">
               <div class="vault-section-title m-0">
-                Yêu thích
+                {t("vault_menu_favorites")}
               </div>
               <span class="section-badge">
                 {favoriteItems().length}
@@ -353,8 +354,8 @@ export const Vault: Component = () => {
           >
             <div class="section-header">
               <div class="vault-section-title m-0">
-                <Show when={search()} fallback="Tất cả tài khoản">
-                  Kết quả tìm kiếm
+                <Show when={search()} fallback={t("vault_all_items")}>
+                  {t("vault_search_results")}
                 </Show>
               </div>
               <span class="section-badge">
@@ -367,8 +368,8 @@ export const Vault: Component = () => {
               fallback={
                 <div class="no-items">
                   {search()
-                    ? "Không tìm thấy tài khoản nào khớp"
-                    : "Két sắt của bạn trống rỗng. Thêm mới tài khoản bằng nút + bên dưới."}
+                    ? t("vault_no_search_matches")
+                    : t("vault_empty_subtitle")}
                 </div>
               }
             >

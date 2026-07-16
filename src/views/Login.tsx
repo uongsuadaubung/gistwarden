@@ -3,6 +3,7 @@ import { store, storeActions } from "@/shared/store.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
 import { ChevronDownIcon, GithubIcon, LockIcon } from "@/icons/svg/index.ts";
+import { t } from "@/shared/i18n.ts";
 
 export const Login: Component = () => {
   const [token, setToken] = createSignal("");
@@ -24,7 +25,7 @@ export const Login: Component = () => {
   const handleSaveToken = async (e: Event) => {
     e.preventDefault();
     if (!token().trim()) {
-      setError("Vui lòng nhập Personal Access Token");
+      setError(t("login_error_empty_pat"));
       return;
     }
     setLoading(true);
@@ -32,11 +33,11 @@ export const Login: Component = () => {
     try {
       const res = await storeActions.setupGithub(token().trim());
       if (!res.success) {
-        setError(res.error || "Token không hợp lệ hoặc lỗi kết nối");
+        setError(res.error || t("login_error_invalid_token"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || "Đã xảy ra lỗi");
+      setError(errMsg || t("login_error_any"));
     } finally {
       setLoading(false);
     }
@@ -47,9 +48,7 @@ export const Login: Component = () => {
     const wUrl = workerUrl().trim();
 
     if (!cId || !wUrl) {
-      setError(
-        "Vui lòng mở mục 'Cấu hình OAuth' để nhập Client ID và Worker URL trước khi đăng nhập.",
-      );
+      setError(t("login_error_oauth_missing_config"));
       setShowConfig(true);
       return;
     }
@@ -72,17 +71,17 @@ export const Login: Component = () => {
       });
 
       if (!oauthRes.success || !oauthRes.token) {
-        throw new Error(oauthRes.error || "Không nhận được token từ GitHub");
+        throw new Error(oauthRes.error || t("login_error_oauth_no_token"));
       }
 
       // 3. Setup GitHub with the obtained token
       const res = await storeActions.setupGithub(oauthRes.token);
       if (!res.success) {
-        setError(res.error || "Token không hợp lệ hoặc lỗi kết nối");
+        setError(res.error || t("login_error_invalid_token"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || "Lỗi đăng nhập OAuth");
+      setError(errMsg || t("login_error_oauth_fail"));
     } finally {
       setLoading(false);
     }
@@ -91,7 +90,7 @@ export const Login: Component = () => {
   const handleUnlock = async (e: Event) => {
     e.preventDefault();
     if (!masterPassword()) {
-      setError("Vui lòng nhập Mật khẩu Master");
+      setError(t("login_error_empty_mp"));
       return;
     }
     setLoading(true);
@@ -102,11 +101,11 @@ export const Login: Component = () => {
         setMasterPassword("");
         // If from FIDO2 Prompt, we will stay in FIDO2 Prompt View, otherwise storeActions automatically navigates to Vault
       } else {
-        setError(res.error || "Mật khẩu Master không đúng");
+        setError(res.error || t("login_error_wrong_mp"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || "Lỗi mở khóa");
+      setError(errMsg || t("login_error_unlock_fail"));
     } finally {
       setLoading(false);
     }
@@ -119,13 +118,7 @@ export const Login: Component = () => {
 
   const handleForgotPassword = async () => {
     const gistId = store.gistId;
-    const message =
-      "Gistwarden sử dụng cơ chế mã hóa đầu-cuối (Zero-Knowledge). Mật khẩu Master không bao giờ được gửi đi hay lưu trữ trên máy chủ, do đó <strong style='color: var(--error);'>KHÔNG CÓ CÁCH NÀO</strong> để khôi phục hoặc đặt lại.<br/><br/>" +
-      "Để bắt đầu lại, hệ thống sẽ <strong>ĐĂNG XUẤT</strong> và <strong>XÓA DỮ LIỆU CỤC BỘ</strong>.<br/><br/>" +
-      "Nếu bạn muốn tiếp tục sử dụng tài khoản GitHub này, hệ thống sẽ mở trang GitHub Gist chứa két sắt cũ để bạn có thể <strong>SAO LƯU</strong> dữ liệu hoặc tiến hành <strong style='color: var(--error);'>XÓA THỦ CÔNG</strong> Gist này trên GitHub trước khi đăng nhập lại.<br/><br/>" +
-      "Bạn có chắc chắn muốn đăng xuất và mở trang Gist cũ không?";
-
-    if (await storeActions.confirm("Quên mật khẩu Master", message, "danger")) {
+    if (await storeActions.confirm(t("login_forgot_password_title"), t("login_forgot_password_msg"), "danger")) {
       if (gistId) {
         window.open(`https://gist.github.com/${gistId}`, "_blank");
       }
@@ -141,9 +134,9 @@ export const Login: Component = () => {
         <p class="login-subtitle">
           <Show
             when={store.githubToken}
-            fallback="Cấu hình bộ lưu trữ đám mây GitHub Gist"
+            fallback={t("login_title_setup")}
           >
-            Két sắt đang bị Khóa
+            {t("login_title_locked")}
           </Show>
         </p>
       </div>
@@ -164,7 +157,7 @@ export const Login: Component = () => {
                   loginMethod() === "oauth" ? "active" : ""
                 }`}
               >
-                Đăng nhập GitHub (OAuth)
+                {t("login_method_oauth")}
               </div>
               <div
                 onClick={() => setLoginMethod("pat")}
@@ -172,7 +165,7 @@ export const Login: Component = () => {
                   loginMethod() === "pat" ? "active" : ""
                 }`}
               >
-                Dùng Token (PAT)
+                {t("login_method_pat")}
               </div>
             </div>
 
@@ -192,11 +185,7 @@ export const Login: Component = () => {
                       onInput={(e) => setToken(e.currentTarget.value)}
                       disabled={loading()}
                     />
-                    <span class="login-pat-help">
-                      Token cần có quyền truy cập{" "}
-                      <strong>gist</strong>. Tiện ích sẽ tạo một Gist bí mật
-                      (secret gist) để lưu trữ két sắt đã mã hóa của bạn.
-                    </span>
+                    <span class="login-pat-help" innerHTML={t("login_pat_help")} />
                   </div>
 
                   <Button
@@ -204,9 +193,9 @@ export const Login: Component = () => {
                     variant="primary"
                     block
                     loading={loading()}
-                    loadingText="Đang xác thực..."
+                    loadingText={t("login_loading_auth")}
                   >
-                    Kết nối GitHub (PAT)
+                    {t("login_btn_save_token")}
                   </Button>
                 </form>
               }
@@ -214,9 +203,7 @@ export const Login: Component = () => {
               <div>
                 <div class="text-center mb-16">
                   <p class="login-oauth-help">
-                    Kết nối tự động và an toàn với tài khoản GitHub của bạn để
-                    đồng bộ két sắt tự động qua Cloudflare Worker Proxy riêng tư
-                    của bạn.
+                    {t("login_oauth_help")}
                   </p>
 
                   <Button
@@ -224,10 +211,10 @@ export const Login: Component = () => {
                     block
                     onClick={handleGithubOauth}
                     loading={loading()}
-                    loadingText="Đang kết nối..."
+                    loadingText={t("login_loading_connect")}
                   >
                     <GithubIcon class="github-btn-icon" />
-                    Đăng nhập bằng GitHub
+                    {t("login_btn_oauth")}
                   </Button>
                 </div>
 
@@ -238,8 +225,8 @@ export const Login: Component = () => {
                   >
                     <span>
                       {showConfig()
-                        ? "Ẩn cấu hình OAuth"
-                        : "Hiện cấu hình OAuth"}
+                        ? t("login_oauth_hide")
+                        : t("login_oauth_show")}
                     </span>
                     <ChevronDownIcon
                       class={`oauth-config-chevron ${
@@ -252,13 +239,13 @@ export const Login: Component = () => {
                     <div class="oauth-config-box">
                       <div class="form-group mb-8 text-left">
                         <label for="oauth-client-id" class="login-config-label">
-                          Client ID của GitHub App
+                          {t("login_oauth_client_id")}
                         </label>
                         <Input
                           id="oauth-client-id"
                           type="text"
                           class="login-config-input"
-                          placeholder="Nhập Client ID..."
+                          placeholder="Client ID..."
                           value={clientId()}
                           onInput={(e) => setClientId(e.currentTarget.value)}
                           disabled={loading()}
@@ -269,7 +256,7 @@ export const Login: Component = () => {
                           for="oauth-worker-url"
                           class="login-config-label"
                         >
-                          URL Cloudflare Worker Proxy
+                          {t("login_oauth_worker_url")}
                         </label>
                         <Input
                           id="oauth-worker-url"
@@ -290,11 +277,11 @@ export const Login: Component = () => {
                             clientId().trim(),
                             workerUrl().trim(),
                           );
-                          alert("Đã lưu thông số cấu hình OAuth!");
+                          alert(t("login_oauth_alert_save"));
                         }}
                         disabled={loading()}
                       >
-                        Lưu cấu hình
+                        {t("login_btn_save_config")}
                       </Button>
                     </div>
                   </Show>
@@ -306,11 +293,11 @@ export const Login: Component = () => {
       >
         <form onSubmit={handleUnlock} class="card mb-0">
           <div class="form-group">
-            <label for="master-password">Mật khẩu Master</label>
+            <label for="master-password">{t("login_master_password")}</label>
             <Input
               id="master-password"
               type="password"
-              placeholder="Nhập mật khẩu Master..."
+              placeholder={t("login_placeholder_mp")}
               value={masterPassword()}
               onInput={(e) => setMasterPassword(e.currentTarget.value)}
               disabled={loading()}
@@ -323,10 +310,10 @@ export const Login: Component = () => {
             variant="primary"
             block
             loading={loading()}
-            loadingText="Đang mở khóa..."
+            loadingText={t("login_loading_unlock")}
             class="mb-12"
           >
-            Mở khóa
+            {t("login_btn_unlock")}
           </Button>
 
           <Button
@@ -336,7 +323,7 @@ export const Login: Component = () => {
             onClick={handleResetToken}
             disabled={loading()}
           >
-            Đổi tài khoản GitHub
+            {t("login_reset_token")}
           </Button>
 
           <div style="margin-top: 16px; text-align: center;">
@@ -348,7 +335,7 @@ export const Login: Component = () => {
                 handleForgotPassword();
               }}
             >
-              Quên mật khẩu Master?
+              {t("login_forgot_password")}
             </a>
           </div>
         </form>

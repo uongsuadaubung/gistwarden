@@ -1,5 +1,5 @@
 import { render } from "solid-js/web";
-import { type Component, Match, onMount, Show, Switch } from "solid-js";
+import { type Component, type JSX, Match, onMount, Show, Switch } from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
 import {
   GeneratorIcon,
@@ -17,7 +17,20 @@ import Generator from "@/views/Generator.tsx";
 import Settings from "@/views/Settings.tsx";
 import VaultOptions from "@/views/VaultOptions.tsx";
 import Fido2Prompt from "@/views/Fido2Prompt.tsx";
+import Language from "@/views/Language.tsx";
+import Theme from "@/views/Theme.tsx";
 import ConfirmModal from "@/components/ConfirmModal.tsx";
+import { t } from "@/shared/i18n.ts";
+
+const TransitionView: Component<{ when: boolean; children: JSX.Element }> = (props) => {
+  return (
+    <Show when={props.when}>
+      <div class={store.transitionClass} style="height: 100%; width: 100%;">
+        {props.children}
+      </div>
+    </Show>
+  );
+};
 
 const App: Component = () => {
   onMount(async () => {
@@ -59,34 +72,40 @@ const App: Component = () => {
           {/* Main Application Shell when unlocked */}
           <Match when={true}>
             <div class="app-container">
-              {/* View Switching */}
               <div style="flex: 1; overflow: hidden; position: relative;">
-                <Switch>
-                  <Match when={store.view === View.Vault}>
-                    <Vault />
-                  </Match>
-                  <Match when={store.view === View.ItemDetail}>
-                    <ItemDetail />
-                  </Match>
-                  <Match when={store.view === View.ItemEdit}>
-                    <ItemEdit />
-                  </Match>
-                  <Match when={store.view === View.Generator}>
-                    <Generator />
-                  </Match>
-                  <Match when={store.view === View.Settings}>
-                    <Settings />
-                  </Match>
-                  <Match when={store.view === View.VaultOptions}>
-                    <VaultOptions />
-                  </Match>
-                </Switch>
+                <TransitionView when={store.view === View.Vault}>
+                  <Vault />
+                </TransitionView>
+                <TransitionView when={store.view === View.ItemDetail}>
+                  <ItemDetail />
+                </TransitionView>
+                <TransitionView when={store.view === View.ItemEdit}>
+                  <ItemEdit />
+                </TransitionView>
+                <TransitionView when={store.view === View.Generator}>
+                  <Generator />
+                </TransitionView>
+                <TransitionView when={store.view === View.Settings}>
+                  <Settings />
+                </TransitionView>
+                <TransitionView when={store.view === View.VaultOptions}>
+                  <VaultOptions />
+                </TransitionView>
+                <TransitionView when={store.view === View.Language}>
+                  <Language />
+                </TransitionView>
+                <TransitionView when={store.view === View.Theme}>
+                  <Theme />
+                </TransitionView>
               </div>
 
               {/* Bottom Nav Bar (hidden when viewing/editing details) */}
               <Show
-                when={store.view !== View.ItemDetail &&
-                  store.view !== View.ItemEdit}
+                when={[
+                  View.Vault,
+                  View.Generator,
+                  View.Settings,
+                ].includes(store.view)}
               >
                 <nav class="app-nav">
                   <div
@@ -96,7 +115,7 @@ const App: Component = () => {
                     onClick={() => storeActions.navigate(View.Vault)}
                   >
                     <VaultIcon />
-                    <span>Két sắt</span>
+                    <span>{t("nav_vault")}</span>
                   </div>
                   <div
                     class={`nav-item ${
@@ -105,7 +124,7 @@ const App: Component = () => {
                     onClick={() => storeActions.navigate(View.Generator)}
                   >
                     <GeneratorIcon />
-                    <span>Trình tạo</span>
+                    <span>{t("nav_generator")}</span>
                   </div>
                   <div
                     class={`nav-item ${
@@ -117,7 +136,7 @@ const App: Component = () => {
                     onClick={() => storeActions.navigate(View.Settings)}
                   >
                     <SettingsIcon />
-                    <span>Cài đặt</span>
+                    <span>{t("nav_settings")}</span>
                   </div>
                 </nav>
               </Show>

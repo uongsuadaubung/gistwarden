@@ -9,6 +9,8 @@ export enum View {
   Settings = "Settings",
   Fido2Prompt = "Fido2Prompt",
   VaultOptions = "VaultOptions",
+  Language = "Language",
+  Theme = "Theme",
 }
 
 export enum VaultItemType {

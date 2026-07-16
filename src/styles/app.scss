@@ -355,6 +355,14 @@ html.mode-responsive #root {
   margin-bottom: 16px;
 }
 
+.card-list {
+  padding: 0 16px;
+}
+
+.card-no-margin {
+  margin-bottom: 0;
+}
+
 /* Alert Banner */
 .alert {
   padding: 10px 12px;
@@ -2052,4 +2060,66 @@ body.light-theme {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+// Slide-in Screen transitions (A/B keyframes to force browser re-render)
+// Modern soft slide + fade + scale easing (designed like premium Apple/SaaS interfaces)
+@keyframes slideInRightA {
+  from {
+    transform: translateX(32px) scale(0.985);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRightB {
+  from {
+    transform: translateX(32px) scale(0.985);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeftA {
+  from {
+    transform: translateX(-32px) scale(0.985);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeftB {
+  from {
+    transform: translateX(-32px) scale(0.985);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.slide-forward-a {
+  animation: slideInRightA 0.28s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+.slide-forward-b {
+  animation: slideInRightB 0.28s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+.slide-backward-a {
+  animation: slideInLeftA 0.28s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+.slide-backward-b {
+  animation: slideInLeftB 0.28s cubic-bezier(0.25, 1, 0.5, 1) both;
 }

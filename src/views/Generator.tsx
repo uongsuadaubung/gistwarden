@@ -1,6 +1,7 @@
 import { type Component, createSignal, onMount, Show } from "solid-js";
 import Button from "@/components/Button.tsx";
 import { RefreshIcon } from "@/icons/svg/index.ts";
+import { t } from "@/shared/i18n.ts";
 
 export const Generator: Component = () => {
   const [password, setPassword] = createSignal("");
@@ -29,7 +30,7 @@ export const Generator: Component = () => {
     }
 
     if (!charset) {
-      setPassword("Chọn ít nhất một kiểu ký tự!");
+      setPassword(t("gen_error_charset_empty"));
       return;
     }
 
@@ -43,7 +44,7 @@ export const Generator: Component = () => {
   };
 
   const handleCopy = async () => {
-    if (!password() || password().startsWith("Chọn")) return;
+    if (!password() || password() === t("gen_error_charset_empty")) return;
     await navigator.clipboard.writeText(password());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -52,18 +53,18 @@ export const Generator: Component = () => {
   return (
     <div class="app-container">
       <div class="app-body">
-        <h3 class="generator-title">Trình tạo Mật khẩu</h3>
+        <h3 class="generator-title">{t("gen_title")}</h3>
 
         {/* Output */}
         <div class="generator-output">
           <div class="output-value">{password()}</div>
           <div class="output-actions">
-            <Button variant="secondary" onClick={generate} title="Tạo lại">
+            <Button variant="secondary" onClick={generate} title={t("gen_btn_generate")}>
               <RefreshIcon class="icon-inline" />
             </Button>
             <Button variant="primary" onClick={handleCopy} class="min-w-100">
-              <Show when={copied()} fallback="Sao chép">
-                Đã chép!
+              <Show when={copied()} fallback={t("btn_copy")}>
+                {t("btn_copied")}
               </Show>
             </Button>
           </div>
@@ -72,7 +73,7 @@ export const Generator: Component = () => {
         {/* Options */}
         <div class="card">
           <div class="form-group mb-16">
-            <label>Độ dài mật khẩu</label>
+            <label>{t("gen_label_length")}</label>
             <div class="range-slider">
               <input
                 type="range"
@@ -98,7 +99,7 @@ export const Generator: Component = () => {
                   generate();
                 }}
               />
-              <span>Chữ hoa (A-Z)</span>
+              <span>{t("gen_opt_uppercase")}</span>
             </label>
 
             <label class="checkbox-option">
@@ -110,7 +111,7 @@ export const Generator: Component = () => {
                   generate();
                 }}
               />
-              <span>Chữ thường (a-z)</span>
+              <span>{t("gen_opt_lowercase")}</span>
             </label>
 
             <label class="checkbox-option">
@@ -122,7 +123,7 @@ export const Generator: Component = () => {
                   generate();
                 }}
               />
-              <span>Chữ số (0-9)</span>
+              <span>{t("gen_opt_numbers")}</span>
             </label>
 
             <label class="checkbox-option">
@@ -134,7 +135,7 @@ export const Generator: Component = () => {
                   generate();
                 }}
               />
-              <span>Ký tự đặc biệt (!@#...)</span>
+              <span>{t("gen_opt_symbols")}</span>
             </label>
 
             <label class="checkbox-option checkbox-option-divider">
@@ -146,7 +147,7 @@ export const Generator: Component = () => {
                   generate();
                 }}
               />
-              <span>Tránh ký tự dễ nhầm lẫn (O, 0, l, 1)</span>
+              <span>{t("gen_opt_avoid_ambiguous")}</span>
             </label>
           </div>
         </div>

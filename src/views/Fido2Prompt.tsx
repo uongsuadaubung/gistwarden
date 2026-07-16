@@ -23,6 +23,7 @@ import {
   QuestionIcon,
   ShieldIcon,
 } from "@/icons/svg/index.ts";
+import { t } from "@/shared/i18n.ts";
 
 interface Fido2Request {
   success: boolean;
@@ -177,11 +178,11 @@ export const Fido2Prompt: Component = () => {
           findMatchingAccounts(rpId, res.origin, res.options.user.name);
         }
       } else {
-        setError(res.error || "Không có yêu cầu xác thực nào đang chờ xử lý.");
+        setError(res.error || t("fido2_error_no_request"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || "Lỗi tải yêu cầu xác thực");
+      setError(errMsg || t("fido2_error_load_failed"));
     }
   };
 
@@ -226,7 +227,7 @@ export const Fido2Prompt: Component = () => {
   const handleUnlock = async (e: Event) => {
     e.preventDefault();
     if (!masterPassword()) {
-      setError("Vui lòng nhập Mật khẩu Master");
+      setError(t("login_error_empty_mp"));
       return;
     }
     setLoading(true);
@@ -237,11 +238,11 @@ export const Fido2Prompt: Component = () => {
         setMasterPassword("");
         await loadPendingRequest();
       } else {
-        setError(res.error || "Mật khẩu Master không đúng");
+        setError(res.error || t("login_error_wrong_mp"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || "Lỗi mở khóa");
+      setError(errMsg || t("login_error_unlock_fail"));
     } finally {
       setLoading(false);
     }
@@ -327,7 +328,7 @@ export const Fido2Prompt: Component = () => {
       }
 
       if (!saveRes.success) {
-        throw new Error(saveRes.error || "Không thể lưu Passkey vào két sắt");
+        throw new Error(saveRes.error || t("fido2_error_save_failed"));
       }
 
       // 7. Generate authData and CBOR attestationObject
@@ -370,7 +371,7 @@ export const Fido2Prompt: Component = () => {
       window.close();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || "Lỗi tạo Passkey");
+      setError(errMsg || t("fido2_error_create_failed"));
       setLoading(false);
     }
   };
@@ -439,7 +440,7 @@ export const Fido2Prompt: Component = () => {
       const saveRes = await storeActions.saveItem(updatedItem);
       if (!saveRes.success) {
         throw new Error(
-          saveRes.error || "Không thể cập nhật số lần sử dụng Passkey",
+          saveRes.error || t("fido2_error_counter_update_failed"),
         );
       }
 
@@ -519,7 +520,7 @@ export const Fido2Prompt: Component = () => {
       window.close();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || "Lỗi xác thực Passkey");
+      setError(errMsg || t("fido2_error_assert_failed"));
       setLoading(false);
     }
   };
@@ -552,7 +553,7 @@ export const Fido2Prompt: Component = () => {
               <Show when={error()}>
                 <div class="alert alert-danger mb-16">{error()}</div>
                 <Button variant="secondary" block onClick={handleReject}>
-                  Đóng cửa sổ
+                  {t("btn_close")}
                 </Button>
               </Show>
 
@@ -565,25 +566,15 @@ export const Fido2Prompt: Component = () => {
                     </div>
                   </div>
 
-                  <h2 class="prompt-title">Đăng ký Passkey mới</h2>
+                  <h2 class="prompt-title">{t("fido2_register_title")}</h2>
 
                   <Show
                     when={matchingAccounts().length > 0}
                     fallback={
-                      <div class="prompt-subtitle">
-                        Ứng dụng{" "}
-                        <strong>{pendingReq()?.options.rp.name}</strong>{" "}
-                        muốn lưu Passkey cho tài khoản{" "}
-                        <strong>{pendingReq()?.options.user.name}</strong>.
-                        Gistwarden sẽ tạo một tài khoản mới để lưu trữ Passkey
-                        này.
-                      </div>
+                      <div class="prompt-subtitle" innerHTML={t("fido2_register_subtitle_new", { rp: pendingReq()?.options.rp.name || "", user: pendingReq()?.options.user.name || "" })} />
                     }
                   >
-                    <div class="prompt-subtitle">
-                      Chọn tài khoản để lưu trữ Passkey cho{" "}
-                      <strong>{pendingReq()?.options.user.name}</strong>:
-                    </div>
+                    <div class="prompt-subtitle" innerHTML={t("fido2_register_subtitle_choose", { user: pendingReq()?.options.user.name || "" })} />
 
                     <div class="passkey-list">
                       <For each={matchingAccounts()}>
@@ -600,7 +591,7 @@ export const Fido2Prompt: Component = () => {
                             <div class="passkey-item-details">
                               <div class="passkey-username">
                                 {item.login.username ||
-                                  "Không có tên đăng nhập"}
+                                  t("detail_no_value")}
                               </div>
                               <div class="passkey-vault-name">{item.name}</div>
                             </div>
@@ -626,9 +617,9 @@ export const Fido2Prompt: Component = () => {
                           <QuestionIcon />
                         </div>
                         <div class="passkey-item-details">
-                          <div class="passkey-username">Tạo tài khoản mới</div>
+                          <div class="passkey-username">{t("fido2_register_new_account")}</div>
                           <div class="passkey-vault-name">
-                            Lưu như một tài khoản riêng biệt
+                            {t("fido2_register_new_account_sub")}
                           </div>
                         </div>
                         <div class="passkey-checkbox">
@@ -648,15 +639,15 @@ export const Fido2Prompt: Component = () => {
                       onClick={handleReject}
                       disabled={loading()}
                     >
-                      Hủy bỏ
+                      {t("btn_cancel")}
                     </Button>
                     <Button
                       variant="primary"
                       onClick={handleConfirmRegister}
                       loading={loading()}
-                      loadingText="Đang lưu..."
+                      loadingText={t("dialog_loading")}
                     >
-                      Lưu Passkey
+                      {t("fido2_btn_save")}
                     </Button>
                   </div>
                 </Show>
@@ -669,17 +660,13 @@ export const Fido2Prompt: Component = () => {
                     </div>
                   </div>
 
-                  <h2 class="prompt-title">Yêu cầu đăng nhập</h2>
+                  <h2 class="prompt-title">{t("fido2_assert_title")}</h2>
 
                   <Show
                     when={matchingCredentials().length === 0}
                     fallback={
                       <>
-                        <div class="prompt-subtitle">
-                          Chọn một tài khoản Passkey đã lưu cho{" "}
-                          <strong>{pendingReq()?.options.rpId}</strong>{" "}
-                          để đăng nhập:
-                        </div>
+                        <div class="prompt-subtitle" innerHTML={t("fido2_assert_subtitle", { rp: pendingReq()?.options.rpId || "" })} />
 
                         {/* Styled list of passkeys instead of select dropdown */}
                         <div class="passkey-list">
@@ -720,28 +707,24 @@ export const Fido2Prompt: Component = () => {
                             onClick={handleReject}
                             disabled={loading()}
                           >
-                            Hủy bỏ
+                            {t("btn_cancel")}
                           </Button>
                           <Button
                             variant="primary"
                             onClick={handleConfirmAssert}
                             loading={loading()}
-                            loadingText="Đang xác thực..."
+                            loadingText={t("dialog_loading")}
                           >
-                            Xác nhận đăng nhập
+                            {t("fido2_assert_btn_confirm")}
                           </Button>
                         </div>
                       </>
                     }
                   >
-                    <div class="prompt-subtitle error-msg">
-                      Không tìm thấy Passkey nào khớp cho tên miền{" "}
-                      <strong>{pendingReq()?.options.rpId}</strong>{" "}
-                      trong két sắt của bạn.
-                    </div>
+                    <div class="prompt-subtitle error-msg" innerHTML={t("fido2_assert_no_match", { rp: pendingReq()?.options.rpId || "" })} />
                     <div class="prompt-footer single-btn">
                       <Button variant="secondary" block onClick={handleReject}>
-                        Đóng cửa sổ
+                        {t("btn_close")}
                       </Button>
                     </div>
                   </Show>
@@ -758,10 +741,9 @@ export const Fido2Prompt: Component = () => {
               </div>
             </div>
 
-            <h2 class="prompt-title">Két sắt đang Khóa</h2>
+            <h2 class="prompt-title">{t("fido2_vault_locked_title")}</h2>
             <p class="prompt-subtitle">
-              Mở khóa Gistwarden bằng mật khẩu Master để tiếp tục xác thực
-              Passkey.
+              {t("fido2_vault_locked_subtitle")}
             </p>
 
             <Show when={error()}>
@@ -774,7 +756,7 @@ export const Fido2Prompt: Component = () => {
               <div class="form-group text-left">
                 <Input
                   type="password"
-                  placeholder="Mật khẩu Master..."
+                  placeholder={t("login_placeholder_mp") + "..."}
                   value={masterPassword()}
                   onInput={(e) => setMasterPassword(e.currentTarget.value)}
                   disabled={loading()}
@@ -788,15 +770,15 @@ export const Fido2Prompt: Component = () => {
                   onClick={handleReject}
                   disabled={loading()}
                 >
-                  Hủy bỏ
+                  {t("btn_cancel")}
                 </Button>
                 <Button
                   type="submit"
                   variant="primary"
                   loading={loading()}
-                  loadingText="Mở khóa..."
+                  loadingText={t("dialog_loading")}
                 >
-                  Mở khóa
+                  {t("login_btn_unlock")}
                 </Button>
               </div>
             </form>

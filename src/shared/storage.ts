@@ -18,6 +18,7 @@ export const SettingsSchema = z.object({
   oauthWorkerUrl: z.string().default(
     "https://gistwarden.uongsuadaubung.workers.dev",
   ),
+  language: z.enum(["en", "vi"]).default("en"),
 });
 
 export type AppSettings = z.infer<typeof SettingsSchema>;

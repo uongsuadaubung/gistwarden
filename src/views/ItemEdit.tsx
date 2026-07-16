@@ -21,6 +21,7 @@ import {
   QrIcon,
   TrashIcon,
 } from "@/icons/svg/index.ts";
+import { t } from "@/shared/i18n.ts";
 
 export const ItemEdit: Component = () => {
   const isEdit = () => !!store.selectedItem?.id;
@@ -77,8 +78,8 @@ export const ItemEdit: Component = () => {
     if (!nameVal) {
       alert(
         editFieldType() === 2
-          ? "Vui lòng nhập tên nhóm phân cách"
-          : "Vui lòng nhập tên trường",
+          ? t("edit_field_error_empty_divider")
+          : t("edit_field_error_empty_name"),
       );
       return;
     }
@@ -171,10 +172,10 @@ export const ItemEdit: Component = () => {
     setFields(fields().filter((_, i) => i !== index));
   };
 
-  const handleCopy = async (text: string, type: string) => {
+  const handleCopy = async (text: string, _type: string) => {
     if (!text) return;
     await navigator.clipboard.writeText(text);
-    storeActions.showToast(`Đã sao chép ${type}!`, "success");
+    storeActions.showToast(t("detail_copied"), "success");
   };
 
   const handleScanQr = async () => {
@@ -190,18 +191,17 @@ export const ItemEdit: Component = () => {
       if (res && res.success && res.secret) {
         setTotpSecret(res.secret);
         storeActions.showToast(
-          "Đã tìm thấy và điền mã QR thành công!",
+          t("edit_qr_success"),
           "success",
         );
       } else {
         setError(
-          res.error ||
-            "Không tìm thấy mã QR nào trên màn hình. Hãy đảm bảo mã QR đang hiển thị trên trang web phía sau.",
+          res.error || t("edit_qr_error_no_match"),
         );
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || "Lỗi chụp quét mã QR");
+      setError(errMsg || t("edit_qr_error_fail"));
     } finally {
       setScanning(false);
     }
@@ -211,8 +211,8 @@ export const ItemEdit: Component = () => {
     if (!store.selectedItem?.id) return;
     if (
       !(await storeActions.confirm(
-        "Xóa tài khoản",
-        "Bạn có chắc chắn muốn xóa tài khoản này?",
+        t("edit_confirm_delete_title"),
+        t("edit_confirm_delete_msg", { name: name() }),
         "danger",
       ))
     ) {
@@ -226,7 +226,7 @@ export const ItemEdit: Component = () => {
       if (res.success) {
         storeActions.navigate(View.Vault);
       } else {
-        setError(res.error || "Lỗi xóa tài khoản");
+        setError(res.error || t("edit_error_delete_failed"));
       }
     } finally {
       setSaving(false);
@@ -236,8 +236,8 @@ export const ItemEdit: Component = () => {
   const handleDeleteFidoCredential = async (credId: string) => {
     if (
       !(await storeActions.confirm(
-        "Xóa Passkey",
-        "Bạn có chắc chắn muốn xóa Passkey này? Việc này sẽ hủy liên kết đăng nhập bằng Passkey của tài khoản này.",
+        t("edit_confirm_delete_passkey_title"),
+        t("edit_confirm_delete_passkey_msg"),
         "danger",
       ))
     ) return;
@@ -250,11 +250,7 @@ export const ItemEdit: Component = () => {
     e.preventDefault();
     if (saving()) return;
     if (!name().trim()) {
-      setError(
-        itemType() === VaultItemType.SecureNote
-          ? "Vui lòng nhập tên ghi chú"
-          : "Vui lòng nhập tên tài khoản",
-      );
+      setError(t("edit_error_empty_name"));
       return;
     }
 
@@ -303,11 +299,11 @@ export const ItemEdit: Component = () => {
       if (res.success) {
         const msg = isEdit()
           ? (itemType() === VaultItemType.SecureNote
-            ? "Đã cập nhật ghi chú!"
-            : "Đã cập nhật tài khoản!")
+            ? t("edit_toast_updated_note")
+            : t("edit_toast_updated_login"))
           : (itemType() === VaultItemType.SecureNote
-            ? "Đã tạo ghi chú thành công!"
-            : "Đã tạo tài khoản thành công!");
+            ? t("edit_toast_created_note")
+            : t("edit_toast_created_login"));
         storeActions.showToast(msg, "success");
 
         // If was editing, return to detail view, else go back to vault
@@ -325,7 +321,7 @@ export const ItemEdit: Component = () => {
           storeActions.navigate(View.Vault);
         }
       } else {
-        setError(res.error || "Lỗi lưu tài khoản");
+        setError(res.error || t("edit_error_save_failed"));
       }
     } finally {
       setSaving(false);
@@ -351,11 +347,11 @@ export const ItemEdit: Component = () => {
           <div class="detail-title detail-header-title">
             {isEdit()
               ? (itemType() === VaultItemType.SecureNote
-                ? "Chỉnh sửa ghi chú"
-                : "Chỉnh sửa tài khoản")
+                ? t("edit_title_edit_note")
+                : t("edit_title_edit_login"))
               : (itemType() === VaultItemType.SecureNote
-                ? "Thêm ghi chú"
-                : "Thêm tài khoản")}
+                ? t("edit_title_add_note")
+                : t("edit_title_add_login"))}
           </div>
         </div>
         <button
@@ -363,7 +359,7 @@ export const ItemEdit: Component = () => {
           class="action-btn"
           style="color: var(--white); cursor: pointer; display: flex; align-items: center; padding: 4px;"
           onClick={() => setFavorite(!favorite())}
-          title={favorite() ? "Bỏ yêu thích" : "Yêu thích"}
+          title={t("vault_menu_favorites")}
         >
           <Show
             when={favorite()}
@@ -384,7 +380,7 @@ export const ItemEdit: Component = () => {
           </Show>
 
           <div class="form-group">
-            <label for="item-type">Loại</label>
+            <label for="item-type">{t("edit_label_type")}</label>
             <select
               id="item-type"
               class="input-control"
@@ -400,38 +396,38 @@ export const ItemEdit: Component = () => {
               }}
               style="height: 38px; border-radius: 8px; font-size: 13px;"
             >
-              <option value={VaultItemType.Login}>Mật khẩu</option>
-              <option value={VaultItemType.SecureNote}>Ghi chú an toàn</option>
+              <option value={VaultItemType.Login}>{t("edit_type_login")}</option>
+              <option value={VaultItemType.SecureNote}>{t("edit_type_note")}</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="item-name">Tên</label>
+            <label for="item-name">{t("edit_label_name")}</label>
             <Input
               id="item-name"
               type="text"
               value={name()}
               onInput={(e) => setName(e.currentTarget.value)}
               placeholder={itemType() === VaultItemType.SecureNote
-                ? "Ví dụ: Mã khẩn cấp, Cấu hình..."
-                : "Ví dụ: Google, Facebook..."}
+                ? t("edit_placeholder_name_note")
+                : t("edit_placeholder_name_login")}
             />
           </div>
 
           <Show when={itemType() !== VaultItemType.SecureNote}>
             <div class="form-group">
-              <label for="item-username">Tên đăng nhập</label>
+              <label for="item-username">{t("edit_label_username")}</label>
               <Input
                 id="item-username"
                 type="text"
                 value={username()}
                 onInput={(e) => setUsername(e.currentTarget.value)}
-                placeholder="Username hoặc email..."
+                placeholder={t("edit_placeholder_username")}
               />
             </div>
 
             <div class="form-group">
-              <label for="item-password">Mật khẩu</label>
+              <label for="item-password">{t("edit_label_password")}</label>
               <div class="pos-relative">
                 <Input
                   id="item-password"
@@ -439,7 +435,7 @@ export const ItemEdit: Component = () => {
                   class="password-font pr-68"
                   value={password()}
                   onInput={(e) => setPassword(e.currentTarget.value)}
-                  placeholder="Mật khẩu..."
+                  placeholder={t("edit_placeholder_password")}
                 />
                 <div class="input-right-actions">
                   <button
@@ -457,7 +453,7 @@ export const ItemEdit: Component = () => {
                   <button
                     type="button"
                     class="action-btn input-action-btn"
-                    onClick={() => handleCopy(password(), "mật khẩu")}
+                    onClick={() => handleCopy(password(), "password")}
                   >
                     <CopyIcon class="icon-inline" />
                   </button>
@@ -467,13 +463,13 @@ export const ItemEdit: Component = () => {
 
             {/* Passkeys list in Edit Mode */}
             <Show when={fidoCredentials().length > 0}>
-              <div class="detail-section-title">Passkey đã liên kết</div>
+              <div class="detail-section-title">{t("detail_passkey_webauthn")}</div>
               <div class="card p-8 mb-12">
                 <For each={fidoCredentials()}>
                   {(cred) => (
                     <div class="fido2-cred-row">
                       <div>
-                        <strong>{cred.userName || "Không có tên"}</strong>
+                        <strong>{cred.userName || t("detail_no_value")}</strong>
                         <span class="card-sub-text">RP: {cred.rpId}</span>
                       </div>
                       <button
@@ -481,7 +477,7 @@ export const ItemEdit: Component = () => {
                         class="action-btn fido2-delete-btn"
                         onClick={() =>
                           handleDeleteFidoCredential(cred.credentialId)}
-                        title="Xóa Passkey"
+                        title={t("edit_confirm_delete_passkey_title")}
                       >
                         <TrashIcon class="icon-inline" />
                       </button>
@@ -493,7 +489,7 @@ export const ItemEdit: Component = () => {
 
             {/* TOTP Section */}
             <div class="form-group mb-20">
-              <label for="item-totp">Khóa xác thực TOTP (Secret Key)</label>
+              <label for="item-totp">{t("edit_label_totp")}</label>
               <div class="pos-relative mb-8">
                 <Input
                   id="item-totp"
@@ -501,16 +497,14 @@ export const ItemEdit: Component = () => {
                   class="password-font pr-68"
                   value={totpSecret()}
                   onInput={(e) => setTotpSecret(e.currentTarget.value)}
-                  placeholder="Secret key (Base32)..."
+                  placeholder={t("edit_placeholder_totp")}
                 />
                 <div class="input-right-actions">
                   <button
                     type="button"
                     class="action-btn input-action-btn"
                     onClick={() => setShowTotpSecret(!showTotpSecret())}
-                    title={showTotpSecret()
-                      ? "Ẩn khóa TOTP"
-                      : "Hiển thị khóa TOTP"}
+                    title={t("edit_placeholder_totp")}
                   >
                     <Show
                       when={showTotpSecret()}
@@ -522,7 +516,7 @@ export const ItemEdit: Component = () => {
                   <button
                     type="button"
                     class="action-btn input-action-btn"
-                    title="Quét mã QR trên màn hình"
+                    title={t("edit_placeholder_totp")}
                     onClick={handleScanQr}
                     disabled={scanning()}
                   >
@@ -537,7 +531,7 @@ export const ItemEdit: Component = () => {
             </div>
 
             <div class="form-group">
-              <label for="item-uri">URI (Trang web)</label>
+              <label for="item-uri">{t("edit_label_website")}</label>
               <Input
                 id="item-uri"
                 type="text"
@@ -550,7 +544,7 @@ export const ItemEdit: Component = () => {
 
           {/* Custom Fields in Edit Mode */}
           <Show when={fields().length > 0}>
-            <div class="detail-section-title">Trường tùy chỉnh</div>
+            <div class="detail-section-title">{t("edit_label_fields")}</div>
             <div class="card p-8 mb-12">
               <For each={fields()}>
                 {(field, index) => (
@@ -584,7 +578,7 @@ export const ItemEdit: Component = () => {
                             <span style="font-size: 12px; color: var(--text-muted); margin-left: 8px; font-family: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
                               {field.type === 1
                                 ? "••••••••"
-                                : (field.value || "Trống")}
+                                : (field.value || t("detail_no_value"))}
                             </span>
                           </div>
                           <div style="display: flex; gap: 8px;">
@@ -593,7 +587,7 @@ export const ItemEdit: Component = () => {
                               class="action-btn"
                               style="padding: 4px; color: var(--text-muted);"
                               onClick={() => handleOpenEditField(index())}
-                              title="Sửa trường"
+                              title={t("btn_edit")}
                             >
                               <EditIcon class="icon-inline" />
                             </button>
@@ -602,7 +596,7 @@ export const ItemEdit: Component = () => {
                               class="action-btn"
                               style="padding: 4px; color: var(--error);"
                               onClick={() => handleRemoveField(index())}
-                              title="Xóa trường"
+                              title={t("btn_delete")}
                             >
                               <TrashIcon class="icon-inline" />
                             </button>
@@ -643,7 +637,7 @@ export const ItemEdit: Component = () => {
                             class="action-btn"
                             style="padding: 4px; color: var(--text-muted);"
                             onClick={() => handleOpenEditField(index())}
-                            title="Sửa phân cách"
+                            title={t("btn_edit")}
                           >
                             <EditIcon class="icon-inline" />
                           </button>
@@ -652,7 +646,7 @@ export const ItemEdit: Component = () => {
                             class="action-btn"
                             style="padding: 4px; color: var(--error);"
                             onClick={() => handleRemoveField(index())}
-                            title="Xóa phân cách"
+                            title={t("btn_delete")}
                           >
                             <TrashIcon class="icon-inline" />
                           </button>
@@ -673,18 +667,18 @@ export const ItemEdit: Component = () => {
               style="font-size: 12px; padding: 8px;"
               onClick={handleOpenAddField}
             >
-              + Thêm trường tùy chỉnh
+              {t("edit_btn_add_field")}
             </button>
           </div>
 
           <div class="form-group">
-            <label for="item-notes">Ghi chú</label>
+            <label for="item-notes">{t("edit_label_notes")}</label>
             <textarea
               id="item-notes"
               class="input-control resize-none"
               value={notes()}
               onInput={(e) => setNotes(e.currentTarget.value)}
-              placeholder="Thông tin thêm..."
+              placeholder={t("edit_placeholder_notes")}
               rows="3"
             />
           </div>
@@ -697,15 +691,13 @@ export const ItemEdit: Component = () => {
               type="submit"
               variant="primary"
               loading={saving()}
-              loadingText={store.selectedItem?.id
-                ? "Đang lưu..."
-                : "Đang tạo..."}
+              loadingText={t("dialog_loading")}
             >
               <Show
                 when={saving()}
-                fallback={store.selectedItem?.id ? "Lưu" : "Tạo"}
+                fallback={store.selectedItem?.id ? t("btn_save") : t("btn_create")}
               >
-                Đang lưu...
+                {t("dialog_loading")}
               </Show>
             </Button>
             <Button
@@ -714,7 +706,7 @@ export const ItemEdit: Component = () => {
               onClick={handleCancel}
               disabled={saving()}
             >
-              Hủy
+              {t("btn_cancel")}
             </Button>
           </div>
 
@@ -723,7 +715,7 @@ export const ItemEdit: Component = () => {
               type="button"
               class="detail-delete-btn"
               onClick={handleDelete}
-              title="Xóa tài khoản"
+              title={t("btn_delete")}
               disabled={saving()}
             >
               <TrashIcon class="icon-inline-large" />
@@ -738,12 +730,12 @@ export const ItemEdit: Component = () => {
           <div class="modal-container">
             <div class="modal-title">
               {selectedFieldIndex() === null
-                ? "Thêm trường tùy chỉnh"
-                : "Chỉnh sửa trường tùy chỉnh"}
+                ? t("edit_field_modal_title_add")
+                : t("edit_field_modal_title_edit")}
             </div>
 
             <div class="form-group">
-              <label>Loại trường</label>
+              <label>{t("edit_field_modal_label_type")}</label>
               <select
                 class="input-control"
                 value={editFieldType()}
@@ -751,19 +743,19 @@ export const ItemEdit: Component = () => {
                   setEditFieldType(parseInt(e.currentTarget.value))}
                 style="height: 38px; border-radius: 8px; font-size: 13px;"
               >
-                <option value={0}>Văn bản (Chữ)</option>
-                <option value={1}>Ẩn (Mật khẩu)</option>
-                <option value={2}>Phân cách (Divider)</option>
+                <option value={0}>{t("edit_field_type_text")}</option>
+                <option value={1}>{t("edit_field_type_hidden")}</option>
+                <option value={2}>{t("edit_field_type_divider")}</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label>Tên trường</label>
+              <label>{t("edit_field_name_placeholder")}</label>
               <Input
                 type="text"
                 placeholder={editFieldType() === 2
-                  ? "Ví dụ: CAU HINH NET, APIS..."
-                  : "Ví dụ: device, pin, ip..."}
+                  ? t("edit_field_modal_placeholder_divider")
+                  : t("edit_field_modal_placeholder_name")}
                 value={editFieldName()}
                 onInput={(e) => setEditFieldName(e.currentTarget.value)}
               />
@@ -771,10 +763,10 @@ export const ItemEdit: Component = () => {
 
             <Show when={editFieldType() !== 2}>
               <div class="form-group">
-                <label>Giá trị</label>
+                <label>{t("edit_field_val_placeholder")}</label>
                 <Input
                   type={editFieldType() === 1 ? "password" : "text"}
-                  placeholder="Nhập giá trị..."
+                  placeholder={t("edit_field_val_placeholder") + "..."}
                   value={editFieldValue()}
                   onInput={(e) => setEditFieldValue(e.currentTarget.value)}
                 />
@@ -790,14 +782,14 @@ export const ItemEdit: Component = () => {
                   setSelectedFieldIndex(null);
                 }}
               >
-                Hủy
+                {t("btn_cancel")}
               </Button>
               <Button
                 type="button"
                 variant="primary"
                 onClick={handleSaveFieldEdit}
               >
-                {selectedFieldIndex() === null ? "Thêm" : "Lưu"}
+                {selectedFieldIndex() === null ? t("btn_create") : t("btn_save")}
               </Button>
             </div>
           </div>

@@ -8,6 +8,7 @@ import {
   SyncIcon,
   UploadIcon,
 } from "@/icons/svg/index.ts";
+import { t } from "@/shared/i18n.ts";
 
 export const VaultOptions: Component = () => {
   const [error, setError] = createSignal("");
@@ -25,9 +26,9 @@ export const VaultOptions: Component = () => {
     const res = await storeActions.syncVault();
     setLoading(false);
     if (res.success) {
-      storeActions.showToast("Đồng bộ dữ liệu thành công!", "success");
+      storeActions.showToast(t("vault_sync_success"), "success");
     } else {
-      setError(res.error || "Lỗi đồng bộ");
+      setError(res.error || t("vault_sync_error"));
     }
   };
 
@@ -53,17 +54,17 @@ export const VaultOptions: Component = () => {
         const res = await storeActions.importJsonData(text);
         if (res.success) {
           storeActions.showToast(
-            `Nhập thành công ${res.importedCount} tài khoản! Két sắt đã được đồng bộ lên Gist.`,
+            t("vault_import_success", { count: res.importedCount ?? 0 }),
             "success",
           );
         } else {
           setError(
-            res.error || "Định dạng file không hợp lệ hoặc xác thực thất bại",
+            res.error || t("vault_import_error_invalid"),
           );
         }
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
-        setError(errMsg || "Lỗi nhập file JSON");
+        setError(errMsg || t("vault_import_error_fail"));
       } finally {
         setLoading(false);
         // Reset file input
@@ -120,10 +121,10 @@ export const VaultOptions: Component = () => {
       }.json`;
       a.click();
       URL.revokeObjectURL(url);
-      storeActions.showToast("Xuất dữ liệu két sắt thành công!", "success");
+      storeActions.showToast(t("settings_export_success"), "success");
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || "Lỗi xuất file JSON");
+      setError(errMsg || t("vault_export_error_fail"));
     }
   };
 
@@ -138,24 +139,24 @@ export const VaultOptions: Component = () => {
           <div class="back-btn" onClick={handleBack}>
             <ArrowLeftIcon />
           </div>
-          <div class="detail-title">Tùy chọn két sắt</div>
+          <div class="detail-title">{t("settings_vault_options_label")}</div>
         </div>
 
         <Show when={error()}>
           <div class="alert alert-danger">{error()}</div>
         </Show>
 
-        <div class="card" style="padding: 0 16px;">
+        <div class="card card-list">
           {/* Sync */}
           <div class="setting-row" onClick={handleSync}>
             <div class="setting-row-left">
               <SyncIcon class={loading() ? "spinning" : ""} />
               <div>
-                <div class="setting-label">Đồng bộ thủ công</div>
+                <div class="setting-label">{t("vault_options_sync_manual")}</div>
                 <div class="setting-sub">
-                  Lần cuối: {store.lastSync
+                  {t("settings_last_sync")}: {store.lastSync
                     ? new Date(store.lastSync).toLocaleTimeString()
-                    : "Chưa đồng bộ"}
+                    : t("settings_sync_never")}
                 </div>
               </div>
             </div>
@@ -167,9 +168,9 @@ export const VaultOptions: Component = () => {
             <div class="setting-row-left">
               <UploadIcon />
               <div>
-                <div class="setting-label">Nhập tài khoản (Import JSON)</div>
+                <div class="setting-label">{t("vault_options_import")}</div>
                 <div class="setting-sub">
-                  Hỗ trợ file accounts.json hoặc xuất từ Bitwarden
+                  {t("vault_options_import_sub")}
                 </div>
               </div>
             </div>
@@ -188,9 +189,9 @@ export const VaultOptions: Component = () => {
             <div class="setting-row-left">
               <DownloadIcon />
               <div>
-                <div class="setting-label">Xuất tài khoản (Export JSON)</div>
+                <div class="setting-label">{t("vault_options_export")}</div>
                 <div class="setting-sub">
-                  Lưu trữ danh sách tài khoản hiện tại ra file JSON
+                  {t("vault_options_export_sub")}
                 </div>
               </div>
             </div>
