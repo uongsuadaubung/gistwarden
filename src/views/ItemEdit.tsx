@@ -83,7 +83,7 @@ export const ItemEdit: Component = () => {
       return;
     }
     const idx = selectedFieldIndex();
-    
+
     if (idx === null) {
       // Add Mode
       setFields([...fields(), {
@@ -105,7 +105,7 @@ export const ItemEdit: Component = () => {
         ),
       );
     }
-    
+
     setShowEditFieldModal(false);
     setSelectedFieldIndex(null);
   };
@@ -166,8 +166,6 @@ export const ItemEdit: Component = () => {
   const handleDragEnd = () => {
     setDraggedIndex(null);
   };
-
-
 
   const handleRemoveField = (index: number) => {
     setFields(fields().filter((_, i) => i !== index));
@@ -304,8 +302,12 @@ export const ItemEdit: Component = () => {
       const res = await storeActions.saveItem(itemData);
       if (res.success) {
         const msg = isEdit()
-          ? (itemType() === VaultItemType.SecureNote ? "Đã cập nhật ghi chú!" : "Đã cập nhật tài khoản!")
-          : (itemType() === VaultItemType.SecureNote ? "Đã tạo ghi chú thành công!" : "Đã tạo tài khoản thành công!");
+          ? (itemType() === VaultItemType.SecureNote
+            ? "Đã cập nhật ghi chú!"
+            : "Đã cập nhật tài khoản!")
+          : (itemType() === VaultItemType.SecureNote
+            ? "Đã tạo ghi chú thành công!"
+            : "Đã tạo tài khoản thành công!");
         storeActions.showToast(msg, "success");
 
         // If was editing, return to detail view, else go back to vault
@@ -695,9 +697,14 @@ export const ItemEdit: Component = () => {
               type="submit"
               variant="primary"
               loading={saving()}
-              loadingText={store.selectedItem?.id ? "Đang lưu..." : "Đang tạo..."}
+              loadingText={store.selectedItem?.id
+                ? "Đang lưu..."
+                : "Đang tạo..."}
             >
-              <Show when={saving()} fallback={store.selectedItem?.id ? "Lưu" : "Tạo"}>
+              <Show
+                when={saving()}
+                fallback={store.selectedItem?.id ? "Lưu" : "Tạo"}
+              >
                 Đang lưu...
               </Show>
             </Button>

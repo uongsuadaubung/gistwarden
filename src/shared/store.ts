@@ -422,7 +422,9 @@ export const storeActions = {
               type: VaultItemType.SecureNote,
               name: item.name !== undefined ? item.name : v.name,
               notes: item.notes !== undefined ? item.notes : v.notes,
-              favorite: item.favorite !== undefined ? item.favorite : v.favorite,
+              favorite: item.favorite !== undefined
+                ? item.favorite
+                : v.favorite,
               fields: item.fields !== undefined ? item.fields : v.fields,
               creationDate: v.creationDate,
               revisionDate: now,
@@ -438,7 +440,9 @@ export const storeActions = {
               type: VaultItemType.Login,
               name: item.name !== undefined ? item.name : v.name,
               notes: item.notes !== undefined ? item.notes : v.notes,
-              favorite: item.favorite !== undefined ? item.favorite : v.favorite,
+              favorite: item.favorite !== undefined
+                ? item.favorite
+                : v.favorite,
               fields: item.fields !== undefined ? item.fields : v.fields,
               login: itemLogin || {
                 username: "",
@@ -625,7 +629,9 @@ export const storeActions = {
       derivedCryptoKey = newKey; // Update in-memory key reference
       await setMasterPassword(newPass);
       await updateSettings({ salt: newSaltBase64 });
-      setStore("salt", newSaltBase64);
+      setStore({
+        salt: newSaltBase64,
+      });
 
       return { success: true };
     } catch (err) {

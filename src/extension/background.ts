@@ -1,9 +1,9 @@
 import qrcodeParser from "qrcode-parser";
 import {
+  deleteGist,
   downloadFromGist,
   uploadToGist,
   validateToken,
-  deleteGist,
 } from "@/domains/github/api.ts";
 import { FIDO2_PROMPT_HEIGHT, POPUP_WIDTH } from "@/shared/constants.ts";
 

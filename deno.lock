@@ -5,6 +5,7 @@
     "npm:adm-zip@~0.5.17": "0.5.18",
     "npm:esbuild-plugin-solid@0.6": "0.6.0_esbuild@0.28.1_solid-js@1.9.14",
     "npm:esbuild@0.28": "0.28.1",
+    "npm:hash-wasm@^4.12.0": "4.12.0",
     "npm:otpauth@^9.5.1": "9.5.1",
     "npm:qrcode-parser@^2.1.3": "2.1.3",
     "npm:sass@^1.99.0": "1.101.0",
@@ -623,6 +624,9 @@
     "gensync@1.0.0-beta.2": {
       "integrity": "sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg=="
     },
+    "hash-wasm@4.12.0": {
+      "integrity": "sha512-+/2B2rYLb48I/evdOIhP+K/DD2ca2fgBjp6O+GBEnCDk2e4rpeXIK8GvIyRPjTezgmWn9gmKwkQjjx6BtqDHVQ=="
+    },
     "html-entities@2.3.3": {
       "integrity": "sha512-DV5Ln36z34NNTDgnz0EWGBLZENelNAtkiFA4kyNOG2tDI6Mz1uSWiq1wAKdyjnJwyDiDO7Fa2SO1CTxPXL8VxA=="
     },
@@ -788,6 +792,7 @@
       "npm:adm-zip@~0.5.17",
       "npm:esbuild-plugin-solid@0.6",
       "npm:esbuild@0.28",
+      "npm:hash-wasm@^4.12.0",
       "npm:otpauth@^9.5.1",
       "npm:qrcode-parser@^2.1.3",
       "npm:sass@^1.99.0",

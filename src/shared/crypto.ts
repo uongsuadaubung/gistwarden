@@ -1,27 +1,28 @@
+import { argon2id } from "hash-wasm";
+
+export const ARGON2_ITERATIONS = 3;
+export const ARGON2_MEMORY = 65536; // 64MB
+
 export async function deriveKey(
   password: string,
   salt: Uint8Array,
 ): Promise<CryptoKey> {
-  const encoder = new TextEncoder();
-  const baseKey = await crypto.subtle.importKey(
+  const keyBytes = await argon2id({
+    password: password,
+    salt: salt,
+    iterations: ARGON2_ITERATIONS,
+    memorySize: ARGON2_MEMORY,
+    parallelism: 1,
+    hashLength: 32,
+    outputType: "binary",
+  });
+
+  const buffer = new ArrayBuffer(keyBytes.byteLength);
+  new Uint8Array(buffer).set(keyBytes);
+
+  return crypto.subtle.importKey(
     "raw",
-    encoder.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveKey"],
-  );
-
-  const saltBuffer = new ArrayBuffer(salt.byteLength);
-  new Uint8Array(saltBuffer).set(salt);
-
-  return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: saltBuffer,
-      iterations: 100000,
-      hash: "SHA-256",
-    },
-    baseKey,
+    buffer,
     { name: "AES-GCM", length: 256 },
     false,
     ["encrypt", "decrypt"],

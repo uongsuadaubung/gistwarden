@@ -1,5 +1,8 @@
 {
   "manifest_version": 3,
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
   "name": "Gistwarden",
   "version": "1.0.0",
   "description": "Secure password, passkey, and TOTP manager synced to your private GitHub Gist.",

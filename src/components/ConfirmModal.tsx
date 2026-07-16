@@ -16,7 +16,10 @@ export const ConfirmModal: Component = () => {
           <h4 class="confirm-modal-title">
             {store.confirmModal.title || "Xác nhận"}
           </h4>
-          <p class="confirm-modal-message" innerHTML={store.confirmModal.message} />
+          <p
+            class="confirm-modal-message"
+            innerHTML={store.confirmModal.message}
+          />
           <div class="confirm-modal-actions">
             <Button
               variant="secondary"
@@ -25,7 +28,9 @@ export const ConfirmModal: Component = () => {
               Hủy
             </Button>
             <Button
-              variant={store.confirmModal.type === "danger" ? "danger" : "primary"}
+              variant={store.confirmModal.type === "danger"
+                ? "danger"
+                : "primary"}
               onClick={() => storeActions.resolveConfirm(true)}
             >
               Xác nhận

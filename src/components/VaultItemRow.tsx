@@ -1,6 +1,11 @@
-import { type Component, createSignal, Show, type JSX } from "solid-js";
+import { type Component, createSignal, type JSX, Show } from "solid-js";
 import { type VaultItem, VaultItemType } from "@/shared/types.ts";
-import { CopyIcon, HeartFilledIcon, KeyIcon, NoteIcon } from "@/icons/svg/index.ts";
+import {
+  CopyIcon,
+  HeartFilledIcon,
+  KeyIcon,
+  NoteIcon,
+} from "@/icons/svg/index.ts";
 import { storeActions } from "@/shared/store.ts";
 
 interface VaultItemRowProps {
@@ -12,7 +17,10 @@ interface VaultItemRowProps {
 }
 
 const getDomain = (item: VaultItem): string | null => {
-  if (item.type !== VaultItemType.Login || !item.login.uris || item.login.uris.length === 0) {
+  if (
+    item.type !== VaultItemType.Login || !item.login.uris ||
+    item.login.uris.length === 0
+  ) {
     return null;
   }
   const uri = item.login.uris[0].uri;
@@ -33,7 +41,9 @@ const getDomain = (item: VaultItem): string | null => {
   }
 };
 
-const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (props) => {
+const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (
+  props,
+) => {
   const [hasError, setHasError] = createSignal(false);
   return (
     <Show when={!hasError()} fallback={props.fallback}>

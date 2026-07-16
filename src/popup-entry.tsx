@@ -109,7 +109,10 @@ const App: Component = () => {
                   </div>
                   <div
                     class={`nav-item ${
-                      store.view === View.Settings || store.view === View.VaultOptions ? "active" : ""
+                      store.view === View.Settings ||
+                        store.view === View.VaultOptions
+                        ? "active"
+                        : ""
                     }`}
                     onClick={() => storeActions.navigate(View.Settings)}
                   >

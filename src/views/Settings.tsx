@@ -5,13 +5,13 @@ import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
 import {
   ArrowLeftIcon,
+  ChevronRightIcon,
   KeyIcon,
   LockIcon,
   LogoutIcon,
+  ShieldIcon,
   ThemeIcon,
   TrashIcon,
-  ShieldIcon,
-  ChevronRightIcon,
 } from "@/icons/svg/index.ts";
 
 const ThemeStorageSchema = z.object({

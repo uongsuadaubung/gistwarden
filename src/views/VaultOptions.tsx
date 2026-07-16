@@ -4,9 +4,9 @@ import { VaultItemType } from "@/shared/types.ts";
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
+  DownloadIcon,
   SyncIcon,
   UploadIcon,
-  DownloadIcon,
 } from "@/icons/svg/index.ts";
 
 export const VaultOptions: Component = () => {
@@ -115,7 +115,9 @@ export const VaultOptions: Component = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `gistwarden_export_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `gistwarden_export_${
+        new Date().toISOString().slice(0, 10)
+      }.json`;
       a.click();
       URL.revokeObjectURL(url);
       storeActions.showToast("Xuất dữ liệu két sắt thành công!", "success");
