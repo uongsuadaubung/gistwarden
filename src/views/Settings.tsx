@@ -5,6 +5,7 @@ import Input from "@/components/Input.tsx";
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
+  GithubIcon,
   GlobeIcon,
   KeyIcon,
   LockIcon,
@@ -129,7 +130,7 @@ export const Settings: Component = () => {
   return (
     <div class="app-container">
       <div class="app-body">
-        <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 15px; font-weight: 600;">
+        <h3 class="mt-0 mb-16 font-sz-15 font-w-600">
           {t("settings_header")}
         </h3>
 
@@ -152,7 +153,6 @@ export const Settings: Component = () => {
                   <div class="user-info">
                     <div
                       class="username"
-                      style="cursor: pointer; color: var(--primary); text-decoration: underline;"
                       onClick={handleOpenGist}
                       title={t("settings_open_gist_title")}
                     >
@@ -162,27 +162,8 @@ export const Settings: Component = () => {
                 </div>
               </Show>
 
-              {/* Settings options list */}
+              {/* Settings options list - Group 1: General & Personalization */}
               <div class="card card-list">
-                {/* Language Settings */}
-                <div
-                  class="setting-row"
-                  onClick={() => storeActions.navigate(View.Language)}
-                >
-                  <div class="setting-row-left">
-                    <GlobeIcon />
-                    <div>
-                      <div class="setting-label">
-                        {t("settings_label_language")}
-                      </div>
-                      <div class="setting-sub">
-                        {store.language === "vi" ? "Tiếng Việt" : "English"}
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRightIcon />
-                </div>
-
                 {/* User Guide */}
                 <div
                   class="setting-row"
@@ -199,6 +180,25 @@ export const Settings: Component = () => {
                       </div>
                       <div class="setting-sub">
                         {t("settings_user_guide_sub")}
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRightIcon />
+                </div>
+
+                {/* Language Settings */}
+                <div
+                  class="setting-row"
+                  onClick={() => storeActions.navigate(View.Language)}
+                >
+                  <div class="setting-row-left">
+                    <GlobeIcon />
+                    <div>
+                      <div class="setting-label">
+                        {t("settings_label_language")}
+                      </div>
+                      <div class="setting-sub">
+                        {store.language === "vi" ? "Tiếng Việt" : "English"}
                       </div>
                     </div>
                   </div>
@@ -228,25 +228,32 @@ export const Settings: Component = () => {
                   <ChevronRightIcon />
                 </div>
 
-                {/* Vault Options */}
+                {/* Homepage */}
                 <div
                   class="setting-row"
-                  onClick={() => storeActions.navigate(View.VaultOptions)}
+                  onClick={() =>
+                    window.open(
+                      "https://github.com/uongsuadaubung/gistwarden",
+                      "_blank",
+                    )}
                 >
                   <div class="setting-row-left">
-                    <ShieldIcon />
+                    <GithubIcon />
                     <div>
                       <div class="setting-label">
-                        {t("settings_vault_options_label")}
+                        {t("settings_homepage")}
                       </div>
                       <div class="setting-sub">
-                        {t("settings_vault_options_sub")}
+                        {t("settings_homepage_sub")}
                       </div>
                     </div>
                   </div>
                   <ChevronRightIcon />
                 </div>
+              </div>
 
+              {/* Group 2: Security & Data */}
+              <div class="card card-list">
                 {/* Change Master Password */}
                 <div
                   class="setting-row"
@@ -267,6 +274,25 @@ export const Settings: Component = () => {
                   <ChevronRightIcon />
                 </div>
 
+                {/* Vault Options */}
+                <div
+                  class="setting-row"
+                  onClick={() => storeActions.navigate(View.VaultOptions)}
+                >
+                  <div class="setting-row-left">
+                    <ShieldIcon />
+                    <div>
+                      <div class="setting-label">
+                        {t("settings_vault_options_label")}
+                      </div>
+                      <div class="setting-sub">
+                        {t("settings_vault_options_sub")}
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRightIcon />
+                </div>
+
                 {/* Lock Vault */}
                 <div class="setting-row" onClick={handleLock}>
                   <div class="setting-row-left">
@@ -276,14 +302,18 @@ export const Settings: Component = () => {
                       <div class="setting-sub">{t("settings_lock_sub")}</div>
                     </div>
                   </div>
+                  <ChevronRightIcon />
                 </div>
+              </div>
 
+              {/* Group 3: Danger Zone */}
+              <div class="card card-list">
                 {/* Clear Vault */}
                 <div class="setting-row" onClick={handleClearVault}>
                   <div class="setting-row-left">
-                    <TrashIcon style="color: var(--error);" />
+                    <TrashIcon class="text-error" />
                     <div>
-                      <div class="setting-label" style="color: var(--error);">
+                      <div class="setting-label text-error">
                         {t("settings_clear_vault")}
                       </div>
                       <div class="setting-sub">
@@ -296,9 +326,9 @@ export const Settings: Component = () => {
                 {/* Disconnect/Logout */}
                 <div class="setting-row" onClick={handleLogout}>
                   <div class="setting-row-left">
-                    <LogoutIcon style="color: var(--error);" />
+                    <LogoutIcon class="text-error" />
                     <div>
-                      <div class="setting-label" style="color: var(--error);">
+                      <div class="setting-label text-error">
                         {t("settings_logout_title")}
                       </div>
                       <div class="setting-sub">
@@ -312,10 +342,7 @@ export const Settings: Component = () => {
           }
         >
           {/* Change Password Form View */}
-          <div
-            class="detail-header"
-            style="margin-top: 6px; margin-bottom: 16px;"
-          >
+          <div class="detail-header mb-16">
             <div
               class="back-btn"
               onClick={() => {
@@ -360,7 +387,7 @@ export const Settings: Component = () => {
               />
             </div>
 
-            <div class="form-group" style="margin-bottom: 20px;">
+            <div class="form-group mb-20">
               <label for="confirm-pass">
                 {t("settings_change_mp_confirm")}
               </label>
@@ -375,7 +402,7 @@ export const Settings: Component = () => {
               />
             </div>
 
-            <div style="display: flex; gap: 8px;">
+            <div class="d-flex gap-8">
               <Button
                 type="button"
                 variant="secondary"

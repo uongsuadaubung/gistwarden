@@ -11,6 +11,7 @@ export enum View {
   VaultOptions = "VaultOptions",
   Language = "Language",
   Theme = "Theme",
+  Welcome = "Welcome",
 }
 
 export enum VaultItemType {

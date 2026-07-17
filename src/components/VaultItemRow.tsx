@@ -102,13 +102,10 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
           when={props.item.type === VaultItemType.SecureNote}
           fallback={
             <>
-              <div
-                class="item-name"
-                style="display: flex; align-items: center; gap: 6px;"
-              >
+              <div class="item-name d-flex align-center gap-6">
                 {props.item.name}
                 <Show when={props.item.favorite}>
-                  <HeartFilledIcon style="width: 12px; height: 12px; color: #ff4e63; flex-shrink: 0;" />
+                  <HeartFilledIcon class="favorite-heart-icon" />
                 </Show>
               </div>
               <div class="item-sub">
@@ -125,13 +122,10 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
             </>
           }
         >
-          <div
-            class="item-name"
-            style="display: flex; align-items: center; gap: 6px;"
-          >
+          <div class="item-name d-flex align-center gap-6">
             {props.item.name}
             <Show when={props.item.favorite}>
-              <HeartFilledIcon style="width: 12px; height: 12px; color: #ff4e63; flex-shrink: 0;" />
+              <HeartFilledIcon class="favorite-heart-icon" />
             </Show>
           </div>
         </Show>

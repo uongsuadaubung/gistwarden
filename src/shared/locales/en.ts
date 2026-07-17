@@ -52,7 +52,7 @@ export default {
   login_error_unlock_fail: "Unlock failed",
   login_forgot_password_title: "Forgot Master Password",
   login_forgot_password_msg:
-    "{APP_NAME} uses end-to-end encryption (Zero-Knowledge). The Master Password is never sent or stored on any server, hence there is <strong style='color: var(--error);'>NO WAY</strong> to recover or reset it.<br/><br/>To start over, the system will <strong>LOG OUT</strong> and <strong>CLEAR LOCAL DATA</strong>.<br/><br/>If you want to continue using this GitHub account, the system will open the GitHub Gist page containing the old vault so you can <strong>BACK UP</strong> the data or <strong style='color: var(--error);'>MANUALLY DELETE</strong> this Gist on GitHub before logging in again.<br/><br/>Are you sure you want to log out and open the old Gist page?",
+    "{APP_NAME} uses end-to-end encryption (Zero-Knowledge). The Master Password is never sent or stored on any server, hence there is <strong class='text-error'>NO WAY</strong> to recover or reset it.<br/><br/>To start over, the system will <strong>LOG OUT</strong> and <strong>CLEAR LOCAL DATA</strong>.<br/><br/>If you want to continue using this GitHub account, the system will open the GitHub Gist page containing the old vault so you can <strong>BACK UP</strong> the data or <strong class='text-error'>MANUALLY DELETE</strong> this Gist on GitHub before logging in again.<br/><br/>Are you sure you want to log out and open the old Gist page?",
   app_loading: "Loading {APP_NAME}...",
 
   // Vault Page
@@ -301,6 +301,10 @@ export default {
   settings_user_guide: "User Guide",
   settings_user_guide_sub:
     "Learn how to use, security architecture, and FIDO2 Passkeys",
+  settings_homepage: "Project Homepage",
+  settings_homepage_sub:
+    "Visit GitHub repository for bug reports and suggestions",
+  guide_homepage_btn: "Homepage",
   guide_title: "{APP_NAME} User Guide",
   guide_welcome: "Welcome to {APP_NAME}!",
   guide_subtitle:
@@ -316,6 +320,7 @@ export default {
   guide_tab_totp: "TOTP (2FA) Codes",
   guide_tab_import_export: "Import / Export Data",
   guide_tab_faq: "FAQ",
+  guide_tab_privacy: "Privacy Policy",
 
   // Guide Gist Token Steps
   guide_token_title: "How to Create a GitHub Token for Sync",
@@ -463,4 +468,50 @@ export default {
   guide_totp_header_title: "Using Two-Factor Authentication (TOTP / 2FA)",
   guide_totp_header_desc:
     "{APP_NAME} supports storing two-factor authentication (TOTP) codes to secure your accounts. The codes refresh automatically every 30 seconds.",
+
+  // Welcome View
+  welcome_header_title: "Welcome to {APP_NAME}",
+  welcome_desc:
+    "A secure password manager, Passkey simulator, and two-factor authentication (TOTP/2FA) vault running entirely on your personal GitHub Gist.",
+  welcome_subtitle_intro:
+    "Before you get started, let's explore some of {APP_NAME}'s features:",
+  welcome_feat_security_title: "Zero-Knowledge Encryption",
+  welcome_feat_security_desc:
+    "Your data is encrypted locally using your Master Password before syncing to your private GitHub Gist. No one else can read your data.",
+  welcome_feat_passkeys_title: "Passwordless Passkeys (FIDO2)",
+  welcome_feat_passkeys_desc:
+    "Register and authenticate securely with modern WebAuthn/Passkeys, avoiding traditional passwords.",
+  welcome_feat_totp_title: "Dynamic TOTP Codes",
+  welcome_feat_totp_desc:
+    "Store and generate 2-factor authentication codes automatically refreshing every 30 seconds.",
+  welcome_feat_backup_title: "Easy Data Migration",
+  welcome_feat_backup_desc:
+    "Import or export your vault seamlessly via JSON format, fully compatible with Bitwarden exports.",
+  welcome_security_notice_title: "⚠️ IMPORTANT SECURITY NOTICE",
+  welcome_security_notice_desc:
+    "The app operates on end-to-end Zero-Knowledge encryption. Your Master Password is the only key to decrypt your vault data locally.",
+  welcome_warning_bold:
+    "If you forget your Master Password, your data will be PERMANENTLY LOST and CANNOT be recovered under any circumstances.",
+  welcome_warning_sub:
+    "We do not store your password on any server, and GitHub only sees your vault data as meaningless encrypted cipher text. (Note: You can still change your Master Password anytime in Settings if needed).",
+  welcome_checkbox_label:
+    "I understand and agree that if I forget my Master Password, I accept losing all my data permanently.",
+  welcome_btn_continue: "Get Started",
+
+  // Privacy & Policy
+  guide_privacy_title: "Privacy & Data Policy",
+  guide_privacy_subtitle:
+    "Your privacy is our highest priority. Learn how {APP_NAME} protects and handles your personal data.",
+  guide_privacy_sec1_title: "🔒 Absolute Zero-Knowledge Privacy",
+  guide_privacy_sec1_desc:
+    "All calculations, password generations, and encryption procedures run completely locally inside your browser. We never collect, store, trace, or transmit any of your passwords, notes, accounts, or personal configurations to any server under our control.",
+  guide_privacy_sec2_title: "☁️ Secure Syncing via GitHub Gist",
+  guide_privacy_sec2_desc:
+    "Your vault database is encrypted with military-grade AES-256-GCM encryption before sync. It is synchronized directly with your personal GitHub Gist account. GitHub or any third party only sees meaningless encrypted cipher text; without your Master Password, it is mathematically impossible to decrypt.",
+  guide_privacy_sec3_title: "🚫 Zero Tracking, Ads, or Analytics",
+  guide_privacy_sec3_desc:
+    "We do not integrate any user-tracking codes, advertising platforms, analytical scripts, or browser-tracking cookies. Your usage of the extension is 100% private and invisible to us.",
+  guide_privacy_sec4_title: "🔌 Extension Permissions",
+  guide_privacy_sec4_desc:
+    "The extension only requests the minimum necessary permissions to function: 'storage' to cache your local extension preferences (like language or theme), 'webNavigation' and 'activeTab' to safely autofill credentials, and connection permission to GitHub APIs for vault syncing.",
 };

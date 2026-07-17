@@ -107,12 +107,20 @@ export const VaultOptions: Component = () => {
           return {
             ...base,
             type: VaultItemType.SecureNote as const,
-            secureNote: null,
+            secureNote: {
+              type: 0,
+            },
           };
         }
       });
 
-      const dataStr = JSON.stringify(exportItems, null, 2);
+      const exportPayload = {
+        encrypted: false,
+        folders: [],
+        items: exportItems,
+      };
+
+      const dataStr = JSON.stringify(exportPayload, null, 2);
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -133,10 +141,7 @@ export const VaultOptions: Component = () => {
     <div class="app-container">
       <div class="app-body">
         {/* Header */}
-        <div
-          class="detail-header"
-          style="margin-top: 0; margin-bottom: 16px;"
-        >
+        <div class="detail-header mt-0 mb-16">
           <div class="back-btn" onClick={handleBack}>
             <ArrowLeftIcon />
           </div>
@@ -182,7 +187,7 @@ export const VaultOptions: Component = () => {
               type="file"
               ref={fileInputRef}
               accept=".json"
-              style="display: none;"
+              class="d-none"
               onChange={handleFileChange}
             />
           </div>

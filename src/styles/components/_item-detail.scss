@@ -38,6 +38,22 @@
     gap: 12px;
     height: 48px;
     flex-shrink: 0;
+
+    .action-btn {
+      color: var(--white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+      background: transparent;
+      border: none;
+
+      svg {
+        width: 20px;
+        height: 20px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+    }
   }
 
   &-back-btn {

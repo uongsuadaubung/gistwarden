@@ -286,6 +286,9 @@ const LangSchema = z.object({
   // Guide Page
   settings_user_guide: z.string(),
   settings_user_guide_sub: z.string(),
+  settings_homepage: z.string(),
+  settings_homepage_sub: z.string(),
+  guide_homepage_btn: z.string(),
   guide_title: z.string(),
   guide_welcome: z.string(),
   guide_subtitle: z.string(),
@@ -298,6 +301,7 @@ const LangSchema = z.object({
   guide_tab_passkey: z.string(),
   guide_tab_import_export: z.string(),
   guide_tab_faq: z.string(),
+  guide_tab_privacy: z.string(),
 
   // Guide Gist Token Steps
   guide_token_title: z.string(),
@@ -406,6 +410,37 @@ const LangSchema = z.object({
   // Guide TOTP Headers
   guide_totp_header_title: z.string(),
   guide_totp_header_desc: z.string(),
+
+  // Welcome View
+  welcome_header_title: z.string(),
+  welcome_desc: z.string(),
+  welcome_subtitle_intro: z.string(),
+  welcome_feat_security_title: z.string(),
+  welcome_feat_security_desc: z.string(),
+  welcome_feat_passkeys_title: z.string(),
+  welcome_feat_passkeys_desc: z.string(),
+  welcome_feat_totp_title: z.string(),
+  welcome_feat_totp_desc: z.string(),
+  welcome_feat_backup_title: z.string(),
+  welcome_feat_backup_desc: z.string(),
+  welcome_security_notice_title: z.string(),
+  welcome_security_notice_desc: z.string(),
+  welcome_warning_bold: z.string(),
+  welcome_warning_sub: z.string(),
+  welcome_checkbox_label: z.string(),
+  welcome_btn_continue: z.string(),
+
+  // Privacy & Policy
+  guide_privacy_title: z.string(),
+  guide_privacy_subtitle: z.string(),
+  guide_privacy_sec1_title: z.string(),
+  guide_privacy_sec1_desc: z.string(),
+  guide_privacy_sec2_title: z.string(),
+  guide_privacy_sec2_desc: z.string(),
+  guide_privacy_sec3_title: z.string(),
+  guide_privacy_sec3_desc: z.string(),
+  guide_privacy_sec4_title: z.string(),
+  guide_privacy_sec4_desc: z.string(),
 });
 
 type Lang = z.infer<typeof LangSchema>;

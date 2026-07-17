@@ -294,7 +294,7 @@ export const Vault: Component = () => {
                 setShowAddMenu(!showAddMenu());
               }}
             >
-              <PlusIcon style="width: 12px; height: 12px; margin-right: 4px; fill: currentColor;" />
+              <PlusIcon />
               {t("vault_btn_add")}
             </button>
             <Show when={showAddMenu()}>
@@ -312,7 +312,7 @@ export const Vault: Component = () => {
           {/* Popout Button */}
           <Show when={!isPopout()}>
             <span
-              style="display: inline-flex; cursor: pointer;"
+              class="d-flex align-center cursor-pointer"
               onClick={handlePopout}
               title={t("vault_popout_title")}
             >
@@ -321,7 +321,7 @@ export const Vault: Component = () => {
           </Show>
           {/* Sync Button */}
           <span
-            style="display: inline-flex; cursor: pointer;"
+            class="d-flex align-center cursor-pointer"
             onClick={handleSync}
             title={t("vault_btn_sync")}
           >
@@ -329,7 +329,7 @@ export const Vault: Component = () => {
           </span>
           {/* Lock Button */}
           <span
-            style="display: inline-flex; cursor: pointer;"
+            class="d-flex align-center cursor-pointer"
             onClick={handleLock}
             title={t("vault_lock_title")}
           >

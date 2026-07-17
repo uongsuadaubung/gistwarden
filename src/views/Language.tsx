@@ -12,10 +12,7 @@ export const Language: Component = () => {
     <div class="app-container">
       <div class="app-body">
         {/* Header */}
-        <div
-          class="detail-header"
-          style="margin-top: 0; margin-bottom: 16px;"
-        >
+        <div class="detail-header mt-0 mb-16">
           <div class="back-btn" onClick={handleBack}>
             <ArrowLeftIcon />
           </div>
@@ -25,22 +22,20 @@ export const Language: Component = () => {
         <div class="card card-list">
           <div
             class="setting-row"
-            style="cursor: pointer;"
             onClick={() => {
               storeActions.updateLanguage("en");
               storeActions.navigate(View.Settings);
             }}
           >
             <div class="setting-row-left">
-              <span style="font-size: 14px;">{t("settings_lang_en")}</span>
+              <span class="font-sz-14">{t("settings_lang_en")}</span>
             </div>
             <Show when={store.language === "en"}>
               <svg
-                class="check-icon"
+                class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                style="width: 16px; height: 16px; color: var(--primary-accent);"
               >
                 <path
                   fill-rule="evenodd"
@@ -53,22 +48,20 @@ export const Language: Component = () => {
 
           <div
             class="setting-row"
-            style="cursor: pointer;"
             onClick={() => {
               storeActions.updateLanguage("vi");
               storeActions.navigate(View.Settings);
             }}
           >
             <div class="setting-row-left">
-              <span style="font-size: 14px;">{t("settings_lang_vi")}</span>
+              <span class="font-sz-14">{t("settings_lang_vi")}</span>
             </div>
             <Show when={store.language === "vi"}>
               <svg
-                class="check-icon"
+                class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                style="width: 16px; height: 16px; color: var(--primary-accent);"
               >
                 <path
                   fill-rule="evenodd"

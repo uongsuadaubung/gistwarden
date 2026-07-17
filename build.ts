@@ -106,6 +106,9 @@ function copyAssets() {
       if (!existsSync(src)) return;
       if (!existsSync(dest)) mkdirSync(dest, { recursive: true });
       readdirSync(src).forEach((item) => {
+        if (item === "svg" || item.endsWith(".ts") || item.endsWith(".tsx")) {
+          return;
+        }
         const srcPath = join(src, item);
         const destPath = join(dest, item);
         if (statSync(srcPath).isDirectory()) {

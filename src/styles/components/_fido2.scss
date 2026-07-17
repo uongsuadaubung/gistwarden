@@ -280,15 +280,12 @@
           }
         }
       }
-    }
-  }
 
-  /* FIDO2 Component Styles & Utilities */
-  &-component {
-    .alert-prompt-compact {
-      margin-bottom: 12px;
-      padding: 6px 8px;
-      font-size: 11px;
+      .alert-prompt-compact {
+        margin-bottom: 12px;
+        padding: 6px 8px;
+        font-size: 11px;
+      }
     }
   }
 

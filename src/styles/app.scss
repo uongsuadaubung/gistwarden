@@ -572,3 +572,173 @@ body.light-theme {
     transform: translate(-50%, 0);
   }
 }
+
+/* Common Layout Utilities to replace inline styles */
+.d-flex {
+  display: flex;
+}
+.align-center {
+  align-items: center;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.flex-1 {
+  flex: 1;
+}
+.gap-6 {
+  gap: 6px;
+}
+.gap-8 {
+  gap: 8px;
+}
+.gap-12 {
+  gap: 12px;
+}
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+.text-center {
+  text-align: center;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.cursor-grab {
+  cursor: grab;
+}
+.text-error {
+  color: var(--error) !important;
+}
+.text-white {
+  color: var(--white) !important;
+}
+.font-w-600 {
+  font-weight: 600;
+}
+.font-w-700 {
+  font-weight: 700;
+}
+.font-sz-11 {
+  font-size: 11px;
+}
+.font-sz-12 {
+  font-size: 12px;
+}
+.font-sz-13 {
+  font-size: 13px;
+}
+.font-sz-14 {
+  font-size: 14px;
+}
+.font-sz-15 {
+  font-size: 15px;
+}
+
+.w-100 {
+  width: 100%;
+}
+.h-100 {
+  height: 100%;
+}
+.m-0 {
+  margin: 0;
+}
+.mt-0 {
+  margin-top: 0;
+}
+.mb-20 {
+  margin-bottom: 20px;
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.pos-relative {
+  position: relative;
+}
+
+.lang-option-check {
+  width: 16px;
+  height: 16px;
+  color: var(--primary-accent);
+}
+.guide-select-field {
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.guide-select-field option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  color: var(--text-muted);
+  background-color: var(--bg);
+}
+.loading-icon {
+  width: 28px;
+  height: 28px;
+  fill: var(--primary);
+  margin: 0 auto 12px;
+}
+.d-none {
+  display: none !important;
+}
+
+.draggable-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--border);
+  cursor: move;
+}
+.field-sub-value {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 8px;
+  font-family: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+.edit-field-btn {
+  padding: 4px;
+  color: var(--text-muted) !important;
+}
+.delete-field-btn {
+  padding: 4px;
+  color: var(--error) !important;
+}
+.divider-row-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary-accent, var(--primary));
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding-left: 4px;
+}
+.add-field-trigger-btn {
+  font-size: 12px;
+  padding: 8px !important;
+}
+.p-4 {
+  padding: 4px !important;
+}

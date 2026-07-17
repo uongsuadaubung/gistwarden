@@ -10,6 +10,7 @@ import PasskeyTab from "@/components/guide/PasskeyTab.tsx";
 import ImportExportTab from "@/components/guide/ImportExportTab.tsx";
 import FaqTab from "@/components/guide/FaqTab.tsx";
 import TotpTab from "@/components/guide/TotpTab.tsx";
+import PrivacyTab from "@/components/guide/PrivacyTab.tsx";
 
 export const Guide: Component = () => {
   const GuideTab = {
@@ -20,6 +21,7 @@ export const Guide: Component = () => {
     Totp: "totp",
     ImportExport: "import_export",
     Faq: "faq",
+    Privacy: "privacy",
   } as const;
 
   type GuideTab = typeof GuideTab[keyof typeof GuideTab];
@@ -73,22 +75,27 @@ export const Guide: Component = () => {
                     handleLangChange(val);
                   }
                 }}
-                style="background: transparent; border: none; font-size: 0.85rem; font-weight: 600; color: var(--text); outline: none; cursor: pointer; padding: 2px 4px;"
+                class="guide-select-field"
               >
-                <option
-                  value="en"
-                  style="background: var(--surface); color: var(--text);"
-                >
+                <option value="en">
                   English
                 </option>
-                <option
-                  value="vi"
-                  style="background: var(--surface); color: var(--text);"
-                >
+                <option value="vi">
                   Tiếng Việt
                 </option>
               </select>
             </div>
+
+            <Button
+              variant="secondary"
+              onClick={() =>
+                window.open(
+                  "https://github.com/uongsuadaubung/gistwarden",
+                  "_blank",
+                )}
+            >
+              {t("guide_homepage_btn")}
+            </Button>
 
             <Button variant="secondary" onClick={() => window.close()}>
               {t("guide_close_page")}
@@ -170,6 +177,16 @@ export const Guide: Component = () => {
                 <span class="tab-icon">💡</span>
                 <span class="tab-label">{t("guide_tab_faq")}</span>
               </button>
+
+              <button
+                class={`nav-tab ${
+                  activeTab() === GuideTab.Privacy ? "active" : ""
+                }`}
+                onClick={() => setActiveTab(GuideTab.Privacy)}
+              >
+                <span class="tab-icon">🔒</span>
+                <span class="tab-label">{t("guide_tab_privacy")}</span>
+              </button>
             </nav>
 
             {/* Quick Action Card */}
@@ -178,8 +195,7 @@ export const Guide: Component = () => {
               <p>{t("guide_quick_action_desc")}</p>
               <button
                 onClick={handleOpenGist}
-                class="game-btn"
-                style="width: 100%; border: none; cursor: pointer;"
+                class="game-btn w-100"
               >
                 ☁️ {t("guide_open_github_btn")}
               </button>
@@ -214,6 +230,10 @@ export const Guide: Component = () => {
 
             <Show when={activeTab() === GuideTab.Faq}>
               <FaqTab />
+            </Show>
+
+            <Show when={activeTab() === GuideTab.Privacy}>
+              <PrivacyTab />
             </Show>
           </main>
         </div>

@@ -157,8 +157,8 @@ export const ItemDetail: Component = () => {
   return (
     <div class="app-container h-full">
       {/* Header */}
-      <div class="detail-item-header" style="justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="detail-item-header justify-between">
+        <div class="d-flex align-center gap-12">
           <div class="back-btn detail-back-btn" onClick={handleBackToVault}>
             <ArrowLeftIcon class="icon-inline-large" />
           </div>
@@ -168,16 +168,15 @@ export const ItemDetail: Component = () => {
               : t("detail_title_login")}
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="d-flex align-center gap-8">
           <Show when={!isPopout()}>
             <button
               type="button"
               class="action-btn"
-              style="color: var(--white); cursor: pointer; display: flex; align-items: center; padding: 4px;"
               onClick={handlePopout}
               title={t("vault_popout_title")}
             >
-              <ExternalLinkIcon style="width: 20px; height: 20px; color: rgba(255, 255, 255, 0.7);" />
+              <ExternalLinkIcon />
             </button>
           </Show>
         </div>
@@ -197,7 +196,7 @@ export const ItemDetail: Component = () => {
           {/* Card 1, 2, 3: Login Credentials */}
           <Show when={store.selectedItem?.type !== VaultItemType.SecureNote}>
             {/* Card 1: Login Credentials */}
-            <div class="detail-section-title" style="margin-top: 0;">
+            <div class="detail-section-title mt-0">
               {t("detail_section_login")}
             </div>
             <div class="card mb-16">

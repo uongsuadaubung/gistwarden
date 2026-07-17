@@ -36,9 +36,8 @@ export interface AppStore {
   salt: string;
   cachedGithubUser: GithubUser | null;
   lastSync: number;
-  oauthClientId: string;
-  oauthWorkerUrl: string;
   language: "en" | "vi";
+  welcomeAccepted: boolean;
 
   isLoaded: boolean;
   isLocked: boolean;
@@ -73,9 +72,8 @@ const [store, setStore] = createStore<AppStore>({
   salt: "",
   cachedGithubUser: null,
   lastSync: 0,
-  oauthClientId: "Ov23liRxwWqLXD5AOkNW",
-  oauthWorkerUrl: "https://gistwarden.uongsuadaubung.workers.dev",
   language: "en",
+  welcomeAccepted: false,
 
   isLoaded: false,
   isLocked: true,
@@ -121,6 +119,7 @@ const viewDepths: Record<View, number> = {
   [View.VaultOptions]: 4,
   [View.Theme]: 4,
   [View.Fido2Prompt]: 5,
+  [View.Welcome]: 0,
 };
 
 let transitionToggle = false;
@@ -153,10 +152,9 @@ export const storeActions = {
       salt: settings.salt,
       cachedGithubUser: settings.cachedGithubUser,
       lastSync: settings.lastSync,
-      oauthClientId: settings.oauthClientId,
-      oauthWorkerUrl: settings.oauthWorkerUrl,
       language: settings.language,
       theme: currentTheme,
+      welcomeAccepted: settings.welcomeAccepted,
     });
 
     setLanguage(
@@ -188,10 +186,24 @@ export const storeActions = {
             key,
           );
           const items = VaultListSchema.parse(JSON.parse(decrypted));
+          
+          let targetView = isFido2Prompt ? View.Fido2Prompt : View.Vault;
+          let selectedItem = undefined;
+          
+          const itemId = params.get("itemId");
+          if (itemId && !isFido2Prompt) {
+            const foundItem = items.find((i) => i.id === itemId);
+            if (foundItem) {
+              selectedItem = foundItem;
+              targetView = View.ItemDetail;
+            }
+          }
+
           setStore({
             vaultItems: items,
             isLocked: false,
-            view: isFido2Prompt ? View.Fido2Prompt : View.Vault,
+            view: targetView,
+            selectedItem,
           });
         } else {
           // If downloading fails but we have setup, it could be network issue or empty gist
@@ -207,7 +219,13 @@ export const storeActions = {
       }
     } else {
       setStore("isLocked", true);
-      if (!isFido2Prompt) setStore("view", View.Login);
+      if (!isFido2Prompt) {
+        if (!settings.githubToken && !settings.welcomeAccepted) {
+          setStore("view", View.Welcome);
+        } else {
+          setStore("view", View.Login);
+        }
+      }
     }
 
     // Subscribe to settings changes
@@ -218,9 +236,8 @@ export const storeActions = {
         salt: newSettings.salt,
         cachedGithubUser: newSettings.cachedGithubUser,
         lastSync: newSettings.lastSync,
-        oauthClientId: newSettings.oauthClientId,
-        oauthWorkerUrl: newSettings.oauthWorkerUrl,
         language: newSettings.language,
+        welcomeAccepted: newSettings.welcomeAccepted,
       });
       if (newSettings.language !== store.language) {
         setLanguage(
@@ -363,11 +380,25 @@ export const storeActions = {
       const decrypted = await decryptData(payload.ciphertext, payload.iv, key);
       const items = VaultListSchema.parse(JSON.parse(decrypted));
 
+      const params = new URLSearchParams(window.location.search);
+      const itemId = params.get("itemId");
+      let targetView = store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault;
+      let selectedItem = undefined;
+
+      if (itemId && store.view !== View.Fido2Prompt) {
+        const foundItem = items.find((i) => i.id === itemId);
+        if (foundItem) {
+          selectedItem = foundItem;
+          targetView = View.ItemDetail;
+        }
+      }
+
       await setMasterPassword(password);
       setStore({
         vaultItems: items,
         isLocked: false,
-        view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
+        view: targetView,
+        selectedItem,
       });
 
       return { success: true };
@@ -438,6 +469,15 @@ export const storeActions = {
       lastSync: 0,
       vaultItems: [],
       isLocked: true,
+      view: View.Login,
+      welcomeAccepted: false,
+    });
+  },
+
+  async acceptWelcome() {
+    await updateSettings({ welcomeAccepted: true });
+    setStore({
+      welcomeAccepted: true,
       view: View.Login,
     });
   },
@@ -816,17 +856,6 @@ export const storeActions = {
     } finally {
       storeActions.setGlobalLoading(false);
     }
-  },
-
-  async saveOauthConfig(clientId: string, workerUrl: string): Promise<void> {
-    await updateSettings({
-      oauthClientId: clientId,
-      oauthWorkerUrl: workerUrl,
-    });
-    setStore({
-      oauthClientId: clientId,
-      oauthWorkerUrl: workerUrl,
-    });
   },
 
   navigate(newView: View) {

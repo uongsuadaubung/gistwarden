@@ -26,6 +26,7 @@ import VaultOptions from "@/views/VaultOptions.tsx";
 import Fido2Prompt from "@/views/Fido2Prompt.tsx";
 import Language from "@/views/Language.tsx";
 import Theme from "@/views/Theme.tsx";
+import Welcome from "@/views/Welcome.tsx";
 import ConfirmModal from "@/components/ConfirmModal.tsx";
 import { t } from "@/shared/i18n.ts";
 
@@ -34,7 +35,7 @@ const TransitionView: Component<{ when: boolean; children: JSX.Element }> = (
 ) => {
   return (
     <Show when={props.when}>
-      <div class={store.transitionClass} style="height: 100%; width: 100%;">
+      <div class={`${store.transitionClass} h-100 w-100`}>
         {props.children}
       </div>
     </Show>
@@ -55,13 +56,10 @@ const App: Component = () => {
     <Show
       when={store.isLoaded}
       fallback={
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; color: var(--text-muted); background-color: var(--bg-dark);">
-          <div style="text-align: center;">
-            <SyncIcon
-              class="spinning"
-              style="width: 28px; height: 28px; fill: var(--primary); margin: 0 auto 12px;"
-            />
-            <div style="font-size: 13px;">{t("app_loading")}</div>
+        <div class="loading-screen">
+          <div class="text-center">
+            <SyncIcon class="spinning loading-icon" />
+            <div class="font-sz-13">{t("app_loading")}</div>
           </div>
         </div>
       }
@@ -75,13 +73,20 @@ const App: Component = () => {
 
           {/* Regular vault locking/login */}
           <Match when={store.isLocked}>
-            <Login />
+            <Switch>
+              <Match when={store.view === View.Welcome}>
+                <Welcome />
+              </Match>
+              <Match when={true}>
+                <Login />
+              </Match>
+            </Switch>
           </Match>
 
           {/* Main Application Shell when unlocked */}
           <Match when={true}>
             <div class="app-container">
-              <div style="flex: 1; overflow: hidden; position: relative;">
+              <div class="flex-1 overflow-hidden pos-relative">
                 <TransitionView when={store.view === View.Vault}>
                   <Vault />
                 </TransitionView>

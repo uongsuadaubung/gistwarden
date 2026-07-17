@@ -12,10 +12,7 @@ export const Theme: Component = () => {
     <div class="app-container">
       <div class="app-body">
         {/* Header */}
-        <div
-          class="detail-header"
-          style="margin-top: 0; margin-bottom: 16px;"
-        >
+        <div class="detail-header mt-0 mb-16">
           <div class="back-btn" onClick={handleBack}>
             <ArrowLeftIcon />
           </div>
@@ -25,22 +22,20 @@ export const Theme: Component = () => {
         <div class="card card-list">
           <div
             class="setting-row"
-            style="cursor: pointer;"
             onClick={() => {
               storeActions.updateTheme("dark");
               storeActions.navigate(View.Settings);
             }}
           >
             <div class="setting-row-left">
-              <span style="font-size: 14px;">{t("settings_theme_dark")}</span>
+              <span class="font-sz-14">{t("settings_theme_dark")}</span>
             </div>
             <Show when={store.theme === "dark"}>
               <svg
-                class="check-icon"
+                class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                style="width: 16px; height: 16px; color: var(--primary-accent);"
               >
                 <path
                   fill-rule="evenodd"
@@ -53,22 +48,20 @@ export const Theme: Component = () => {
 
           <div
             class="setting-row"
-            style="cursor: pointer;"
             onClick={() => {
               storeActions.updateTheme("light");
               storeActions.navigate(View.Settings);
             }}
           >
             <div class="setting-row-left">
-              <span style="font-size: 14px;">{t("settings_theme_light")}</span>
+              <span class="font-sz-14">{t("settings_theme_light")}</span>
             </div>
             <Show when={store.theme === "light"}>
               <svg
-                class="check-icon"
+                class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                style="width: 16px; height: 16px; color: var(--primary-accent);"
               >
                 <path
                   fill-rule="evenodd"

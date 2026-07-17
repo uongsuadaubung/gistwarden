@@ -14,11 +14,8 @@ export const SettingsSchema = z.object({
   lastSync: z.number().default(0),
   lastSyncedHash: z.string().default(""),
   cachedGithubUser: GithubUserSchema.nullable().default(null),
-  oauthClientId: z.string().default("Ov23liRxwWqLXD5AOkNW"),
-  oauthWorkerUrl: z.string().default(
-    "https://gistwarden.uongsuadaubung.workers.dev",
-  ),
   language: z.enum(["en", "vi"]).default("en"),
+  welcomeAccepted: z.boolean().default(false),
 });
 
 export type AppSettings = z.infer<typeof SettingsSchema>;

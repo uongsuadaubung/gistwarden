@@ -318,8 +318,8 @@ export const ItemEdit: Component = () => {
   return (
     <div class="app-container h-full">
       {/* Header */}
-      <div class="detail-item-header" style="justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="detail-item-header justify-between">
+        <div class="d-flex align-center gap-12">
           <div class="back-btn detail-back-btn" onClick={handleCancel}>
             <ArrowLeftIcon class="icon-inline-large" />
           </div>
@@ -342,7 +342,7 @@ export const ItemEdit: Component = () => {
             <div class="alert alert-danger">{error()}</div>
           </Show>
 
-          <div class="detail-section-title" style="margin-top: 0;">
+          <div class="detail-section-title mt-0">
             {t("edit_section_item_details")}
           </div>
           <div class="card mb-16">
@@ -518,36 +518,29 @@ export const ItemEdit: Component = () => {
                         onDragStart={(e) => handleDragStart(index(), e)}
                         onDragOver={(e) => handleDragOver(index(), e)}
                         onDragEnd={handleDragEnd}
+                        class="draggable-field-row"
                         style={{
-                          display: "flex",
-                          "flex-direction": "column",
-                          gap: "6px",
-                          "margin-bottom": "12px",
-                          "padding-bottom": "12px",
-                          "border-bottom": "1px dashed var(--border)",
                           opacity: draggedIndex() === index() ? 0.4 : 1,
-                          cursor: "move",
                         }}
                       >
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                          <div style="display: flex; align-items: center; gap: 6px;">
-                            <div style="cursor: grab; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                        <div class="d-flex justify-between align-center">
+                          <div class="d-flex align-center gap-6">
+                            <div class="cursor-grab d-flex align-center justify-center text-muted">
                               <DragIcon class="icon-inline" />
                             </div>
-                            <span style="font-weight: 600; font-size: 13px; color: var(--text);">
+                            <span class="font-w-600 font-sz-13">
                               {field.name}
                             </span>
-                            <span style="font-size: 12px; color: var(--text-muted); margin-left: 8px; font-family: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
+                            <span class="field-sub-value">
                               {field.type === 1
                                 ? "••••••••"
                                 : (field.value || t("detail_no_value"))}
                             </span>
                           </div>
-                          <div style="display: flex; gap: 8px;">
+                          <div class="d-flex gap-8">
                             <button
                               type="button"
-                              class="action-btn"
-                              style="padding: 4px; color: var(--text-muted);"
+                              class="action-btn edit-field-btn"
                               onClick={() => handleOpenEditField(index())}
                               title={t("btn_edit")}
                             >
@@ -555,8 +548,7 @@ export const ItemEdit: Component = () => {
                             </button>
                             <button
                               type="button"
-                              class="action-btn"
-                              style="padding: 4px; color: var(--error);"
+                              class="action-btn delete-field-btn"
                               onClick={() => handleRemoveField(index())}
                               title={t("btn_delete")}
                             >
@@ -573,31 +565,24 @@ export const ItemEdit: Component = () => {
                       onDragStart={(e) => handleDragStart(index(), e)}
                       onDragOver={(e) => handleDragOver(index(), e)}
                       onDragEnd={handleDragEnd}
+                      class="draggable-field-row"
                       style={{
-                        display: "flex",
-                        "flex-direction": "column",
-                        gap: "6px",
-                        "margin-bottom": "12px",
-                        "padding-bottom": "12px",
-                        "border-bottom": "1px dashed var(--border)",
                         opacity: draggedIndex() === index() ? 0.4 : 1,
-                        cursor: "move",
                       }}
                     >
-                      <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
-                          <div style="cursor: grab; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                      <div class="d-flex justify-between align-center">
+                        <div class="d-flex align-center gap-6 flex-1">
+                          <div class="cursor-grab d-flex align-center justify-center text-muted">
                             <DragIcon class="icon-inline" />
                           </div>
-                          <span style="font-size: 11px; font-weight: 700; color: var(--primary-accent, var(--primary)); text-transform: uppercase; letter-spacing: 0.8px; padding-left: 4px;">
+                          <span class="divider-row-title">
                             {field.name}
                           </span>
                         </div>
-                        <div style="display: flex; gap: 8px;">
+                        <div class="d-flex gap-8">
                           <button
                             type="button"
-                            class="action-btn"
-                            style="padding: 4px; color: var(--text-muted);"
+                            class="action-btn edit-field-btn"
                             onClick={() => handleOpenEditField(index())}
                             title={t("btn_edit")}
                           >
@@ -605,8 +590,7 @@ export const ItemEdit: Component = () => {
                           </button>
                           <button
                             type="button"
-                            class="action-btn"
-                            style="padding: 4px; color: var(--error);"
+                            class="action-btn delete-field-btn"
                             onClick={() => handleRemoveField(index())}
                             title={t("btn_delete")}
                           >
@@ -622,11 +606,10 @@ export const ItemEdit: Component = () => {
           </Show>
 
           {/* Button to Open Add Custom Field Modal */}
-          <div style="margin-bottom: 16px;">
+          <div class="mb-16">
             <button
               type="button"
-              class="btn btn-secondary w-full"
-              style="font-size: 12px; padding: 8px;"
+              class="btn btn-secondary w-full add-field-trigger-btn"
               onClick={handleOpenAddField}
             >
               {t("edit_btn_add_field")}
@@ -654,7 +637,7 @@ export const ItemEdit: Component = () => {
 
         {/* Footer */}
         <div class="detail-footer-bar">
-          <div style="display: flex; gap: 8px;">
+          <div class="d-flex gap-8">
             <Button
               type="submit"
               variant="primary"

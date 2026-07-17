@@ -1,10 +1,14 @@
-import { type Component, createEffect, createSignal, Show } from "solid-js";
+import { type Component, createSignal, Show } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
-import { AppIcon, ChevronDownIcon, GithubIcon } from "@/icons/svg/index.ts";
+import { AppIcon, GithubIcon } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
-import { APP_NAME } from "@/shared/constants.ts";
+import {
+  APP_NAME,
+  OAUTH_CLIENT_ID,
+  OAUTH_WORKER_URL,
+} from "@/shared/constants.ts";
 
 export const Login: Component = () => {
   const [token, setToken] = createSignal("");
@@ -14,14 +18,6 @@ export const Login: Component = () => {
 
   // OAuth states
   const [loginMethod, setLoginMethod] = createSignal<"oauth" | "pat">("oauth");
-  const [clientId, setClientId] = createSignal(store.oauthClientId || "");
-  const [workerUrl, setWorkerUrl] = createSignal(store.oauthWorkerUrl || "");
-  const [showConfig, setShowConfig] = createSignal(false);
-
-  createEffect(() => {
-    if (store.oauthClientId) setClientId(store.oauthClientId);
-    if (store.oauthWorkerUrl) setWorkerUrl(store.oauthWorkerUrl);
-  });
 
   const handleSaveToken = async (e: Event) => {
     e.preventDefault();
@@ -45,29 +41,17 @@ export const Login: Component = () => {
   };
 
   const handleGithubOauth = async () => {
-    const cId = clientId().trim();
-    const wUrl = workerUrl().trim();
-
-    if (!cId || !wUrl) {
-      setError(t("login_error_oauth_missing_config"));
-      setShowConfig(true);
-      return;
-    }
-
     setLoading(true);
     setError("");
     try {
-      // 1. Save OAuth config locally
-      await storeActions.saveOauthConfig(cId, wUrl);
-
-      // 2. Call background script to launch web auth flow
+      // Call background script to launch web auth flow
       const oauthRes = await new Promise<
         { success: boolean; token?: string; error?: string }
       >((resolve) => {
         chrome.runtime.sendMessage({
           type: "START_GITHUB_OAUTH",
-          content: cId,
-          token: wUrl,
+          content: OAUTH_CLIENT_ID,
+          token: OAUTH_WORKER_URL,
         }, resolve);
       });
 
@@ -75,7 +59,7 @@ export const Login: Component = () => {
         throw new Error(oauthRes.error || t("login_error_oauth_no_token"));
       }
 
-      // 3. Setup GitHub with the obtained token
+      // Setup GitHub with the obtained token
       const res = await storeActions.setupGithub(oauthRes.token);
       if (!res.success) {
         setError(res.error || t("login_error_invalid_token"));
@@ -135,6 +119,25 @@ export const Login: Component = () => {
 
   return (
     <div class="app-body justify-center h-full">
+      {/* Floating Language Switcher */}
+      <div class="login-lang-selector">
+        <button
+          type="button"
+          class={`lang-toggle-btn ${store.language === "en" ? "active" : ""}`}
+          onClick={() => storeActions.updateLanguage("en")}
+        >
+          EN
+        </button>
+        <span class="lang-divider">|</span>
+        <button
+          type="button"
+          class={`lang-toggle-btn ${store.language === "vi" ? "active" : ""}`}
+          onClick={() => storeActions.updateLanguage("vi")}
+        >
+          VI
+        </button>
+      </div>
+
       <div class="text-center mb-24">
         <AppIcon class="login-header-logo" />
         <h2 class="login-brand-title">{APP_NAME}</h2>
@@ -227,75 +230,6 @@ export const Login: Component = () => {
                     {t("login_btn_oauth")}
                   </Button>
                 </div>
-
-                <div class="login-oauth-config-footer">
-                  <div
-                    onClick={() => setShowConfig(!showConfig())}
-                    class="oauth-config-toggle"
-                  >
-                    <span>
-                      {showConfig()
-                        ? t("login_oauth_hide")
-                        : t("login_oauth_show")}
-                    </span>
-                    <ChevronDownIcon
-                      class={`oauth-config-chevron ${
-                        showConfig() ? "open" : ""
-                      }`}
-                    />
-                  </div>
-
-                  <Show when={showConfig()}>
-                    <div class="oauth-config-box">
-                      <div class="form-group mb-8 text-left">
-                        <label for="oauth-client-id" class="login-config-label">
-                          {t("login_oauth_client_id")}
-                        </label>
-                        <Input
-                          id="oauth-client-id"
-                          type="text"
-                          class="login-config-input"
-                          placeholder="Client ID..."
-                          value={clientId()}
-                          onInput={(e) => setClientId(e.currentTarget.value)}
-                          disabled={loading()}
-                        />
-                      </div>
-                      <div class="form-group mb-12 text-left">
-                        <label
-                          for="oauth-worker-url"
-                          class="login-config-label"
-                        >
-                          {t("login_oauth_worker_url")}
-                        </label>
-                        <Input
-                          id="oauth-worker-url"
-                          type="text"
-                          class="login-config-input"
-                          placeholder="https://xxx.workers.dev"
-                          value={workerUrl()}
-                          onInput={(e) => setWorkerUrl(e.currentTarget.value)}
-                          disabled={loading()}
-                        />
-                      </div>
-                      <Button
-                        variant="secondary"
-                        block
-                        class="login-config-save-btn"
-                        onClick={() => {
-                          storeActions.saveOauthConfig(
-                            clientId().trim(),
-                            workerUrl().trim(),
-                          );
-                          alert(t("login_oauth_alert_save"));
-                        }}
-                        disabled={loading()}
-                      >
-                        {t("login_btn_save_config")}
-                      </Button>
-                    </div>
-                  </Show>
-                </div>
               </div>
             </Show>
           </div>
@@ -336,10 +270,10 @@ export const Login: Component = () => {
             {t("login_reset_token")}
           </Button>
 
-          <div style="margin-top: 16px; text-align: center;">
+          <div class="mt-16 text-center">
             <a
               href="#"
-              style="color: var(--text-muted); font-size: 11.5px; text-decoration: underline;"
+              class="forgot-pass-link"
               onClick={(e) => {
                 e.preventDefault();
                 handleForgotPassword();

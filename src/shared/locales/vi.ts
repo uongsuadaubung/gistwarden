@@ -52,7 +52,7 @@ export default {
   login_error_unlock_fail: "Lỗi mở khóa",
   login_forgot_password_title: "Quên mật khẩu Master",
   login_forgot_password_msg:
-    "{APP_NAME} sử dụng cơ chế mã hóa đầu-cuối (Zero-Knowledge). Mật khẩu Master không bao giờ được gửi đi hay lưu trữ trên máy chủ, do đó <strong style='color: var(--error);'>KHÔNG CÓ CÁCH NÀO</strong> để khôi phục hoặc đặt lại.<br/><br/>Để bắt đầu lại, hệ thống sẽ <strong>ĐĂNG XUẤT</strong> và <strong>XÓA DỮ LIỆU CỤC BỘ</strong>.<br/><br/>Nếu bạn muốn tiếp tục sử dụng tài khoản GitHub này, hệ thống sẽ mở trang GitHub Gist chứa két sắt cũ để bạn có thể <strong>SAO LƯU</strong> dữ liệu hoặc tiến hành <strong style='color: var(--error);'>XÓA THỦ CÔNG</strong> Gist này trên GitHub trước khi đăng nhập lại.<br/><br/>Bạn có chắc chắn muốn đăng xuất và mở trang Gist cũ không?",
+    "{APP_NAME} sử dụng cơ chế mã hóa đầu-cuối (Zero-Knowledge). Mật khẩu Master không bao giờ được gửi đi hay lưu trữ trên máy chủ, do đó <strong class='text-error'>KHÔNG CÓ CÁCH NÀO</strong> để khôi phục hoặc đặt lại.<br/><br/>Để bắt đầu lại, hệ thống sẽ <strong>ĐĂNG XUẤT</strong> và <strong>XÓA DỮ LIỆU CỤC BỘ</strong>.<br/><br/>Nếu bạn muốn tiếp tục sử dụng tài khoản GitHub này, hệ thống sẽ mở trang GitHub Gist chứa két sắt cũ để bạn có thể <strong>SAO LƯU</strong> dữ liệu hoặc tiến hành <strong class='text-error'>XÓA THỦ CÔNG</strong> Gist này trên GitHub trước khi đăng nhập lại.<br/><br/>Bạn có chắc chắn muốn đăng xuất và mở trang Gist cũ không?",
   app_loading: "Đang tải {APP_NAME}...",
 
   // Vault Page
@@ -304,6 +304,9 @@ export default {
   settings_user_guide: "Hướng dẫn sử dụng",
   settings_user_guide_sub:
     "Tìm hiểu cách sử dụng, kiến trúc bảo mật và FIDO2 Passkeys",
+  settings_homepage: "Trang chủ dự án",
+  settings_homepage_sub: "Ghé thăm GitHub để báo lỗi và góp ý",
+  guide_homepage_btn: "Trang chủ",
   guide_title: "Hướng dẫn sử dụng {APP_NAME}",
   guide_welcome: "Chào mừng bạn đến với {APP_NAME}!",
   guide_subtitle:
@@ -319,6 +322,7 @@ export default {
   guide_tab_totp: "Mã TOTP (2FA)",
   guide_tab_import_export: "Nhập xuất dữ liệu",
   guide_tab_faq: "Câu hỏi thường gặp",
+  guide_tab_privacy: "Chính sách bảo mật",
 
   // Guide Gist Token Steps
   guide_token_title: "Cách tạo GitHub Token để đồng bộ",
@@ -467,4 +471,50 @@ export default {
   guide_totp_header_title: "Sử dụng mã xác thực hai lớp (TOTP / 2FA)",
   guide_totp_header_desc:
     "{APP_NAME} hỗ trợ lưu trữ mã bảo mật 2 lớp (TOTP) giúp bảo vệ tài khoản của bạn. Mã xác thực sẽ tự động thay đổi sau mỗi 30 giây.",
+
+  // Welcome View
+  welcome_header_title: "Chào mừng đến với {APP_NAME}",
+  welcome_desc:
+    "Trình quản lý mật khẩu, giả lập Passkey và mã xác thực hai lớp (TOTP/2FA) bảo mật, hoạt động hoàn toàn trên GitHub Gist cá nhân của bạn.",
+  welcome_subtitle_intro:
+    "Trước khi bắt đầu, hãy cùng điểm qua một số tính năng nổi bật của {APP_NAME}:",
+  welcome_feat_security_title: "Mã hóa Zero-Knowledge",
+  welcome_feat_security_desc:
+    "Dữ liệu được mã hóa cục bộ bằng Master Password trước khi đồng bộ lên GitHub Gist cá nhân. Tuyệt đối không ai khác có thể đọc được dữ liệu của bạn.",
+  welcome_feat_passkeys_title: "Đăng nhập không mật khẩu (Passkey)",
+  welcome_feat_passkeys_desc:
+    "Đăng ký và xác thực an toàn bằng tiêu chuẩn WebAuthn/Passkey hiện đại, loại bỏ hoàn toàn mật khẩu truyền thống.",
+  welcome_feat_totp_title: "Mã xác thực hai lớp (TOTP/2FA)",
+  welcome_feat_totp_desc:
+    "Lưu trữ và tự động tạo mã OTP 6 số cập nhật liên tục mỗi 30 giây giúp nâng cao bảo mật tài khoản.",
+  welcome_feat_backup_title: "Nhập xuất dữ liệu dễ dàng",
+  welcome_feat_backup_desc:
+    "Dễ dàng sao lưu két sắt hoặc di chuyển dữ liệu từ Bitwarden thông qua tính năng nhập xuất file JSON tương thích tốt.",
+  welcome_security_notice_title: "⚠️ LƯU Ý BẢO MẬT QUAN TRỌNG",
+  welcome_security_notice_desc:
+    "Ứng dụng hoạt động theo cơ chế mã hóa đầu-cuối Zero-Knowledge. Mật khẩu Master là chìa khóa duy nhất để giải mã dữ liệu két sắt của bạn cục bộ.",
+  welcome_warning_bold:
+    "Nếu bạn quên Mật khẩu Master, dữ liệu của bạn sẽ BỊ MẤT VĨNH VIỄN và KHÔNG THỂ khôi phục dưới bất kỳ hình thức nào.",
+  welcome_warning_sub:
+    "Chúng tôi không lưu trữ mật khẩu của bạn trên bất kỳ máy chủ nào và GitHub cũng chỉ thấy dữ liệu két sắt dưới dạng các ký tự mã hóa vô nghĩa. (Lưu ý: Bạn vẫn có thể đổi Mật khẩu Master trong phần Cài đặt bất cứ lúc nào nếu muốn).",
+  welcome_checkbox_label:
+    "Tôi đã hiểu rằng nếu quên Mật khẩu Master, tôi chấp nhận mất toàn bộ dữ liệu vĩnh viễn và không thể khôi phục.",
+  welcome_btn_continue: "Bắt đầu thiết lập",
+
+  // Privacy & Policy
+  guide_privacy_title: "Chính sách Quyền riêng tư & Dữ liệu",
+  guide_privacy_subtitle:
+    "Quyền riêng tư của bạn là ưu tiên hàng đầu của chúng tôi. Tìm hiểu cách {APP_NAME} bảo vệ và xử lý dữ liệu của bạn.",
+  guide_privacy_sec1_title: "🔒 Riêng tư Tuyệt đối (Zero-Knowledge)",
+  guide_privacy_sec1_desc:
+    "Mọi tính toán, khởi tạo mật khẩu và quá trình mã hóa đều diễn ra hoàn toàn cục bộ trong trình duyệt của bạn. Chúng tôi tuyệt đối không thu thập, lưu trữ, theo dõi hoặc truyền tải bất kỳ mật khẩu, ghi chú, tài khoản hay cấu hình cá nhân nào của bạn về bất kỳ máy chủ nào của chúng tôi.",
+  guide_privacy_sec2_title: "☁️ Đồng bộ qua Gist cá nhân bảo mật",
+  guide_privacy_sec2_desc:
+    "Cơ sở dữ liệu két sắt của bạn được mã hóa bằng thuật toán tiêu chuẩn quân sự AES-256-GCM trước khi đồng bộ. Dữ liệu được truyền trực tiếp đến tài khoản GitHub Gist cá nhân của chính bạn. GitHub hay bất kỳ bên thứ ba nào chỉ nhìn thấy chuỗi ký tự mã hóa vô nghĩa; nếu không có Master Password, việc giải mã dữ liệu là bất khả thi về mặt toán học.",
+  guide_privacy_sec3_title: "🚫 Không theo dõi, Quảng cáo hay Analytics",
+  guide_privacy_sec3_desc:
+    "Chúng tôi không tích hợp bất kỳ mã theo dõi người dùng, mạng lưới quảng cáo, mã phân tích hành vi (analytics) hay cookie theo dõi trình duyệt nào. Trải nghiệm sử dụng tiện ích của bạn là hoàn toàn riêng tư 100% đối với chúng tôi.",
+  guide_privacy_sec4_title: "🔌 Quyền hạn của Tiện ích mở rộng",
+  guide_privacy_sec4_desc:
+    "Tiện ích chỉ yêu cầu các quyền tối thiểu cần thiết để hoạt động: quyền 'storage' để lưu cấu hình tiện ích cục bộ (như ngôn ngữ hay giao diện), quyền 'webNavigation' và 'activeTab' để hỗ trợ điền thông tin đăng nhập tự động, và quyền kết nối API đến GitHub để thực hiện đồng bộ két sắt.",
 };

@@ -1,6 +1,7 @@
 import {
   ImportArraySchema,
   type ImportItem,
+  ImportItemSchema,
   ImportObjectSchema,
   type VaultItem,
   VaultItemType,
@@ -24,35 +25,35 @@ export function parseAndValidateImportJson(
     const parsed = JSON.parse(jsonString);
     let itemsToImport: ImportItem[] = [];
 
-    // Validate structure using Zod
-    console.log(`[${APP_NAME} Import] Thử parse dạng Array...`);
-    const parseArray = ImportArraySchema.safeParse(parsed);
-    if (parseArray.success) {
-      console.log(`[${APP_NAME} Import] Parse dạng Array thành công!`);
-      itemsToImport = parseArray.data;
+    // Extract raw items list
+    let rawItems: any[] = [];
+    if (Array.isArray(parsed)) {
+      rawItems = parsed;
+    } else if (parsed && typeof parsed === "object" && Array.isArray(parsed.items)) {
+      rawItems = parsed.items;
     } else {
-      console.log(
-        `[${APP_NAME} Import] Parse dạng Array thất bại:`,
-        parseArray.error.issues,
-      );
-      console.log(
-        `[${APP_NAME} Import] Kiểm tra định dạng Bitwarden (object chứa danh sách items)...`,
-      );
-      const parseObject = ImportObjectSchema.safeParse(parsed);
-      if (parseObject.success) {
-        console.log(`[${APP_NAME} Import] Parse dạng Object thành công!`);
-        itemsToImport = parseObject.data.items;
-      } else {
-        console.log(
-          `[${APP_NAME} Import] Parse dạng Object thất bại:`,
-          parseObject.error.issues,
-        );
-        throw new Error("Định dạng JSON không hợp lệ hoặc không được hỗ trợ");
+      throw new Error("Định dạng JSON không hợp lệ hoặc không được hỗ trợ");
+    }
+
+    // Validate and parse supported items individually, skipping unsupported types (Cards: 3, Identities: 4, etc.)
+    for (const rawItem of rawItems) {
+      if (rawItem && typeof rawItem === "object") {
+        const type = rawItem.type;
+        if (type === VaultItemType.Login || type === VaultItemType.SecureNote) {
+          const parseResult = ImportItemSchema.safeParse(rawItem);
+          if (parseResult.success) {
+            itemsToImport.push(parseResult.data);
+          } else {
+            console.warn(`[${APP_NAME} Import] Bỏ qua item lỗi định dạng:`, parseResult.error.issues);
+          }
+        } else {
+          console.log(`[${APP_NAME} Import] Bỏ qua item không hỗ trợ (type: ${type})`);
+        }
       }
     }
 
     console.log(
-      `[${APP_NAME} Import] Kiểm tra xong! Có ${itemsToImport.length} tài khoản cần import.`,
+      `[${APP_NAME} Import] Kiểm tra xong! Có ${itemsToImport.length} tài khoản hợp lệ cần import.`,
     );
 
     const now = new Date().toISOString();
@@ -111,7 +112,7 @@ export function parseAndValidateImportJson(
                 uri: u.uri || "",
               }))
               : [],
-            fido2Credentials: [],
+            fido2Credentials: loginData.fido2Credentials || [],
           },
           creationDate: now,
           revisionDate: now,
