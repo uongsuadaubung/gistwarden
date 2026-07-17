@@ -33,4 +33,5 @@ export { default as DownloadIcon } from "./DownloadIcon.tsx";
 export { default as GlobeIcon } from "./GlobeIcon.tsx";
 export { default as MoreVerticalIcon } from "./MoreVerticalIcon.tsx";
 export { default as CloseIcon } from "./CloseIcon.tsx";
+export { default as ClipboardIcon } from "./ClipboardIcon.tsx";
 export * from "./types.ts";

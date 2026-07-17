@@ -2,7 +2,6 @@ import { type Component, createSignal, Show } from "solid-js";
 import { type CardVaultItem } from "@/shared/types.ts";
 import { t } from "@/shared/i18n.ts";
 import { CopyIcon, EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
-import CardBrandIcon from "@/components/CardBrandIcon.tsx";
 
 interface CardDetailFieldsProps {
   item: CardVaultItem;
@@ -52,20 +51,6 @@ export const CardDetailFields: Component<CardDetailFieldsProps> = (props) => {
           </div>
         </div>
       </Show>
-
-      {/* Card Info Box */}
-      <div class="card p-16 mb-16">
-        <div class="d-flex align-center gap-12">
-          <div class="item-icon-container item-icon-container-large">
-            <CardBrandIcon brand={props.item.card.brand || ""} />
-          </div>
-          <div>
-            <div class="font-w-600 font-sz-16 text-break">
-              {props.item.name}
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div class="detail-section-title">
         {t("detail_card_details_title", {

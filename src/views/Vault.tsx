@@ -128,12 +128,30 @@ export const Vault: Component = () => {
     return sortByName(list);
   };
 
+  const cardItems = () => {
+    return allItems().filter((item) => item.type === VaultItemType.Card);
+  };
+
+  const identityItems = () => {
+    return allItems().filter((item) => item.type === VaultItemType.Identity);
+  };
+
   const favoriteItems = () => {
-    return allItems().filter((item) => item.favorite);
+    return allItems().filter(
+      (item) =>
+        item.favorite &&
+        item.type !== VaultItemType.Card &&
+        item.type !== VaultItemType.Identity,
+    );
   };
 
   const regularItems = () => {
-    return allItems().filter((item) => !item.favorite);
+    return allItems().filter(
+      (item) =>
+        !item.favorite &&
+        item.type !== VaultItemType.Card &&
+        item.type !== VaultItemType.Identity,
+    );
   };
 
   const handleCopyText = async (text: string, _type: string, e: MouseEvent) => {
@@ -302,6 +320,63 @@ export const Vault: Component = () => {
     setShowAddMenu(false);
   };
 
+  const handleAddNewIdentity = () => {
+    storeActions.selectItem({
+      id: "",
+      type: VaultItemType.Identity,
+      name: "",
+      notes: "",
+      favorite: false,
+      reprompt: 0,
+      fields: [],
+      creationDate: "",
+      revisionDate: "",
+      identity: {
+        title: "",
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        username: "",
+        company: "",
+        ssn: "",
+        passportNumber: "",
+        licenseNumber: "",
+        email: "",
+        phone: "",
+        address1: "",
+        address2: "",
+        address3: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "",
+      },
+    });
+    storeActions.navigate(View.ItemEdit);
+    setShowAddMenu(false);
+  };
+
+  const handleAddNewSshKey = () => {
+    storeActions.selectItem({
+      id: "",
+      type: VaultItemType.SshKey,
+      name: "",
+      notes: "",
+      favorite: false,
+      reprompt: 0,
+      fields: [],
+      creationDate: "",
+      revisionDate: "",
+      sshKey: {
+        privateKey: "",
+        publicKey: "",
+        keyFingerprint: "",
+      },
+    });
+    storeActions.navigate(View.ItemEdit);
+    setShowAddMenu(false);
+  };
+
   const handleLock = () => {
     storeActions.lock();
   };
@@ -326,6 +401,7 @@ export const Vault: Component = () => {
                 e.stopPropagation();
                 setShowAddMenu(!showAddMenu());
               }}
+              title={t("vault_btn_add")}
             >
               <PlusIcon />
               {t("vault_btn_add")}
@@ -340,6 +416,12 @@ export const Vault: Component = () => {
                 </div>
                 <div class="dropdown-item" onClick={handleAddNewCard}>
                   {t("vault_item_card")}
+                </div>
+                <div class="dropdown-item" onClick={handleAddNewIdentity}>
+                  {t("vault_item_identity")}
+                </div>
+                <div class="dropdown-item" onClick={handleAddNewSshKey}>
+                  {t("vault_item_ssh_key")}
                 </div>
               </div>
             </Show>
@@ -435,7 +517,65 @@ export const Vault: Component = () => {
             <div class="vault-section-divider"></div>
           </Show>
 
-          {/* 2. Favorite items section */}
+          {/* 2. Cards section */}
+          <Show when={cardItems().length > 0}>
+            <div class="section-header">
+              <div class="vault-section-title m-0">
+                {t("vault_section_cards")}
+              </div>
+              <span class="section-badge">
+                {cardItems().length}
+              </span>
+            </div>
+            <For each={cardItems()}>
+              {(item) => (
+                <VaultItemRow
+                  item={item}
+                  activeMenuId={activeMenuId()}
+                  activeOptionsMenuId={activeOptionsMenuId()}
+                  onToggleMenu={handleToggleMenu}
+                  onToggleOptionsMenu={handleToggleOptionsMenu}
+                  onCopyText={handleCopyText}
+                  onCopyTotpDirect={handleCopyTotpDirect}
+                  onFavoriteItem={handleFavoriteItem}
+                  onCloneItem={handleCloneItem}
+                  onDeleteItem={handleDeleteItem}
+                />
+              )}
+            </For>
+            <div class="vault-section-divider"></div>
+          </Show>
+
+          {/* 3. Identities section */}
+          <Show when={identityItems().length > 0}>
+            <div class="section-header">
+              <div class="vault-section-title m-0">
+                {t("vault_section_identities")}
+              </div>
+              <span class="section-badge">
+                {identityItems().length}
+              </span>
+            </div>
+            <For each={identityItems()}>
+              {(item) => (
+                <VaultItemRow
+                  item={item}
+                  activeMenuId={activeMenuId()}
+                  activeOptionsMenuId={activeOptionsMenuId()}
+                  onToggleMenu={handleToggleMenu}
+                  onToggleOptionsMenu={handleToggleOptionsMenu}
+                  onCopyText={handleCopyText}
+                  onCopyTotpDirect={handleCopyTotpDirect}
+                  onFavoriteItem={handleFavoriteItem}
+                  onCloneItem={handleCloneItem}
+                  onDeleteItem={handleDeleteItem}
+                />
+              )}
+            </For>
+            <div class="vault-section-divider"></div>
+          </Show>
+
+          {/* 4. Favorite items section */}
           <Show when={favoriteItems().length > 0}>
             <div class="section-header">
               <div class="vault-section-title m-0">
@@ -464,9 +604,11 @@ export const Vault: Component = () => {
             <div class="vault-section-divider"></div>
           </Show>
 
-          {/* 3. Regular items section */}
+          {/* 5. Regular items section (All Items) */}
           <Show
-            when={regularItems().length > 0 || favoriteItems().length === 0}
+            when={regularItems().length > 0 ||
+              (favoriteItems().length === 0 && cardItems().length === 0 &&
+                identityItems().length === 0)}
           >
             <div class="section-header">
               <div class="vault-section-title m-0">

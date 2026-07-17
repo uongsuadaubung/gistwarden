@@ -2,6 +2,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import { t } from "@/shared/i18n.ts";
 import Input from "@/components/Input.tsx";
 import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
+import FormField from "@/components/FormField.tsx";
 
 interface CardEditFieldsProps {
   cardholderName: string;
@@ -29,8 +30,7 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
       </div>
       <div class="card mb-16">
         {/* Cardholder name */}
-        <div class="form-group">
-          <label for="card-holder">{t("detail_card_cardholder")}</label>
+        <FormField id="card-holder" label={t("detail_card_cardholder")}>
           <Input
             id="card-holder"
             type="text"
@@ -38,11 +38,10 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
             onInput={(e) => props.setCardholderName(e.currentTarget.value)}
             placeholder="e.g. John Doe"
           />
-        </div>
+        </FormField>
 
         {/* Number */}
-        <div class="form-group">
-          <label for="card-number">{t("detail_card_number")}</label>
+        <FormField id="card-number" label={t("detail_card_number")}>
           <div class="pos-relative">
             <Input
               id="card-number"
@@ -68,11 +67,10 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
               </button>
             </div>
           </div>
-        </div>
+        </FormField>
 
         {/* Brand dropdown */}
-        <div class="form-group">
-          <label for="card-brand">{t("detail_card_brand") || "Brand"}</label>
+        <FormField id="card-brand" label={t("detail_card_brand") || "Brand"}>
           <select
             id="card-brand"
             class="input-control"
@@ -91,14 +89,11 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
             <option value="RuPay">RuPay</option>
             <option value="Other">Other</option>
           </select>
-        </div>
+        </FormField>
 
         {/* Expiration date */}
         <div class="grid-2">
-          <div class="form-group">
-            <label for="card-exp-month">
-              {t("detail_card_expiration") || "Expiration month"}
-            </label>
+          <FormField id="card-exp-month" label={t("detail_card_expiration") || "Expiration month"}>
             <select
               id="card-exp-month"
               class="input-control"
@@ -118,9 +113,8 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
               <option value="11">11 - November</option>
               <option value="12">12 - December</option>
             </select>
-          </div>
-          <div class="form-group">
-            <label for="card-exp-year">Year</label>
+          </FormField>
+          <FormField id="card-exp-year" label="Year">
             <Input
               id="card-exp-year"
               type="number"
@@ -128,12 +122,11 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
               onInput={(e) => props.setCardExpYear(e.currentTarget.value)}
               placeholder="2026"
             />
-          </div>
+          </FormField>
         </div>
 
         {/* Security code */}
-        <div class="form-group">
-          <label for="card-code">{t("detail_card_security_code")}</label>
+        <FormField id="card-code" label={t("detail_card_security_code")}>
           <div class="pos-relative">
             <Input
               id="card-code"
@@ -159,7 +152,7 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
               </button>
             </div>
           </div>
-        </div>
+        </FormField>
       </div>
     </>
   );

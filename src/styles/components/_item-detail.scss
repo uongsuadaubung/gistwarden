@@ -512,3 +512,8 @@
   margin-top: 6px;
   display: inline-block;
 }
+
+.text-break {
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+}

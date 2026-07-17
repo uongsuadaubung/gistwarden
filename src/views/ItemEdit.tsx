@@ -1,11 +1,14 @@
 import { type Component, createSignal, For, onMount, Show } from "solid-js";
+import { createStore } from "solid-js/store";
 import { store, storeActions, View } from "@/shared/store.ts";
 import {
   type CardVaultItem,
   CustomFieldType,
   type Fido2Credential,
+  type IdentityVaultItem,
   type LoginVaultItem,
   type SecureNoteVaultItem,
+  type SshKeyVaultItem,
   type VaultField,
   VaultItemType,
 } from "@/shared/types.ts";
@@ -19,24 +22,57 @@ import DetailHeader from "@/components/DetailHeader.tsx";
 import LoginEditFields from "@/components/item-edit/LoginEditFields.tsx";
 import CardEditFields from "@/components/item-edit/CardEditFields.tsx";
 import NoteEditFields from "@/components/item-edit/NoteEditFields.tsx";
+import IdentityEditFields from "@/components/item-edit/IdentityEditFields.tsx";
+import SshKeyEditFields from "@/components/item-edit/SshKeyEditFields.tsx";
 import qrcodeParser from "qrcode-parser";
 
 export const ItemEdit: Component = () => {
   const isEdit = () => !!store.selectedItem?.id;
 
-  // Local form states
-  const [name, setName] = createSignal("");
-  const [username, setUsername] = createSignal("");
-  const [password, setPassword] = createSignal("");
-  const [uri, setUri] = createSignal("");
-  const [totpSecret, setTotpSecret] = createSignal("");
-  const [notes, setNotes] = createSignal("");
-  const [favorite, setFavorite] = createSignal(false);
-  const [reprompt, setReprompt] = createSignal(0);
-  const [fidoCredentials, setFidoCredentials] = createSignal<Fido2Credential[]>(
-    [],
-  );
-  const [fields, setFields] = createSignal<VaultField[]>([]);
+  const [formState, setFormState] = createStore({
+    itemType: VaultItemType.Login,
+    name: "",
+    notes: "",
+    favorite: false,
+    reprompt: 0,
+    fields: Array<VaultField>(),
+    username: "",
+    password: "",
+    uri: "",
+    totpSecret: "",
+    fidoCredentials: Array<Fido2Credential>(),
+    cardholderName: "",
+    cardNumber: "",
+    cardBrand: "Visa",
+    cardExpMonth: "1",
+    cardExpYear: String(new Date().getFullYear()),
+    cardCode: "",
+    sshPrivateKey: "",
+    sshPublicKey: "",
+    sshFingerprint: "",
+    identityTitle: "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    identityUsername: "",
+    company: "",
+    ssn: "",
+    passportNumber: "",
+    licenseNumber: "",
+    email: "",
+    phone: "",
+    address1: "",
+    address2: "",
+    address3: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+  });
+
+  const updateForm = <K extends keyof typeof formState>(key: K, value: typeof formState[K]) => {
+    setFormState(key, value);
+  };
 
   // UI state
   const [scanning, setScanning] = createSignal(false);
@@ -50,7 +86,7 @@ export const ItemEdit: Component = () => {
 
   const initialField = () => {
     const idx = selectedFieldIndex();
-    return idx === null ? null : fields()[idx];
+    return idx === null ? null : formState.fields[idx];
   };
 
   const handleOpenAddField = () => {
@@ -68,9 +104,9 @@ export const ItemEdit: Component = () => {
   ) => {
     const idx = selectedFieldIndex();
     if (idx === null) {
-      setFields([...fields(), field]);
+      updateForm("fields", [...formState.fields, field]);
     } else {
-      setFields(fields().map((f, i) => (i === idx ? field : f)));
+      updateForm("fields", formState.fields.map((f, i) => (i === idx ? field : f)));
     }
     setShowEditFieldModal(false);
     setSelectedFieldIndex(null);
@@ -84,79 +120,90 @@ export const ItemEdit: Component = () => {
   // Drag and drop states
   const [draggedIndex, setDraggedIndex] = createSignal<number | null>(null);
 
-  const [itemType, setItemType] = createSignal<VaultItemType>(
-    VaultItemType.Login,
-  );
-
-  // Card specific fields
-  const [cardholderName, setCardholderName] = createSignal("");
-  const [cardNumber, setCardNumber] = createSignal("");
-  const [cardBrand, setCardBrand] = createSignal("Visa");
-  const [cardExpMonth, setCardExpMonth] = createSignal("1");
-  const [cardExpYear, setCardExpYear] = createSignal(
-    String(new Date().getFullYear()),
-  );
-  const [cardCode, setCardCode] = createSignal("");
-
   onMount(() => {
     const item = store.selectedItem;
     if (item) {
-      setName(item.name || "");
-      setItemType(item.type || VaultItemType.Login);
-      if (item.type === VaultItemType.SecureNote) {
-        setUsername("");
-        setPassword("");
-        setUri("");
-        setTotpSecret("");
-        setFidoCredentials([]);
-
-        setCardholderName("");
-        setCardNumber("");
-        setCardBrand("Visa");
-        setCardExpMonth("1");
-        setCardExpYear(String(new Date().getFullYear()));
-        setCardCode("");
-      } else if (item.type === VaultItemType.Card) {
-        setUsername("");
-        setPassword("");
-        setUri("");
-        setTotpSecret("");
-        setFidoCredentials([]);
-
-        setCardholderName(item.card.cardholderName || "");
-        setCardNumber(item.card.number || "");
-        setCardBrand(item.card.brand || "Visa");
-        setCardExpMonth(item.card.expMonth || "1");
-        setCardExpYear(item.card.expYear || String(new Date().getFullYear()));
-        setCardCode(item.card.code || "");
-      } else {
-        setUsername(item.login.username || "");
-        setPassword(item.login.password || "");
-        setUri(item.login.uris?.[0]?.uri || "");
-        setTotpSecret(item.login.totp || "");
-        setFidoCredentials(item.login.fido2Credentials || []);
-
-        setCardholderName("");
-        setCardNumber("");
-        setCardBrand("Visa");
-        setCardExpMonth("1");
-        setCardExpYear(String(new Date().getFullYear()));
-        setCardCode("");
-      }
-      setNotes(item.notes || "");
-      setFavorite(item.favorite || false);
-      setReprompt(item.reprompt || 0);
-      setFields(item.fields || []);
+      setFormState({
+        itemType: item.type || VaultItemType.Login,
+        name: item.name || "",
+        notes: item.notes || "",
+        favorite: item.favorite || false,
+        reprompt: item.reprompt || 0,
+        fields: item.fields ? JSON.parse(JSON.stringify(item.fields)) : [],
+        username: item.type === VaultItemType.Login ? item.login.username || "" : "",
+        password: item.type === VaultItemType.Login ? item.login.password || "" : "",
+        uri: item.type === VaultItemType.Login ? item.login.uris?.[0]?.uri || "" : "",
+        totpSecret: item.type === VaultItemType.Login ? item.login.totp || "" : "",
+        fidoCredentials: item.type === VaultItemType.Login ? item.login.fido2Credentials || [] : [],
+        cardholderName: item.type === VaultItemType.Card ? item.card.cardholderName || "" : "",
+        cardNumber: item.type === VaultItemType.Card ? item.card.number || "" : "",
+        cardBrand: item.type === VaultItemType.Card ? item.card.brand || "Visa" : "Visa",
+        cardExpMonth: item.type === VaultItemType.Card ? item.card.expMonth || "1" : "1",
+        cardExpYear: item.type === VaultItemType.Card ? item.card.expYear || String(new Date().getFullYear()) : String(new Date().getFullYear()),
+        cardCode: item.type === VaultItemType.Card ? item.card.code || "" : "",
+        sshPrivateKey: item.type === VaultItemType.SshKey ? item.sshKey.privateKey || "" : "",
+        sshPublicKey: item.type === VaultItemType.SshKey ? item.sshKey.publicKey || "" : "",
+        sshFingerprint: item.type === VaultItemType.SshKey ? item.sshKey.keyFingerprint || "" : "",
+        identityTitle: item.type === VaultItemType.Identity ? item.identity.title || "" : "",
+        firstName: item.type === VaultItemType.Identity ? item.identity.firstName || "" : "",
+        middleName: item.type === VaultItemType.Identity ? item.identity.middleName || "" : "",
+        lastName: item.type === VaultItemType.Identity ? item.identity.lastName || "" : "",
+        identityUsername: item.type === VaultItemType.Identity ? item.identity.username || "" : "",
+        company: item.type === VaultItemType.Identity ? item.identity.company || "" : "",
+        ssn: item.type === VaultItemType.Identity ? item.identity.ssn || "" : "",
+        passportNumber: item.type === VaultItemType.Identity ? item.identity.passportNumber || "" : "",
+        licenseNumber: item.type === VaultItemType.Identity ? item.identity.licenseNumber || "" : "",
+        email: item.type === VaultItemType.Identity ? item.identity.email || "" : "",
+        phone: item.type === VaultItemType.Identity ? item.identity.phone || "" : "",
+        address1: item.type === VaultItemType.Identity ? item.identity.address1 || "" : "",
+        address2: item.type === VaultItemType.Identity ? item.identity.address2 || "" : "",
+        address3: item.type === VaultItemType.Identity ? item.identity.address3 || "" : "",
+        city: item.type === VaultItemType.Identity ? item.identity.city || "" : "",
+        state: item.type === VaultItemType.Identity ? item.identity.state || "" : "",
+        postalCode: item.type === VaultItemType.Identity ? item.identity.postalCode || "" : "",
+        country: item.type === VaultItemType.Identity ? item.identity.country || "" : "",
+      });
     } else {
-      setItemType(VaultItemType.Login);
-      setFields([]);
-      setCardholderName("");
-      setCardNumber("");
-      setCardBrand("Visa");
-      setCardExpMonth("1");
-      setCardExpYear(String(new Date().getFullYear()));
-      setCardCode("");
-      setReprompt(0);
+      setFormState({
+        itemType: VaultItemType.Login,
+        name: "",
+        notes: "",
+        favorite: false,
+        reprompt: 0,
+        fields: [],
+        username: "",
+        password: "",
+        uri: "",
+        totpSecret: "",
+        fidoCredentials: [],
+        cardholderName: "",
+        cardNumber: "",
+        cardBrand: "Visa",
+        cardExpMonth: "1",
+        cardExpYear: String(new Date().getFullYear()),
+        cardCode: "",
+        sshPrivateKey: "",
+        sshPublicKey: "",
+        sshFingerprint: "",
+        identityTitle: "",
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        identityUsername: "",
+        company: "",
+        ssn: "",
+        passportNumber: "",
+        licenseNumber: "",
+        email: "",
+        phone: "",
+        address1: "",
+        address2: "",
+        address3: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "",
+      });
     }
   });
 
@@ -172,10 +219,10 @@ export const ItemEdit: Component = () => {
     const dragged = draggedIndex();
     if (dragged === null || dragged === index) return;
 
-    const list = [...fields()];
+    const list = [...formState.fields];
     const [moved] = list.splice(dragged, 1);
     list.splice(index, 0, moved);
-    setFields(list);
+    updateForm("fields", list);
     setDraggedIndex(index);
   };
 
@@ -184,7 +231,7 @@ export const ItemEdit: Component = () => {
   };
 
   const handleRemoveField = (index: number) => {
-    setFields(fields().filter((_, i) => i !== index));
+    updateForm("fields", formState.fields.filter((_, i) => i !== index));
   };
 
   const handleScanQr = async () => {
@@ -206,7 +253,7 @@ export const ItemEdit: Component = () => {
       try {
         const url = new URL(decodedStr);
         if (url.protocol === "otpauth:" && url.searchParams.has("secret")) {
-          setTotpSecret(decodedStr); // Lưu toàn bộ URL để đồng bộ với định dạng cũ và Bitwarden
+          updateForm("totpSecret", decodedStr); // Lưu toàn bộ URL để đồng bộ với định dạng cũ và Bitwarden
           storeActions.showToast(t("edit_qr_success"), "success");
         } else {
           setError(t("edit_qr_error_no_match"));
@@ -227,7 +274,7 @@ export const ItemEdit: Component = () => {
     if (
       !(await storeActions.confirm(
         t("edit_confirm_delete_title"),
-        t("edit_confirm_delete_msg", { name: name() }),
+        t("edit_confirm_delete_msg", { name: formState.name }),
         "danger",
       ))
     ) {
@@ -256,15 +303,15 @@ export const ItemEdit: Component = () => {
         "danger",
       ))
     ) return;
-    setFidoCredentials(
-      fidoCredentials().filter((c) => c.credentialId !== credId),
+    updateForm("fidoCredentials",
+      formState.fidoCredentials.filter((c) => c.credentialId !== credId),
     );
   };
 
   const handleSave = async (e: Event) => {
     e.preventDefault();
     if (saving()) return;
-    if (!name().trim()) {
+    if (!formState.name.trim()) {
       setError(t("edit_error_empty_name"));
       return;
     }
@@ -276,63 +323,152 @@ export const ItemEdit: Component = () => {
       let itemData:
         | Partial<LoginVaultItem>
         | Partial<SecureNoteVaultItem>
-        | Partial<CardVaultItem>;
+        | Partial<CardVaultItem>
+        | Partial<IdentityVaultItem>
+        | Partial<SshKeyVaultItem>;
 
-      if (itemType() === VaultItemType.SecureNote) {
+      if (formState.itemType === VaultItemType.SecureNote) {
         itemData = {
           id: store.selectedItem?.id || undefined,
           type: VaultItemType.SecureNote,
-          name: name().trim(),
-          notes: notes().trim(),
-          favorite: favorite(),
-          reprompt: reprompt(),
-          fields: fields().map((f) => ({
+          name: formState.name.trim(),
+          notes: formState.notes.trim(),
+          favorite: formState.favorite,
+          reprompt: formState.reprompt,
+          fields: formState.fields.map((f) => ({
             type: f.type,
             name: f.name.trim(),
             value: f.value.trim(),
           })),
         };
-      } else if (itemType() === VaultItemType.Card) {
+      } else if (formState.itemType === VaultItemType.Card) {
         itemData = {
           id: store.selectedItem?.id || undefined,
           type: VaultItemType.Card,
-          name: name().trim(),
-          notes: notes().trim(),
-          favorite: favorite(),
-          reprompt: reprompt(),
-          fields: fields().map((f) => ({
+          name: formState.name.trim(),
+          notes: formState.notes.trim(),
+          favorite: formState.favorite,
+          reprompt: formState.reprompt,
+          fields: formState.fields.map((f) => ({
             type: f.type,
             name: f.name.trim(),
             value: f.value.trim(),
           })),
           card: {
-            cardholderName: cardholderName().trim(),
-            brand: cardBrand(),
-            number: cardNumber().trim(),
-            expMonth: cardExpMonth(),
-            expYear: cardExpYear().trim(),
-            code: cardCode().trim(),
+            cardholderName: formState.cardholderName.trim(),
+            brand: formState.cardBrand,
+            number: formState.cardNumber.trim(),
+            expMonth: formState.cardExpMonth,
+            expYear: formState.cardExpYear.trim(),
+            code: formState.cardCode.trim(),
           },
         };
-      } else {
+      } else if (formState.itemType === VaultItemType.Login) {
+        const originalItem = store.selectedItem;
+        const originalLogin = originalItem?.type === VaultItemType.Login
+          ? originalItem.login
+          : null;
+
+        let revDate = originalLogin?.passwordRevisionDate || null;
+        let history = originalLogin?.passwordHistory || [];
+
+        const newPassword = formState.password.trim();
+        const oldPassword = originalLogin?.password || "";
+
+        if (originalLogin && newPassword !== oldPassword) {
+          revDate = new Date().toISOString();
+          if (oldPassword) {
+            history = [
+              { lastUsedDate: new Date().toISOString(), password: oldPassword },
+              ...(history || []),
+            ].slice(0, 5);
+          }
+        }
+
+        const originalUris = originalLogin?.uris || [];
+        const newUri = formState.uri.trim();
+        const mappedUris = newUri
+          ? [{
+            uri: newUri,
+            match: originalUris[0]?.uri === newUri
+              ? originalUris[0]?.match
+              : null,
+          }]
+          : [];
+
         itemData = {
           id: store.selectedItem?.id || undefined,
           type: VaultItemType.Login,
-          name: name().trim(),
-          notes: notes().trim(),
-          favorite: favorite(),
-          reprompt: reprompt(),
-          fields: fields().map((f) => ({
+          name: formState.name.trim(),
+          notes: formState.notes.trim(),
+          favorite: formState.favorite,
+          reprompt: formState.reprompt,
+          fields: formState.fields.map((f) => ({
             type: f.type,
             name: f.name.trim(),
             value: f.value.trim(),
           })),
           login: {
-            username: username().trim(),
-            password: password().trim(),
-            totp: totpSecret().trim(),
-            uris: uri().trim() ? [{ uri: uri().trim() }] : [],
-            fido2Credentials: fidoCredentials(),
+            username: formState.username.trim(),
+            password: newPassword,
+            totp: formState.totpSecret.trim(),
+            uris: mappedUris,
+            fido2Credentials: formState.fidoCredentials,
+            passwordRevisionDate: revDate,
+            passwordHistory: history,
+          },
+        };
+      } else if (formState.itemType === VaultItemType.Identity) {
+        itemData = {
+          id: store.selectedItem?.id || undefined,
+          type: VaultItemType.Identity,
+          name: formState.name.trim(),
+          notes: formState.notes.trim(),
+          favorite: formState.favorite,
+          reprompt: formState.reprompt,
+          fields: formState.fields.map((f) => ({
+            type: f.type,
+            name: f.name.trim(),
+            value: f.value.trim(),
+          })),
+          identity: {
+            title: formState.identityTitle.trim(),
+            firstName: formState.firstName.trim(),
+            middleName: formState.middleName.trim(),
+            lastName: formState.lastName.trim(),
+            username: formState.identityUsername.trim(),
+            company: formState.company.trim(),
+            ssn: formState.ssn.trim(),
+            passportNumber: formState.passportNumber.trim(),
+            licenseNumber: formState.licenseNumber.trim(),
+            email: formState.email.trim(),
+            phone: formState.phone.trim(),
+            address1: formState.address1.trim(),
+            address2: formState.address2.trim(),
+            address3: formState.address3.trim(),
+            city: formState.city.trim(),
+            state: formState.state.trim(),
+            postalCode: formState.postalCode.trim(),
+            country: formState.country.trim(),
+          },
+        };
+      } else {
+        itemData = {
+          id: store.selectedItem?.id || undefined,
+          type: VaultItemType.SshKey,
+          name: formState.name.trim(),
+          notes: formState.notes.trim(),
+          favorite: formState.favorite,
+          reprompt: formState.reprompt,
+          fields: formState.fields.map((f) => ({
+            type: f.type,
+            name: f.name.trim(),
+            value: f.value.trim(),
+          })),
+          sshKey: {
+            privateKey: formState.sshPrivateKey.trim(),
+            publicKey: formState.sshPublicKey.trim(),
+            keyFingerprint: formState.sshFingerprint.trim(),
           },
         };
       }
@@ -340,15 +476,23 @@ export const ItemEdit: Component = () => {
       const res = await storeActions.saveItem(itemData);
       if (res.success) {
         const msg = isEdit()
-          ? (itemType() === VaultItemType.SecureNote
+          ? (formState.itemType === VaultItemType.SecureNote
             ? t("edit_toast_updated_note")
-            : itemType() === VaultItemType.Card
+            : formState.itemType === VaultItemType.Card
             ? t("edit_toast_updated_card")
+            : formState.itemType === VaultItemType.Identity
+            ? t("edit_toast_updated_identity")
+            : formState.itemType === VaultItemType.SshKey
+            ? t("edit_toast_updated_ssh_key")
             : t("edit_toast_updated_login"))
-          : (itemType() === VaultItemType.SecureNote
+          : (formState.itemType === VaultItemType.SecureNote
             ? t("edit_toast_created_note")
-            : itemType() === VaultItemType.Card
+            : formState.itemType === VaultItemType.Card
             ? t("edit_toast_created_card")
+            : formState.itemType === VaultItemType.Identity
+            ? t("edit_toast_created_identity")
+            : formState.itemType === VaultItemType.SshKey
+            ? t("edit_toast_created_ssh_key")
             : t("edit_toast_created_login"));
         storeActions.showToast(msg, "success");
 
@@ -390,15 +534,23 @@ export const ItemEdit: Component = () => {
           {/* Header */}
           <DetailHeader
             title={isEdit()
-              ? (itemType() === VaultItemType.SecureNote
+              ? (formState.itemType === VaultItemType.SecureNote
                 ? t("edit_title_edit_note")
-                : itemType() === VaultItemType.Card
+                : formState.itemType === VaultItemType.Card
                 ? t("edit_title_edit_card")
+                : formState.itemType === VaultItemType.Identity
+                ? t("edit_title_edit_identity")
+                : formState.itemType === VaultItemType.SshKey
+                ? t("edit_title_edit_ssh_key")
                 : t("edit_title_edit_login"))
-              : (itemType() === VaultItemType.SecureNote
+              : (formState.itemType === VaultItemType.SecureNote
                 ? t("edit_title_add_note")
-                : itemType() === VaultItemType.Card
+                : formState.itemType === VaultItemType.Card
                 ? t("edit_title_add_card")
+                : formState.itemType === VaultItemType.Identity
+                ? t("edit_title_add_identity")
+                : formState.itemType === VaultItemType.SshKey
+                ? t("edit_title_add_ssh_key")
                 : t("edit_title_add_login"))}
             onBack={handleCancel}
           />
@@ -415,65 +567,117 @@ export const ItemEdit: Component = () => {
               <Input
                 id="item-name"
                 type="text"
-                value={name()}
-                onInput={(e) => setName(e.currentTarget.value)}
-                placeholder={itemType() === VaultItemType.SecureNote
+                value={formState.name}
+                onInput={(e) => updateForm("name", e.currentTarget.value)}
+                placeholder={formState.itemType === VaultItemType.SecureNote
                   ? t("edit_placeholder_name_note")
-                  : itemType() === VaultItemType.Card
+                  : formState.itemType === VaultItemType.Card
                   ? "e.g. Visa, Mastercard..."
                   : t("edit_placeholder_name_login")}
               />
             </div>
           </div>
 
-          <Show when={itemType() === VaultItemType.Login}>
+          <Show when={formState.itemType === VaultItemType.Login}>
             <LoginEditFields
-              username={username()}
-              setUsername={setUsername}
-              password={password()}
-              setPassword={setPassword}
-              uri={uri()}
-              setUri={setUri}
-              totpSecret={totpSecret()}
-              setTotpSecret={setTotpSecret}
-              fidoCredentials={fidoCredentials()}
+              username={formState.username}
+              setUsername={(v) => updateForm("username", v)}
+              password={formState.password}
+              setPassword={(v) => updateForm("password", v)}
+              uri={formState.uri}
+              setUri={(v) => updateForm("uri", v)}
+              totpSecret={formState.totpSecret}
+              setTotpSecret={(v) => updateForm("totpSecret", v)}
+              fidoCredentials={formState.fidoCredentials}
               onDeleteFido={handleDeleteFidoCredential}
               scanning={scanning()}
               onScanQr={handleScanQr}
             />
           </Show>
 
-          <Show when={itemType() === VaultItemType.Card}>
+          <Show when={formState.itemType === VaultItemType.Card}>
             <CardEditFields
-              cardholderName={cardholderName()}
-              setCardholderName={setCardholderName}
-              cardNumber={cardNumber()}
-              setCardNumber={setCardNumber}
-              cardBrand={cardBrand()}
-              setCardBrand={setCardBrand}
-              cardExpMonth={cardExpMonth()}
-              setCardExpMonth={setCardExpMonth}
-              cardExpYear={cardExpYear()}
-              setCardExpYear={setCardExpYear}
-              cardCode={cardCode()}
-              setCardCode={setCardCode}
+              cardholderName={formState.cardholderName}
+              setCardholderName={(v) => updateForm("cardholderName", v)}
+              cardNumber={formState.cardNumber}
+              setCardNumber={(v) => updateForm("cardNumber", v)}
+              cardBrand={formState.cardBrand}
+              setCardBrand={(v) => updateForm("cardBrand", v)}
+              cardExpMonth={formState.cardExpMonth}
+              setCardExpMonth={(v) => updateForm("cardExpMonth", v)}
+              cardExpYear={formState.cardExpYear}
+              setCardExpYear={(v) => updateForm("cardExpYear", v)}
+              cardCode={formState.cardCode}
+              setCardCode={(v) => updateForm("cardCode", v)}
             />
           </Show>
 
-          <Show when={itemType() === VaultItemType.SecureNote}>
+          <Show when={formState.itemType === VaultItemType.SecureNote}>
             <NoteEditFields
-              notes={notes()}
-              setNotes={setNotes}
-              reprompt={reprompt()}
-              setReprompt={setReprompt}
+              notes={formState.notes}
+              setNotes={(v) => updateForm("notes", v)}
+              reprompt={formState.reprompt}
+              setReprompt={(v) => updateForm("reprompt", v)}
+            />
+          </Show>
+
+          <Show when={formState.itemType === VaultItemType.Identity}>
+            <IdentityEditFields
+              identityTitle={formState.identityTitle}
+              setIdentityTitle={(v) => updateForm("identityTitle", v)}
+              firstName={formState.firstName}
+              setFirstName={(v) => updateForm("firstName", v)}
+              middleName={formState.middleName}
+              setMiddleName={(v) => updateForm("middleName", v)}
+              lastName={formState.lastName}
+              setLastName={(v) => updateForm("lastName", v)}
+              identityUsername={formState.identityUsername}
+              setIdentityUsername={(v) => updateForm("identityUsername", v)}
+              company={formState.company}
+              setCompany={(v) => updateForm("company", v)}
+              ssn={formState.ssn}
+              setSsn={(v) => updateForm("ssn", v)}
+              passportNumber={formState.passportNumber}
+              setPassportNumber={(v) => updateForm("passportNumber", v)}
+              licenseNumber={formState.licenseNumber}
+              setLicenseNumber={(v) => updateForm("licenseNumber", v)}
+              email={formState.email}
+              setEmail={(v) => updateForm("email", v)}
+              phone={formState.phone}
+              setPhone={(v) => updateForm("phone", v)}
+              address1={formState.address1}
+              setAddress1={(v) => updateForm("address1", v)}
+              address2={formState.address2}
+              setAddress2={(v) => updateForm("address2", v)}
+              address3={formState.address3}
+              setAddress3={(v) => updateForm("address3", v)}
+              city={formState.city}
+              setCity={(v) => updateForm("city", v)}
+              state={formState.state}
+              setState={(v) => updateForm("state", v)}
+              postalCode={formState.postalCode}
+              setPostalCode={(v) => updateForm("postalCode", v)}
+              country={formState.country}
+              setCountry={(v) => updateForm("country", v)}
+            />
+          </Show>
+
+          <Show when={formState.itemType === VaultItemType.SshKey}>
+            <SshKeyEditFields
+              privateKey={formState.sshPrivateKey}
+              setPrivateKey={(v) => updateForm("sshPrivateKey", v)}
+              publicKey={formState.sshPublicKey}
+              setPublicKey={(v) => updateForm("sshPublicKey", v)}
+              keyFingerprint={formState.sshFingerprint}
+              setKeyFingerprint={(v) => updateForm("sshFingerprint", v)}
             />
           </Show>
 
           {/* Custom Fields in Edit Mode */}
-          <Show when={fields().length > 0}>
+          <Show when={formState.fields.length > 0}>
             <div class="detail-section-title">{t("edit_label_fields")}</div>
             <div class="card mb-12">
-              <For each={fields()}>
+              <For each={formState.fields}>
                 {(field, index) => (
                   <Show
                     when={field.type === CustomFieldType.Divider}
@@ -580,7 +784,7 @@ export const ItemEdit: Component = () => {
           </div>
 
           {/* Notes Section (Common to Login and Card) */}
-          <Show when={itemType() !== VaultItemType.SecureNote}>
+          <Show when={formState.itemType !== VaultItemType.SecureNote}>
             <div class="detail-section-title">
               {t("edit_section_additional_options")}
             </div>
@@ -590,8 +794,8 @@ export const ItemEdit: Component = () => {
                 <textarea
                   id="item-notes"
                   class="input-control resize-none"
-                  value={notes()}
-                  onInput={(e) => setNotes(e.currentTarget.value)}
+                  value={formState.notes}
+                  onInput={(e) => updateForm("notes", e.currentTarget.value)}
                   placeholder={t("edit_placeholder_notes")}
                   rows="5"
                 />
@@ -599,8 +803,8 @@ export const ItemEdit: Component = () => {
               <div class="form-group mt-12">
                 <Checkbox
                   id="item-reprompt"
-                  checked={reprompt() === 1}
-                  onChange={(checked) => setReprompt(checked ? 1 : 0)}
+                  checked={formState.reprompt === 1}
+                  onChange={(checked) => updateForm("reprompt", checked ? 1 : 0)}
                   label={t("edit_label_reprompt")}
                 />
               </div>

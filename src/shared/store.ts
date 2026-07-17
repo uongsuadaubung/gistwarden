@@ -20,14 +20,12 @@ import {
   setDerivedKey,
 } from "./crypto.ts";
 import {
-  type CardVaultItem,
   type ConfirmType,
-  type LoginVaultItem,
-  type SecureNoteVaultItem,
   ThemeMode,
   type ThemeModeType,
   type ToastType,
   type VaultItem,
+  VaultItemSchema,
   VaultItemType,
   VaultListSchema,
   type VaultTimeoutAction,
@@ -35,6 +33,7 @@ import {
 } from "./types.ts";
 import { setLanguage, SupportLanguage, t } from "./i18n.ts";
 import { parseAndValidateImportJson } from "./import-export.ts";
+import { syncVaultToGist } from "./sync-utils.ts";
 import { APP_NAME } from "./constants.ts";
 export { View };
 
@@ -141,13 +140,6 @@ export { store };
 
 let toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-function isLoginVaultItem(item: VaultItem): item is LoginVaultItem {
-  return item.type === VaultItemType.Login;
-}
-
-function isCardVaultItem(item: VaultItem): item is CardVaultItem {
-  return item.type === VaultItemType.Card;
-}
 
 const viewDepths: Record<View, number> = {
   [View.Login]: 0,
@@ -371,24 +363,9 @@ export const storeActions = {
         setStore("salt", saltBase64);
 
         const key = await getOrDeriveKey(password, saltBase64);
-        const encrypted = await encryptData(JSON.stringify([]), key);
-        const payload = JSON.stringify({
-          salt: saltBase64,
-          iv: encrypted.iv,
-          ciphertext: encrypted.ciphertext,
-        });
-
-        const res = await new Promise<{ success: boolean; error?: string }>(
-          (resolve) => {
-            chrome.runtime.sendMessage({
-              type: "UPLOAD_TO_GIST",
-              content: payload,
-            }, resolve);
-          },
-        );
-
-        if (!res.success) {
-          throw new Error(res.error || "Không thể tạo Gist trên GitHub");
+        const uploadRes = await syncVaultToGist([], key, saltBase64);
+        if (!uploadRes.success) {
+          throw new Error(uploadRes.error || "Không thể tạo Gist trên GitHub");
         }
 
         await setMasterPassword(password);
@@ -408,21 +385,7 @@ export const storeActions = {
 
       if (!hasExistingGist || !existingGistContent) {
         // Có salt nhưng không có Gist (có thể bị xóa trên GitHub), tạo lại Gist trống
-        const encrypted = await encryptData(JSON.stringify([]), key);
-        const payload = JSON.stringify({
-          salt: saltBase64,
-          iv: encrypted.iv,
-          ciphertext: encrypted.ciphertext,
-        });
-
-        const uploadRes = await new Promise<
-          { success: boolean; error?: string }
-        >((resolve) => {
-          chrome.runtime.sendMessage({
-            type: "UPLOAD_TO_GIST",
-            content: payload,
-          }, resolve);
-        });
+        const uploadRes = await syncVaultToGist([], key, saltBase64);
 
         if (!uploadRes.success) {
           return {
@@ -581,201 +544,139 @@ export const storeActions = {
         updatedList = store.vaultItems.map((v) => {
           if (v.id !== item.id) return v;
 
-          const targetType = item.type !== undefined ? item.type : v.type;
-          if (targetType === VaultItemType.SecureNote) {
-            return {
-              id: v.id,
-              type: VaultItemType.SecureNote,
-              name: item.name !== undefined ? item.name : v.name,
-              notes: item.notes !== undefined ? item.notes : v.notes,
-              favorite: item.favorite !== undefined
-                ? item.favorite
-                : v.favorite,
-              reprompt: item.reprompt !== undefined
-                ? item.reprompt
-                : (v.reprompt !== undefined ? v.reprompt : 0),
-              fields: item.fields !== undefined ? item.fields : v.fields,
-              creationDate: v.creationDate,
-              revisionDate: now,
-            };
-          }
-
-          if (targetType === VaultItemType.Card) {
-            const itemCard = "card" in item ? item.card : undefined;
-            if (!isCardVaultItem(v)) {
-              return {
-                id: v.id,
-                type: VaultItemType.Card,
-                name: item.name !== undefined ? item.name : v.name,
-                notes: item.notes !== undefined ? item.notes : v.notes,
-                favorite: item.favorite !== undefined
-                  ? item.favorite
-                  : v.favorite,
-                reprompt: item.reprompt !== undefined
-                  ? item.reprompt
-                  : (v.reprompt !== undefined ? v.reprompt : 0),
-                fields: item.fields !== undefined ? item.fields : v.fields,
-                card: itemCard || {
-                  cardholderName: "",
-                  brand: "",
-                  number: "",
-                  expMonth: "",
-                  expYear: "",
-                  code: "",
-                },
-                creationDate: v.creationDate,
-                revisionDate: now,
-              };
-            }
-            return {
-              id: v.id,
-              type: VaultItemType.Card,
-              name: item.name !== undefined ? item.name : v.name,
-              notes: item.notes !== undefined ? item.notes : v.notes,
-              favorite: item.favorite !== undefined
-                ? item.favorite
-                : v.favorite,
-              reprompt: item.reprompt !== undefined
-                ? item.reprompt
-                : (v.reprompt !== undefined ? v.reprompt : 0),
-              fields: item.fields !== undefined ? item.fields : v.fields,
-              card: itemCard !== undefined ? itemCard : v.card,
-              creationDate: v.creationDate,
-              revisionDate: now,
-            };
-          }
-
-          const itemLogin = "login" in item ? item.login : undefined;
-
-          // If changing type from SecureNote to Login, or v is not typed as Login yet
-          if (!isLoginVaultItem(v)) {
-            return {
-              id: v.id,
-              type: VaultItemType.Login,
-              name: item.name !== undefined ? item.name : v.name,
-              notes: item.notes !== undefined ? item.notes : v.notes,
-              favorite: item.favorite !== undefined
-                ? item.favorite
-                : v.favorite,
-              reprompt: item.reprompt !== undefined
-                ? item.reprompt
-                : (v.reprompt !== undefined ? v.reprompt : 0),
-              fields: item.fields !== undefined ? item.fields : v.fields,
-              login: itemLogin || {
-                username: "",
-                password: "",
-                totp: "",
-                uris: [],
-                fido2Credentials: [],
-              },
-              creationDate: v.creationDate,
-              revisionDate: now,
-            };
-          }
-
-          // v is safely narrowed to LoginVaultItem, so v.login is guaranteed to exist
-          return {
+          const targetType = item.type !== undefined ? Number(item.type) : Number(v.type);
+          
+          const baseItem: Record<string, unknown> = {
             id: v.id,
-            type: VaultItemType.Login,
+            type: targetType,
             name: item.name !== undefined ? item.name : v.name,
             notes: item.notes !== undefined ? item.notes : v.notes,
             favorite: item.favorite !== undefined ? item.favorite : v.favorite,
-            reprompt: item.reprompt !== undefined
-              ? item.reprompt
-              : (v.reprompt !== undefined ? v.reprompt : 0),
+            reprompt: item.reprompt !== undefined ? item.reprompt : (v.reprompt !== undefined ? v.reprompt : 0),
             fields: item.fields !== undefined ? item.fields : v.fields,
-            login: itemLogin !== undefined ? itemLogin : v.login,
             creationDate: v.creationDate,
             revisionDate: now,
           };
-        });
-      } else {
-        // New
-        const targetType = item.type || VaultItemType.Login;
-        if (targetType === VaultItemType.SecureNote) {
-          const newItem: SecureNoteVaultItem = {
-            id: crypto.randomUUID(),
-            type: VaultItemType.SecureNote,
-            name: item.name || "Chưa đặt tên",
-            notes: item.notes,
-            favorite: item.favorite || false,
-            reprompt: item.reprompt || 0,
-            fields: item.fields || [],
-            creationDate: now,
-            revisionDate: now,
-          };
-          updatedList = [...store.vaultItems, newItem];
-        } else if (targetType === VaultItemType.Card) {
-          const itemCard = "card" in item ? item.card : undefined;
-          const newItem: CardVaultItem = {
-            id: crypto.randomUUID(),
-            type: VaultItemType.Card,
-            name: item.name || "Chưa đặt tên",
-            notes: item.notes,
-            favorite: item.favorite || false,
-            reprompt: item.reprompt || 0,
-            fields: item.fields || [],
-            card: itemCard || {
+
+          if (targetType === VaultItemType.Login) {
+            baseItem.login = "login" in item ? item.login : ("login" in v ? v.login : {
+              username: "",
+              password: "",
+              totp: "",
+              uris: [],
+              fido2Credentials: [],
+            });
+          } else if (targetType === VaultItemType.Card) {
+            baseItem.card = "card" in item ? item.card : ("card" in v ? v.card : {
               cardholderName: "",
               brand: "",
               number: "",
               expMonth: "",
               expYear: "",
               code: "",
-            },
-            creationDate: now,
-            revisionDate: now,
-          };
-          updatedList = [...store.vaultItems, newItem];
-        } else {
-          const itemLogin = "login" in item ? item.login : undefined;
-          const newItem: LoginVaultItem = {
-            id: crypto.randomUUID(),
-            type: VaultItemType.Login,
-            name: item.name || "Chưa đặt tên",
-            notes: item.notes,
-            favorite: item.favorite || false,
-            reprompt: item.reprompt || 0,
-            fields: item.fields || [],
-            login: itemLogin || {
+            });
+          } else if (targetType === VaultItemType.Identity) {
+            baseItem.identity = "identity" in item ? item.identity : ("identity" in v ? v.identity : {
+              title: "",
+              firstName: "",
+              middleName: "",
+              lastName: "",
               username: "",
-              password: "",
-              totp: "",
-              uris: [],
-              fido2Credentials: [],
-            },
-            creationDate: now,
-            revisionDate: now,
+              company: "",
+              ssn: "",
+              passportNumber: "",
+              licenseNumber: "",
+              email: "",
+              phone: "",
+              address1: "",
+              address2: "",
+              address3: "",
+              city: "",
+              state: "",
+              postalCode: "",
+              country: "",
+            });
+          } else if (targetType === VaultItemType.SshKey) {
+            baseItem.sshKey = "sshKey" in item ? item.sshKey : ("sshKey" in v ? v.sshKey : {
+              privateKey: "",
+              publicKey: "",
+              keyFingerprint: "",
+            });
+          }
+
+          return VaultItemSchema.parse(baseItem);
+        });
+      } else {
+        // New
+        const targetType = item.type !== undefined ? Number(item.type) : VaultItemType.Login;
+        const baseItem: Record<string, unknown> = {
+          id: crypto.randomUUID(),
+          type: targetType,
+          name: item.name || "Chưa đặt tên",
+          notes: item.notes || "",
+          favorite: item.favorite || false,
+          reprompt: item.reprompt || 0,
+          fields: item.fields || [],
+          creationDate: now,
+          revisionDate: now,
+        };
+
+        if (targetType === VaultItemType.Login) {
+          baseItem.login = "login" in item ? item.login : {
+            username: "",
+            password: "",
+            totp: "",
+            uris: [],
+            fido2Credentials: [],
           };
-          updatedList = [...store.vaultItems, newItem];
+        } else if (targetType === VaultItemType.Card) {
+          baseItem.card = "card" in item ? item.card : {
+            cardholderName: "",
+            brand: "",
+            number: "",
+            expMonth: "",
+            expYear: "",
+            code: "",
+          };
+        } else if (targetType === VaultItemType.Identity) {
+          baseItem.identity = "identity" in item ? item.identity : {
+            title: "",
+            firstName: "",
+            middleName: "",
+            lastName: "",
+            username: "",
+            company: "",
+            ssn: "",
+            passportNumber: "",
+            licenseNumber: "",
+            email: "",
+            phone: "",
+            address1: "",
+            address2: "",
+            address3: "",
+            city: "",
+            state: "",
+            postalCode: "",
+            country: "",
+          };
+        } else if (targetType === VaultItemType.SshKey) {
+          baseItem.sshKey = "sshKey" in item ? item.sshKey : {
+            privateKey: "",
+            publicKey: "",
+            keyFingerprint: "",
+          };
         }
+
+        updatedList = [...store.vaultItems, VaultItemSchema.parse(baseItem)];
       }
 
-      // Validate via Zod
-      const validatedList = VaultListSchema.parse(updatedList);
+      const uploadRes = await syncVaultToGist(updatedList, key, store.salt);
 
-      // Encrypt and upload
-      const encrypted = await encryptData(JSON.stringify(validatedList), key);
-      const payload = JSON.stringify({
-        salt: store.salt,
-        iv: encrypted.iv,
-        ciphertext: encrypted.ciphertext,
-      });
-
-      const res = await new Promise<{ success: boolean; error?: string }>(
-        (resolve) => {
-          chrome.runtime.sendMessage({
-            type: "UPLOAD_TO_GIST",
-            content: payload,
-          }, resolve);
-        },
-      );
-
-      if (!res.success) {
-        throw new Error(res.error || "Lỗi đồng bộ lên GitHub Gist");
+      if (!uploadRes.success) {
+        throw new Error(uploadRes.error || "Lỗi đồng bộ lên GitHub Gist");
       }
 
-      setStore("vaultItems", reconcile(validatedList));
+      setStore("vaultItems", reconcile(uploadRes.validatedList || updatedList));
       return { success: true };
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
@@ -793,30 +694,13 @@ export const storeActions = {
       const key = await getOrDeriveKey(password, store.salt);
 
       const filtered = store.vaultItems.filter((v) => v.id !== id);
-      const validatedList = VaultListSchema.parse(filtered);
+      const uploadRes = await syncVaultToGist(filtered, key, store.salt);
 
-      // Encrypt and upload
-      const encrypted = await encryptData(JSON.stringify(validatedList), key);
-      const payload = JSON.stringify({
-        salt: store.salt,
-        iv: encrypted.iv,
-        ciphertext: encrypted.ciphertext,
-      });
-
-      const res = await new Promise<{ success: boolean; error?: string }>(
-        (resolve) => {
-          chrome.runtime.sendMessage({
-            type: "UPLOAD_TO_GIST",
-            content: payload,
-          }, resolve);
-        },
-      );
-
-      if (!res.success) {
-        throw new Error(res.error || "Lỗi đồng bộ lên GitHub Gist");
+      if (!uploadRes.success) {
+        throw new Error(uploadRes.error || "Lỗi đồng bộ lên GitHub Gist");
       }
 
-      setStore("vaultItems", reconcile(validatedList));
+      setStore("vaultItems", reconcile(uploadRes.validatedList || filtered));
       return { success: true };
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
@@ -850,29 +734,10 @@ export const storeActions = {
       // 2. Derive new key
       const newKey = await deriveKey(newPass, rawSalt);
 
-      // 3. Encrypt existing vault items with the new key
-      const encrypted = await encryptData(
-        JSON.stringify(store.vaultItems),
-        newKey,
-      );
-      const payload = JSON.stringify({
-        salt: newSaltBase64,
-        iv: encrypted.iv,
-        ciphertext: encrypted.ciphertext,
-      });
+      const uploadRes = await syncVaultToGist(store.vaultItems, newKey, newSaltBase64);
 
-      // 4. Upload to Gist
-      const res = await new Promise<{ success: boolean; error?: string }>(
-        (resolve) => {
-          chrome.runtime.sendMessage({
-            type: "UPLOAD_TO_GIST",
-            content: payload,
-          }, resolve);
-        },
-      );
-
-      if (!res.success) {
-        throw new Error(res.error || "Lỗi đồng bộ mật khẩu mới lên Gist");
+      if (!uploadRes.success) {
+        throw new Error(uploadRes.error || "Lỗi đồng bộ mật khẩu mới lên Gist");
       }
 
       // 5. Update local state, session, and settings
@@ -982,31 +847,14 @@ export const storeActions = {
       if (!password || !store.salt) throw new Error("Vault is locked");
       const key = await getOrDeriveKey(password, store.salt);
 
-      const encrypted = await encryptData(
-        JSON.stringify(importRes.combinedItems),
-        key,
-      );
-      const payload = JSON.stringify({
-        salt: store.salt,
-        iv: encrypted.iv,
-        ciphertext: encrypted.ciphertext,
-      });
-
       console.log(`[${APP_NAME} Import] Dang tai len Gist...`);
-      const uploadRes = await new Promise<{ success: boolean; error?: string }>(
-        (resolve) => {
-          chrome.runtime.sendMessage({
-            type: "UPLOAD_TO_GIST",
-            content: payload,
-          }, resolve);
-        },
-      );
+      const uploadRes = await syncVaultToGist(importRes.combinedItems, key, store.salt);
 
       if (!uploadRes.success) {
         throw new Error(uploadRes.error || "Loi dong bo len Gist");
       }
 
-      setStore("vaultItems", reconcile(importRes.combinedItems));
+      setStore("vaultItems", reconcile(uploadRes.validatedList || importRes.combinedItems));
       console.log(`[${APP_NAME} Import] Import HOAN TAT thanh cong!`);
       return { success: true, importedCount: importRes.importedCount };
     } catch (err) {

@@ -95,18 +95,79 @@ export const VaultOptions: Component = () => {
           return {
             ...base,
             type: VaultItemType.Login as const,
+            reprompt: item.reprompt,
             login: {
               username: item.login.username || "",
               password: item.login.password || "",
               totp: item.login.totp || "",
-              uris: item.login.uris?.map((u) => ({ uri: u.uri })) || [],
+              uris: item.login.uris?.map((u) => ({
+                uri: u.uri,
+                match: typeof u.match === "number" ? u.match : null,
+              })) || [],
               fido2Credentials: item.login.fido2Credentials || [],
+              passwordRevisionDate: item.login.passwordRevisionDate || null,
+              passwordHistory: item.login.passwordHistory?.map((ph) => ({
+                lastUsedDate: ph.lastUsedDate || null,
+                password: ph.password || "",
+              })) || [],
+            },
+          };
+        } else if (item.type === VaultItemType.Card) {
+          return {
+            ...base,
+            type: VaultItemType.Card as const,
+            reprompt: item.reprompt,
+            card: {
+              cardholderName: item.card.cardholderName || "",
+              brand: item.card.brand || "",
+              number: item.card.number || "",
+              expMonth: item.card.expMonth || "",
+              expYear: item.card.expYear || "",
+              code: item.card.code || "",
+            },
+          };
+        } else if (item.type === VaultItemType.Identity) {
+          return {
+            ...base,
+            type: VaultItemType.Identity as const,
+            reprompt: item.reprompt,
+            identity: {
+              title: item.identity.title || "",
+              firstName: item.identity.firstName || "",
+              middleName: item.identity.middleName || "",
+              lastName: item.identity.lastName || "",
+              username: item.identity.username || "",
+              company: item.identity.company || "",
+              ssn: item.identity.ssn || "",
+              passportNumber: item.identity.passportNumber || "",
+              licenseNumber: item.identity.licenseNumber || "",
+              email: item.identity.email || "",
+              phone: item.identity.phone || "",
+              address1: item.identity.address1 || "",
+              address2: item.identity.address2 || "",
+              address3: item.identity.address3 || "",
+              city: item.identity.city || "",
+              state: item.identity.state || "",
+              postalCode: item.identity.postalCode || "",
+              country: item.identity.country || "",
+            },
+          };
+        } else if (item.type === VaultItemType.SshKey) {
+          return {
+            ...base,
+            type: VaultItemType.SshKey as const,
+            reprompt: item.reprompt,
+            sshKey: {
+              privateKey: item.sshKey.privateKey || "",
+              publicKey: item.sshKey.publicKey || "",
+              keyFingerprint: item.sshKey.keyFingerprint || "",
             },
           };
         } else {
           return {
             ...base,
             type: VaultItemType.SecureNote as const,
+            reprompt: item.reprompt,
             secureNote: {
               type: 0,
             },

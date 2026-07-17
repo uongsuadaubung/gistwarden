@@ -1,20 +1,79 @@
-import { type Component, createSignal, For, onMount, Show } from "solid-js";
+import { type Component, createSignal, For, type JSX, onMount, Show } from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
 import {
   type CardVaultItem,
   CustomFieldType,
+  type IdentityVaultItem,
   type LoginVaultItem,
   type SecureNoteVaultItem,
+  type SshKeyVaultItem,
   type VaultField,
+  type VaultItem,
   VaultItemType,
 } from "@/shared/types.ts";
 import Button from "@/components/Button.tsx";
-import { CopyIcon, EyeIcon, EyeOffIcon, TrashIcon } from "@/icons/svg/index.ts";
+import { CopyIcon, EyeIcon, EyeOffIcon, TrashIcon, NoteIcon, KeyIcon } from "@/icons/svg/index.ts";
 import { formatDateTime, t } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
 import LoginDetailFields from "@/components/item-detail/LoginDetailFields.tsx";
 import CardDetailFields from "@/components/item-detail/CardDetailFields.tsx";
 import NoteDetailFields from "@/components/item-detail/NoteDetailFields.tsx";
+import IdentityDetailFields from "@/components/item-detail/IdentityDetailFields.tsx";
+import SshKeyDetailFields from "@/components/item-detail/SshKeyDetailFields.tsx";
+import CardBrandIcon from "@/components/CardBrandIcon.tsx";
+
+const isLoginItem = (item: VaultItem): item is LoginVaultItem => {
+  return Number(item.type) === VaultItemType.Login;
+};
+
+const isCardItem = (item: VaultItem): item is CardVaultItem => {
+  return Number(item.type) === VaultItemType.Card;
+};
+
+const isNoteItem = (item: VaultItem): item is SecureNoteVaultItem => {
+  return Number(item.type) === VaultItemType.SecureNote;
+};
+
+const isIdentityItem = (item: VaultItem): item is IdentityVaultItem => {
+  return Number(item.type) === VaultItemType.Identity;
+};
+
+const isSshKeyItem = (item: VaultItem): item is SshKeyVaultItem => {
+  return Number(item.type) === VaultItemType.SshKey;
+};
+
+const getDomain = (item: LoginVaultItem): string | null => {
+  if (
+    Number(item.type) !== VaultItemType.Login || !item.login.uris ||
+    item.login.uris.length === 0
+  ) {
+    return null;
+  }
+  const uri = item.login.uris[0].uri;
+  try {
+    let hostname = uri;
+    if (!/^https?:\/\//i.test(hostname)) {
+      hostname = "http://" + hostname;
+    }
+    const url = new URL(hostname);
+    return url.hostname;
+  } catch (_e) {
+    return null;
+  }
+};
+
+const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (props) => {
+  const [hasError, setHasError] = createSignal(false);
+  return (
+    <Show when={!hasError()} fallback={props.fallback}>
+      <img
+        src={`https://www.google.com/s2/favicons?domain=${props.domain}&sz=32`}
+        alt=""
+        onError={() => setHasError(true)}
+      />
+    </Show>
+  );
+};
 
 export const ItemDetail: Component = () => {
   // Local view states
@@ -38,17 +97,27 @@ export const ItemDetail: Component = () => {
 
   const getCardItem = (): CardVaultItem | null => {
     const item = store.selectedItem;
-    return item?.type === VaultItemType.Card ? item : null;
+    return item && isCardItem(item) ? item : null;
   };
 
   const getLoginItem = (): LoginVaultItem | null => {
     const item = store.selectedItem;
-    return item?.type === VaultItemType.Login ? item : null;
+    return item && isLoginItem(item) ? item : null;
   };
 
   const getNoteItem = (): SecureNoteVaultItem | null => {
     const item = store.selectedItem;
-    return item?.type === VaultItemType.SecureNote ? item : null;
+    return item && isNoteItem(item) ? item : null;
+  };
+
+  const getIdentityItem = (): IdentityVaultItem | null => {
+    const item = store.selectedItem;
+    return item && isIdentityItem(item) ? item : null;
+  };
+
+  const getSshKeyItem = (): SshKeyVaultItem | null => {
+    const item = store.selectedItem;
+    return item && isSshKeyItem(item) ? item : null;
   };
 
   const toggleFieldVisibility = (index: number) => {
@@ -97,10 +166,14 @@ export const ItemDetail: Component = () => {
         <div class="app-body pb-24">
           {/* Header */}
           <DetailHeader
-            title={store.selectedItem?.type === VaultItemType.SecureNote
+            title={Number(store.selectedItem?.type) === VaultItemType.SecureNote
               ? t("detail_title_note")
-              : store.selectedItem?.type === VaultItemType.Card
+              : Number(store.selectedItem?.type) === VaultItemType.Card
               ? t("detail_title_card")
+              : Number(store.selectedItem?.type) === VaultItemType.Identity
+              ? t("detail_title_identity")
+              : Number(store.selectedItem?.type) === VaultItemType.SshKey
+              ? t("detail_title_ssh_key")
               : t("detail_title_login")}
             onBack={handleBackToVault}
             showPopout
@@ -109,16 +182,53 @@ export const ItemDetail: Component = () => {
             <div class="alert alert-danger">{error()}</div>
           </Show>
 
-          {/* Card Info Name (For non-Card items) */}
-          <Show
-            when={store.selectedItem &&
-              store.selectedItem.type !== VaultItemType.Card}
-          >
-            <div class="detail-view-header">
-              <div class="detail-view-name">
-                {name() || t("detail_no_value")}
-              </div>
-            </div>
+          {/* Card Info Name (For all items) */}
+          <Show when={store.selectedItem}>
+            {(item) => {
+              const getDetailIcon = () => {
+                const currentItem = item();
+                if (Number(currentItem.type) === VaultItemType.SecureNote) {
+                  return <NoteIcon />;
+                }
+                if (isCardItem(currentItem)) {
+                  return <CardBrandIcon brand={currentItem.card.brand || ""} />;
+                }
+                if (Number(currentItem.type) === VaultItemType.Identity) {
+                  return <CardBrandIcon brand="" />;
+                }
+                if (Number(currentItem.type) === VaultItemType.SshKey) {
+                  return <KeyIcon />;
+                }
+                // Login
+                if (isLoginItem(currentItem)) {
+                  const domainStr = getDomain(currentItem);
+                  return (
+                    <Show
+                      when={domainStr}
+                      fallback={<KeyIcon />}
+                    >
+                      {(dom) => <Favicon domain={dom()} fallback={<KeyIcon />} />}
+                    </Show>
+                  );
+                }
+                return <KeyIcon />;
+              };
+
+              return (
+                <div class="card p-16 mb-16">
+                  <div class="d-flex align-center gap-12">
+                    <div class="item-icon-container item-icon-container-large">
+                      {getDetailIcon()}
+                    </div>
+                    <div>
+                      <div class="font-w-600 font-sz-16 text-break">
+                        {item().name || t("detail_no_value")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }}
           </Show>
 
           {/* Modular Type-Specific Fields */}
@@ -142,6 +252,22 @@ export const ItemDetail: Component = () => {
             {(noteItem) => (
               <NoteDetailFields
                 item={noteItem()}
+              />
+            )}
+          </Show>
+          <Show when={getIdentityItem()}>
+            {(identityItem) => (
+              <IdentityDetailFields
+                item={identityItem()}
+                onCopy={handleCopy}
+              />
+            )}
+          </Show>
+          <Show when={getSshKeyItem()}>
+            {(sshKeyItem) => (
+              <SshKeyDetailFields
+                item={sshKeyItem()}
+                onCopy={handleCopy}
               />
             )}
           </Show>
@@ -248,13 +374,13 @@ export const ItemDetail: Component = () => {
                   {t("detail_item_history")}
                 </div>
                 <div class="card mb-16 p-16 font-sz-12 text-muted">
-                  <div class="py-4">
+                  <div class="py-6 d-flex align-center gap-8">
                     <span>{t("detail_revision_date")}:</span>
                     <span class="font-w-500 text-normal">
                       {formatDateTime(item().revisionDate)}
                     </span>
                   </div>
-                  <div class="py-4 border-top mt-4 pt-4">
+                  <div class="py-6 d-flex align-center gap-8">
                     <span>{t("detail_creation_date")}:</span>
                     <span class="font-w-500 text-normal">
                       {formatDateTime(item().creationDate)}

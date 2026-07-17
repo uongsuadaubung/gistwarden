@@ -1,6 +1,9 @@
 import { type Component, createSignal, type JSX, Show } from "solid-js";
 import {
   type CardVaultItem,
+  type IdentityVaultItem,
+  type SshKeyVaultItem,
+  type LoginVaultItem,
   type VaultItem,
   VaultItemType,
   View,
@@ -66,7 +69,19 @@ const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (
 };
 
 const isCard = (item: VaultItem): item is CardVaultItem => {
-  return item.type === VaultItemType.Card;
+  return Number(item.type) === VaultItemType.Card;
+};
+
+const isIdentity = (item: VaultItem): item is IdentityVaultItem => {
+  return Number(item.type) === VaultItemType.Identity;
+};
+
+const isSshKey = (item: VaultItem): item is SshKeyVaultItem => {
+  return Number(item.type) === VaultItemType.SshKey;
+};
+
+const isLogin = (item: VaultItem): item is LoginVaultItem => {
+  return Number(item.type) === VaultItemType.Login;
 };
 
 const getCardSub = (item: CardVaultItem): string => {
@@ -74,6 +89,16 @@ const getCardSub = (item: CardVaultItem): string => {
   const number = item.card.number || "";
   const last4 = number.length > 4 ? number.slice(-4) : number;
   return `${brand}${last4 ? `, *${last4}` : ""}`;
+};
+
+const getIdentitySub = (item: IdentityVaultItem): string => {
+  const first = item.identity.firstName || "";
+  const last = item.identity.lastName || "";
+  return `${first} ${last}`.trim() || t("detail_identity_title");
+};
+
+const getSshKeySub = (item: SshKeyVaultItem): string => {
+  return item.sshKey.keyFingerprint || "SSH Key";
 };
 
 export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
@@ -98,34 +123,32 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
     >
       {/* Icon Container */}
       <div class="item-icon-container">
-        <Show
-          when={props.item.type === VaultItemType.SecureNote}
-          fallback={
-            <Show
-              when={isCard(props.item) ? props.item : null}
-              fallback={
-                <Show
-                  when={domain()}
-                  fallback={<KeyIcon />}
-                >
-                  {(dom) => <Favicon domain={dom()} fallback={<KeyIcon />} />}
-                </Show>
-              }
-            >
-              {(cardItem) => (
-                <CardBrandIcon brand={cardItem().card.brand || ""} />
-              )}
-            </Show>
-          }
-        >
+        <Show when={Number(props.item.type) === VaultItemType.SecureNote}>
           <NoteIcon />
+        </Show>
+        <Show when={isCard(props.item) ? props.item : null}>
+          {(cardItem) => <CardBrandIcon brand={cardItem().card.brand || ""} />}
+        </Show>
+        <Show when={Number(props.item.type) === VaultItemType.Identity}>
+          <CardBrandIcon brand="" />
+        </Show>
+        <Show when={Number(props.item.type) === VaultItemType.SshKey}>
+          <KeyIcon />
+        </Show>
+        <Show when={Number(props.item.type) === VaultItemType.Login}>
+          <Show
+            when={domain()}
+            fallback={<KeyIcon />}
+          >
+            {(dom) => <Favicon domain={dom()} fallback={<KeyIcon />} />}
+          </Show>
         </Show>
       </div>
 
       {/* Info Container */}
       <div class="item-info">
         <Show
-          when={props.item.type === VaultItemType.SecureNote}
+          when={Number(props.item.type) === VaultItemType.SecureNote}
           fallback={
             <>
               <div class="item-name d-flex align-center gap-6">
@@ -135,23 +158,27 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
                 </Show>
               </div>
               <div class="item-sub">
-                <Show
-                  when={isCard(props.item) ? props.item : null}
-                  fallback={
+                <Show when={isCard(props.item) ? props.item : null}>
+                  {(cardItem) => getCardSub(cardItem())}
+                </Show>
+                <Show when={isIdentity(props.item) ? props.item : null}>
+                  {(identityItem) => getIdentitySub(identityItem())}
+                </Show>
+                <Show when={isSshKey(props.item) ? props.item : null}>
+                  {(sshItem) => getSshKeySub(sshItem())}
+                </Show>
+                <Show when={isLogin(props.item) ? props.item : null}>
+                  {(loginItem) => (
                     <>
                       <Show
-                        when={props.item.type === VaultItemType.Login &&
-                          props.item.login.fido2Credentials &&
-                          props.item.login.fido2Credentials.length > 0}
+                        when={loginItem().login.fido2Credentials &&
+                          loginItem().login.fido2Credentials!.length > 0}
                       >
                         <span class="passkey-badge">PASSKEY</span>
                       </Show>
-                      {(props.item.type === VaultItemType.Login &&
-                        props.item.login.username) || t("vault_no_username")}
+                      {loginItem().login.username || t("vault_no_username")}
                     </>
-                  }
-                >
-                  {(cardItem) => getCardSub(cardItem())}
+                  )}
                 </Show>
               </div>
             </>
@@ -298,6 +325,55 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
                         )}
                     >
                       {t("detail_copy_card_code")}
+                    </div>
+                  </Show>
+                </>
+              )}
+            </Show>
+
+            {/* SSH Key Item Copy Actions */}
+            <Show
+              when={isSshKey(props.item) ? props.item : null}
+            >
+              {(sshItem) => (
+                <>
+                  <Show when={sshItem().sshKey.privateKey}>
+                    <div
+                      class="dropdown-item"
+                      onClick={(e) =>
+                        props.onCopyText(
+                          sshItem().sshKey.privateKey || "",
+                          t("detail_copy_ssh_private_key"),
+                          e,
+                        )}
+                    >
+                      {t("detail_copy_ssh_private_key")}
+                    </div>
+                  </Show>
+                  <Show when={sshItem().sshKey.publicKey}>
+                    <div
+                      class="dropdown-item"
+                      onClick={(e) =>
+                        props.onCopyText(
+                          sshItem().sshKey.publicKey || "",
+                          t("detail_copy_ssh_public_key"),
+                          e,
+                        )}
+                    >
+                      {t("detail_copy_ssh_public_key")}
+                    </div>
+                  </Show>
+                  <Show when={sshItem().sshKey.keyFingerprint}>
+                    <div
+                      class="dropdown-item"
+                      onClick={(e) =>
+                        props.onCopyText(
+                          sshItem().sshKey.keyFingerprint || "",
+                          t("detail_copy_ssh_fingerprint"),
+                          e,
+                        )}
+                    >
+                      {t("detail_copy_ssh_fingerprint")}
                     </div>
                   </Show>
                 </>

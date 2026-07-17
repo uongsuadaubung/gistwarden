@@ -3,6 +3,7 @@ import { type Fido2Credential } from "@/shared/types.ts";
 import { t } from "@/shared/i18n.ts";
 import Input from "@/components/Input.tsx";
 import { EyeIcon, EyeOffIcon, QrIcon, TrashIcon } from "@/icons/svg/index.ts";
+import FormField from "@/components/FormField.tsx";
 
 interface LoginEditFieldsProps {
   username: string;
@@ -27,8 +28,7 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
     <>
       <div class="detail-section-title">{t("detail_section_login")}</div>
       <div class="card mb-16">
-        <div class="form-group">
-          <label for="item-username">{t("edit_label_username")}</label>
+        <FormField id="item-username" label={t("edit_label_username")}>
           <Input
             id="item-username"
             type="text"
@@ -36,10 +36,9 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
             onInput={(e) => props.setUsername(e.currentTarget.value)}
             placeholder={t("edit_placeholder_username")}
           />
-        </div>
+        </FormField>
 
-        <div class="form-group">
-          <label for="item-password">{t("edit_label_password")}</label>
+        <FormField id="item-password" label={t("edit_label_password")}>
           <div class="pos-relative">
             <Input
               id="item-password"
@@ -65,7 +64,7 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
               </button>
             </div>
           </div>
-        </div>
+        </FormField>
       </div>
 
       {/* FIDO2/Passkey credentials (Read-only display of existing credentials with delete option) */}
@@ -100,8 +99,7 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
         {t("detail_section_security")}
       </div>
       <div class="card mb-16">
-        <div class="form-group">
-          <label for="item-totp">{t("edit_label_totp")}</label>
+        <FormField id="item-totp" label={t("edit_label_totp")}>
           <div class="pos-relative">
             <Input
               id="item-totp"
@@ -140,7 +138,7 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
               </button>
             </div>
           </div>
-        </div>
+        </FormField>
       </div>
 
       {/* Website Section */}
@@ -148,8 +146,7 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
         {t("detail_section_autofill")}
       </div>
       <div class="card mb-16">
-        <div class="form-group">
-          <label for="item-uri">{t("edit_label_website")}</label>
+        <FormField id="item-uri" label={t("edit_label_website")}>
           <Input
             id="item-uri"
             type="text"
@@ -157,7 +154,7 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
             onInput={(e) => props.setUri(e.currentTarget.value)}
             placeholder="https://example.com"
           />
-        </div>
+        </FormField>
       </div>
     </>
   );

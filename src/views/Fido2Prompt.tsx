@@ -20,6 +20,7 @@ import {
   ShieldIcon,
 } from "@/icons/svg/index.ts";
 import { formatDateTime, t } from "@/shared/i18n.ts";
+import PasskeySelectRow from "@/components/PasskeySelectRow.tsx";
 
 interface Fido2Request {
   success: boolean;
@@ -469,64 +470,30 @@ export const Fido2Prompt: Component = () => {
                   <div class="passkey-list">
                     <For each={matchingAccounts()}>
                       {(item, idx) => (
-                        <div
-                          class={`passkey-item ${
-                            selectedAccountIndex() === idx() ? "active" : ""
-                          }`}
+                        <PasskeySelectRow
+                          icon={<LockIcon />}
+                          title={item.login.username || t("detail_no_value")}
+                          subtitle={item.name}
+                          active={selectedAccountIndex() === idx()}
                           onClick={() => {
                             setSelectedAccountIndex(idx());
                             initPasskeyOptions(item);
                           }}
-                        >
-                          <div class="passkey-item-icon">
-                            <LockIcon />
-                          </div>
-                          <div class="passkey-item-details">
-                            <div class="passkey-username">
-                              {item.login.username || t("detail_no_value")}
-                            </div>
-                            <div class="passkey-vault-name">{item.name}</div>
-                          </div>
-                          <div class="passkey-checkbox">
-                            <div class="circle-check">
-                              <Show when={selectedAccountIndex() === idx()}>
-                                <div class="check-dot"></div>
-                              </Show>
-                            </div>
-                          </div>
-                        </div>
+                        />
                       )}
                     </For>
 
                     {/* Option to create a new account */}
-                    <div
-                      class={`passkey-item ${
-                        selectedAccountIndex() === null ? "active" : ""
-                      }`}
+                    <PasskeySelectRow
+                      icon={<QuestionIcon />}
+                      title={t("fido2_register_new_account")}
+                      subtitle={t("fido2_register_new_account_sub")}
+                      active={selectedAccountIndex() === null}
                       onClick={() => {
                         setSelectedAccountIndex(null);
                         setSelectedPasskeyOption("add");
                       }}
-                    >
-                      <div class="passkey-item-icon">
-                        <QuestionIcon />
-                      </div>
-                      <div class="passkey-item-details">
-                        <div class="passkey-username">
-                          {t("fido2_register_new_account")}
-                        </div>
-                        <div class="passkey-vault-name">
-                          {t("fido2_register_new_account_sub")}
-                        </div>
-                      </div>
-                      <div class="passkey-checkbox">
-                        <div class="circle-check">
-                          <Show when={selectedAccountIndex() === null}>
-                            <div class="check-dot"></div>
-                          </Show>
-                        </div>
-                      </div>
-                    </div>
+                    />
                   </div>
 
                   <Show when={selectedAccountIndex() !== null}>
@@ -552,155 +519,54 @@ export const Fido2Prompt: Component = () => {
                                 <>
                                   <For each={creds}>
                                     {(cred, cIdx) => (
-                                      <div
-                                        class={`passkey-item sub-item ${
-                                          selectedPasskeyOption() ===
-                                              cred.credentialId
-                                            ? "active"
-                                            : ""
-                                        }`}
-                                        onClick={() =>
-                                          setSelectedPasskeyOption(
-                                            cred.credentialId,
-                                          )}
-                                      >
-                                        <div class="passkey-item-icon">
-                                          <ShieldIcon />
-                                        </div>
-                                        <div class="passkey-item-details">
-                                          <div class="passkey-username">
-                                            {t("fido2_register_passkey_info", {
-                                              index: cIdx() + 1,
-                                              date: cred.creationDate
-                                                ? formatDateTime(
-                                                  cred.creationDate,
-                                                )
-                                                : "N/A",
-                                            })}
-                                          </div>
-                                          <div class="passkey-vault-name">
-                                            ID: {cred.credentialId.substring(
-                                              0,
-                                              16,
-                                            )}...
-                                          </div>
-                                        </div>
-                                        <div class="passkey-checkbox">
-                                          <div class="circle-check">
-                                            <Show
-                                              when={selectedPasskeyOption() ===
-                                                cred.credentialId}
-                                            >
-                                              <div class="check-dot"></div>
-                                            </Show>
-                                          </div>
-                                        </div>
-                                      </div>
+                                      <PasskeySelectRow
+                                        icon={<ShieldIcon />}
+                                        title={t("fido2_register_passkey_info", {
+                                          index: cIdx() + 1,
+                                          date: cred.creationDate
+                                            ? formatDateTime(cred.creationDate)
+                                            : "N/A",
+                                        })}
+                                        subtitle={`ID: ${cred.credentialId.substring(0, 16)}...`}
+                                        active={selectedPasskeyOption() === cred.credentialId}
+                                        subItem={true}
+                                        onClick={() => setSelectedPasskeyOption(cred.credentialId)}
+                                      />
                                     )}
                                   </For>
-                                  <div
-                                    class={`passkey-item sub-item ${
-                                      selectedPasskeyOption() === "add"
-                                        ? "active"
-                                        : ""
-                                    }`}
-                                    onClick={() =>
-                                      setSelectedPasskeyOption("add")}
-                                  >
-                                    <div class="passkey-item-icon">
-                                      <QuestionIcon />
-                                    </div>
-                                    <div class="passkey-item-details">
-                                      <div class="passkey-username">
-                                        {t("fido2_register_option_add")}
-                                      </div>
-                                      <div class="passkey-vault-name">
-                                        {t("fido2_register_option_add_sub")}
-                                      </div>
-                                    </div>
-                                    <div class="passkey-checkbox">
-                                      <div class="circle-check">
-                                        <Show
-                                          when={selectedPasskeyOption() ===
-                                            "add"}
-                                        >
-                                          <div class="check-dot"></div>
-                                        </Show>
-                                      </div>
-                                    </div>
-                                  </div>
+                                  <PasskeySelectRow
+                                    icon={<QuestionIcon />}
+                                    title={t("fido2_register_option_add")}
+                                    subtitle={t("fido2_register_option_add_sub")}
+                                    active={selectedPasskeyOption() === "add"}
+                                    subItem={true}
+                                    onClick={() => setSelectedPasskeyOption("add")}
+                                  />
                                 </>
                               }
                             >
-                              <div
-                                class={`passkey-item sub-item ${
-                                  selectedPasskeyOption() ===
-                                      creds[0].credentialId
-                                    ? "active"
-                                    : ""
-                                }`}
-                                onClick={() =>
-                                  setSelectedPasskeyOption(
-                                    creds[0].credentialId,
-                                  )}
-                              >
-                                <div class="passkey-item-icon">
-                                  <ShieldIcon />
-                                </div>
-                                <div class="passkey-item-details">
-                                  <div class="passkey-username">
-                                    {t("fido2_register_option_overwrite")}
-                                  </div>
-                                  <div class="passkey-vault-name">
-                                    {t("fido2_register_passkey_info", {
-                                      index: 1,
-                                      date: creds[0].creationDate
-                                        ? formatDateTime(creds[0].creationDate)
-                                        : "N/A",
-                                    })}
-                                  </div>
-                                </div>
-                                <div class="passkey-checkbox">
-                                  <div class="circle-check">
-                                    <Show
-                                      when={selectedPasskeyOption() ===
-                                        creds[0].credentialId}
-                                    >
-                                      <div class="check-dot"></div>
-                                    </Show>
-                                  </div>
-                                </div>
-                              </div>
+                              <PasskeySelectRow
+                                icon={<ShieldIcon />}
+                                title={t("fido2_register_option_overwrite")}
+                                subtitle={t("fido2_register_passkey_info", {
+                                  index: 1,
+                                  date: creds[0].creationDate
+                                    ? formatDateTime(creds[0].creationDate)
+                                    : "N/A",
+                                })}
+                                active={selectedPasskeyOption() === creds[0].credentialId}
+                                subItem={true}
+                                onClick={() => setSelectedPasskeyOption(creds[0].credentialId)}
+                              />
 
-                              <div
-                                class={`passkey-item sub-item ${
-                                  selectedPasskeyOption() === "add"
-                                    ? "active"
-                                    : ""
-                                }`}
+                              <PasskeySelectRow
+                                icon={<QuestionIcon />}
+                                title={t("fido2_register_option_add")}
+                                subtitle={t("fido2_register_option_add_sub")}
+                                active={selectedPasskeyOption() === "add"}
+                                subItem={true}
                                 onClick={() => setSelectedPasskeyOption("add")}
-                              >
-                                <div class="passkey-item-icon">
-                                  <QuestionIcon />
-                                </div>
-                                <div class="passkey-item-details">
-                                  <div class="passkey-username">
-                                    {t("fido2_register_option_add")}
-                                  </div>
-                                  <div class="passkey-vault-name">
-                                    {t("fido2_register_option_add_sub")}
-                                  </div>
-                                </div>
-                                <div class="passkey-checkbox">
-                                  <div class="circle-check">
-                                    <Show
-                                      when={selectedPasskeyOption() === "add"}
-                                    >
-                                      <div class="check-dot"></div>
-                                    </Show>
-                                  </div>
-                                </div>
-                              </div>
+                              />
                             </Show>
                           </div>
                         </div>
@@ -752,31 +618,13 @@ export const Fido2Prompt: Component = () => {
                         <div class="passkey-list">
                           <For each={matchingCredentials()}>
                             {(item, idx) => (
-                              <div
-                                class={`passkey-item ${
-                                  selectedCredIndex() === idx() ? "active" : ""
-                                }`}
+                              <PasskeySelectRow
+                                icon={<QuestionIcon />}
+                              title={item.credential.userName || ""}
+                                subtitle={item.vaultItemName}
+                                active={selectedCredIndex() === idx()}
                                 onClick={() => setSelectedCredIndex(idx())}
-                              >
-                                <div class="passkey-item-icon">
-                                  <QuestionIcon />
-                                </div>
-                                <div class="passkey-item-details">
-                                  <div class="passkey-username">
-                                    {item.credential.userName}
-                                  </div>
-                                  <div class="passkey-vault-name">
-                                    {item.vaultItemName}
-                                  </div>
-                                </div>
-                                <div class="passkey-checkbox">
-                                  <div class="circle-check">
-                                    <Show when={selectedCredIndex() === idx()}>
-                                      <div class="check-dot"></div>
-                                    </Show>
-                                  </div>
-                                </div>
-                              </div>
+                              />
                             )}
                           </For>
                         </div>

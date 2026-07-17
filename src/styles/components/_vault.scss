@@ -171,15 +171,15 @@
 .add-new-header-btn {
   display: inline-flex;
   align-items: center;
+  width: fit-content;
   background-color: var(--primary);
   color: var(--white);
   border: none;
   border-radius: 4px;
-  padding: 4px 10px;
+  padding: 6px 12px;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  height: 26px;
   transition: background-color 0.2s, transform 0.1s;
 
   &:hover {

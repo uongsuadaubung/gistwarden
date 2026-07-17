@@ -10,7 +10,8 @@
     "storage",
     "activeTab",
     "alarms",
-    "identity"
+    "identity",
+    "clipboardRead"
   ],
   "host_permissions": [
     "https://api.github.com/*",

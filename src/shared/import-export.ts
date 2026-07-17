@@ -111,6 +111,69 @@ export function parseAndValidateImportJson(
           creationDate: now,
           revisionDate: now,
         };
+      } else if (item.type === VaultItemType.Identity) {
+        const identityData = item.identity || {};
+        return {
+          id: crypto.randomUUID(),
+          type: VaultItemType.Identity,
+          name: item.name || "Chưa đặt tên danh tính",
+          notes: item.notes || "",
+          favorite: item.favorite || false,
+          reprompt: item.reprompt,
+          fields: item.fields
+            ? item.fields.map((f) => ({
+              name: f.name || "",
+              value: f.value || "",
+              type: f.type || 0,
+            }))
+            : [],
+          identity: {
+            title: identityData.title || "",
+            firstName: identityData.firstName || "",
+            middleName: identityData.middleName || "",
+            lastName: identityData.lastName || "",
+            username: identityData.username || "",
+            company: identityData.company || "",
+            ssn: identityData.ssn || "",
+            passportNumber: identityData.passportNumber || "",
+            licenseNumber: identityData.licenseNumber || "",
+            email: identityData.email || "",
+            phone: identityData.phone || "",
+            address1: identityData.address1 || "",
+            address2: identityData.address2 || "",
+            address3: identityData.address3 || "",
+            city: identityData.city || "",
+            state: identityData.state || "",
+            postalCode: identityData.postalCode || "",
+            country: identityData.country || "",
+          },
+          creationDate: now,
+          revisionDate: now,
+        };
+      } else if (item.type === VaultItemType.SshKey) {
+        const sshKeyData = item.sshKey || {};
+        return {
+          id: crypto.randomUUID(),
+          type: VaultItemType.SshKey,
+          name: item.name || "Chưa đặt tên SSH Key",
+          notes: item.notes || "",
+          favorite: item.favorite || false,
+          reprompt: item.reprompt,
+          fields: item.fields
+            ? item.fields.map((f) => ({
+              name: f.name || "",
+              value: f.value || "",
+              type: f.type || 0,
+            }))
+            : [],
+          sshKey: {
+            privateKey: sshKeyData.privateKey || "",
+            publicKey: sshKeyData.publicKey || "",
+            keyFingerprint: sshKeyData.keyFingerprint || "",
+          },
+          creationDate: now,
+          revisionDate: now,
+        };
       } else {
         // Login
         const loginData = item.login || {};
@@ -135,9 +198,17 @@ export function parseAndValidateImportJson(
             uris: loginData.uris
               ? loginData.uris.map((u) => ({
                 uri: u.uri || "",
+                match: typeof u.match === "number" ? u.match : null,
               }))
               : [],
             fido2Credentials: loginData.fido2Credentials || [],
+            passwordRevisionDate: loginData.passwordRevisionDate || null,
+            passwordHistory: loginData.passwordHistory
+              ? loginData.passwordHistory.map((ph) => ({
+                lastUsedDate: ph.lastUsedDate || null,
+                password: ph.password || "",
+              }))
+              : [],
           },
           creationDate: now,
           revisionDate: now,
