@@ -2,11 +2,11 @@ import { type Component, createSignal, type JSX, Show } from "solid-js";
 import { type VaultItem, VaultItemType, View } from "@/shared/types.ts";
 import {
   CopyIcon,
+  ExternalLinkIcon,
   HeartFilledIcon,
   KeyIcon,
-  NoteIcon,
-  ExternalLinkIcon,
   MoreVerticalIcon,
+  NoteIcon,
 } from "@/icons/svg/index.ts";
 import { storeActions } from "@/shared/store.ts";
 import { t } from "@/shared/i18n.ts";
@@ -247,7 +247,9 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
               class="dropdown-item"
               onClick={(e) => props.onFavoriteItem(props.item, e)}
             >
-              {props.item.favorite ? t("vault_menu_unfavorite") : t("vault_menu_favorites")}
+              {props.item.favorite
+                ? t("vault_menu_unfavorite")
+                : t("vault_menu_favorites")}
             </div>
             <div
               class="dropdown-item"

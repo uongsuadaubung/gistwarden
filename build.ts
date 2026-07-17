@@ -47,7 +47,9 @@ function compileSCSS() {
     });
 
     writeFileSync(join(chromeDir, "popup.css"), compiled.css);
+    writeFileSync(join(chromeDir, "guide.css"), compiled.css);
     writeFileSync(join(firefoxDir, "popup.css"), compiled.css);
+    writeFileSync(join(firefoxDir, "guide.css"), compiled.css);
     console.log("✓ SCSS compilation successful.");
   } catch (e) {
     console.error("SCSS compilation failed:", e);
@@ -57,7 +59,18 @@ function compileSCSS() {
 
 function copyAssets() {
   console.log("Copying assets...");
-  const assets = ["manifest.json", "popup.html"];
+  const assets = ["manifest.json", "popup.html", "guide.html"];
+
+  // Read APP_NAME from constants.ts
+  const constantsContent = readFileSync(
+    join(srcDir, "shared", "constants.ts"),
+    "utf8",
+  );
+  const appNameMatch = constantsContent.match(
+    /export const APP_NAME = "([^"]+)";/,
+  );
+  const appName = appNameMatch ? appNameMatch[1] : "Gistwarden";
+  const appNameLower = appName.toLowerCase().replace(/[^a-z0-9]/g, "");
 
   function copyAssetsToDir(targetDir: string, isFirefox = false) {
     assets.forEach((file) => {
@@ -66,10 +79,11 @@ function copyAssets() {
       let content: string;
       if (file === "manifest.json") {
         const manifest = JSON.parse(readFileSync(filePath, "utf8"));
+        manifest.name = appName;
         if (isFirefox) {
           manifest.browser_specific_settings = {
             gecko: {
-              id: "gistwarden@kien.hm",
+              id: `${appNameLower}@kien.hm`,
               strict_min_version: "109.0",
             },
           };
@@ -80,23 +94,37 @@ function copyAssets() {
         }
         content = JSON.stringify(manifest, null, 2);
       } else {
-        content = readFileSync(filePath, "utf8");
+        content = readFileSync(filePath, "utf8").replaceAll(
+          "Gistwarden",
+          appName,
+        );
       }
       writeFileSync(join(targetDir, file), content);
     });
 
-    // Copy icons if exist
-    const iconsTarget = join(targetDir, "icons");
-    const iconsSrc = join(srcDir, "icons");
-    if (existsSync(iconsSrc)) {
-      if (!existsSync(iconsTarget)) mkdirSync(iconsTarget, { recursive: true });
-      readdirSync(iconsSrc).forEach((icon) => {
-        const srcPath = join(iconsSrc, icon);
-        if (statSync(srcPath).isFile()) {
-          copyFileSync(srcPath, join(iconsTarget, icon));
+    function copyDirRecursive(src: string, dest: string) {
+      if (!existsSync(src)) return;
+      if (!existsSync(dest)) mkdirSync(dest, { recursive: true });
+      readdirSync(src).forEach((item) => {
+        const srcPath = join(src, item);
+        const destPath = join(dest, item);
+        if (statSync(srcPath).isDirectory()) {
+          copyDirRecursive(srcPath, destPath);
+        } else {
+          copyFileSync(srcPath, destPath);
         }
       });
     }
+
+    // Copy icons if exist
+    const iconsTarget = join(targetDir, "icons");
+    const iconsSrc = join(srcDir, "icons");
+    copyDirRecursive(iconsSrc, iconsTarget);
+
+    // Copy images if exist
+    const imagesTarget = join(targetDir, "images");
+    const imagesSrc = join(srcDir, "images");
+    copyDirRecursive(imagesSrc, imagesTarget);
   }
 
   copyAssetsToDir(chromeDir);
@@ -132,6 +160,7 @@ async function runBuild() {
     "fido2-content-script": join(srcDir, "extension/fido2-content-script.ts"),
     "fido2-page-script": join(srcDir, "extension/fido2-page-script.ts"),
     popup: join(srcDir, "popup-entry.tsx"),
+    guide: join(srcDir, "guide-entry.tsx"),
   };
 
   // Custom path-alias resolver plugin for esbuild
@@ -182,7 +211,8 @@ async function runBuild() {
     for await (const event of watcher) {
       const hasScssChange = event.paths.some((p) => p.endsWith(".scss"));
       const hasAssetChange = event.paths.some((p) =>
-        p.endsWith(".json") || p.endsWith(".html") || p.includes("icons")
+        p.endsWith(".json") || p.endsWith(".html") || p.includes("icons") ||
+        p.includes("images")
       );
       if (hasScssChange) {
         compileSCSS();

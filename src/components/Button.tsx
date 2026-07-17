@@ -37,7 +37,9 @@ export const Button: Component<ButtonProps> = (props) => {
       onClick={local.onClick}
       {...others}
     >
-      {local.loading ? (local.loadingText || t("dialog_loading")) : local.children}
+      {local.loading
+        ? (local.loadingText || t("dialog_loading"))
+        : local.children}
     </button>
   );
 };

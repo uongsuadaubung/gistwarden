@@ -7,8 +7,9 @@ import {
   Show,
 } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
+import { APP_NAME } from "@/shared/constants.ts";
 import { type VaultItem, VaultItemType, View } from "@/shared/types.ts";
-import { isPopout, handlePopout } from "@/shared/popout-utils.ts";
+import { handlePopout, isPopout } from "@/shared/popout-utils.ts";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/shared/totp-utils.ts";
 import {
@@ -98,7 +99,9 @@ export const Vault: Component = () => {
   const matchingItems = () => {
     const domain = currentTabDomain();
     if (!domain) return [];
-    const filtered = store.vaultItems.filter((item) => isMatchingDomain(item, domain));
+    const filtered = store.vaultItems.filter((item) =>
+      isMatchingDomain(item, domain)
+    );
     return sortByName(filtered);
   };
 
@@ -149,7 +152,7 @@ export const Vault: Component = () => {
       await navigator.clipboard.writeText(code);
       storeActions.showToast(t("detail_totp_copied"), "success");
     } catch (err) {
-      console.error("[Gistwarden] Vault copy TOTP error:", err);
+      console.error(`[${APP_NAME}] Vault copy TOTP error:`, err);
       storeActions.showToast(t("toast_error"), "error");
     }
     setActiveMenuId(""); // Close menu
@@ -192,15 +195,15 @@ export const Vault: Component = () => {
 
   const handleCloneItem = async (item: VaultItem, e: MouseEvent) => {
     e.stopPropagation();
-    
+
     // Omit ID to force saveItem into the "New" creation path
     const { id: _id, name, ...rest } = item;
-    
+
     const cloned = {
       ...rest,
       name: `${name} - ${t("vault_item_clone_suffix")}`,
     };
-    
+
     const res = await storeActions.saveItem(cloned);
     if (res.success) {
       storeActions.showToast(t("toast_success"), "success");
@@ -213,7 +216,7 @@ export const Vault: Component = () => {
   const handleDeleteItem = async (item: VaultItem, e: MouseEvent) => {
     e.stopPropagation();
     setActiveOptionsMenuId(""); // Close options dropdown immediately
-    
+
     const confirmed = await storeActions.confirm(
       t("edit_confirm_delete_title"),
       t("edit_confirm_delete_msg", { name: item.name }),
@@ -275,13 +278,11 @@ export const Vault: Component = () => {
     await storeActions.syncVault();
   };
 
-
-
   return (
     <div class="app-container">
       {/* Header */}
       <header class="app-header">
-        <span>Gistwarden</span>
+        <span>{APP_NAME}</span>
         <div class="header-actions">
           {/* Add New dropdown */}
           <div class="add-menu-container">
@@ -310,16 +311,28 @@ export const Vault: Component = () => {
 
           {/* Popout Button */}
           <Show when={!isPopout()}>
-            <span style="display: inline-flex; cursor: pointer;" onClick={handlePopout} title={t("vault_popout_title")}>
+            <span
+              style="display: inline-flex; cursor: pointer;"
+              onClick={handlePopout}
+              title={t("vault_popout_title")}
+            >
               <ExternalLinkIcon />
             </span>
           </Show>
           {/* Sync Button */}
-          <span style="display: inline-flex; cursor: pointer;" onClick={handleSync} title={t("vault_btn_sync")}>
+          <span
+            style="display: inline-flex; cursor: pointer;"
+            onClick={handleSync}
+            title={t("vault_btn_sync")}
+          >
             <SyncIcon class={store.syncing ? "spinning" : ""} />
           </span>
           {/* Lock Button */}
-          <span style="display: inline-flex; cursor: pointer;" onClick={handleLock} title={t("vault_lock_title")}>
+          <span
+            style="display: inline-flex; cursor: pointer;"
+            onClick={handleLock}
+            title={t("vault_lock_title")}
+          >
             <LockIcon />
           </span>
         </div>

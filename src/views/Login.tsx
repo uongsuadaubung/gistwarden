@@ -2,8 +2,9 @@ import { type Component, createEffect, createSignal, Show } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
-import { ChevronDownIcon, GithubIcon, LockIcon } from "@/icons/svg/index.ts";
+import { AppIcon, ChevronDownIcon, GithubIcon } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
+import { APP_NAME } from "@/shared/constants.ts";
 
 export const Login: Component = () => {
   const [token, setToken] = createSignal("");
@@ -118,7 +119,13 @@ export const Login: Component = () => {
 
   const handleForgotPassword = async () => {
     const gistId = store.gistId;
-    if (await storeActions.confirm(t("login_forgot_password_title"), t("login_forgot_password_msg"), "danger")) {
+    if (
+      await storeActions.confirm(
+        t("login_forgot_password_title"),
+        t("login_forgot_password_msg"),
+        "danger",
+      )
+    ) {
       if (gistId) {
         window.open(`https://gist.github.com/${gistId}`, "_blank");
       }
@@ -129,8 +136,8 @@ export const Login: Component = () => {
   return (
     <div class="app-body justify-center h-full">
       <div class="text-center mb-24">
-        <LockIcon class="login-header-logo" />
-        <h2 class="login-brand-title">Gistwarden</h2>
+        <AppIcon class="login-header-logo" />
+        <h2 class="login-brand-title">{APP_NAME}</h2>
         <p class="login-subtitle">
           <Show
             when={store.githubToken}
@@ -185,7 +192,10 @@ export const Login: Component = () => {
                       onInput={(e) => setToken(e.currentTarget.value)}
                       disabled={loading()}
                     />
-                    <span class="login-pat-help" innerHTML={t("login_pat_help")} />
+                    <span
+                      class="login-pat-help"
+                      innerHTML={t("login_pat_help")}
+                    />
                   </div>
 
                   <Button

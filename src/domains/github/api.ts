@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { getAllSettings, updateSettings } from "@/shared/storage.ts";
+import { APP_NAME } from "@/shared/constants.ts";
 
 const GITHUB_API_BASE = "https://api.github.com";
-const GIST_DESCRIPTION = "gistwarden_vault";
-const GIST_FILE_NAME = "gistwarden.json";
+const GIST_DESCRIPTION = `${APP_NAME.toLowerCase()}_vault`;
+const GIST_FILE_NAME = `${APP_NAME.toLowerCase()}.json`;
 
 const GithubErrorSchema = z.object({
   message: z.string().optional(),
@@ -178,7 +179,7 @@ export async function downloadFromGist(): Promise<
       if (!gistId) {
         return {
           success: false,
-          error: "Gistwarden vault not found on GitHub",
+          error: `${APP_NAME} vault not found on GitHub`,
         };
       }
       await updateSettings({ gistId });
@@ -187,7 +188,7 @@ export async function downloadFromGist(): Promise<
     const data = await githubRequest(`/gists/${gistId}`);
     const gist = GistSchema.parse(data);
     const file = gist.files[GIST_FILE_NAME];
-    if (!file) throw new Error("Gistwarden file not found in Gist");
+    if (!file) throw new Error(`${APP_NAME} file not found in Gist`);
 
     const content = file.content ||
       await fetch(file.raw_url, { cache: "no-store" }).then((r) => r.text());

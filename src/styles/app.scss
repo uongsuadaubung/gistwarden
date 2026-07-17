@@ -10,7 +10,7 @@
 @use "./components/settings";
 @use "./components/fido2";
 @use "./components/confirm-modal";
-
+@use "./components/guide";
 
 :root {
   /* Constant colors */
@@ -280,9 +280,6 @@ html.mode-responsive #root {
   }
 }
 
-
-
-
 .card-no-margin {
   margin-bottom: 0;
 }
@@ -482,8 +479,6 @@ html.mode-responsive #root {
   padding-bottom: 12px;
 }
 
-
-
 .icon-inline {
   width: 16px;
   height: 16px;
@@ -577,6 +572,3 @@ body.light-theme {
     transform: translate(-50%, 0);
   }
 }
-
-
-

@@ -23,7 +23,9 @@ export const SettingsSchema = z.object({
 
 export type AppSettings = z.infer<typeof SettingsSchema>;
 
-export const STORAGE_KEY = "gistwarden_settings";
+import { APP_NAME } from "./constants.ts";
+
+export const STORAGE_KEY = `${APP_NAME.toLowerCase()}_settings`;
 
 export async function getAllSettings(): Promise<AppSettings> {
   if (

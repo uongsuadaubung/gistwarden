@@ -1,5 +1,6 @@
 import { type Component, createSignal, For, onMount, Show } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
+import { APP_NAME } from "@/shared/constants.ts";
 import {
   generatePasskeyAssertResponse,
   generatePasskeyRegisterResponse,
@@ -18,7 +19,7 @@ import {
   QuestionIcon,
   ShieldIcon,
 } from "@/icons/svg/index.ts";
-import { t } from "@/shared/i18n.ts";
+import { formatDateTime, t } from "@/shared/i18n.ts";
 
 interface Fido2Request {
   success: boolean;
@@ -69,6 +70,18 @@ export const Fido2Prompt: Component = () => {
   const [selectedAccountIndex, setSelectedAccountIndex] = createSignal<
     number | null
   >(null);
+  const [selectedPasskeyOption, setSelectedPasskeyOption] = createSignal<
+    string
+  >("add");
+
+  const initPasskeyOptions = (item: LoginVaultItem) => {
+    const creds = item.login.fido2Credentials || [];
+    if (creds.length > 0) {
+      setSelectedPasskeyOption(creds[0].credentialId);
+    } else {
+      setSelectedPasskeyOption("add");
+    }
+  };
 
   onMount(async () => {
     // If vault is already unlocked, load pending request immediately
@@ -86,39 +99,41 @@ export const Fido2Prompt: Component = () => {
     }
   };
 
+  const isDomainMatch = (domainA: string, domainB: string): boolean => {
+    const d1 = domainA.trim().toLowerCase();
+    const d2 = domainB.trim().toLowerCase();
+    if (!d1 || !d2) return false;
+    if (d1 === d2) return true;
+    return d1.endsWith("." + d2) || d2.endsWith("." + d1);
+  };
+
   const findMatchingAccounts = (
     rpId: string,
     origin: string,
-    userName: string,
   ) => {
     const rpIdNormalized = rpId.toLowerCase().trim();
     const originHost = getDomainFromUrl(origin);
-    const usernameNormalized = userName.toLowerCase().trim();
 
     const matches = store.vaultItems.filter((item): item is LoginVaultItem => {
       if (item.type !== VaultItemType.Login || !item.login) return false;
-
-      // Match username (must match)
-      const itemUser = (item.login.username || "").toLowerCase().trim();
-      if (itemUser !== usernameNormalized) return false;
 
       // Match domain / RP ID
       // Check URIs
       if (item.login.uris) {
         const hasMatchingUri = item.login.uris.some((u) => {
           const uriHost = getDomainFromUrl(u.uri);
-          return uriHost.includes(rpIdNormalized) ||
-            rpIdNormalized.includes(uriHost) ||
-            uriHost.includes(originHost) ||
-            originHost.includes(uriHost);
+          return isDomainMatch(uriHost, rpIdNormalized) ||
+            isDomainMatch(uriHost, originHost);
         });
         if (hasMatchingUri) return true;
       }
 
-      // Check name
+      // Check name (exact match or domain match to avoid collision like 'x.com' matching 'firefox.com')
       const itemName = item.name.toLowerCase().trim();
       if (
-        itemName.includes(rpIdNormalized) || rpIdNormalized.includes(itemName)
+        itemName === rpIdNormalized ||
+        itemName === originHost ||
+        isDomainMatch(itemName, rpIdNormalized)
       ) {
         return true;
       }
@@ -129,8 +144,10 @@ export const Fido2Prompt: Component = () => {
     setMatchingAccounts(matches);
     if (matches.length > 0) {
       setSelectedAccountIndex(0);
+      initPasskeyOptions(matches[0]);
     } else {
       setSelectedAccountIndex(null);
+      setSelectedPasskeyOption("add");
     }
   };
 
@@ -170,7 +187,7 @@ export const Fido2Prompt: Component = () => {
           findMatchingPasskeys(rpId);
         } else if (res.type === "create") {
           const rpId = res.options.rp.id || res.options.rp.name;
-          findMatchingAccounts(rpId, res.origin, res.options.user.name);
+          findMatchingAccounts(rpId, res.origin);
         }
       } else {
         setError(res.error || t("fido2_error_no_request"));
@@ -184,17 +201,17 @@ export const Fido2Prompt: Component = () => {
   const findMatchingPasskeys = (rpId: string) => {
     const list: MatchingPasskey[] = [];
     console.log(
-      "[Gistwarden FIDO2] Bat dau tim kiem Passkey khop voi rpId:",
+      `[${APP_NAME} FIDO2] Bat dau tim kiem Passkey khop voi rpId:`,
       rpId,
     );
     console.log(
-      "[Gistwarden FIDO2] So luong tai khoan trong ket sat:",
+      `[${APP_NAME} FIDO2] So luong tai khoan trong ket sat:`,
       store.vaultItems.length,
     );
 
     store.vaultItems.forEach((item) => {
       if (item.type !== VaultItemType.Login) return;
-      console.log(`[Gistwarden FIDO2] Kiem tra tai khoan "${item.name}":`, {
+      console.log(`[${APP_NAME} FIDO2] Kiem tra tai khoan "${item.name}":`, {
         hasLogin: true,
         fido2CredentialsCount: item.login.fido2Credentials?.length || 0,
         fido2Credentials: item.login.fido2Credentials,
@@ -202,10 +219,10 @@ export const Fido2Prompt: Component = () => {
       if (item.login.fido2Credentials) {
         item.login.fido2Credentials.forEach((cred: Fido2Credential) => {
           console.log(
-            `[Gistwarden FIDO2] So sanh rpId: "${cred.rpId}" voi "${rpId}"`,
+            `[${APP_NAME} FIDO2] So sanh rpId: "${cred.rpId}" voi "${rpId}"`,
           );
           if (cred.rpId?.trim().toLowerCase() === rpId?.trim().toLowerCase()) {
-            console.log("[Gistwarden FIDO2] KHOP THANH CONG!");
+            console.log(`[${APP_NAME} FIDO2] KHOP THANH CONG!`);
             list.push({
               vaultItemId: item.id,
               vaultItemName: item.name,
@@ -216,7 +233,7 @@ export const Fido2Prompt: Component = () => {
       }
     });
     setMatchingCredentials(list);
-    console.log("[Gistwarden FIDO2] Ket qua danh sach Passkey khop:", list);
+    console.log(`[${APP_NAME} FIDO2] Ket qua danh sach Passkey khop:`, list);
   };
 
   const handleUnlock = async (e: Event) => {
@@ -260,12 +277,28 @@ export const Fido2Prompt: Component = () => {
       const idx = selectedAccountIndex();
       if (idx !== null && matchingAccounts()[idx]) {
         const existingItem = matchingAccounts()[idx];
+
+        let updatedCredentials: Fido2Credential[] = [];
+        const existingCredentials = existingItem.login.fido2Credentials || [];
+        const option = selectedPasskeyOption();
+
+        if (option === "add") {
+          updatedCredentials = [...existingCredentials, newCred];
+        } else {
+          updatedCredentials = existingCredentials.map((c) =>
+            c.credentialId === option ? newCred : c
+          );
+          if (!existingCredentials.some((c) => c.credentialId === option)) {
+            updatedCredentials.push(newCred);
+          }
+        }
+
         const updatedItem: Partial<LoginVaultItem> = {
           id: existingItem.id,
           type: VaultItemType.Login,
           login: {
             ...existingItem.login,
-            fido2Credentials: [newCred],
+            fido2Credentials: updatedCredentials,
           },
         };
         saveRes = await storeActions.saveItem(updatedItem);
@@ -386,7 +419,7 @@ export const Fido2Prompt: Component = () => {
       {/* Bitwarden Brand Header */}
       <div class="fido2-header">
         <ShieldIcon class="fido2-logo" fill="var(--white)" />
-        <span class="fido2-header-title">Gistwarden</span>
+        <span class="fido2-header-title">{APP_NAME}</span>
       </div>
 
       <div class="fido2-body">
@@ -415,66 +448,264 @@ export const Fido2Prompt: Component = () => {
                   <Show
                     when={matchingAccounts().length > 0}
                     fallback={
-                      <div class="prompt-subtitle" innerHTML={t("fido2_register_subtitle_new", { rp: pendingReq()?.options.rp.name || "", user: pendingReq()?.options.user.name || "" })} />
+                      <div
+                        class="prompt-subtitle"
+                        innerHTML={t("fido2_register_subtitle_new", {
+                          rp: pendingReq()?.options.rp.name ||
+                            pendingReq()?.options.rp.id || "",
+                          user: pendingReq()?.options.user.name || "",
+                        })}
+                      />
                     }
                   >
-                    <div class="prompt-subtitle" innerHTML={t("fido2_register_subtitle_choose", { user: pendingReq()?.options.user.name || "" })} />
+                    <div
+                      class="prompt-subtitle"
+                      innerHTML={t("fido2_register_subtitle_choose", {
+                        user: pendingReq()?.options.user.name || "",
+                      })}
+                    />
+                  </Show>
 
-                    <div class="passkey-list">
-                      <For each={matchingAccounts()}>
-                        {(item, idx) => (
-                          <div
-                            class={`passkey-item ${
-                              selectedAccountIndex() === idx() ? "active" : ""
-                            }`}
-                            onClick={() => setSelectedAccountIndex(idx())}
-                          >
-                            <div class="passkey-item-icon">
-                              <LockIcon />
-                            </div>
-                            <div class="passkey-item-details">
-                              <div class="passkey-username">
-                                {item.login.username ||
-                                  t("detail_no_value")}
-                              </div>
-                              <div class="passkey-vault-name">{item.name}</div>
-                            </div>
-                            <div class="passkey-checkbox">
-                              <div class="circle-check">
-                                <Show when={selectedAccountIndex() === idx()}>
-                                  <div class="check-dot"></div>
-                                </Show>
-                              </div>
-                            </div>
+                  <div class="passkey-list">
+                    <For each={matchingAccounts()}>
+                      {(item, idx) => (
+                        <div
+                          class={`passkey-item ${
+                            selectedAccountIndex() === idx() ? "active" : ""
+                          }`}
+                          onClick={() => {
+                            setSelectedAccountIndex(idx());
+                            initPasskeyOptions(item);
+                          }}
+                        >
+                          <div class="passkey-item-icon">
+                            <LockIcon />
                           </div>
-                        )}
-                      </For>
-
-                      {/* Option to create a new account */}
-                      <div
-                        class={`passkey-item ${
-                          selectedAccountIndex() === null ? "active" : ""
-                        }`}
-                        onClick={() => setSelectedAccountIndex(null)}
-                      >
-                        <div class="passkey-item-icon">
-                          <QuestionIcon />
-                        </div>
-                        <div class="passkey-item-details">
-                          <div class="passkey-username">{t("fido2_register_new_account")}</div>
-                          <div class="passkey-vault-name">
-                            {t("fido2_register_new_account_sub")}
+                          <div class="passkey-item-details">
+                            <div class="passkey-username">
+                              {item.login.username || t("detail_no_value")}
+                            </div>
+                            <div class="passkey-vault-name">{item.name}</div>
+                          </div>
+                          <div class="passkey-checkbox">
+                            <div class="circle-check">
+                              <Show when={selectedAccountIndex() === idx()}>
+                                <div class="check-dot"></div>
+                              </Show>
+                            </div>
                           </div>
                         </div>
-                        <div class="passkey-checkbox">
-                          <div class="circle-check">
-                            <Show when={selectedAccountIndex() === null}>
-                              <div class="check-dot"></div>
-                            </Show>
-                          </div>
+                      )}
+                    </For>
+
+                    {/* Option to create a new account */}
+                    <div
+                      class={`passkey-item ${
+                        selectedAccountIndex() === null ? "active" : ""
+                      }`}
+                      onClick={() => {
+                        setSelectedAccountIndex(null);
+                        setSelectedPasskeyOption("add");
+                      }}
+                    >
+                      <div class="passkey-item-icon">
+                        <QuestionIcon />
+                      </div>
+                      <div class="passkey-item-details">
+                        <div class="passkey-username">
+                          {t("fido2_register_new_account")}
+                        </div>
+                        <div class="passkey-vault-name">
+                          {t("fido2_register_new_account_sub")}
+                        </div>
+                      </div>
+                      <div class="passkey-checkbox">
+                        <div class="circle-check">
+                          <Show when={selectedAccountIndex() === null}>
+                            <div class="check-dot"></div>
+                          </Show>
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  <Show when={selectedAccountIndex() !== null}>
+                    {(() => {
+                      const account =
+                        matchingAccounts()[selectedAccountIndex()!];
+                      if (!account) return null;
+                      const creds = account.login.fido2Credentials || [];
+                      if (creds.length === 0) return null;
+
+                      return (
+                        <div class="passkey-options-section">
+                          <div class="passkey-options-title">
+                            {creds.length === 1
+                              ? t("fido2_register_choose_passkey_action")
+                              : t("fido2_register_choose_passkey_overwrite")}
+                          </div>
+
+                          <div class="passkey-list">
+                            <Show
+                              when={creds.length === 1}
+                              fallback={
+                                <>
+                                  <For each={creds}>
+                                    {(cred, cIdx) => (
+                                      <div
+                                        class={`passkey-item sub-item ${
+                                          selectedPasskeyOption() ===
+                                              cred.credentialId
+                                            ? "active"
+                                            : ""
+                                        }`}
+                                        onClick={() =>
+                                          setSelectedPasskeyOption(
+                                            cred.credentialId,
+                                          )}
+                                      >
+                                        <div class="passkey-item-icon">
+                                          <ShieldIcon />
+                                        </div>
+                                        <div class="passkey-item-details">
+                                          <div class="passkey-username">
+                                            {t("fido2_register_passkey_info", {
+                                              index: cIdx() + 1,
+                                              date: cred.creationDate
+                                                ? formatDateTime(
+                                                  cred.creationDate,
+                                                )
+                                                : "N/A",
+                                            })}
+                                          </div>
+                                          <div class="passkey-vault-name">
+                                            ID: {cred.credentialId.substring(
+                                              0,
+                                              16,
+                                            )}...
+                                          </div>
+                                        </div>
+                                        <div class="passkey-checkbox">
+                                          <div class="circle-check">
+                                            <Show
+                                              when={selectedPasskeyOption() ===
+                                                cred.credentialId}
+                                            >
+                                              <div class="check-dot"></div>
+                                            </Show>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </For>
+                                  <div
+                                    class={`passkey-item sub-item ${
+                                      selectedPasskeyOption() === "add"
+                                        ? "active"
+                                        : ""
+                                    }`}
+                                    onClick={() =>
+                                      setSelectedPasskeyOption("add")}
+                                  >
+                                    <div class="passkey-item-icon">
+                                      <QuestionIcon />
+                                    </div>
+                                    <div class="passkey-item-details">
+                                      <div class="passkey-username">
+                                        {t("fido2_register_option_add")}
+                                      </div>
+                                      <div class="passkey-vault-name">
+                                        {t("fido2_register_option_add_sub")}
+                                      </div>
+                                    </div>
+                                    <div class="passkey-checkbox">
+                                      <div class="circle-check">
+                                        <Show
+                                          when={selectedPasskeyOption() ===
+                                            "add"}
+                                        >
+                                          <div class="check-dot"></div>
+                                        </Show>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </>
+                              }
+                            >
+                              <div
+                                class={`passkey-item sub-item ${
+                                  selectedPasskeyOption() ===
+                                      creds[0].credentialId
+                                    ? "active"
+                                    : ""
+                                }`}
+                                onClick={() =>
+                                  setSelectedPasskeyOption(
+                                    creds[0].credentialId,
+                                  )}
+                              >
+                                <div class="passkey-item-icon">
+                                  <ShieldIcon />
+                                </div>
+                                <div class="passkey-item-details">
+                                  <div class="passkey-username">
+                                    {t("fido2_register_option_overwrite")}
+                                  </div>
+                                  <div class="passkey-vault-name">
+                                    {t("fido2_register_passkey_info", {
+                                      index: 1,
+                                      date: creds[0].creationDate
+                                        ? formatDateTime(creds[0].creationDate)
+                                        : "N/A",
+                                    })}
+                                  </div>
+                                </div>
+                                <div class="passkey-checkbox">
+                                  <div class="circle-check">
+                                    <Show
+                                      when={selectedPasskeyOption() ===
+                                        creds[0].credentialId}
+                                    >
+                                      <div class="check-dot"></div>
+                                    </Show>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div
+                                class={`passkey-item sub-item ${
+                                  selectedPasskeyOption() === "add"
+                                    ? "active"
+                                    : ""
+                                }`}
+                                onClick={() => setSelectedPasskeyOption("add")}
+                              >
+                                <div class="passkey-item-icon">
+                                  <QuestionIcon />
+                                </div>
+                                <div class="passkey-item-details">
+                                  <div class="passkey-username">
+                                    {t("fido2_register_option_add")}
+                                  </div>
+                                  <div class="passkey-vault-name">
+                                    {t("fido2_register_option_add_sub")}
+                                  </div>
+                                </div>
+                                <div class="passkey-checkbox">
+                                  <div class="circle-check">
+                                    <Show
+                                      when={selectedPasskeyOption() === "add"}
+                                    >
+                                      <div class="check-dot"></div>
+                                    </Show>
+                                  </div>
+                                </div>
+                              </div>
+                            </Show>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </Show>
 
                   <div class="prompt-footer">
@@ -510,7 +741,12 @@ export const Fido2Prompt: Component = () => {
                     when={matchingCredentials().length === 0}
                     fallback={
                       <>
-                        <div class="prompt-subtitle" innerHTML={t("fido2_assert_subtitle", { rp: pendingReq()?.options.rpId || "" })} />
+                        <div
+                          class="prompt-subtitle"
+                          innerHTML={t("fido2_assert_subtitle", {
+                            rp: pendingReq()?.options.rpId || "",
+                          })}
+                        />
 
                         {/* Styled list of passkeys instead of select dropdown */}
                         <div class="passkey-list">
@@ -565,7 +801,12 @@ export const Fido2Prompt: Component = () => {
                       </>
                     }
                   >
-                    <div class="prompt-subtitle error-msg" innerHTML={t("fido2_assert_no_match", { rp: pendingReq()?.options.rpId || "" })} />
+                    <div
+                      class="prompt-subtitle error-msg"
+                      innerHTML={t("fido2_assert_no_match", {
+                        rp: pendingReq()?.options.rpId || "",
+                      })}
+                    />
                     <div class="prompt-footer single-btn">
                       <Button variant="secondary" block onClick={handleReject}>
                         {t("btn_close")}

@@ -1,3 +1,5 @@
+import { APP_NAME } from "@/shared/constants.ts";
+
 // Inject fido2-page-script.js into the main page context
 try {
   const script = document.createElement("script");
@@ -7,7 +9,7 @@ try {
   };
   (document.head || document.documentElement).appendChild(script);
 } catch (err) {
-  console.error("[Gistwarden] Failed to inject FIDO2 page script:", err);
+  console.error(`[${APP_NAME}] Failed to inject FIDO2 page script:`, err);
 }
 
 // Forward messages between main-world (page-script) and extension-world (background)
@@ -15,7 +17,7 @@ window.addEventListener("message", (event) => {
   // Only handle messages coming from our own page script
   if (
     event.source !== window || !event.data ||
-    event.data.source !== "gistwarden-page-script"
+    event.data.source !== `${APP_NAME.toLowerCase()}-page-script`
   ) {
     return;
   }
@@ -28,7 +30,7 @@ window.addEventListener("message", (event) => {
     if (chrome.runtime.lastError) {
       window.postMessage(
         {
-          source: "gistwarden-content-script",
+          source: `${APP_NAME.toLowerCase()}-content-script`,
           requestId,
           success: false,
           error: chrome.runtime.lastError.message ||
@@ -42,7 +44,7 @@ window.addEventListener("message", (event) => {
     // Forward the response back to page script
     window.postMessage(
       {
-        source: "gistwarden-content-script",
+        source: `${APP_NAME.toLowerCase()}-content-script`,
         requestId,
         success: response?.success || false,
         result: response?.result,

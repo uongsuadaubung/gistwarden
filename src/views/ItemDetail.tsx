@@ -13,6 +13,7 @@ import {
   VaultItemType,
 } from "@/shared/types.ts";
 import Button from "@/components/Button.tsx";
+import { APP_NAME } from "@/shared/constants.ts";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/shared/totp-utils.ts";
 import {
@@ -24,7 +25,7 @@ import {
   TrashIcon,
 } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
-import { isPopout, handlePopout } from "@/shared/popout-utils.ts";
+import { handlePopout, isPopout } from "@/shared/popout-utils.ts";
 
 export const ItemDetail: Component = () => {
   // Local view states
@@ -109,7 +110,7 @@ export const ItemDetail: Component = () => {
       const formatted = rawCode.slice(0, 3) + " " + rawCode.slice(3);
       setTotpCode(formatted);
     } catch (err) {
-      console.error("[Gistwarden] TOTP Generation error:", err);
+      console.error(`[${APP_NAME}] TOTP Generation error:`, err);
       setTotpCode(t("detail_totp_error"));
     }
   };
@@ -152,10 +153,6 @@ export const ItemDetail: Component = () => {
   const handleGoToEdit = () => {
     storeActions.navigate(View.ItemEdit);
   };
-
-
-
-
 
   return (
     <div class="app-container h-full">
@@ -208,7 +205,9 @@ export const ItemDetail: Component = () => {
               <div class="detail-row">
                 <div class="field-content">
                   <div class="field-label">{t("edit_label_username")}</div>
-                  <div class="field-value">{username() || t("detail_no_value")}</div>
+                  <div class="field-value">
+                    {username() || t("detail_no_value")}
+                  </div>
                 </div>
                 <Show when={username()}>
                   <button
@@ -260,7 +259,9 @@ export const ItemDetail: Component = () => {
 
             {/* Card 2: Security & OTP */}
             <Show when={totpCode() || fidoCredentials().length > 0}>
-              <div class="detail-section-title">{t("detail_section_security")}</div>
+              <div class="detail-section-title">
+                {t("detail_section_security")}
+              </div>
               <div class="card mb-16">
                 {/* Rolling TOTP Display */}
                 <Show when={totpCode()}>
@@ -297,10 +298,13 @@ export const ItemDetail: Component = () => {
                     {(cred) => (
                       <div class="detail-row">
                         <div class="field-content">
-                          <div class="field-label">{t("detail_passkey_webauthn")}</div>
+                          <div class="field-label">
+                            {t("detail_passkey_webauthn")}
+                          </div>
                           <div class="field-value">
-                            <strong>{cred.userName || t("detail_no_value")}</strong>
-                            {" "}
+                            <strong>
+                              {cred.userName || t("detail_no_value")}
+                            </strong>{" "}
                             (RP: {cred.rpId})
                           </div>
                         </div>
@@ -312,7 +316,9 @@ export const ItemDetail: Component = () => {
             </Show>
 
             {/* Card 3: Auto-fill Options */}
-            <div class="detail-section-title">{t("detail_section_autofill")}</div>
+            <div class="detail-section-title">
+              {t("detail_section_autofill")}
+            </div>
             <div class="card mb-16">
               {/* URI Field */}
               <div class="detail-row">

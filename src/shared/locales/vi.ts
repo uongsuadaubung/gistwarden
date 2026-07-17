@@ -19,8 +19,10 @@ export default {
   login_method_oauth: "Đăng nhập GitHub (OAuth)",
   login_method_pat: "Dùng Token (PAT)",
   login_placeholder_pat: "Nhập Personal Access Token GitHub của bạn...",
-  login_pat_help: "Token cần có quyền truy cập <strong>gist</strong>. Tiện ích sẽ tạo một Gist bí mật (secret gist) để lưu trữ két sắt đã mã hóa của bạn.",
-  login_oauth_help: "Kết nối tự động và an toàn với tài khoản GitHub của bạn để đồng bộ két sắt tự động qua Cloudflare Worker Proxy riêng tư của bạn.",
+  login_pat_help:
+    "Token cần có quyền truy cập <strong>gist</strong>. Tiện ích sẽ tạo một Gist bí mật (secret gist) để lưu trữ két sắt đã mã hóa của bạn.",
+  login_oauth_help:
+    "Kết nối tự động và an toàn với tài khoản GitHub của bạn để đồng bộ két sắt tự động qua Cloudflare Worker Proxy riêng tư của bạn.",
   login_oauth_hide: "Ẩn cấu hình OAuth",
   login_oauth_show: "Hiện cấu hình OAuth",
   login_oauth_alert_save: "Đã lưu thông số cấu hình OAuth!",
@@ -41,20 +43,23 @@ export default {
   login_error_empty_pat: "Vui lòng nhập Personal Access Token",
   login_error_invalid_token: "Token không hợp lệ hoặc lỗi kết nối",
   login_error_any: "Đã xảy ra lỗi",
-  login_error_oauth_missing_config: "Vui lòng mở mục 'Cấu hình OAuth' để nhập Client ID và Worker URL trước khi đăng nhập.",
+  login_error_oauth_missing_config:
+    "Vui lòng mở mục 'Cấu hình OAuth' để nhập Client ID và Worker URL trước khi đăng nhập.",
   login_error_oauth_no_token: "Không nhận được token từ GitHub",
   login_error_oauth_fail: "Lỗi đăng nhập OAuth",
   login_error_empty_mp: "Vui lòng nhập Mật khẩu Master",
   login_error_wrong_mp: "Mật khẩu Master không đúng",
   login_error_unlock_fail: "Lỗi mở khóa",
   login_forgot_password_title: "Quên mật khẩu Master",
-  login_forgot_password_msg: "Gistwarden sử dụng cơ chế mã hóa đầu-cuối (Zero-Knowledge). Mật khẩu Master không bao giờ được gửi đi hay lưu trữ trên máy chủ, do đó <strong style='color: var(--error);'>KHÔNG CÓ CÁCH NÀO</strong> để khôi phục hoặc đặt lại.<br/><br/>Để bắt đầu lại, hệ thống sẽ <strong>ĐĂNG XUẤT</strong> và <strong>XÓA DỮ LIỆU CỤC BỘ</strong>.<br/><br/>Nếu bạn muốn tiếp tục sử dụng tài khoản GitHub này, hệ thống sẽ mở trang GitHub Gist chứa két sắt cũ để bạn có thể <strong>SAO LƯU</strong> dữ liệu hoặc tiến hành <strong style='color: var(--error);'>XÓA THỦ CÔNG</strong> Gist này trên GitHub trước khi đăng nhập lại.<br/><br/>Bạn có chắc chắn muốn đăng xuất và mở trang Gist cũ không?",
-  app_loading: "Đang tải Gistwarden...",
+  login_forgot_password_msg:
+    "{APP_NAME} sử dụng cơ chế mã hóa đầu-cuối (Zero-Knowledge). Mật khẩu Master không bao giờ được gửi đi hay lưu trữ trên máy chủ, do đó <strong style='color: var(--error);'>KHÔNG CÓ CÁCH NÀO</strong> để khôi phục hoặc đặt lại.<br/><br/>Để bắt đầu lại, hệ thống sẽ <strong>ĐĂNG XUẤT</strong> và <strong>XÓA DỮ LIỆU CỤC BỘ</strong>.<br/><br/>Nếu bạn muốn tiếp tục sử dụng tài khoản GitHub này, hệ thống sẽ mở trang GitHub Gist chứa két sắt cũ để bạn có thể <strong>SAO LƯU</strong> dữ liệu hoặc tiến hành <strong style='color: var(--error);'>XÓA THỦ CÔNG</strong> Gist này trên GitHub trước khi đăng nhập lại.<br/><br/>Bạn có chắc chắn muốn đăng xuất và mở trang Gist cũ không?",
+  app_loading: "Đang tải {APP_NAME}...",
 
   // Vault Page
   vault_search_placeholder: "Tìm kiếm tài khoản...",
   vault_empty_title: "Chưa có tài khoản nào",
-  vault_empty_subtitle: "Két sắt của bạn trống rỗng. Thêm mới tài khoản bằng nút + bên dưới.",
+  vault_empty_subtitle:
+    "Két sắt của bạn trống rỗng. Thêm mới tài khoản bằng nút + bên dưới.",
   vault_btn_sync: "Đồng bộ",
   vault_btn_settings: "Cài đặt",
   vault_btn_generator: "Sinh mã",
@@ -119,7 +124,8 @@ export default {
   edit_error_empty_name: "Vui lòng nhập tên",
   edit_error_save_failed: "Lỗi lưu tài khoản",
   edit_confirm_delete_title: "Xóa tài khoản",
-  edit_confirm_delete_msg: "Bạn có chắc chắn muốn xóa mục '{name}' không? Hành động này không thể hoàn tác.",
+  edit_confirm_delete_msg:
+    "Bạn có chắc chắn muốn xóa mục '{name}' không? Hành động này không thể hoàn tác.",
   edit_error_delete_failed: "Lỗi xóa tài khoản",
   edit_label_type: "Loại",
   edit_type_login: "Mật khẩu",
@@ -135,10 +141,12 @@ export default {
   edit_field_error_empty_divider: "Vui lòng nhập tên nhóm phân cách",
   edit_field_error_empty_name: "Vui lòng nhập tên trường",
   edit_qr_success: "Đã tìm thấy và điền mã QR thành công!",
-  edit_qr_error_no_match: "Không tìm thấy mã QR nào trên màn hình. Hãy đảm bảo mã QR đang hiển thị trên trang web phía sau.",
+  edit_qr_error_no_match:
+    "Không tìm thấy mã QR nào trên màn hình. Hãy đảm bảo mã QR đang hiển thị trên trang web phía sau.",
   edit_qr_error_fail: "Lỗi chụp quét mã QR",
   edit_confirm_delete_passkey_title: "Xóa Passkey",
-  edit_confirm_delete_passkey_msg: "Bạn có chắc chắn muốn xóa Passkey này? Việc này sẽ hủy liên kết đăng nhập bằng Passkey của tài khoản này.",
+  edit_confirm_delete_passkey_msg:
+    "Bạn có chắc chắn muốn xóa Passkey này? Việc này sẽ hủy liên kết đăng nhập bằng Passkey của tài khoản này.",
   edit_toast_updated_note: "Đã cập nhật ghi chú!",
   edit_toast_updated_login: "Đã cập nhật tài khoản!",
   edit_toast_created_note: "Đã tạo ghi chú thành công!",
@@ -207,19 +215,25 @@ export default {
   settings_export_btn: "Giải mã & Tải xuống",
   settings_export_success: "Đã tải xuống file sao lưu!",
   settings_clear_vault_title: "Xóa sạch két sắt",
-  settings_clear_vault_msg: "Bạn có chắc chắn muốn xóa TOÀN BỘ tài khoản trong két sắt? Hành động này không thể hoàn tác và toàn bộ dữ liệu trên Gist sẽ bị xóa sạch.",
+  settings_clear_vault_msg:
+    "Bạn có chắc chắn muốn xóa TOÀN BỘ tài khoản trong két sắt? Hành động này không thể hoàn tác và toàn bộ dữ liệu trên Gist sẽ bị xóa sạch.",
   settings_clear_vault_confirm_title: "Xác nhận xóa vĩnh viễn",
-  settings_clear_vault_confirm_msg: "XÁC NHẬN LẦN CUỐI: Xóa vĩnh viễn toàn bộ dữ liệu tài khoản?",
+  settings_clear_vault_confirm_msg:
+    "XÁC NHẬN LẦN CUỐI: Xóa vĩnh viễn toàn bộ dữ liệu tài khoản?",
   settings_clear_vault_placeholder: "Nhập mật khẩu Master để xác nhận xóa...",
   settings_clear_vault_btn: "XÓA VĨNH VIỄN",
-  settings_clear_vault_success: "Đã xóa toàn bộ tài khoản trong két sắt thành công!",
+  settings_clear_vault_success:
+    "Đã xóa toàn bộ tài khoản trong két sắt thành công!",
   settings_clear_vault_fail: "Lỗi xóa két sắt",
   settings_logout_title: "Đăng xuất",
-  settings_logout_msg: "Bạn có chắc chắn muốn ngắt kết nối tài khoản GitHub? Thao tác này sẽ xóa toàn bộ cấu hình cục bộ.",
+  settings_logout_msg:
+    "Bạn có chắc chắn muốn ngắt kết nối tài khoản GitHub? Thao tác này sẽ xóa toàn bộ cấu hình cục bộ.",
   settings_logout_success: "Đăng xuất thành công",
   vault_sync_success: "Đồng bộ dữ liệu thành công!",
-  vault_import_success: "Nhập thành công {count} tài khoản! Két sắt đã được đồng bộ lên Gist.",
-  vault_import_error_invalid: "Định dạng file không hợp lệ hoặc xác thực thất bại",
+  vault_import_success:
+    "Nhập thành công {count} tài khoản! Két sắt đã được đồng bộ lên Gist.",
+  vault_import_error_invalid:
+    "Định dạng file không hợp lệ hoặc xác thực thất bại",
   vault_import_error_fail: "Lỗi nhập file JSON",
   vault_export_error_fail: "Lỗi xuất file JSON",
   vault_options_sync_manual: "Đồng bộ thủ công",
@@ -251,23 +265,206 @@ export default {
   fido2_error_load_failed: "Lỗi tải yêu cầu xác thực",
   fido2_error_save_failed: "Không thể lưu Passkey vào két sắt",
   fido2_error_create_failed: "Lỗi tạo Passkey",
-  fido2_error_counter_update_failed: "Không thể cập nhật số lần sử dụng Passkey",
+  fido2_error_counter_update_failed:
+    "Không thể cập nhật số lần sử dụng Passkey",
   fido2_error_assert_failed: "Lỗi xác thực Passkey",
   fido2_register_title: "Đăng ký Passkey mới",
-  fido2_register_subtitle_new: "Ứng dụng <strong>{rp}</strong> muốn lưu Passkey cho tài khoản <strong>{user}</strong>. Gistwarden sẽ tạo một tài khoản mới để lưu trữ Passkey này.",
-  fido2_register_subtitle_choose: "Chọn tài khoản để lưu trữ Passkey cho <strong>{user}</strong>:",
+  fido2_register_subtitle_new:
+    "Ứng dụng <strong>{rp}</strong> muốn lưu Passkey cho tài khoản <strong>{user}</strong>. {APP_NAME} sẽ tạo một tài khoản mới để lưu trữ Passkey này.",
+  fido2_register_subtitle_choose:
+    "Chọn tài khoản để lưu trữ Passkey cho <strong>{user}</strong>:",
   fido2_register_new_account: "Tạo tài khoản mới",
   fido2_register_new_account_sub: "Lưu như một tài khoản riêng biệt",
   fido2_btn_save: "Lưu Passkey",
   fido2_assert_title: "Yêu cầu đăng nhập",
-  fido2_assert_subtitle: "Chọn một tài khoản Passkey đã lưu cho <strong>{rp}</strong> để đăng nhập:",
+  fido2_assert_subtitle:
+    "Chọn một tài khoản Passkey đã lưu cho <strong>{rp}</strong> để đăng nhập:",
   fido2_assert_btn_confirm: "Xác nhận đăng nhập",
-  fido2_assert_no_match: "Không tìm thấy Passkey nào khớp cho tên miền <strong>{rp}</strong> trong két sắt của bạn.",
+  fido2_assert_no_match:
+    "Không tìm thấy Passkey nào khớp cho tên miền <strong>{rp}</strong> trong két sắt của bạn.",
   fido2_vault_locked_title: "Két sắt đang Khóa",
-  fido2_vault_locked_subtitle: "Mở khóa Gistwarden bằng mật khẩu Master để tiếp tục xác thực Passkey.",
+  fido2_vault_locked_subtitle:
+    "Mở khóa {APP_NAME} bằng mật khẩu Master để tiếp tục xác thực Passkey.",
+  fido2_register_choose_passkey_action:
+    "Tài khoản này đã có Passkey. Bạn muốn làm gì?",
+  fido2_register_choose_passkey_overwrite:
+    "Tài khoản này đã có nhiều Passkey. Chọn Passkey để ghi đè hoặc thêm mới:",
+  fido2_register_passkey_info: "Passkey #{index} (Tạo ngày: {date})",
+  fido2_register_option_overwrite: "Ghi đè Passkey hiện tại",
+  fido2_register_option_add: "Thêm mới Passkey",
+  fido2_register_option_add_sub:
+    "Lưu như một Passkey bổ sung trong tài khoản này",
 
   // Navigation tabs
   nav_vault: "Két sắt",
   nav_generator: "Trình tạo",
   nav_settings: "Cài đặt",
+
+  // Guide Page
+  settings_user_guide: "Hướng dẫn sử dụng",
+  settings_user_guide_sub:
+    "Tìm hiểu cách sử dụng, kiến trúc bảo mật và FIDO2 Passkeys",
+  guide_title: "Hướng dẫn sử dụng {APP_NAME}",
+  guide_welcome: "Chào mừng bạn đến với {APP_NAME}!",
+  guide_subtitle:
+    "Két sắt mật khẩu cá nhân, mã hóa Zero-Knowledge đồng bộ GitHub Gist.",
+  guide_close_page: "Đóng hướng dẫn",
+  guide_quick_action_desc:
+    "Mở nhanh trang Github Gist để quản lý các file dữ liệu két sắt của bạn.",
+  guide_open_github_btn: "Mở GitHub Gist",
+  guide_tab_general: "Giới thiệu chung",
+  guide_tab_gist: "Đồng bộ GitHub Gist",
+  guide_tab_security: "Kiến trúc bảo mật",
+  guide_tab_passkey: "Sử dụng Passkeys (FIDO2)",
+  guide_tab_totp: "Mã TOTP (2FA)",
+  guide_tab_import_export: "Nhập xuất dữ liệu",
+  guide_tab_faq: "Câu hỏi thường gặp",
+
+  // Guide Gist Token Steps
+  guide_token_title: "Cách tạo GitHub Token để đồng bộ",
+  guide_token_desc:
+    "Để đồng bộ đám mây, {APP_NAME} sẽ lưu két sắt đã mã hóa vào mục GitHub Gist cá nhân của bạn. Bạn cần tạo một mã Token có quyền Gist.",
+  guide_token_step1_title: "Bước 1: Đặt tên và hạn dùng",
+  guide_token_step1_desc:
+    "Đăng nhập GitHub, bấm nút màu xanh bên dưới để mở nhanh trang tạo Token. Hãy đặt một cái tên dễ nhớ (ví dụ: '{APP_NAME}') và chọn hạn dùng là 'No expiration' (Không hết hạn) để không bị lỗi đồng bộ sau này.",
+  guide_token_step1_btn: "Mở trang tạo Token trên GitHub",
+  guide_token_step1_img_info: "Đặt tên Token và chọn thời gian hết hạn",
+  guide_token_step2_title: "Bước 2: Tích chọn quyền Gist",
+  guide_token_step2_desc:
+    "Tìm và tích chọn duy nhất vào ô 'gist'. Quyền này chỉ cho phép extension lưu file dữ liệu lên mục Gist cá nhân của bạn, hoàn toàn không xem được các repository code khác.",
+  guide_token_step2_img_info: "Đảm bảo đã tích chọn quyền 'gist'",
+  guide_token_step3_title: "Bước 3: Tạo mã Token",
+  guide_token_step3_desc:
+    "Cuộn xuống cuối trang rồi nhấn nút 'Generate token' màu xanh lá để tạo mã.",
+  guide_token_step3_img_info: "Nhấn nút 'Generate token' ở cuối trang",
+  guide_token_step4_title: "Bước 4: Copy và dán vào cài đặt",
+  guide_token_step4_desc:
+    "Copy mã Token vừa hiển thị (dãy ký tự bắt đầu bằng ghp_). Sau đó mở {APP_NAME}, chọn 'Dùng Token (PAT)', dán vào ô GitHub Token rồi nhấn nút Lưu.",
+  guide_token_step4_img_info: "Sao chép Token và dán vào phần cài đặt",
+  guide_token_important_note: "Lưu ý quan trọng:",
+  guide_token_note_desc:
+    " Tuyệt đối KHÔNG đưa mã Token này cho bất kỳ ai. Extension chỉ lưu Token ngay trên máy tính của bạn và gửi trực tiếp tới GitHub, không đi qua máy chủ trung gian nào khác.",
+
+  // Guide Passkey Registration Steps
+  guide_pk_reg_title: "Cách đăng ký Passkey mới",
+  guide_pk_reg_desc:
+    "Để bắt đầu sử dụng đăng nhập không mật khẩu, hãy làm theo hướng dẫn 3 bước dưới đây để lưu Passkey mới vào két sắt của bạn.",
+  guide_pk_reg_step1_title: "Bước 1: Bấm đăng ký trên trang web",
+  guide_pk_reg_step1_desc:
+    "Khi bạn đang ở trang quản lý bảo mật của trang web (ví dụ: Google, GitHub, webauthn.me), hãy bấm nút đăng ký Passkey mới (hoặc 'Add a passkey').",
+  guide_pk_reg_step1_img_info: "Yêu cầu đăng ký Passkey trên trang web",
+  guide_pk_reg_step2_title: "Bước 2: Chọn tài khoản lưu trữ",
+  guide_pk_reg_step2_desc:
+    "{APP_NAME} sẽ tự động phát hiện và chặn yêu cầu của trình duyệt để hiển thị popup. Hãy chọn tài khoản khớp có sẵn trong két sắt để liên kết, hoặc chọn 'Tạo tài khoản mới' để lưu như một mục riêng biệt.",
+  guide_pk_reg_step2_img_info: "Lựa chọn tài khoản hoặc chọn tạo tài khoản mới",
+  guide_pk_reg_step3_title: "Bước 3: Xác nhận lưu Passkey",
+  guide_pk_reg_step3_desc:
+    "Sau khi chọn, bấm nút 'Lưu Passkey' để lưu khóa riêng tư đã mã hóa vào két sắt. Extension sẽ tự động đồng bộ lên GitHub Gist nếu bạn đã thiết lập đồng bộ.",
+  guide_pk_reg_step3_img_info: "Xác nhận lưu Passkey thành công",
+
+  // Guide Passkey Login Steps
+  guide_pk_login_title: "Cách đăng nhập bằng Passkey",
+  guide_pk_login_desc:
+    "Khi đã lưu trữ Passkey, bạn không cần nhập mật khẩu hay mã 2FA để đăng nhập nữa. Quy trình đăng nhập nhanh chóng chỉ với 2 bước:",
+  guide_pk_login_step1_title: "Bước 1: Chọn đăng nhập bằng Passkey",
+  guide_pk_login_step1_desc:
+    "Tại trang đăng nhập của trang web, chọn hình thức đăng nhập bằng Passkey (hoặc biểu tượng hình chiếc chìa khóa/face ID).",
+  guide_pk_login_step1_img_info:
+    "Bấm nút đăng nhập bằng Passkey trên trang web",
+  guide_pk_login_step2_title: "Bước 2: Xác nhận tài khoản trên popup",
+  guide_pk_login_step2_desc:
+    "Popup của {APP_NAME} sẽ hiện ra danh sách các tài khoản Passkey đã lưu cho trang web này. Hãy chọn tài khoản tương ứng và bấm 'Xác nhận đăng nhập' để truy cập ngay lập tức.",
+  guide_pk_login_step2_img_info:
+    "Lựa chọn tài khoản Passkey tương ứng để đăng nhập",
+
+  // Guide TOTP Steps
+  guide_totp_step1_title: "Bước 1: Quét mã QR 2FA trên trang web",
+  guide_totp_step1_desc:
+    "Khi trang web (ví dụ: Google, GitHub, Facebook) hiển thị mã QR cấu hình bảo mật 2 lớp, mở {APP_NAME} ra và bấm vào biểu tượng chiếc máy ảnh/quét QR ở góc bên cạnh trường TOTP để quét. Nếu không quét được QR hoặc trang web chỉ cung cấp mã chữ (Secret Key), bạn có thể sao chép đoạn mã đó rồi dán thủ công vào trường TOTP và lưu lại.",
+  guide_totp_step1_img_info: "Nhấn vào biểu tượng quét mã QR trên ứng dụng",
+  guide_totp_step2_title: "Bước 2: Tự động lưu và hiển thị mã OTP",
+  guide_totp_step2_desc:
+    "Sau khi quét, khóa bí mật sẽ tự động được giải mã và lưu lại. {APP_NAME} sẽ bắt đầu sinh mã xác thực 6 chữ số và đếm ngược 30 giây. Bạn chỉ cần click chuột vào mã này để sao chép nhanh và dán vào ô xác thực của website.",
+  guide_totp_step2_img_info:
+    "Mã xác thực tự động tạo và có nút click sao chép tiện lợi",
+
+  // Guide Security Tab
+  guide_sec_title: "Kiến trúc Bảo mật",
+  guide_sec_subtitle:
+    "Để bảo vệ thông tin cá nhân của bạn, {APP_NAME} được thiết kế với cơ chế bảo mật tối ưu giúp dữ liệu luôn an toàn trước mọi nguy cơ.",
+  guide_sec_card1_title: "Mã hóa Zero-Knowledge (Kiến thức bằng Không)",
+  guide_sec_card1_desc:
+    "Mọi mật khẩu và ghi chú của bạn đều được mã hóa ngay trên thiết bị của bạn trước khi đồng bộ. Mật khẩu Master chỉ chạy cục bộ trong trình duyệt và KHÔNG bao giờ gửi đi bất cứ đâu. Không ai (kể cả nhà phát triển hay GitHub) có thể đọc được mật khẩu của bạn.",
+  guide_sec_card2_title: "Bảo vệ mật khẩu cực kỳ mạnh mẽ",
+  guide_sec_card2_desc:
+    "{APP_NAME} sử dụng các công nghệ mã hóa hiện đại và an toàn nhất hiện nay để bảo vệ két sắt của bạn, giúp ngăn chặn hiệu quả mọi hành vi cố gắng dò tìm hoặc bẻ khóa mật khẩu Master của bạn ngay cả khi sử dụng siêu máy tính.",
+  guide_sec_card3_title: "Đồng bộ đám mây an toàn tuyệt đối",
+  guide_sec_card3_desc:
+    "Dữ liệu két sắt lưu trên GitHub Gist cá nhân của bạn hoàn toàn được mã hóa thành các ký tự vô nghĩa. Dữ liệu này chỉ có thể giải mã và đọc được khi chính bạn nhập đúng mật khẩu Master của mình trên ứng dụng.",
+
+  // Guide General Tab
+  guide_gen_title: "3 Bước khởi đầu nhanh",
+  guide_gen_step1_title: "Thiết lập Mật khẩu Master",
+  guide_gen_step1_desc:
+    "Tạo mật khẩu Master cực kỳ an toàn để mã hóa toàn bộ dữ liệu két sắt của bạn cục bộ. Mật khẩu này tuyệt đối không được quên vì không thể khôi phục.",
+  guide_gen_step2_title: "Kết nối đồng bộ GitHub",
+  guide_gen_step2_desc:
+    "Đăng nhập nhanh qua OAuth hoặc dán Personal Access Token (PAT) có quyền 'gist' để {APP_NAME} tự tạo một Gist bí mật đồng bộ két sắt mật khẩu.",
+  guide_gen_step3_title: "Sử dụng an toàn",
+  guide_gen_step3_desc:
+    "Bắt đầu lưu trữ tài khoản, ghi chú bảo mật, tự động điền (autofill) và giả lập/lưu Passkey (FIDO2) an toàn ngay tại trình duyệt của bạn.",
+
+  // Guide Import / Export Tab
+  guide_ie_title: "Nhập xuất dữ liệu",
+  guide_ie_subtitle:
+    "{APP_NAME} hoàn toàn tương thích với định dạng dữ liệu xuất từ Bitwarden. Bạn có thể dễ dàng chuyển dữ liệu két sắt của mình sang {APP_NAME}.",
+  guide_ie_import_title: "Cách nhập dữ liệu từ Bitwarden",
+  guide_ie_import_step1_title: "Bước 1: Xuất file JSON từ Bitwarden",
+  guide_ie_import_step1_desc:
+    "Mở ứng dụng hoặc tiện ích Bitwarden -> Vào Cài đặt -> Xuất két sắt -> Chọn định dạng '.json (Không mã hóa)' và tải về máy tính.",
+  guide_ie_import_step2_title: "Bước 2: Nạp vào {APP_NAME}",
+  guide_ie_import_step2_desc:
+    "Mở {APP_NAME} -> Vào mục Cài đặt -> Nhập tài khoản (Import JSON) -> Chọn file JSON vừa tải về ở Bước 1.",
+  guide_ie_import_step3_title: "Bước 3: Lưu trữ và đồng bộ",
+  guide_ie_import_step3_desc:
+    "Hệ thống sẽ mã hóa toàn bộ dữ liệu này bằng Master Password của bạn và đẩy trực tiếp lên GitHub Gist. File JSON thô của Bitwarden trên máy tính nên được xóa đi ngay lập tức để bảo mật.",
+  guide_ie_export_title: "Cách xuất dữ liệu sao lưu",
+  guide_ie_export_desc:
+    "Để có thêm bản lưu trữ offline đề phòng trường hợp mất tài khoản GitHub hoặc hỏng máy:",
+  guide_ie_export_step1:
+    "Vào Cài đặt của {APP_NAME} -> Chọn 'Xuất tài khoản (Export JSON)'.",
+  guide_ie_export_step2: "Nhập mật khẩu Master để giải mã cơ sở dữ liệu.",
+  guide_ie_export_step3:
+    "Bấm 'Giải mã & Tải xuống' để lưu file `accounts.json` chưa mã hóa về máy. Hãy bảo vệ file này cẩn thận vì nó chứa toàn bộ mật khẩu dạng chữ rõ!",
+
+  // Guide FAQ Tab
+  guide_faq_title: "Câu hỏi thường gặp",
+  guide_faq_subtitle:
+    "Giải đáp một số thắc mắc phổ biến về cơ chế đồng bộ, bảo mật và mật khẩu của {APP_NAME}.",
+  guide_faq_q1_title: "❓ Mật khẩu Master của tôi có an toàn không?",
+  guide_faq_q1_desc:
+    "Cực kỳ an toàn. {APP_NAME} áp dụng cơ chế Zero-Knowledge (Kiến thức bằng Không). Mật khẩu Master của bạn chỉ dùng để sinh khóa mã hóa cục bộ ngay tại trình duyệt, không bao giờ được lưu lại hay gửi qua Internet.",
+  guide_faq_q2_title: "❓ Tôi quên mật khẩu Master thì phải làm sao?",
+  guide_faq_q2_desc:
+    "Không có cách nào khôi phục mật khẩu Master. Nếu quên, bạn buộc phải đặt lại extension để bắt đầu lại từ đầu. Hãy ghi nhớ hoặc ghi mật khẩu Master ra giấy cất ở nơi an toàn.",
+  guide_faq_q3_title:
+    "❓ Tôi có thể đồng bộ mật khẩu trên nhiều máy tính không?",
+  guide_faq_q3_desc:
+    "Có. Chỉ cần cài đặt {APP_NAME} lên máy tính khác, đăng nhập cùng tài khoản GitHub (hoặc cấu hình cùng mã Token) và điền ĐÚNG mật khẩu Master đã dùng ở máy cũ. Dữ liệu sẽ tự động tải về và giải mã mượt mà.",
+  guide_faq_q4_title:
+    "❓ Két sắt lưu trên GitHub Gist dưới dạng bí mật (Secret Gist) có thực sự riêng tư?",
+  guide_faq_q4_desc:
+    "Có. Secret Gist không được index bởi các công cụ tìm kiếm và không hiện công khai trên profile GitHub của bạn. Ngay cả khi có ai đó đoán được URL của Gist, họ cũng chỉ nhìn thấy một chuỗi ký tự mã hóa vô nghĩa. Không có Master Password, dữ liệu đó hoàn toàn không thể giải mã.",
+
+  // Guide Passkey Headers & sub-tabs
+  guide_pk_header_title: "Sử dụng Passkeys (FIDO2)",
+  guide_pk_header_desc:
+    "{APP_NAME} hỗ trợ giả lập và quản lý khóa đăng nhập không mật khẩu (Passkeys / WebAuthn) để thay thế cho mật khẩu truyền thống.",
+  guide_pk_subtab_reg: "📝 Hướng dẫn Đăng ký",
+  guide_pk_subtab_login: "🔑 Hướng dẫn Đăng nhập",
+
+  // Guide TOTP Headers
+  guide_totp_header_title: "Sử dụng mã xác thực hai lớp (TOTP / 2FA)",
+  guide_totp_header_desc:
+    "{APP_NAME} hỗ trợ lưu trữ mã bảo mật 2 lớp (TOTP) giúp bảo vệ tài khoản của bạn. Mã xác thực sẽ tự động thay đổi sau mỗi 30 giây.",
 };

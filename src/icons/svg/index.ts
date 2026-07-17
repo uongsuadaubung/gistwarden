@@ -1,5 +1,6 @@
 export { default as RefreshIcon } from "./RefreshIcon.tsx";
 export { default as LockIcon } from "./LockIcon.tsx";
+export { default as AppIcon } from "./AppIcon.tsx";
 export { default as VaultIcon } from "./VaultIcon.tsx";
 export { default as GithubIcon } from "./GithubIcon.tsx";
 export { default as ChevronDownIcon } from "./ChevronDownIcon.tsx";

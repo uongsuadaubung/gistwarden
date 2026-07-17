@@ -1,7 +1,9 @@
+import { APP_NAME } from "@/shared/constants.ts";
+
 (function () {
   // Prevent duplicate injection
-  if ("__gistwarden_fido2_injected" in window) return;
-  Object.defineProperty(window, "__gistwarden_fido2_injected", {
+  if (`__${APP_NAME.toLowerCase()}_fido2_injected` in window) return;
+  Object.defineProperty(window, `__${APP_NAME.toLowerCase()}_fido2_injected`, {
     value: true,
     writable: true,
   });
@@ -75,7 +77,7 @@
   window.addEventListener("message", (event) => {
     if (
       event.source !== window || !event.data ||
-      event.data.source !== "gistwarden-content-script"
+      event.data.source !== `${APP_NAME.toLowerCase()}-content-script`
     ) {
       return;
     }
@@ -105,7 +107,7 @@
 
       window.postMessage(
         {
-          source: "gistwarden-page-script",
+          source: `${APP_NAME.toLowerCase()}-page-script`,
           requestId,
           type,
           data,
@@ -123,7 +125,7 @@
       return originalCredentials.create(options);
     }
 
-    console.debug("[Gistwarden] Intercepted credentials.create");
+    console.debug(`[${APP_NAME}] Intercepted credentials.create`);
 
     // Serialize options for background script
     const serializedOptions = {
@@ -207,7 +209,7 @@
       return originalCredentials.get(options);
     }
 
-    console.debug("[Gistwarden] Intercepted credentials.get");
+    console.debug(`[${APP_NAME}] Intercepted credentials.get`);
 
     const serializedOptions = {
       challenge: bufferToBase64Url(options.publicKey.challenge),

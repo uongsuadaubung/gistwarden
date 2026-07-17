@@ -1,4 +1,5 @@
 import { type Component, createSignal, For, onMount, Show } from "solid-js";
+import qrcodeParser from "qrcode-parser";
 import { store, storeActions, View } from "@/shared/store.ts";
 import {
   type Fido2Credential,
@@ -46,7 +47,9 @@ export const ItemEdit: Component = () => {
   const [saving, setSaving] = createSignal(false);
 
   const [showEditFieldModal, setShowEditFieldModal] = createSignal(false);
-  const [selectedFieldIndex, setSelectedFieldIndex] = createSignal<number | null>(null);
+  const [selectedFieldIndex, setSelectedFieldIndex] = createSignal<
+    number | null
+  >(null);
 
   const initialField = () => {
     const idx = selectedFieldIndex();
@@ -63,7 +66,9 @@ export const ItemEdit: Component = () => {
     setShowEditFieldModal(true);
   };
 
-  const handleSaveFieldEdit = (field: { name: string; value: string; type: number }) => {
+  const handleSaveFieldEdit = (
+    field: { name: string; value: string; type: number },
+  ) => {
     const idx = selectedFieldIndex();
     if (idx === null) {
       setFields([...fields(), field]);
@@ -150,22 +155,28 @@ export const ItemEdit: Component = () => {
     setScanning(true);
     setError("");
     try {
-      const res = await new Promise<
-        { success: boolean; secret?: string; error?: string }
-      >((resolve) => {
-        chrome.runtime.sendMessage({ type: "SCAN_QR_CODE" }, resolve);
-      });
+      // 1. Capture the visible tab as a PNG data URL
+      const screenshot = await chrome.tabs.captureVisibleTab({ format: "png" });
+      if (!screenshot) {
+        setError(t("edit_qr_error_fail"));
+        return;
+      }
 
-      if (res && res.success && res.secret) {
-        setTotpSecret(res.secret);
-        storeActions.showToast(
-          t("edit_qr_success"),
-          "success",
-        );
-      } else {
-        setError(
-          res.error || t("edit_qr_error_no_match"),
-        );
+      // 2. Decode using qrcode-parser
+      const decodedStr = await qrcodeParser(screenshot);
+      console.debug("[Popup] Decoded QR Code URL:", decodedStr);
+
+      // 3. Parse OTPAuth URL
+      try {
+        const url = new URL(decodedStr);
+        if (url.protocol === "otpauth:" && url.searchParams.has("secret")) {
+          setTotpSecret(decodedStr); // Lưu toàn bộ URL để đồng bộ với định dạng cũ và Bitwarden
+          storeActions.showToast(t("edit_qr_success"), "success");
+        } else {
+          setError(t("edit_qr_error_no_match"));
+        }
+      } catch (_e) {
+        setError(t("edit_qr_error_no_match"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
@@ -401,7 +412,9 @@ export const ItemEdit: Component = () => {
 
             {/* Passkeys list in Edit Mode */}
             <Show when={fidoCredentials().length > 0}>
-              <div class="detail-section-title">{t("detail_passkey_webauthn")}</div>
+              <div class="detail-section-title">
+                {t("detail_passkey_webauthn")}
+              </div>
               <div class="card mb-12">
                 <For each={fidoCredentials()}>
                   {(cred) => (
@@ -426,7 +439,9 @@ export const ItemEdit: Component = () => {
             </Show>
 
             {/* TOTP Section */}
-            <div class="detail-section-title">{t("detail_section_security")}</div>
+            <div class="detail-section-title">
+              {t("detail_section_security")}
+            </div>
             <div class="card mb-16">
               <div class="form-group">
                 <label for="item-totp">{t("edit_label_totp")}</label>
@@ -472,7 +487,9 @@ export const ItemEdit: Component = () => {
             </div>
 
             {/* Website Section */}
-            <div class="detail-section-title">{t("detail_section_autofill")}</div>
+            <div class="detail-section-title">
+              {t("detail_section_autofill")}
+            </div>
             <div class="card mb-16">
               <div class="form-group">
                 <label for="item-uri">{t("edit_label_website")}</label>
@@ -617,7 +634,9 @@ export const ItemEdit: Component = () => {
           </div>
 
           {/* Notes Section */}
-          <div class="detail-section-title">{t("edit_section_additional_options")}</div>
+          <div class="detail-section-title">
+            {t("edit_section_additional_options")}
+          </div>
           <div class="card mb-16">
             <div class="form-group">
               <label for="item-notes">{t("edit_label_notes")}</label>
@@ -644,7 +663,9 @@ export const ItemEdit: Component = () => {
             >
               <Show
                 when={saving()}
-                fallback={store.selectedItem?.id ? t("btn_save") : t("btn_create")}
+                fallback={store.selectedItem?.id
+                  ? t("btn_save")
+                  : t("btn_create")}
               >
                 {t("dialog_loading")}
               </Show>

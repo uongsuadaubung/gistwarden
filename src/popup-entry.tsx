@@ -1,5 +1,12 @@
 import { render } from "solid-js/web";
-import { type Component, type JSX, Match, onMount, Show, Switch } from "solid-js";
+import {
+  type Component,
+  type JSX,
+  Match,
+  onMount,
+  Show,
+  Switch,
+} from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
 import {
   GeneratorIcon,
@@ -22,7 +29,9 @@ import Theme from "@/views/Theme.tsx";
 import ConfirmModal from "@/components/ConfirmModal.tsx";
 import { t } from "@/shared/i18n.ts";
 
-const TransitionView: Component<{ when: boolean; children: JSX.Element }> = (props) => {
+const TransitionView: Component<{ when: boolean; children: JSX.Element }> = (
+  props,
+) => {
   return (
     <Show when={props.when}>
       <div class={store.transitionClass} style="height: 100%; width: 100%;">

@@ -27,6 +27,7 @@ import {
 } from "./types.ts";
 import { setLanguage, SupportLanguage, t } from "./i18n.ts";
 import { parseAndValidateImportJson } from "./import-export.ts";
+import { APP_NAME } from "./constants.ts";
 export { View };
 
 export interface AppStore {
@@ -126,14 +127,18 @@ let transitionToggle = false;
 
 export const storeActions = {
   async init() {
-    console.log("[Store] Initializing Gistwarden Store...");
+    console.log(`[Store] Initializing ${APP_NAME} Store...`);
     const settings = await getAllSettings();
     const masterPassword = await getMasterPassword();
 
     let currentTheme: "dark" | "light" = "dark";
     if (typeof chrome !== "undefined" && chrome.storage) {
-      const res = await chrome.storage.local.get("gistwarden_theme");
-      currentTheme = res.gistwarden_theme === "light" ? "light" : "dark";
+      const res = await chrome.storage.local.get(
+        `${APP_NAME.toLowerCase()}_theme`,
+      );
+      currentTheme = res[`${APP_NAME.toLowerCase()}_theme`] === "light"
+        ? "light"
+        : "dark";
     }
 
     if (currentTheme === "light") {
@@ -154,7 +159,9 @@ export const storeActions = {
       theme: currentTheme,
     });
 
-    setLanguage(settings.language === "vi" ? SupportLanguage.Vi : SupportLanguage.En);
+    setLanguage(
+      settings.language === "vi" ? SupportLanguage.Vi : SupportLanguage.En,
+    );
 
     // Check mode FIDO2 prompt
     const params = new URLSearchParams(window.location.search);
@@ -216,7 +223,11 @@ export const storeActions = {
         language: newSettings.language,
       });
       if (newSettings.language !== store.language) {
-        setLanguage(newSettings.language === "vi" ? SupportLanguage.Vi : SupportLanguage.En);
+        setLanguage(
+          newSettings.language === "vi"
+            ? SupportLanguage.Vi
+            : SupportLanguage.En,
+        );
       }
     });
 
@@ -759,7 +770,10 @@ export const storeActions = {
   ): Promise<{ success: boolean; importedCount?: number; error?: string }> {
     storeActions.setGlobalLoading(true, t("vault_importing"));
     try {
-      const importRes = parseAndValidateImportJson(jsonString, store.vaultItems);
+      const importRes = parseAndValidateImportJson(
+        jsonString,
+        store.vaultItems,
+      );
       if (!importRes.success) {
         throw new Error(importRes.error);
       }
@@ -778,7 +792,7 @@ export const storeActions = {
         ciphertext: encrypted.ciphertext,
       });
 
-      console.log("[Gistwarden Import] Dang tai len Gist...");
+      console.log(`[${APP_NAME} Import] Dang tai len Gist...`);
       const uploadRes = await new Promise<{ success: boolean; error?: string }>(
         (resolve) => {
           chrome.runtime.sendMessage({
@@ -793,10 +807,10 @@ export const storeActions = {
       }
 
       setStore("vaultItems", importRes.combinedItems);
-      console.log("[Gistwarden Import] Import HOAN TAT thanh cong!");
+      console.log(`[${APP_NAME} Import] Import HOAN TAT thanh cong!`);
       return { success: true, importedCount: importRes.importedCount };
     } catch (err) {
-      console.error("[Gistwarden Import] Loi import:", err);
+      console.error(`[${APP_NAME} Import] Loi import:`, err);
       const errMsg = err instanceof Error ? err.message : String(err);
       return { success: false, error: errMsg || "Loi nhap file JSON" };
     } finally {
@@ -825,11 +839,13 @@ export const storeActions = {
     } else if (newDepth < oldDepth) {
       direction = "backward";
     }
-    
+
     // Toggle class suffix to force animation re-trigger
     transitionToggle = !transitionToggle;
     const suffix = transitionToggle ? "a" : "b";
-    const transitionClass = direction === "none" ? "" : `slide-${direction}-${suffix}`;
+    const transitionClass = direction === "none"
+      ? ""
+      : `slide-${direction}-${suffix}`;
 
     setStore({
       view: newView,
@@ -907,7 +923,9 @@ export const storeActions = {
       document.body.classList.remove("light-theme");
     }
     if (typeof chrome !== "undefined" && chrome.storage) {
-      await chrome.storage.local.set({ gistwarden_theme: newTheme });
+      await chrome.storage.local.set({
+        [`${APP_NAME.toLowerCase()}_theme`]: newTheme,
+      });
     }
   },
 };

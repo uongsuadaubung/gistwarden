@@ -1,4 +1,3 @@
-import qrcodeParser from "qrcode-parser";
 import {
   deleteGist,
   downloadFromGist,
@@ -51,12 +50,6 @@ chrome.runtime.onMessage.addListener(
 
       case "VALIDATE_TOKEN":
         validateToken(message.token || "").then(sendResponse);
-        return true;
-
-      case "SCAN_QR_CODE":
-        captureAndDecodeQr().then(sendResponse).catch((err) => {
-          sendResponse({ success: false, error: err.message || String(err) });
-        });
         return true;
 
       case "START_GITHUB_OAUTH": {
@@ -180,45 +173,3 @@ chrome.runtime.onMessage.addListener(
     }
   },
 );
-
-// Helper function to capture the active tab and parse the QR code
-async function captureAndDecodeQr(): Promise<
-  { success: boolean; secret?: string; error?: string }
-> {
-  try {
-    // 1. Capture the visible tab as a PNG data URL
-    const screenshot = await chrome.tabs.captureVisibleTab({ format: "png" });
-    if (!screenshot) {
-      return { success: false, error: "Failed to capture screenshot of tab" };
-    }
-
-    // 2. Parse the QR code
-    const decoded = await qrcodeParser(screenshot);
-    if (!decoded) {
-      return { success: false, error: "No QR code found on screen" };
-    }
-
-    const decodedStr = decoded.toString();
-    console.debug("[Background] Decoded QR Code URL:", decodedStr);
-
-    // 3. Check if it is a valid otpauth url
-    try {
-      const url = new URL(decodedStr);
-      if (url.protocol === "otpauth:" && url.searchParams.has("secret")) {
-        const secret = url.searchParams.get("secret") || "";
-        return { success: true, secret };
-      } else {
-        return {
-          success: false,
-          error: "QR code is not a valid TOTP URL (missing secret)",
-        };
-      }
-    } catch (_e) {
-      return { success: false, error: "QR code does not contain a valid URL" };
-    }
-  } catch (err) {
-    console.error("[Background] QR Capture error:", err);
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg || "Failed to parse QR code" };
-  }
-}

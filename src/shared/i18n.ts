@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createSignal } from "solid-js";
 import en from "./locales/en.ts";
 import vi from "./locales/vi.ts";
+import { APP_NAME } from "./constants.ts";
 
 const LangSchema = z.object({
   // Common buttons & notifications
@@ -270,11 +271,141 @@ const LangSchema = z.object({
   fido2_assert_no_match: z.string(),
   fido2_vault_locked_title: z.string(),
   fido2_vault_locked_subtitle: z.string(),
+  fido2_register_choose_passkey_action: z.string(),
+  fido2_register_choose_passkey_overwrite: z.string(),
+  fido2_register_passkey_info: z.string(),
+  fido2_register_option_overwrite: z.string(),
+  fido2_register_option_add: z.string(),
+  fido2_register_option_add_sub: z.string(),
 
   // Navigation tabs
   nav_vault: z.string(),
   nav_generator: z.string(),
   nav_settings: z.string(),
+
+  // Guide Page
+  settings_user_guide: z.string(),
+  settings_user_guide_sub: z.string(),
+  guide_title: z.string(),
+  guide_welcome: z.string(),
+  guide_subtitle: z.string(),
+  guide_close_page: z.string(),
+  guide_quick_action_desc: z.string(),
+  guide_open_github_btn: z.string(),
+  guide_tab_general: z.string(),
+  guide_tab_gist: z.string(),
+  guide_tab_security: z.string(),
+  guide_tab_passkey: z.string(),
+  guide_tab_import_export: z.string(),
+  guide_tab_faq: z.string(),
+
+  // Guide Gist Token Steps
+  guide_token_title: z.string(),
+  guide_token_desc: z.string(),
+  guide_token_step1_title: z.string(),
+  guide_token_step1_desc: z.string(),
+  guide_token_step1_btn: z.string(),
+  guide_token_step1_img_info: z.string(),
+  guide_token_step2_title: z.string(),
+  guide_token_step2_desc: z.string(),
+  guide_token_step2_img_info: z.string(),
+  guide_token_step3_title: z.string(),
+  guide_token_step3_desc: z.string(),
+  guide_token_step3_img_info: z.string(),
+  guide_token_step4_title: z.string(),
+  guide_token_step4_desc: z.string(),
+  guide_token_step4_img_info: z.string(),
+  guide_token_important_note: z.string(),
+  guide_token_note_desc: z.string(),
+
+  // Guide Passkey Registration Steps
+  guide_pk_reg_title: z.string(),
+  guide_pk_reg_desc: z.string(),
+  guide_pk_reg_step1_title: z.string(),
+  guide_pk_reg_step1_desc: z.string(),
+  guide_pk_reg_step1_img_info: z.string(),
+  guide_pk_reg_step2_title: z.string(),
+  guide_pk_reg_step2_desc: z.string(),
+  guide_pk_reg_step2_img_info: z.string(),
+  guide_pk_reg_step3_title: z.string(),
+  guide_pk_reg_step3_desc: z.string(),
+  guide_pk_reg_step3_img_info: z.string(),
+
+  // Guide Passkey Login Steps
+  guide_pk_login_title: z.string(),
+  guide_pk_login_desc: z.string(),
+  guide_pk_login_step1_title: z.string(),
+  guide_pk_login_step1_desc: z.string(),
+  guide_pk_login_step1_img_info: z.string(),
+  guide_pk_login_step2_title: z.string(),
+  guide_pk_login_step2_desc: z.string(),
+  guide_pk_login_step2_img_info: z.string(),
+
+  // Guide TOTP Steps
+  guide_tab_totp: z.string(),
+  guide_totp_step1_title: z.string(),
+  guide_totp_step1_desc: z.string(),
+  guide_totp_step1_img_info: z.string(),
+  guide_totp_step2_title: z.string(),
+  guide_totp_step2_desc: z.string(),
+  guide_totp_step2_img_info: z.string(),
+
+  // Guide Security Tab
+  guide_sec_title: z.string(),
+  guide_sec_subtitle: z.string(),
+  guide_sec_card1_title: z.string(),
+  guide_sec_card1_desc: z.string(),
+  guide_sec_card2_title: z.string(),
+  guide_sec_card2_desc: z.string(),
+  guide_sec_card3_title: z.string(),
+  guide_sec_card3_desc: z.string(),
+
+  // Guide General Tab
+  guide_gen_title: z.string(),
+  guide_gen_step1_title: z.string(),
+  guide_gen_step1_desc: z.string(),
+  guide_gen_step2_title: z.string(),
+  guide_gen_step2_desc: z.string(),
+  guide_gen_step3_title: z.string(),
+  guide_gen_step3_desc: z.string(),
+
+  // Guide Import / Export Tab
+  guide_ie_title: z.string(),
+  guide_ie_subtitle: z.string(),
+  guide_ie_import_title: z.string(),
+  guide_ie_import_step1_title: z.string(),
+  guide_ie_import_step1_desc: z.string(),
+  guide_ie_import_step2_title: z.string(),
+  guide_ie_import_step2_desc: z.string(),
+  guide_ie_import_step3_title: z.string(),
+  guide_ie_import_step3_desc: z.string(),
+  guide_ie_export_title: z.string(),
+  guide_ie_export_desc: z.string(),
+  guide_ie_export_step1: z.string(),
+  guide_ie_export_step2: z.string(),
+  guide_ie_export_step3: z.string(),
+
+  // Guide FAQ Tab
+  guide_faq_title: z.string(),
+  guide_faq_subtitle: z.string(),
+  guide_faq_q1_title: z.string(),
+  guide_faq_q1_desc: z.string(),
+  guide_faq_q2_title: z.string(),
+  guide_faq_q2_desc: z.string(),
+  guide_faq_q3_title: z.string(),
+  guide_faq_q3_desc: z.string(),
+  guide_faq_q4_title: z.string(),
+  guide_faq_q4_desc: z.string(),
+
+  // Guide Passkey Headers & sub-tabs
+  guide_pk_header_title: z.string(),
+  guide_pk_header_desc: z.string(),
+  guide_pk_subtab_reg: z.string(),
+  guide_pk_subtab_login: z.string(),
+
+  // Guide TOTP Headers
+  guide_totp_header_title: z.string(),
+  guide_totp_header_desc: z.string(),
 });
 
 type Lang = z.infer<typeof LangSchema>;
@@ -298,7 +429,9 @@ const dictionaries: Record<SupportLanguage, unknown> = {
 };
 
 const [translations, setTranslations] = createSignal<Partial<Lang>>({});
-const [currentLanguageCode, setCurrentLanguageCode] = createSignal<SupportLanguage>(SupportLanguage.En);
+const [currentLanguageCode, setCurrentLanguageCode] = createSignal<
+  SupportLanguage
+>(SupportLanguage.En);
 
 export function setLanguage(code: SupportLanguage): void {
   const raw = dictionaries[code];
@@ -306,11 +439,15 @@ export function setLanguage(code: SupportLanguage): void {
   setCurrentLanguageCode(code);
 }
 
-export function t(key: TranslationKey, params?: Record<string, string | number>): string {
+export function t(
+  key: TranslationKey,
+  params?: Record<string, string | number>,
+): string {
   let msg = translations()[key] ?? key;
+  msg = msg.replaceAll("{APP_NAME}", APP_NAME);
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
-      msg = msg.replace(`{${k}}`, String(v));
+      msg = msg.replaceAll(`{${k}}`, String(v));
     });
   }
   return msg;

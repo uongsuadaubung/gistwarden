@@ -9,6 +9,7 @@ import {
   UploadIcon,
 } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
+import { APP_NAME } from "@/shared/constants.ts";
 
 export const VaultOptions: Component = () => {
   const [error, setError] = createSignal("");
@@ -116,7 +117,7 @@ export const VaultOptions: Component = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `gistwarden_export_${
+      a.download = `${APP_NAME.toLowerCase()}_export_${
         new Date().toISOString().slice(0, 10)
       }.json`;
       a.click();
@@ -152,7 +153,9 @@ export const VaultOptions: Component = () => {
             <div class="setting-row-left">
               <SyncIcon class={loading() ? "spinning" : ""} />
               <div>
-                <div class="setting-label">{t("vault_options_sync_manual")}</div>
+                <div class="setting-label">
+                  {t("vault_options_sync_manual")}
+                </div>
                 <div class="setting-sub">
                   {t("settings_last_sync")}: {store.lastSync
                     ? new Date(store.lastSync).toLocaleTimeString()

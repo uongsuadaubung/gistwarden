@@ -1,4 +1,4 @@
-import { createSignal, createEffect, Show } from "solid-js";
+import { createEffect, createSignal, Show } from "solid-js";
 import { t } from "../shared/i18n.ts";
 import Input from "./Input.tsx";
 import Button from "./Button.tsx";
@@ -47,7 +47,7 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
       alert(
         type() === 2
           ? t("edit_field_error_empty_divider")
-          : t("edit_field_error_empty_name")
+          : t("edit_field_error_empty_name"),
       );
       return;
     }
@@ -75,7 +75,11 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
                 ? t("edit_field_modal_title_edit")
                 : t("edit_field_modal_title_add")}
             </div>
-            <button type="button" class="modal-close-btn" onClick={triggerClose}>
+            <button
+              type="button"
+              class="modal-close-btn"
+              onClick={triggerClose}
+            >
               &times;
             </button>
           </div>
@@ -98,11 +102,9 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
               <label>{t("edit_field_name_placeholder")}</label>
               <Input
                 type="text"
-                placeholder={
-                  type() === 2
-                    ? t("edit_field_modal_placeholder_divider")
-                    : t("edit_field_modal_placeholder_name")
-                }
+                placeholder={type() === 2
+                  ? t("edit_field_modal_placeholder_divider")
+                  : t("edit_field_modal_placeholder_name")}
                 value={name()}
                 onInput={(e) => setName(e.currentTarget.value)}
               />

@@ -5,13 +5,14 @@ import Input from "@/components/Input.tsx";
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
+  GlobeIcon,
   KeyIcon,
   LockIcon,
   LogoutIcon,
+  QuestionIcon,
   ShieldIcon,
   ThemeIcon,
   TrashIcon,
-  GlobeIcon,
 } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
 
@@ -164,11 +165,16 @@ export const Settings: Component = () => {
               {/* Settings options list */}
               <div class="card card-list">
                 {/* Language Settings */}
-                <div class="setting-row" onClick={() => storeActions.navigate(View.Language)}>
+                <div
+                  class="setting-row"
+                  onClick={() => storeActions.navigate(View.Language)}
+                >
                   <div class="setting-row-left">
                     <GlobeIcon />
                     <div>
-                      <div class="setting-label">{t("settings_label_language")}</div>
+                      <div class="setting-label">
+                        {t("settings_label_language")}
+                      </div>
                       <div class="setting-sub">
                         {store.language === "vi" ? "Tiếng Việt" : "English"}
                       </div>
@@ -177,14 +183,45 @@ export const Settings: Component = () => {
                   <ChevronRightIcon />
                 </div>
 
+                {/* User Guide */}
+                <div
+                  class="setting-row"
+                  onClick={() =>
+                    chrome.tabs.create({
+                      url: chrome.runtime.getURL("guide.html"),
+                    })}
+                >
+                  <div class="setting-row-left">
+                    <QuestionIcon />
+                    <div>
+                      <div class="setting-label">
+                        {t("settings_user_guide")}
+                      </div>
+                      <div class="setting-sub">
+                        {t("settings_user_guide_sub")}
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRightIcon />
+                </div>
+
                 {/* Theme Settings */}
-                <div class="setting-row" onClick={() => storeActions.navigate(View.Theme)}>
+                <div
+                  class="setting-row"
+                  onClick={() => storeActions.navigate(View.Theme)}
+                >
                   <div class="setting-row-left">
                     <ThemeIcon />
                     <div>
-                      <div class="setting-label">{t("settings_theme_label")}</div>
+                      <div class="setting-label">
+                        {t("settings_theme_label")}
+                      </div>
                       <div class="setting-sub">
-                        {t("settings_theme_sub", { theme: store.theme === "dark" ? t("settings_theme_dark") : t("settings_theme_light") })}
+                        {t("settings_theme_sub", {
+                          theme: store.theme === "dark"
+                            ? t("settings_theme_dark")
+                            : t("settings_theme_light"),
+                        })}
                       </div>
                     </div>
                   </div>
@@ -199,7 +236,9 @@ export const Settings: Component = () => {
                   <div class="setting-row-left">
                     <ShieldIcon />
                     <div>
-                      <div class="setting-label">{t("settings_vault_options_label")}</div>
+                      <div class="setting-label">
+                        {t("settings_vault_options_label")}
+                      </div>
                       <div class="setting-sub">
                         {t("settings_vault_options_sub")}
                       </div>
@@ -294,7 +333,9 @@ export const Settings: Component = () => {
             class="card card-no-margin"
           >
             <div class="form-group">
-              <label for="current-pass">{t("settings_change_mp_current")}</label>
+              <label for="current-pass">
+                {t("settings_change_mp_current")}
+              </label>
               <Input
                 id="current-pass"
                 type="password"
@@ -320,7 +361,9 @@ export const Settings: Component = () => {
             </div>
 
             <div class="form-group" style="margin-bottom: 20px;">
-              <label for="confirm-pass">{t("settings_change_mp_confirm")}</label>
+              <label for="confirm-pass">
+                {t("settings_change_mp_confirm")}
+              </label>
               <Input
                 id="confirm-pass"
                 type="password"

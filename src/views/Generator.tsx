@@ -59,7 +59,11 @@ export const Generator: Component = () => {
         <div class="generator-output">
           <div class="output-value">{password()}</div>
           <div class="output-actions">
-            <Button variant="secondary" onClick={generate} title={t("gen_btn_generate")}>
+            <Button
+              variant="secondary"
+              onClick={generate}
+              title={t("gen_btn_generate")}
+            >
               <RefreshIcon class="icon-inline" />
             </Button>
             <Button variant="primary" onClick={handleCopy} class="min-w-100">
