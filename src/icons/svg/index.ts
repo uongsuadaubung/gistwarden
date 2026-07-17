@@ -32,4 +32,5 @@ export { default as ChevronRightIcon } from "./ChevronRightIcon.tsx";
 export { default as DownloadIcon } from "./DownloadIcon.tsx";
 export { default as GlobeIcon } from "./GlobeIcon.tsx";
 export { default as MoreVerticalIcon } from "./MoreVerticalIcon.tsx";
+export { default as CloseIcon } from "./CloseIcon.tsx";
 export * from "./types.ts";

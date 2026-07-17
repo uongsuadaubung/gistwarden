@@ -3394,6 +3394,47 @@
       "passwordHistory": [],
       "creationDate": "",
       "revisionDate": ""
+    },
+    {
+      "type": 3,
+      "name": "card",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "c8ea6f99-308b-45a4-9125-b48a007b9704",
+      "collectionIds": null,
+      "fields": [],
+      "card": {
+        "cardholderName": "holder name",
+        "brand": "Visa",
+        "number": "23232323",
+        "expMonth": "1",
+        "expYear": "2012",
+        "code": "1212"
+      },
+      "passwordHistory": [],
+      "creationDate": "2026-07-17T07:29:58.619Z",
+      "revisionDate": "2026-07-17T07:29:58.619Z"
+    },
+    {
+      "type": 3,
+      "name": "card - Clone",
+      "favorite": false,
+      "reprompt": 0,
+      "id": "9fd024d4-8ba8-4333-af3f-b48a007d15f1",
+      "collectionIds": null,
+      "notes": "note",
+      "fields": [],
+      "card": {
+        "cardholderName": "holder name",
+        "brand": "Visa",
+        "number": "23232323",
+        "expMonth": "1",
+        "expYear": "2012",
+        "code": "1212"
+      },
+      "passwordHistory": [],
+      "creationDate": "2026-07-17T07:35:25.383Z",
+      "revisionDate": "2026-07-17T07:35:25.383Z"
     }
   ]
 }

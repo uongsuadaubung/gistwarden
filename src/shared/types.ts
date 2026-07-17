@@ -12,11 +12,15 @@ export enum View {
   Language = "Language",
   Theme = "Theme",
   Welcome = "Welcome",
+  AccountSecurity = "AccountSecurity",
+  ChangeMasterPassword = "ChangeMasterPassword",
 }
 
 export enum VaultItemType {
   Login = 1,
   SecureNote = 2,
+  Card = 3,
+  Identity = 4,
 }
 
 // 1. URIs
@@ -54,8 +58,17 @@ export const Fido2CredentialSchema = z.object({
 export type Fido2Credential = z.infer<typeof Fido2CredentialSchema>;
 
 // 3. Custom Fields
+export enum CustomFieldType {
+  Text = 0,
+  Hidden = 1,
+  Boolean = 2,
+  Linked = 3,
+  Divider = 10,
+}
+export const CustomFieldTypeSchema = z.nativeEnum(CustomFieldType);
+
 export const VaultFieldSchema = z.object({
-  type: z.number().default(0),
+  type: CustomFieldTypeSchema.default(CustomFieldType.Text),
   name: z.string().or(z.null()).optional().transform((v) => v || ""),
   value: z.string().or(z.null()).optional().transform((v) => v || ""),
 });
@@ -67,6 +80,7 @@ export const BaseVaultItemSchema = z.object({
   name: z.string(),
   notes: z.string().optional(),
   favorite: z.boolean(),
+  reprompt: z.number(),
   fields: z.array(VaultFieldSchema),
   creationDate: z.string(),
   revisionDate: z.string(),
@@ -92,10 +106,28 @@ export const SecureNoteVaultItemSchema = BaseVaultItemSchema.extend({
 });
 export type SecureNoteVaultItem = z.infer<typeof SecureNoteVaultItemSchema>;
 
+// 6b. Card Vault Item Schema
+export const CardSchema = z.object({
+  cardholderName: z.string().or(z.null()).optional().transform((v) => v || ""),
+  brand: z.string().or(z.null()).optional().transform((v) => v || ""),
+  number: z.string().or(z.null()).optional().transform((v) => v || ""),
+  expMonth: z.string().or(z.null()).optional().transform((v) => v || ""),
+  expYear: z.string().or(z.null()).optional().transform((v) => v || ""),
+  code: z.string().or(z.null()).optional().transform((v) => v || ""),
+});
+export type CardDetails = z.infer<typeof CardSchema>;
+
+export const CardVaultItemSchema = BaseVaultItemSchema.extend({
+  type: z.literal(VaultItemType.Card),
+  card: CardSchema,
+});
+export type CardVaultItem = z.infer<typeof CardVaultItemSchema>;
+
 // 7. Discriminated Union for Vault Items
 export const VaultItemSchema = z.discriminatedUnion("type", [
   LoginVaultItemSchema,
   SecureNoteVaultItemSchema,
+  CardVaultItemSchema,
 ]);
 export type VaultItem = z.infer<typeof VaultItemSchema>;
 
@@ -108,6 +140,7 @@ export const ImportLoginItemSchema = z.object({
   name: z.string(),
   notes: z.string().nullish(),
   favorite: z.boolean(),
+  reprompt: z.number(),
   fields: z.array(VaultFieldSchema).nullish(),
   login: z.object({
     username: z.string().nullish(),
@@ -123,15 +156,34 @@ export const ImportSecureNoteItemSchema = z.object({
   name: z.string(),
   notes: z.string().nullish(),
   favorite: z.boolean(),
+  reprompt: z.number(),
   fields: z.array(VaultFieldSchema).nullish(),
   secureNote: z.object({
     type: z.number(),
   }).nullish(),
 });
 
+export const ImportCardItemSchema = z.object({
+  type: z.literal(VaultItemType.Card),
+  name: z.string(),
+  notes: z.string().nullish(),
+  favorite: z.boolean(),
+  reprompt: z.number(),
+  fields: z.array(VaultFieldSchema).nullish(),
+  card: z.object({
+    cardholderName: z.string().nullish(),
+    brand: z.string().nullish(),
+    number: z.string().nullish(),
+    expMonth: z.string().nullish(),
+    expYear: z.string().nullish(),
+    code: z.string().nullish(),
+  }).nullish(),
+});
+
 export const ImportItemSchema = z.discriminatedUnion("type", [
   ImportLoginItemSchema,
   ImportSecureNoteItemSchema,
+  ImportCardItemSchema,
 ]);
 export type ImportItem = z.infer<typeof ImportItemSchema>;
 
@@ -139,3 +191,31 @@ export const ImportArraySchema = z.array(ImportItemSchema);
 export const ImportObjectSchema = z.object({
   items: z.array(ImportItemSchema),
 });
+
+// Toast Types
+export const ToastTypeSchema = z.enum(["success", "error", "info"]);
+export type ToastType = z.infer<typeof ToastTypeSchema>;
+
+// Confirm Modal Types
+export const ConfirmTypeSchema = z.enum(["info", "warning", "danger"]);
+export type ConfirmType = z.infer<typeof ConfirmTypeSchema>;
+
+// Vault Timeout Action Types
+export const VaultTimeoutActionSchema = z.enum(["lock", "logout"]);
+export type VaultTimeoutAction = z.infer<typeof VaultTimeoutActionSchema>;
+
+// Theme Types
+export enum ThemeMode {
+  Dark = "dark",
+  Light = "light",
+}
+export const ThemeModeSchema = z.enum(["dark", "light"]);
+export type ThemeModeType = z.infer<typeof ThemeModeSchema>;
+
+// Login Method Types
+export const LoginMethodSchema = z.enum(["oauth", "pat"]);
+export type LoginMethod = z.infer<typeof LoginMethodSchema>;
+
+// Login View Mode Types
+export const LoginViewModeSchema = z.enum(["masterPassword", "pin"]);
+export type LoginViewMode = z.infer<typeof LoginViewModeSchema>;

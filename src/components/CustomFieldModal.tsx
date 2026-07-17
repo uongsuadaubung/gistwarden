@@ -2,19 +2,20 @@ import { createEffect, createSignal, Show } from "solid-js";
 import { t } from "../shared/i18n.ts";
 import Input from "./Input.tsx";
 import Button from "./Button.tsx";
+import { CustomFieldType, type VaultField } from "../shared/types.ts";
 
 interface CustomFieldModalProps {
   isOpen: boolean;
   isEdit: boolean;
-  initialField: { name: string; value: string; type: number } | null;
+  initialField: VaultField | null;
   onClose: () => void;
-  onSave: (field: { name: string; value: string; type: number }) => void;
+  onSave: (field: VaultField) => void;
 }
 
 export default function CustomFieldModal(props: CustomFieldModalProps) {
   const [name, setName] = createSignal("");
   const [value, setValue] = createSignal("");
-  const [type, setType] = createSignal(0);
+  const [type, setType] = createSignal<CustomFieldType>(CustomFieldType.Text);
   const [isClosing, setIsClosing] = createSignal(false);
 
   createEffect(() => {
@@ -23,11 +24,11 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
       if (props.initialField) {
         setName(props.initialField.name || "");
         setValue(props.initialField.value || "");
-        setType(props.initialField.type ?? 0);
+        setType(props.initialField.type ?? CustomFieldType.Text);
       } else {
         setName("");
         setValue("");
-        setType(0);
+        setType(CustomFieldType.Text);
       }
     }
   });
@@ -45,7 +46,7 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
     const trimmedName = name().trim();
     if (!trimmedName) {
       alert(
-        type() === 2
+        type() === CustomFieldType.Divider
           ? t("edit_field_error_empty_divider")
           : t("edit_field_error_empty_name"),
       );
@@ -56,7 +57,7 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
     setTimeout(() => {
       props.onSave({
         name: trimmedName,
-        value: type() === 2 ? "" : value().trim(),
+        value: type() === CustomFieldType.Divider ? "" : value().trim(),
         type: type(),
       });
     }, 250);
@@ -90,11 +91,34 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
               <select
                 class="input-control"
                 value={type()}
-                onChange={(e) => setType(parseInt(e.currentTarget.value))}
+                onChange={(e) => {
+                  const val = parseInt(e.currentTarget.value);
+                  if (
+                    val === CustomFieldType.Text ||
+                    val === CustomFieldType.Hidden ||
+                    val === CustomFieldType.Boolean ||
+                    val === CustomFieldType.Linked ||
+                    val === CustomFieldType.Divider
+                  ) {
+                    setType(val);
+                  }
+                }}
               >
-                <option value={0}>{t("edit_field_type_text")}</option>
-                <option value={1}>{t("edit_field_type_hidden")}</option>
-                <option value={2}>{t("edit_field_type_divider")}</option>
+                <option value={CustomFieldType.Text}>
+                  {t("edit_field_type_text")}
+                </option>
+                <option value={CustomFieldType.Hidden}>
+                  {t("edit_field_type_hidden")}
+                </option>
+                <option value={CustomFieldType.Boolean}>
+                  {t("edit_field_type_boolean")}
+                </option>
+                <option value={CustomFieldType.Linked}>
+                  {t("edit_field_type_linked")}
+                </option>
+                <option value={CustomFieldType.Divider}>
+                  {t("edit_field_type_divider")}
+                </option>
               </select>
             </div>
 
@@ -102,7 +126,7 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
               <label>{t("edit_field_name_placeholder")}</label>
               <Input
                 type="text"
-                placeholder={type() === 2
+                placeholder={type() === CustomFieldType.Divider
                   ? t("edit_field_modal_placeholder_divider")
                   : t("edit_field_modal_placeholder_name")}
                 value={name()}
@@ -110,11 +134,11 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
               />
             </div>
 
-            <Show when={type() !== 2}>
+            <Show when={type() !== CustomFieldType.Divider}>
               <div class="form-group">
                 <label>{t("edit_field_val_placeholder")}</label>
                 <Input
-                  type={type() === 1 ? "password" : "text"}
+                  type={type() === CustomFieldType.Hidden ? "password" : "text"}
                   placeholder={t("edit_field_val_placeholder") + "..."}
                   value={value()}
                   onInput={(e) => setValue(e.currentTarget.value)}

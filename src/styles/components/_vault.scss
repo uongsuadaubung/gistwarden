@@ -5,6 +5,7 @@
 
   .input-control {
     padding-left: 36px;
+    padding-right: 32px;
   }
 
   .search-icon {
@@ -17,6 +18,32 @@
     width: 16px;
     height: 16px;
     pointer-events: none;
+  }
+
+  .search-clear-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--primary);
+    }
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
   }
 }
 
@@ -44,32 +71,6 @@
     &:hover {
       background-color: var(--hover-bg);
       border-color: var(--primary);
-    }
-
-    .item-icon-container {
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: var(--hover-bg);
-      border-radius: 6px;
-      margin-right: 12px;
-      flex-shrink: 0;
-
-      img {
-        width: 18px;
-        height: 18px;
-        border-radius: 2px;
-        object-fit: contain;
-      }
-
-      svg {
-        width: 16px;
-        height: 16px;
-        color: var(--text-muted);
-        fill: currentColor;
-      }
     }
 
     .item-info {
@@ -276,4 +277,113 @@
   font-weight: 600;
   user-select: none;
   padding-right: 4px;
+}
+
+.item-icon-container {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--hover-bg);
+  border-radius: 6px;
+  margin-right: 12px;
+  flex-shrink: 0;
+
+  &-large {
+    width: 36px;
+    height: 36px;
+    margin-right: 0;
+  }
+
+  img {
+    width: 18px;
+    height: 18px;
+    border-radius: 2px;
+    object-fit: contain;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    fill: currentColor;
+  }
+
+  .visa-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: #1a1f2c;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 8px;
+    font-weight: 800;
+    font-style: italic;
+    letter-spacing: 0.2px;
+  }
+
+  .amex-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: #007bc1;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: 0.1px;
+  }
+
+  .mastercard-logo {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: #1a1f2c;
+    border-radius: 4px;
+    overflow: hidden;
+
+    .mc-circle {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      position: absolute;
+      top: 8px;
+
+      &-left {
+        background: #eb001b;
+        left: 4px;
+      }
+
+      &-right {
+        background: #ff5f00;
+        right: 4px;
+        opacity: 0.9;
+      }
+    }
+  }
+
+  .card-brand-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: #1a1f2c;
+    border-radius: 4px;
+    color: var(--text-muted);
+
+    svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+    }
+  }
 }

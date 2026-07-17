@@ -13,6 +13,7 @@ import { handlePopout, isPopout } from "@/shared/popout-utils.ts";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/shared/totp-utils.ts";
 import {
+  CloseIcon,
   ExternalLinkIcon,
   LockIcon,
   PlusIcon,
@@ -22,9 +23,15 @@ import {
 import { Input } from "@/components/Input.tsx";
 import { VaultItemRow } from "@/components/VaultItemRow.tsx";
 import { t } from "@/shared/i18n.ts";
-
 export const Vault: Component = () => {
-  const [search, setSearch] = createSignal("");
+  const [search, setSearch] = createSignal(
+    sessionStorage.getItem("vault_search_query") || "",
+  );
+
+  const updateSearch = (val: string) => {
+    setSearch(val);
+    sessionStorage.setItem("vault_search_query", val);
+  };
   const [activeMenuId, setActiveMenuId] = createSignal("");
   const [activeOptionsMenuId, setActiveOptionsMenuId] = createSignal("");
   const [currentTabDomain, setCurrentTabDomain] = createSignal("");
@@ -239,6 +246,7 @@ export const Vault: Component = () => {
       name: "",
       notes: "",
       favorite: false,
+      reprompt: 0,
       fields: [],
       creationDate: "",
       revisionDate: "",
@@ -261,9 +269,34 @@ export const Vault: Component = () => {
       name: "",
       notes: "",
       favorite: false,
+      reprompt: 0,
       fields: [],
       creationDate: "",
       revisionDate: "",
+    });
+    storeActions.navigate(View.ItemEdit);
+    setShowAddMenu(false);
+  };
+
+  const handleAddNewCard = () => {
+    storeActions.selectItem({
+      id: "",
+      type: VaultItemType.Card,
+      name: "",
+      notes: "",
+      favorite: false,
+      reprompt: 0,
+      fields: [],
+      creationDate: "",
+      revisionDate: "",
+      card: {
+        cardholderName: "",
+        brand: "Visa",
+        number: "",
+        expMonth: "1",
+        expYear: String(new Date().getFullYear()),
+        code: "",
+      },
     });
     storeActions.navigate(View.ItemEdit);
     setShowAddMenu(false);
@@ -304,6 +337,9 @@ export const Vault: Component = () => {
                 </div>
                 <div class="dropdown-item" onClick={handleAddNewNote}>
                   {t("vault_item_note")}
+                </div>
+                <div class="dropdown-item" onClick={handleAddNewCard}>
+                  {t("vault_item_card")}
                 </div>
               </div>
             </Show>
@@ -347,8 +383,18 @@ export const Vault: Component = () => {
             type="text"
             placeholder={t("vault_search_placeholder")}
             value={search()}
-            onInput={(e) => setSearch(e.currentTarget.value)}
+            onInput={(e) => updateSearch(e.currentTarget.value)}
           />
+          <Show when={search()}>
+            <button
+              type="button"
+              class="search-clear-btn"
+              onClick={() => updateSearch("")}
+              title={t("btn_clear") || "Clear"}
+            >
+              <CloseIcon />
+            </button>
+          </Show>
         </div>
 
         {/* Sync Error */}

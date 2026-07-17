@@ -1,7 +1,8 @@
 import { type Component, createSignal, For, onMount, Show } from "solid-js";
-import qrcodeParser from "qrcode-parser";
 import { store, storeActions, View } from "@/shared/store.ts";
 import {
+  type CardVaultItem,
+  CustomFieldType,
   type Fido2Credential,
   type LoginVaultItem,
   type SecureNoteVaultItem,
@@ -10,18 +11,15 @@ import {
 } from "@/shared/types.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
+import Checkbox from "@/components/Checkbox.tsx";
 import CustomFieldModal from "@/components/CustomFieldModal.tsx";
-import {
-  ArrowLeftIcon,
-  CopyIcon,
-  DragIcon,
-  EditIcon,
-  EyeIcon,
-  EyeOffIcon,
-  QrIcon,
-  TrashIcon,
-} from "@/icons/svg/index.ts";
+import { DragIcon, EditIcon, TrashIcon } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
+import DetailHeader from "@/components/DetailHeader.tsx";
+import LoginEditFields from "@/components/item-edit/LoginEditFields.tsx";
+import CardEditFields from "@/components/item-edit/CardEditFields.tsx";
+import NoteEditFields from "@/components/item-edit/NoteEditFields.tsx";
+import qrcodeParser from "qrcode-parser";
 
 export const ItemEdit: Component = () => {
   const isEdit = () => !!store.selectedItem?.id;
@@ -34,14 +32,13 @@ export const ItemEdit: Component = () => {
   const [totpSecret, setTotpSecret] = createSignal("");
   const [notes, setNotes] = createSignal("");
   const [favorite, setFavorite] = createSignal(false);
+  const [reprompt, setReprompt] = createSignal(0);
   const [fidoCredentials, setFidoCredentials] = createSignal<Fido2Credential[]>(
     [],
   );
   const [fields, setFields] = createSignal<VaultField[]>([]);
 
   // UI state
-  const [showPassword, setShowPassword] = createSignal(false);
-  const [showTotpSecret, setShowTotpSecret] = createSignal(false);
   const [scanning, setScanning] = createSignal(false);
   const [error, setError] = createSignal("");
   const [saving, setSaving] = createSignal(false);
@@ -91,6 +88,16 @@ export const ItemEdit: Component = () => {
     VaultItemType.Login,
   );
 
+  // Card specific fields
+  const [cardholderName, setCardholderName] = createSignal("");
+  const [cardNumber, setCardNumber] = createSignal("");
+  const [cardBrand, setCardBrand] = createSignal("Visa");
+  const [cardExpMonth, setCardExpMonth] = createSignal("1");
+  const [cardExpYear, setCardExpYear] = createSignal(
+    String(new Date().getFullYear()),
+  );
+  const [cardCode, setCardCode] = createSignal("");
+
   onMount(() => {
     const item = store.selectedItem;
     if (item) {
@@ -102,19 +109,54 @@ export const ItemEdit: Component = () => {
         setUri("");
         setTotpSecret("");
         setFidoCredentials([]);
+
+        setCardholderName("");
+        setCardNumber("");
+        setCardBrand("Visa");
+        setCardExpMonth("1");
+        setCardExpYear(String(new Date().getFullYear()));
+        setCardCode("");
+      } else if (item.type === VaultItemType.Card) {
+        setUsername("");
+        setPassword("");
+        setUri("");
+        setTotpSecret("");
+        setFidoCredentials([]);
+
+        setCardholderName(item.card.cardholderName || "");
+        setCardNumber(item.card.number || "");
+        setCardBrand(item.card.brand || "Visa");
+        setCardExpMonth(item.card.expMonth || "1");
+        setCardExpYear(item.card.expYear || String(new Date().getFullYear()));
+        setCardCode(item.card.code || "");
       } else {
         setUsername(item.login.username || "");
         setPassword(item.login.password || "");
         setUri(item.login.uris?.[0]?.uri || "");
         setTotpSecret(item.login.totp || "");
         setFidoCredentials(item.login.fido2Credentials || []);
+
+        setCardholderName("");
+        setCardNumber("");
+        setCardBrand("Visa");
+        setCardExpMonth("1");
+        setCardExpYear(String(new Date().getFullYear()));
+        setCardCode("");
       }
       setNotes(item.notes || "");
       setFavorite(item.favorite || false);
+      setReprompt(item.reprompt || 0);
       setFields(item.fields || []);
     } else {
       setItemType(VaultItemType.Login);
       setFields([]);
+      setCardholderName("");
+      setCardNumber("");
+      setCardBrand("Visa");
+      setCardExpMonth("1");
+      setCardExpYear(String(new Date().getFullYear()));
+      setCardCode("");
+      setReprompt(0);
     }
   });
 
@@ -143,12 +185,6 @@ export const ItemEdit: Component = () => {
 
   const handleRemoveField = (index: number) => {
     setFields(fields().filter((_, i) => i !== index));
-  };
-
-  const handleCopy = async (text: string, _type: string) => {
-    if (!text) return;
-    await navigator.clipboard.writeText(text);
-    storeActions.showToast(t("detail_copied"), "success");
   };
 
   const handleScanQr = async () => {
@@ -237,7 +273,10 @@ export const ItemEdit: Component = () => {
     setSaving(true);
 
     try {
-      let itemData: Partial<LoginVaultItem> | Partial<SecureNoteVaultItem>;
+      let itemData:
+        | Partial<LoginVaultItem>
+        | Partial<SecureNoteVaultItem>
+        | Partial<CardVaultItem>;
 
       if (itemType() === VaultItemType.SecureNote) {
         itemData = {
@@ -246,11 +285,34 @@ export const ItemEdit: Component = () => {
           name: name().trim(),
           notes: notes().trim(),
           favorite: favorite(),
+          reprompt: reprompt(),
           fields: fields().map((f) => ({
             type: f.type,
             name: f.name.trim(),
             value: f.value.trim(),
           })),
+        };
+      } else if (itemType() === VaultItemType.Card) {
+        itemData = {
+          id: store.selectedItem?.id || undefined,
+          type: VaultItemType.Card,
+          name: name().trim(),
+          notes: notes().trim(),
+          favorite: favorite(),
+          reprompt: reprompt(),
+          fields: fields().map((f) => ({
+            type: f.type,
+            name: f.name.trim(),
+            value: f.value.trim(),
+          })),
+          card: {
+            cardholderName: cardholderName().trim(),
+            brand: cardBrand(),
+            number: cardNumber().trim(),
+            expMonth: cardExpMonth(),
+            expYear: cardExpYear().trim(),
+            code: cardCode().trim(),
+          },
         };
       } else {
         itemData = {
@@ -259,6 +321,7 @@ export const ItemEdit: Component = () => {
           name: name().trim(),
           notes: notes().trim(),
           favorite: favorite(),
+          reprompt: reprompt(),
           fields: fields().map((f) => ({
             type: f.type,
             name: f.name.trim(),
@@ -279,9 +342,13 @@ export const ItemEdit: Component = () => {
         const msg = isEdit()
           ? (itemType() === VaultItemType.SecureNote
             ? t("edit_toast_updated_note")
+            : itemType() === VaultItemType.Card
+            ? t("edit_toast_updated_card")
             : t("edit_toast_updated_login"))
           : (itemType() === VaultItemType.SecureNote
             ? t("edit_toast_created_note")
+            : itemType() === VaultItemType.Card
+            ? t("edit_toast_created_card")
             : t("edit_toast_created_login"));
         storeActions.showToast(msg, "success");
 
@@ -317,27 +384,24 @@ export const ItemEdit: Component = () => {
 
   return (
     <div class="app-container h-full">
-      {/* Header */}
-      <div class="detail-item-header justify-between">
-        <div class="d-flex align-center gap-12">
-          <div class="back-btn detail-back-btn" onClick={handleCancel}>
-            <ArrowLeftIcon class="icon-inline-large" />
-          </div>
-          <div class="detail-title detail-header-title">
-            {isEdit()
-              ? (itemType() === VaultItemType.SecureNote
-                ? t("edit_title_edit_note")
-                : t("edit_title_edit_login"))
-              : (itemType() === VaultItemType.SecureNote
-                ? t("edit_title_add_note")
-                : t("edit_title_add_login"))}
-          </div>
-        </div>
-      </div>
-
       <form onSubmit={handleSave} class="detail-form">
         {/* Scrollable Form Body */}
         <div class="app-body pb-24">
+          {/* Header */}
+          <DetailHeader
+            title={isEdit()
+              ? (itemType() === VaultItemType.SecureNote
+                ? t("edit_title_edit_note")
+                : itemType() === VaultItemType.Card
+                ? t("edit_title_edit_card")
+                : t("edit_title_edit_login"))
+              : (itemType() === VaultItemType.SecureNote
+                ? t("edit_title_add_note")
+                : itemType() === VaultItemType.Card
+                ? t("edit_title_add_card")
+                : t("edit_title_add_login"))}
+            onBack={handleCancel}
+          />
           <Show when={error()}>
             <div class="alert alert-danger">{error()}</div>
           </Show>
@@ -355,153 +419,54 @@ export const ItemEdit: Component = () => {
                 onInput={(e) => setName(e.currentTarget.value)}
                 placeholder={itemType() === VaultItemType.SecureNote
                   ? t("edit_placeholder_name_note")
+                  : itemType() === VaultItemType.Card
+                  ? "e.g. Visa, Mastercard..."
                   : t("edit_placeholder_name_login")}
               />
             </div>
           </div>
 
-          <Show when={itemType() !== VaultItemType.SecureNote}>
-            <div class="detail-section-title">{t("detail_section_login")}</div>
-            <div class="card mb-16">
-              <div class="form-group">
-                <label for="item-username">{t("edit_label_username")}</label>
-                <Input
-                  id="item-username"
-                  type="text"
-                  value={username()}
-                  onInput={(e) => setUsername(e.currentTarget.value)}
-                  placeholder={t("edit_placeholder_username")}
-                />
-              </div>
+          <Show when={itemType() === VaultItemType.Login}>
+            <LoginEditFields
+              username={username()}
+              setUsername={setUsername}
+              password={password()}
+              setPassword={setPassword}
+              uri={uri()}
+              setUri={setUri}
+              totpSecret={totpSecret()}
+              setTotpSecret={setTotpSecret}
+              fidoCredentials={fidoCredentials()}
+              onDeleteFido={handleDeleteFidoCredential}
+              scanning={scanning()}
+              onScanQr={handleScanQr}
+            />
+          </Show>
 
-              <div class="form-group">
-                <label for="item-password">{t("edit_label_password")}</label>
-                <div class="pos-relative">
-                  <Input
-                    id="item-password"
-                    type={showPassword() ? "text" : "password"}
-                    class="password-font pr-68"
-                    value={password()}
-                    onInput={(e) => setPassword(e.currentTarget.value)}
-                    placeholder={t("edit_placeholder_password")}
-                  />
-                  <div class="input-right-actions">
-                    <button
-                      type="button"
-                      class="action-btn input-action-btn"
-                      onClick={() => setShowPassword(!showPassword())}
-                    >
-                      <Show
-                        when={showPassword()}
-                        fallback={<EyeIcon class="icon-inline" />}
-                      >
-                        <EyeOffIcon class="icon-inline" />
-                      </Show>
-                    </button>
-                    <button
-                      type="button"
-                      class="action-btn input-action-btn"
-                      onClick={() => handleCopy(password(), "password")}
-                    >
-                      <CopyIcon class="icon-inline" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <Show when={itemType() === VaultItemType.Card}>
+            <CardEditFields
+              cardholderName={cardholderName()}
+              setCardholderName={setCardholderName}
+              cardNumber={cardNumber()}
+              setCardNumber={setCardNumber}
+              cardBrand={cardBrand()}
+              setCardBrand={setCardBrand}
+              cardExpMonth={cardExpMonth()}
+              setCardExpMonth={setCardExpMonth}
+              cardExpYear={cardExpYear()}
+              setCardExpYear={setCardExpYear}
+              cardCode={cardCode()}
+              setCardCode={setCardCode}
+            />
+          </Show>
 
-            {/* Passkeys list in Edit Mode */}
-            <Show when={fidoCredentials().length > 0}>
-              <div class="detail-section-title">
-                {t("detail_passkey_webauthn")}
-              </div>
-              <div class="card mb-12">
-                <For each={fidoCredentials()}>
-                  {(cred) => (
-                    <div class="fido2-cred-row">
-                      <div>
-                        <strong>{cred.userName || t("detail_no_value")}</strong>
-                        <span class="card-sub-text">RP: {cred.rpId}</span>
-                      </div>
-                      <button
-                        type="button"
-                        class="action-btn fido2-delete-btn"
-                        onClick={() =>
-                          handleDeleteFidoCredential(cred.credentialId)}
-                        title={t("edit_confirm_delete_passkey_title")}
-                      >
-                        <TrashIcon class="icon-inline" />
-                      </button>
-                    </div>
-                  )}
-                </For>
-              </div>
-            </Show>
-
-            {/* TOTP Section */}
-            <div class="detail-section-title">
-              {t("detail_section_security")}
-            </div>
-            <div class="card mb-16">
-              <div class="form-group">
-                <label for="item-totp">{t("edit_label_totp")}</label>
-                <div class="pos-relative">
-                  <Input
-                    id="item-totp"
-                    type={showTotpSecret() ? "text" : "password"}
-                    class="password-font pr-68"
-                    value={totpSecret()}
-                    onInput={(e) => setTotpSecret(e.currentTarget.value)}
-                    placeholder={t("edit_placeholder_totp")}
-                  />
-                  <div class="input-right-actions">
-                    <button
-                      type="button"
-                      class="action-btn input-action-btn"
-                      onClick={() => setShowTotpSecret(!showTotpSecret())}
-                      title={t("edit_placeholder_totp")}
-                    >
-                      <Show
-                        when={showTotpSecret()}
-                        fallback={<EyeIcon class="icon-inline" />}
-                      >
-                        <EyeOffIcon class="icon-inline" />
-                      </Show>
-                    </button>
-                    <button
-                      type="button"
-                      class="action-btn input-action-btn"
-                      title={t("edit_placeholder_totp")}
-                      onClick={handleScanQr}
-                      disabled={scanning()}
-                    >
-                      <QrIcon
-                        class={scanning()
-                          ? "spinning icon-inline"
-                          : "icon-inline"}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Website Section */}
-            <div class="detail-section-title">
-              {t("detail_section_autofill")}
-            </div>
-            <div class="card mb-16">
-              <div class="form-group">
-                <label for="item-uri">{t("edit_label_website")}</label>
-                <Input
-                  id="item-uri"
-                  type="text"
-                  value={uri()}
-                  onInput={(e) => setUri(e.currentTarget.value)}
-                  placeholder="https://example.com"
-                />
-              </div>
-            </div>
+          <Show when={itemType() === VaultItemType.SecureNote}>
+            <NoteEditFields
+              notes={notes()}
+              setNotes={setNotes}
+              reprompt={reprompt()}
+              setReprompt={setReprompt}
+            />
           </Show>
 
           {/* Custom Fields in Edit Mode */}
@@ -511,17 +476,16 @@ export const ItemEdit: Component = () => {
               <For each={fields()}>
                 {(field, index) => (
                   <Show
-                    when={field.type === 2}
+                    when={field.type === CustomFieldType.Divider}
                     fallback={
                       <div
                         draggable="true"
                         onDragStart={(e) => handleDragStart(index(), e)}
                         onDragOver={(e) => handleDragOver(index(), e)}
                         onDragEnd={handleDragEnd}
-                        class="draggable-field-row"
-                        style={{
-                          opacity: draggedIndex() === index() ? 0.4 : 1,
-                        }}
+                        class={`draggable-field-row ${
+                          draggedIndex() === index() ? "dragging" : ""
+                        }`}
                       >
                         <div class="d-flex justify-between align-center">
                           <div class="d-flex align-center gap-6">
@@ -532,7 +496,7 @@ export const ItemEdit: Component = () => {
                               {field.name}
                             </span>
                             <span class="field-sub-value">
-                              {field.type === 1
+                              {field.type === CustomFieldType.Hidden
                                 ? "••••••••"
                                 : (field.value || t("detail_no_value"))}
                             </span>
@@ -565,10 +529,9 @@ export const ItemEdit: Component = () => {
                       onDragStart={(e) => handleDragStart(index(), e)}
                       onDragOver={(e) => handleDragOver(index(), e)}
                       onDragEnd={handleDragEnd}
-                      class="draggable-field-row"
-                      style={{
-                        opacity: draggedIndex() === index() ? 0.4 : 1,
-                      }}
+                      class={`draggable-field-row ${
+                        draggedIndex() === index() ? "dragging" : ""
+                      }`}
                     >
                       <div class="d-flex justify-between align-center">
                         <div class="d-flex align-center gap-6 flex-1">
@@ -616,23 +579,33 @@ export const ItemEdit: Component = () => {
             </button>
           </div>
 
-          {/* Notes Section */}
-          <div class="detail-section-title">
-            {t("edit_section_additional_options")}
-          </div>
-          <div class="card mb-16">
-            <div class="form-group">
-              <label for="item-notes">{t("edit_label_notes")}</label>
-              <textarea
-                id="item-notes"
-                class="input-control resize-none"
-                value={notes()}
-                onInput={(e) => setNotes(e.currentTarget.value)}
-                placeholder={t("edit_placeholder_notes")}
-                rows="5"
-              />
+          {/* Notes Section (Common to Login and Card) */}
+          <Show when={itemType() !== VaultItemType.SecureNote}>
+            <div class="detail-section-title">
+              {t("edit_section_additional_options")}
             </div>
-          </div>
+            <div class="card mb-16">
+              <div class="form-group">
+                <label for="item-notes">{t("edit_label_notes")}</label>
+                <textarea
+                  id="item-notes"
+                  class="input-control resize-none"
+                  value={notes()}
+                  onInput={(e) => setNotes(e.currentTarget.value)}
+                  placeholder={t("edit_placeholder_notes")}
+                  rows="5"
+                />
+              </div>
+              <div class="form-group mt-12">
+                <Checkbox
+                  id="item-reprompt"
+                  checked={reprompt() === 1}
+                  onChange={(checked) => setReprompt(checked ? 1 : 0)}
+                  label={t("edit_label_reprompt")}
+                />
+              </div>
+            </div>
+          </Show>
         </div>
 
         {/* Footer */}

@@ -1,7 +1,7 @@
 import { type Component, Show } from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
-import { ArrowLeftIcon } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
+import DetailHeader from "@/components/DetailHeader.tsx";
 
 export const Language: Component = () => {
   const handleBack = () => {
@@ -12,12 +12,10 @@ export const Language: Component = () => {
     <div class="app-container">
       <div class="app-body">
         {/* Header */}
-        <div class="detail-header mt-0 mb-16">
-          <div class="back-btn" onClick={handleBack}>
-            <ArrowLeftIcon />
-          </div>
-          <div class="detail-title">{t("settings_label_language")}</div>
-        </div>
+        <DetailHeader
+          title={t("settings_label_language")}
+          onBack={handleBack}
+        />
 
         <div class="card card-list">
           <div

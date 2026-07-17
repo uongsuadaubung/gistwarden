@@ -305,7 +305,7 @@ export const Fido2Prompt: Component = () => {
       } else {
         const newItem: Partial<VaultItem> = {
           name: req.options.rp.name || req.options.rp.id,
-          type: 1, // Login
+          type: VaultItemType.Login,
           login: {
             username: req.options.user.name,
             password: "",

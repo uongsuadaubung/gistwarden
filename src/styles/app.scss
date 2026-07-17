@@ -11,6 +11,7 @@
 @use "./components/fido2";
 @use "./components/confirm-modal";
 @use "./components/guide";
+@use "./components/checkbox";
 
 :root {
   /* Constant colors */
@@ -429,6 +430,9 @@ html.mode-responsive #root {
 .mt-16 {
   margin-top: 16px;
 }
+.ml-auto {
+  margin-left: auto !important;
+}
 .p-4 {
   padding: 4px;
 }
@@ -458,6 +462,9 @@ html.mode-responsive #root {
 }
 .pt-10 {
   padding-top: 10px;
+}
+.pl-24 {
+  padding-left: 24px !important;
 }
 .pt-12 {
   padding-top: 12px;
@@ -589,6 +596,9 @@ body.light-theme {
 .flex-1 {
   flex: 1;
 }
+.flex-column {
+  flex-direction: column;
+}
 .gap-6 {
   gap: 6px;
 }
@@ -597,6 +607,9 @@ body.light-theme {
 }
 .gap-12 {
   gap: 12px;
+}
+.gap-16 {
+  gap: 16px;
 }
 .flex-shrink-0 {
   flex-shrink: 0;
@@ -708,6 +721,10 @@ body.light-theme {
   padding-bottom: 12px;
   border-bottom: 1px dashed var(--border);
   cursor: move;
+
+  &.dragging {
+    opacity: 0.4;
+  }
 }
 .field-sub-value {
   font-size: 12px;
@@ -741,4 +758,12 @@ body.light-theme {
 }
 .p-4 {
   padding: 4px !important;
+}
+.border-top {
+  border-top: 1px solid var(--border);
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }

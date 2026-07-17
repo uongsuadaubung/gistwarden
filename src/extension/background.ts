@@ -5,6 +5,7 @@ import {
   validateToken,
 } from "@/domains/github/api.ts";
 import { FIDO2_PROMPT_HEIGHT, POPUP_WIDTH } from "@/shared/constants.ts";
+import { getAllSettings } from "@/shared/storage.ts";
 
 // Pending FIDO2 request state
 interface PendingRequest {
@@ -34,6 +35,31 @@ chrome.runtime.onMessage.addListener(
     sendResponse: (response: unknown) => void,
   ) => {
     console.debug("[Background] Received message type:", message.type);
+
+    const extensionPageOrigin = chrome.runtime.getURL("");
+    const isExtensionSender = sender.url &&
+      sender.url.startsWith(extensionPageOrigin);
+
+    const internalMessages = [
+      "UPLOAD_TO_GIST",
+      "DELETE_GIST",
+      "DOWNLOAD_FROM_GIST",
+      "VALIDATE_TOKEN",
+      "START_GITHUB_OAUTH",
+      "GET_PENDING_FIDO2_REQUEST",
+      "RESOLVE_FIDO2_REQUEST",
+      "REJECT_FIDO2_REQUEST",
+      "RESET_TIMEOUT",
+    ];
+
+    if (internalMessages.includes(message.type) && !isExtensionSender) {
+      console.warn(
+        `[Background] Unauthorized message type: ${message.type} from sender:`,
+        sender.url,
+      );
+      sendResponse({ success: false, error: "Unauthorized sender context" });
+      return false;
+    }
 
     switch (message.type) {
       case "UPLOAD_TO_GIST":
@@ -168,8 +194,76 @@ chrome.runtime.onMessage.addListener(
         }
         return false;
 
+      case "RESET_TIMEOUT":
+        updateTimeoutAlarm().then(() => sendResponse({ success: true }));
+        return true;
+
       default:
         return false;
     }
   },
 );
+
+// Timeout Alarm Management
+async function updateTimeoutAlarm() {
+  if (typeof chrome === "undefined" || !chrome.alarms) return;
+  await chrome.alarms.clear("vaultTimeout");
+
+  try {
+    const settings = await getAllSettings();
+    const timeout = settings.vaultTimeout || "onRestart";
+
+    if (timeout !== "onRestart" && timeout !== "never") {
+      const minutes = parseInt(timeout, 10);
+      if (!isNaN(minutes) && minutes > 0) {
+        const session = await chrome.storage.session.get("masterPassword");
+        if (session && session.masterPassword) {
+          chrome.alarms.create("vaultTimeout", { delayInMinutes: minutes });
+          console.debug(
+            `[Background] Set vaultTimeout alarm for ${minutes} minutes`,
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[Background] Failed to update timeout alarm:", err);
+  }
+}
+
+if (typeof chrome !== "undefined" && chrome.alarms) {
+  chrome.alarms.onAlarm.addListener(async (alarm) => {
+    if (alarm.name === "vaultTimeout") {
+      console.debug(
+        "[Background] vaultTimeout alarm fired. Locking/Logging out...",
+      );
+      try {
+        const settings = await getAllSettings();
+        const action = settings.vaultTimeoutAction || "lock";
+
+        // Clear masterPassword from session storage
+        await chrome.storage.session.remove("masterPassword");
+
+        if (action === "logout") {
+          await chrome.storage.local.clear();
+          chrome.runtime.sendMessage({ type: "VAULT_LOGGED_OUT" }).catch(
+            () => {},
+          );
+        } else {
+          chrome.runtime.sendMessage({ type: "VAULT_LOCKED" }).catch(() => {});
+        }
+      } catch (err) {
+        console.error("[Background] Failed to execute timeout action:", err);
+      }
+    }
+  });
+}
+
+if (
+  typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged
+) {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "local" && changes["gistwarden_settings"]) {
+      updateTimeoutAlarm();
+    }
+  });
+}

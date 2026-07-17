@@ -2,7 +2,6 @@ import { type Component, createSignal, Show } from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
 import { VaultItemType } from "@/shared/types.ts";
 import {
-  ArrowLeftIcon,
   ChevronRightIcon,
   DownloadIcon,
   SyncIcon,
@@ -10,6 +9,7 @@ import {
 } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
 import { APP_NAME } from "@/shared/constants.ts";
+import DetailHeader from "@/components/DetailHeader.tsx";
 
 export const VaultOptions: Component = () => {
   const [error, setError] = createSignal("");
@@ -141,12 +141,10 @@ export const VaultOptions: Component = () => {
     <div class="app-container">
       <div class="app-body">
         {/* Header */}
-        <div class="detail-header mt-0 mb-16">
-          <div class="back-btn" onClick={handleBack}>
-            <ArrowLeftIcon />
-          </div>
-          <div class="detail-title">{t("settings_vault_options_label")}</div>
-        </div>
+        <DetailHeader
+          title={t("settings_vault_options_label")}
+          onBack={handleBack}
+        />
 
         <Show when={error()}>
           <div class="alert alert-danger">{error()}</div>

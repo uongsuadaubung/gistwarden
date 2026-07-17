@@ -7,7 +7,11 @@ export interface LintNode {
   type: string;
   id?: LintNode;
   init?: LintNode;
-  name?: string;
+  name?: string | { type: string; name: string };
+  value?: {
+    type: string;
+    expression?: { type: string };
+  };
   params?: unknown[];
   typeAnnotation?: LintNode;
   typeName?: LintNode;
@@ -97,6 +101,38 @@ const customRulesPlugin: LintPlugin = {
                 message:
                   "Do not use 'as' type assertions. Use proper type guards, schema parsing, or type narrowing instead.",
               });
+            }
+          },
+        };
+      },
+    },
+
+    // Luật 4: Cấm sử dụng style inline trong TSX/JSX (Cho phép truyền tiếp style={props.style})
+    "no-inline-style": {
+      create(context: LintContext) {
+        return {
+          JSXAttribute(node: LintNode) {
+            if (
+              node.name &&
+              typeof node.name === "object" &&
+              node.name.type === "JSXIdentifier" &&
+              node.name.name === "style"
+            ) {
+              const val = node.value;
+              const isInline = val && (
+                val.type === "Literal" ||
+                val.type === "StringLiteral" ||
+                (val.type === "JSXExpressionContainer" &&
+                  val.expression &&
+                  val.expression.type === "ObjectExpression")
+              );
+              if (isInline) {
+                context.report({
+                  node,
+                  message:
+                    "Do not use inline 'style' object/string. Move styles to SCSS/CSS files instead.",
+                });
+              }
             }
           },
         };

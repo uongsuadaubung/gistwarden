@@ -1,23 +1,75 @@
-import { type Component, createSignal, Show } from "solid-js";
+import { type Component, createEffect, createSignal, Show } from "solid-js";
 import { store, storeActions } from "@/shared/store.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
+import PinUnlockForm from "@/components/PinUnlockForm.tsx";
 import { AppIcon, GithubIcon } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
+import {
+  base64ToArrayBuffer,
+  decryptData,
+  deriveKey,
+} from "@/shared/crypto.ts";
 import {
   APP_NAME,
   OAUTH_CLIENT_ID,
   OAUTH_WORKER_URL,
 } from "@/shared/constants.ts";
+import { type LoginMethod, type LoginViewMode } from "@/shared/types.ts";
 
 export const Login: Component = () => {
   const [token, setToken] = createSignal("");
   const [masterPassword, setMasterPassword] = createSignal("");
   const [error, setError] = createSignal("");
   const [loading, setLoading] = createSignal(false);
+  const [viewMode, setViewMode] = createSignal<LoginViewMode>("masterPassword");
+
+  createEffect(() => {
+    if (store.isLoaded) {
+      if (store.pinUnlockEnabled) {
+        if (store.requireMasterPasswordOnRestart) {
+          setViewMode(store.sessionUnlocked ? "pin" : "masterPassword");
+        } else {
+          setViewMode("pin");
+        }
+      } else {
+        setViewMode("masterPassword");
+      }
+    }
+  });
+
+  const handlePinUnlock = async (pin: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      if (!store.pinUnlockValue || !store.pinUnlockIv || !store.pinUnlockSalt) {
+        throw new Error(t("login_error_unlock_fail"));
+      }
+
+      const saltBuffer = base64ToArrayBuffer(store.pinUnlockSalt);
+      const pinKey = await deriveKey(pin, new Uint8Array(saltBuffer));
+      const decryptedMp = await decryptData(
+        store.pinUnlockValue,
+        store.pinUnlockIv,
+        pinKey,
+      );
+
+      const res = await storeActions.unlock(decryptedMp);
+      if (res.success) {
+        setMasterPassword("");
+      } else {
+        setError(res.error || t("login_error_wrong_pin"));
+      }
+    } catch (err) {
+      console.error("[Login] PIN unlock failed:", err);
+      setError(t("login_error_wrong_pin"));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // OAuth states
-  const [loginMethod, setLoginMethod] = createSignal<"oauth" | "pat">("oauth");
+  const [loginMethod, setLoginMethod] = createSignal<LoginMethod>("oauth");
 
   const handleSaveToken = async (e: Event) => {
     e.preventDefault();
@@ -235,54 +287,85 @@ export const Login: Component = () => {
           </div>
         }
       >
-        <form onSubmit={handleUnlock} class="card mb-0">
-          <div class="form-group">
-            <label for="master-password">{t("login_master_password")}</label>
-            <Input
-              id="master-password"
-              type="password"
-              placeholder={t("login_placeholder_mp")}
-              value={masterPassword()}
-              onInput={(e) => setMasterPassword(e.currentTarget.value)}
-              disabled={loading()}
-              autofocus
-            />
-          </div>
+        <Show
+          when={viewMode() === "pin"}
+          fallback={
+            <form onSubmit={handleUnlock} class="card mb-0">
+              <div class="form-group">
+                <label for="master-password">
+                  {t("login_master_password")}
+                </label>
+                <Input
+                  id="master-password"
+                  type="password"
+                  placeholder={t("login_placeholder_mp")}
+                  value={masterPassword()}
+                  onInput={(e) => setMasterPassword(e.currentTarget.value)}
+                  disabled={loading()}
+                  autofocus
+                />
+              </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            block
+              <Button
+                type="submit"
+                variant="primary"
+                block
+                loading={loading()}
+                loadingText={t("login_loading_unlock")}
+                class="mb-12"
+              >
+                {t("login_btn_unlock")}
+              </Button>
+
+              <Show
+                when={store.pinUnlockEnabled &&
+                  !(store.requireMasterPasswordOnRestart &&
+                    !store.sessionUnlocked)}
+              >
+                <Button
+                  type="button"
+                  variant="secondary"
+                  block
+                  onClick={() => setViewMode("pin")}
+                  disabled={loading()}
+                  class="mb-12"
+                >
+                  {t("login_unlock_with_pin")}
+                </Button>
+              </Show>
+
+              <Button
+                type="button"
+                variant="secondary"
+                block
+                onClick={handleResetToken}
+                disabled={loading()}
+              >
+                {t("login_reset_token")}
+              </Button>
+
+              <div class="mt-16 text-center">
+                <a
+                  href="#"
+                  class="forgot-pass-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleForgotPassword();
+                  }}
+                >
+                  {t("login_forgot_password")}
+                </a>
+              </div>
+            </form>
+          }
+        >
+          <PinUnlockForm
             loading={loading()}
-            loadingText={t("login_loading_unlock")}
-            class="mb-12"
-          >
-            {t("login_btn_unlock")}
-          </Button>
-
-          <Button
-            type="button"
-            variant="secondary"
-            block
-            onClick={handleResetToken}
-            disabled={loading()}
-          >
-            {t("login_reset_token")}
-          </Button>
-
-          <div class="mt-16 text-center">
-            <a
-              href="#"
-              class="forgot-pass-link"
-              onClick={(e) => {
-                e.preventDefault();
-                handleForgotPassword();
-              }}
-            >
-              {t("login_forgot_password")}
-            </a>
-          </div>
-        </form>
+            error={error()}
+            onUnlock={handlePinUnlock}
+            onSwitchToMasterPassword={() => setViewMode("masterPassword")}
+          />
+        </Show>
       </Show>
     </div>
   );

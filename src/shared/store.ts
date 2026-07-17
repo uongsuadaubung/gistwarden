@@ -1,10 +1,12 @@
-import { createStore } from "solid-js/store";
+import { createStore, reconcile } from "solid-js/store";
 import {
   clearMasterPassword,
   getAllSettings,
   getMasterPassword,
   type GithubUser,
+  isSessionUnlocked,
   setMasterPassword,
+  setSessionUnlocked,
   subscribeToSettings,
   updateSettings,
 } from "./storage.ts";
@@ -18,11 +20,17 @@ import {
   setDerivedKey,
 } from "./crypto.ts";
 import {
+  type CardVaultItem,
+  type ConfirmType,
   type LoginVaultItem,
   type SecureNoteVaultItem,
+  ThemeMode,
+  type ThemeModeType,
+  type ToastType,
   type VaultItem,
   VaultItemType,
   VaultListSchema,
+  type VaultTimeoutAction,
   View,
 } from "./types.ts";
 import { setLanguage, SupportLanguage, t } from "./i18n.ts";
@@ -50,20 +58,36 @@ export interface AppStore {
 
   // Global Toast States
   toastMessage: string;
-  toastType: "success" | "error" | "info";
+  toastType: ToastType;
 
   // Reusable Confirmation Modal States
   confirmModal: {
     isOpen: boolean;
     title: string;
     message: string;
-    type: "info" | "warning" | "danger";
+    type: ConfirmType;
+    resolve: ((value: boolean) => void) | null;
+  };
+  // Master Password Reprompt Modal States
+  repromptModal: {
+    isOpen: boolean;
     resolve: ((value: boolean) => void) | null;
   };
   transitionClass: string;
-  theme: "dark" | "light";
+  theme: ThemeModeType;
   globalLoading: boolean;
   globalLoadingText: string;
+
+  // PIN settings
+  pinUnlockEnabled: boolean;
+  pinUnlockValue: string;
+  pinUnlockIv: string;
+  pinUnlockSalt: string;
+  requireMasterPasswordOnRestart: boolean;
+  // Session timeout settings
+  vaultTimeout: string;
+  vaultTimeoutAction: VaultTimeoutAction;
+  sessionUnlocked: boolean;
 }
 
 const [store, setStore] = createStore<AppStore>({
@@ -94,10 +118,23 @@ const [store, setStore] = createStore<AppStore>({
     type: "info",
     resolve: null,
   },
+  repromptModal: {
+    isOpen: false,
+    resolve: null,
+  },
   transitionClass: "",
-  theme: "dark",
+  theme: ThemeMode.Dark,
   globalLoading: false,
   globalLoadingText: "",
+
+  pinUnlockEnabled: false,
+  pinUnlockValue: "",
+  pinUnlockIv: "",
+  pinUnlockSalt: "",
+  requireMasterPasswordOnRestart: true,
+  vaultTimeout: "onRestart",
+  vaultTimeoutAction: "lock",
+  sessionUnlocked: false,
 });
 
 export { store };
@@ -106,6 +143,10 @@ let toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 function isLoginVaultItem(item: VaultItem): item is LoginVaultItem {
   return item.type === VaultItemType.Login;
+}
+
+function isCardVaultItem(item: VaultItem): item is CardVaultItem {
+  return item.type === VaultItemType.Card;
 }
 
 const viewDepths: Record<View, number> = {
@@ -120,6 +161,8 @@ const viewDepths: Record<View, number> = {
   [View.Theme]: 4,
   [View.Fido2Prompt]: 5,
   [View.Welcome]: 0,
+  [View.AccountSecurity]: 4,
+  [View.ChangeMasterPassword]: 5,
 };
 
 let transitionToggle = false;
@@ -129,6 +172,7 @@ export const storeActions = {
     console.log(`[Store] Initializing ${APP_NAME} Store...`);
     const settings = await getAllSettings();
     const masterPassword = await getMasterPassword();
+    const sessionUnlockedVal = await isSessionUnlocked();
 
     let currentTheme: "dark" | "light" = "dark";
     if (typeof chrome !== "undefined" && chrome.storage) {
@@ -155,6 +199,14 @@ export const storeActions = {
       language: settings.language,
       theme: currentTheme,
       welcomeAccepted: settings.welcomeAccepted,
+      pinUnlockEnabled: settings.pinUnlockEnabled,
+      pinUnlockValue: settings.pinUnlockValue,
+      pinUnlockIv: settings.pinUnlockIv,
+      pinUnlockSalt: settings.pinUnlockSalt,
+      requireMasterPasswordOnRestart: settings.requireMasterPasswordOnRestart,
+      vaultTimeout: settings.vaultTimeout,
+      vaultTimeoutAction: settings.vaultTimeoutAction,
+      sessionUnlocked: sessionUnlockedVal,
     });
 
     setLanguage(
@@ -186,10 +238,10 @@ export const storeActions = {
             key,
           );
           const items = VaultListSchema.parse(JSON.parse(decrypted));
-          
+
           let targetView = isFido2Prompt ? View.Fido2Prompt : View.Vault;
           let selectedItem = undefined;
-          
+
           const itemId = params.get("itemId");
           if (itemId && !isFido2Prompt) {
             const foundItem = items.find((i) => i.id === itemId);
@@ -205,12 +257,14 @@ export const storeActions = {
             view: targetView,
             selectedItem,
           });
+          chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
         } else {
           // If downloading fails but we have setup, it could be network issue or empty gist
           setStore({
             isLocked: false,
             view: isFido2Prompt ? View.Fido2Prompt : View.Vault,
           });
+          chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
         }
       } catch (err) {
         console.error("[Store] Decryption on load failed:", err);
@@ -238,6 +292,14 @@ export const storeActions = {
         lastSync: newSettings.lastSync,
         language: newSettings.language,
         welcomeAccepted: newSettings.welcomeAccepted,
+        pinUnlockEnabled: newSettings.pinUnlockEnabled,
+        pinUnlockValue: newSettings.pinUnlockValue,
+        pinUnlockIv: newSettings.pinUnlockIv,
+        pinUnlockSalt: newSettings.pinUnlockSalt,
+        requireMasterPasswordOnRestart:
+          newSettings.requireMasterPasswordOnRestart,
+        vaultTimeout: newSettings.vaultTimeout,
+        vaultTimeoutAction: newSettings.vaultTimeoutAction,
       });
       if (newSettings.language !== store.language) {
         setLanguage(
@@ -330,11 +392,14 @@ export const storeActions = {
         }
 
         await setMasterPassword(password);
+        await setSessionUnlocked(true);
         setStore({
           vaultItems: [],
           isLocked: false,
           view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
+          sessionUnlocked: true,
         });
+        chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
         return { success: true };
       }
 
@@ -367,11 +432,14 @@ export const storeActions = {
         }
 
         await setMasterPassword(password);
+        await setSessionUnlocked(true);
         setStore({
           vaultItems: [],
           isLocked: false,
           view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
+          sessionUnlocked: true,
         });
+        chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
         return { success: true };
       }
 
@@ -382,7 +450,9 @@ export const storeActions = {
 
       const params = new URLSearchParams(window.location.search);
       const itemId = params.get("itemId");
-      let targetView = store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault;
+      let targetView = store.view === View.Fido2Prompt
+        ? View.Fido2Prompt
+        : View.Vault;
       let selectedItem = undefined;
 
       if (itemId && store.view !== View.Fido2Prompt) {
@@ -394,12 +464,15 @@ export const storeActions = {
       }
 
       await setMasterPassword(password);
+      await setSessionUnlocked(true);
       setStore({
         vaultItems: items,
         isLocked: false,
         view: targetView,
         selectedItem,
+        sessionUnlocked: true,
       });
+      chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
 
       return { success: true };
     } catch (err) {
@@ -457,6 +530,7 @@ export const storeActions = {
 
   async logout() {
     await clearMasterPassword();
+    await setSessionUnlocked(false);
     clearDerivedKey();
     if (typeof chrome !== "undefined" && chrome.storage) {
       await chrome.storage.local.clear();
@@ -471,6 +545,14 @@ export const storeActions = {
       isLocked: true,
       view: View.Login,
       welcomeAccepted: false,
+      pinUnlockEnabled: false,
+      pinUnlockValue: "",
+      pinUnlockIv: "",
+      pinUnlockSalt: "",
+      requireMasterPasswordOnRestart: true,
+      vaultTimeout: "onRestart",
+      vaultTimeoutAction: "lock",
+      sessionUnlocked: false,
     });
   },
 
@@ -509,7 +591,55 @@ export const storeActions = {
               favorite: item.favorite !== undefined
                 ? item.favorite
                 : v.favorite,
+              reprompt: item.reprompt !== undefined
+                ? item.reprompt
+                : (v.reprompt !== undefined ? v.reprompt : 0),
               fields: item.fields !== undefined ? item.fields : v.fields,
+              creationDate: v.creationDate,
+              revisionDate: now,
+            };
+          }
+
+          if (targetType === VaultItemType.Card) {
+            const itemCard = "card" in item ? item.card : undefined;
+            if (!isCardVaultItem(v)) {
+              return {
+                id: v.id,
+                type: VaultItemType.Card,
+                name: item.name !== undefined ? item.name : v.name,
+                notes: item.notes !== undefined ? item.notes : v.notes,
+                favorite: item.favorite !== undefined
+                  ? item.favorite
+                  : v.favorite,
+                reprompt: item.reprompt !== undefined
+                  ? item.reprompt
+                  : (v.reprompt !== undefined ? v.reprompt : 0),
+                fields: item.fields !== undefined ? item.fields : v.fields,
+                card: itemCard || {
+                  cardholderName: "",
+                  brand: "",
+                  number: "",
+                  expMonth: "",
+                  expYear: "",
+                  code: "",
+                },
+                creationDate: v.creationDate,
+                revisionDate: now,
+              };
+            }
+            return {
+              id: v.id,
+              type: VaultItemType.Card,
+              name: item.name !== undefined ? item.name : v.name,
+              notes: item.notes !== undefined ? item.notes : v.notes,
+              favorite: item.favorite !== undefined
+                ? item.favorite
+                : v.favorite,
+              reprompt: item.reprompt !== undefined
+                ? item.reprompt
+                : (v.reprompt !== undefined ? v.reprompt : 0),
+              fields: item.fields !== undefined ? item.fields : v.fields,
+              card: itemCard !== undefined ? itemCard : v.card,
               creationDate: v.creationDate,
               revisionDate: now,
             };
@@ -527,6 +657,9 @@ export const storeActions = {
               favorite: item.favorite !== undefined
                 ? item.favorite
                 : v.favorite,
+              reprompt: item.reprompt !== undefined
+                ? item.reprompt
+                : (v.reprompt !== undefined ? v.reprompt : 0),
               fields: item.fields !== undefined ? item.fields : v.fields,
               login: itemLogin || {
                 username: "",
@@ -547,6 +680,9 @@ export const storeActions = {
             name: item.name !== undefined ? item.name : v.name,
             notes: item.notes !== undefined ? item.notes : v.notes,
             favorite: item.favorite !== undefined ? item.favorite : v.favorite,
+            reprompt: item.reprompt !== undefined
+              ? item.reprompt
+              : (v.reprompt !== undefined ? v.reprompt : 0),
             fields: item.fields !== undefined ? item.fields : v.fields,
             login: itemLogin !== undefined ? itemLogin : v.login,
             creationDate: v.creationDate,
@@ -563,7 +699,30 @@ export const storeActions = {
             name: item.name || "Chưa đặt tên",
             notes: item.notes,
             favorite: item.favorite || false,
+            reprompt: item.reprompt || 0,
             fields: item.fields || [],
+            creationDate: now,
+            revisionDate: now,
+          };
+          updatedList = [...store.vaultItems, newItem];
+        } else if (targetType === VaultItemType.Card) {
+          const itemCard = "card" in item ? item.card : undefined;
+          const newItem: CardVaultItem = {
+            id: crypto.randomUUID(),
+            type: VaultItemType.Card,
+            name: item.name || "Chưa đặt tên",
+            notes: item.notes,
+            favorite: item.favorite || false,
+            reprompt: item.reprompt || 0,
+            fields: item.fields || [],
+            card: itemCard || {
+              cardholderName: "",
+              brand: "",
+              number: "",
+              expMonth: "",
+              expYear: "",
+              code: "",
+            },
             creationDate: now,
             revisionDate: now,
           };
@@ -576,6 +735,7 @@ export const storeActions = {
             name: item.name || "Chưa đặt tên",
             notes: item.notes,
             favorite: item.favorite || false,
+            reprompt: item.reprompt || 0,
             fields: item.fields || [],
             login: itemLogin || {
               username: "",
@@ -615,7 +775,7 @@ export const storeActions = {
         throw new Error(res.error || "Lỗi đồng bộ lên GitHub Gist");
       }
 
-      setStore("vaultItems", validatedList);
+      setStore("vaultItems", reconcile(validatedList));
       return { success: true };
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
@@ -656,7 +816,7 @@ export const storeActions = {
         throw new Error(res.error || "Lỗi đồng bộ lên GitHub Gist");
       }
 
-      setStore("vaultItems", validatedList);
+      setStore("vaultItems", reconcile(validatedList));
       return { success: true };
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
@@ -792,7 +952,7 @@ export const storeActions = {
       const decrypted = await decryptData(payload.ciphertext, payload.iv, key);
       const items = VaultListSchema.parse(JSON.parse(decrypted));
 
-      setStore("vaultItems", items);
+      setStore("vaultItems", reconcile(items));
       setStore("syncing", false);
       return { success: true };
     } catch (err) {
@@ -846,7 +1006,7 @@ export const storeActions = {
         throw new Error(uploadRes.error || "Loi dong bo len Gist");
       }
 
-      setStore("vaultItems", importRes.combinedItems);
+      setStore("vaultItems", reconcile(importRes.combinedItems));
       console.log(`[${APP_NAME} Import] Import HOAN TAT thanh cong!`);
       return { success: true, importedCount: importRes.importedCount };
     } catch (err) {
@@ -894,7 +1054,41 @@ export const storeActions = {
     }
   },
 
-  showToast(message: string, type: "success" | "error" | "info" = "success") {
+  async openItem(item: VaultItem, targetView: View = View.ItemDetail) {
+    if (item.reprompt === 1) {
+      const authorized = await storeActions.requestReprompt();
+      if (!authorized) return;
+    }
+    setStore("selectedItem", item);
+    transitionToggle = !transitionToggle;
+    const suffix = transitionToggle ? "a" : "b";
+    setStore({
+      view: targetView,
+      transitionClass: `slide-forward-${suffix}`,
+    });
+  },
+
+  requestReprompt(): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      setStore("repromptModal", {
+        isOpen: true,
+        resolve,
+      });
+    });
+  },
+
+  resolveReprompt(success: boolean) {
+    const modal = store.repromptModal;
+    if (modal.resolve) {
+      modal.resolve(success);
+    }
+    setStore("repromptModal", {
+      isOpen: false,
+      resolve: null,
+    });
+  },
+
+  showToast(message: string, type: ToastType = "success") {
     if (toastTimeoutId) {
       clearTimeout(toastTimeoutId);
     }
@@ -911,7 +1105,7 @@ export const storeActions = {
   confirm(
     title: string,
     message: string,
-    type: "info" | "warning" | "danger" = "info",
+    type: ConfirmType = "info",
   ): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
       setStore("confirmModal", {
@@ -956,5 +1150,58 @@ export const storeActions = {
         [`${APP_NAME.toLowerCase()}_theme`]: newTheme,
       });
     }
+  },
+
+  async setPinUnlock(
+    pin: string,
+    requireRestart: boolean,
+  ): Promise<{ success: boolean; error?: string }> {
+    storeActions.setGlobalLoading(true);
+    try {
+      const masterPassword = await getMasterPassword();
+      if (!masterPassword) {
+        throw new Error("Vault is locked");
+      }
+      const rawSalt = generateSalt();
+      const pinSaltBase64 = btoa(String.fromCharCode(...rawSalt));
+      const pinKey = await deriveKey(pin, rawSalt);
+      const { iv, ciphertext } = await encryptData(masterPassword, pinKey);
+
+      await updateSettings({
+        pinUnlockEnabled: true,
+        pinUnlockValue: ciphertext,
+        pinUnlockIv: iv,
+        pinUnlockSalt: pinSaltBase64,
+        requireMasterPasswordOnRestart: requireRestart,
+      });
+
+      return { success: true };
+    } catch (err) {
+      console.error("[Store] Set PIN failed:", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      return { success: false, error: errMsg || "Failed to set PIN" };
+    } finally {
+      storeActions.setGlobalLoading(false);
+    }
+  },
+
+  async disablePinUnlock(): Promise<void> {
+    await updateSettings({
+      pinUnlockEnabled: false,
+      pinUnlockValue: "",
+      pinUnlockIv: "",
+      pinUnlockSalt: "",
+    });
+  },
+
+  async updateSessionTimeout(
+    timeout: string,
+    action: VaultTimeoutAction,
+  ): Promise<void> {
+    await updateSettings({
+      vaultTimeout: timeout,
+      vaultTimeoutAction: action,
+    });
+    chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
   },
 };

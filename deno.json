@@ -33,8 +33,6 @@
     "build": "deno run --node-modules-dir=auto -A build.ts",
     "watch": "deno run --node-modules-dir=auto -A build.ts --watch",
     "test": "deno test -A",
-    "fmt": "deno fmt",
-    "lint": "deno lint",
     "bump-version": "deno run -A version.ts"
   },
   "fmt": {

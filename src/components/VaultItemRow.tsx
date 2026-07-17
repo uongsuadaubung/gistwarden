@@ -1,5 +1,10 @@
 import { type Component, createSignal, type JSX, Show } from "solid-js";
-import { type VaultItem, VaultItemType, View } from "@/shared/types.ts";
+import {
+  type CardVaultItem,
+  type VaultItem,
+  VaultItemType,
+  View,
+} from "@/shared/types.ts";
 import {
   CopyIcon,
   ExternalLinkIcon,
@@ -10,6 +15,7 @@ import {
 } from "@/icons/svg/index.ts";
 import { storeActions } from "@/shared/store.ts";
 import { t } from "@/shared/i18n.ts";
+import CardBrandIcon from "./CardBrandIcon.tsx";
 
 interface VaultItemRowProps {
   item: VaultItem;
@@ -59,6 +65,17 @@ const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (
   );
 };
 
+const isCard = (item: VaultItem): item is CardVaultItem => {
+  return item.type === VaultItemType.Card;
+};
+
+const getCardSub = (item: CardVaultItem): string => {
+  const brand = item.card.brand || "Card";
+  const number = item.card.number || "";
+  const last4 = number.length > 4 ? number.slice(-4) : number;
+  return `${brand}${last4 ? `, *${last4}` : ""}`;
+};
+
 export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
   const domain = () => getDomain(props.item);
 
@@ -77,7 +94,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
   return (
     <div
       class="vault-item-row"
-      onClick={() => storeActions.selectItem(props.item)}
+      onClick={() => storeActions.openItem(props.item, View.ItemDetail)}
     >
       {/* Icon Container */}
       <div class="item-icon-container">
@@ -85,10 +102,19 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
           when={props.item.type === VaultItemType.SecureNote}
           fallback={
             <Show
-              when={domain()}
-              fallback={<KeyIcon />}
+              when={isCard(props.item) ? props.item : null}
+              fallback={
+                <Show
+                  when={domain()}
+                  fallback={<KeyIcon />}
+                >
+                  {(dom) => <Favicon domain={dom()} fallback={<KeyIcon />} />}
+                </Show>
+              }
             >
-              {(dom) => <Favicon domain={dom()} fallback={<KeyIcon />} />}
+              {(cardItem) => (
+                <CardBrandIcon brand={cardItem().card.brand || ""} />
+              )}
             </Show>
           }
         >
@@ -110,14 +136,23 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
               </div>
               <div class="item-sub">
                 <Show
-                  when={props.item.type === VaultItemType.Login &&
-                    props.item.login.fido2Credentials &&
-                    props.item.login.fido2Credentials.length > 0}
+                  when={isCard(props.item) ? props.item : null}
+                  fallback={
+                    <>
+                      <Show
+                        when={props.item.type === VaultItemType.Login &&
+                          props.item.login.fido2Credentials &&
+                          props.item.login.fido2Credentials.length > 0}
+                      >
+                        <span class="passkey-badge">PASSKEY</span>
+                      </Show>
+                      {(props.item.type === VaultItemType.Login &&
+                        props.item.login.username) || t("vault_no_username")}
+                    </>
+                  }
                 >
-                  <span class="passkey-badge">PASSKEY</span>
+                  {(cardItem) => getCardSub(cardItem())}
                 </Show>
-                {(props.item.type === VaultItemType.Login &&
-                  props.item.login.username) || t("vault_no_username")}
               </div>
             </>
           }
@@ -186,6 +221,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
             props.activeMenuId === props.item.id}
         >
           <div class="copy-dropdown" onClick={(e) => e.stopPropagation()}>
+            {/* Login Item Copy Actions */}
             <Show
               when={props.item.type === VaultItemType.Login &&
                 props.item.login.username}
@@ -231,6 +267,42 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
                 {t("detail_copy_totp")}
               </div>
             </Show>
+
+            {/* Card Item Copy Actions */}
+            <Show
+              when={isCard(props.item) ? props.item : null}
+            >
+              {(cardItem) => (
+                <>
+                  <Show when={cardItem().card.number}>
+                    <div
+                      class="dropdown-item"
+                      onClick={(e) =>
+                        props.onCopyText(
+                          cardItem().card.number || "",
+                          t("detail_copy_card_number"),
+                          e,
+                        )}
+                    >
+                      {t("detail_copy_card_number")}
+                    </div>
+                  </Show>
+                  <Show when={cardItem().card.code}>
+                    <div
+                      class="dropdown-item"
+                      onClick={(e) =>
+                        props.onCopyText(
+                          cardItem().card.code || "",
+                          t("detail_copy_card_code"),
+                          e,
+                        )}
+                    >
+                      {t("detail_copy_card_code")}
+                    </div>
+                  </Show>
+                </>
+              )}
+            </Show>
           </div>
         </Show>
 
@@ -249,8 +321,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
               class="dropdown-item"
               onClick={(e) => {
                 e.stopPropagation();
-                storeActions.selectItem(props.item);
-                storeActions.navigate(View.ItemEdit);
+                storeActions.openItem(props.item, View.ItemEdit);
               }}
             >
               {t("btn_edit")}

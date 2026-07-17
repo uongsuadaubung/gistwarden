@@ -27,7 +27,10 @@ import Fido2Prompt from "@/views/Fido2Prompt.tsx";
 import Language from "@/views/Language.tsx";
 import Theme from "@/views/Theme.tsx";
 import Welcome from "@/views/Welcome.tsx";
+import AccountSecurity from "@/views/AccountSecurity.tsx";
+import ChangeMasterPassword from "@/views/ChangeMasterPassword.tsx";
 import ConfirmModal from "@/components/ConfirmModal.tsx";
+import RepromptModal from "@/components/RepromptModal.tsx";
 import { t } from "@/shared/i18n.ts";
 
 const TransitionView: Component<{ when: boolean; children: JSX.Element }> = (
@@ -50,6 +53,35 @@ const App: Component = () => {
       document.documentElement.classList.add("mode-responsive");
     }
     await storeActions.init();
+
+    // Listen for background lock events
+    if (
+      typeof chrome !== "undefined" && chrome.runtime &&
+      chrome.runtime.onMessage
+    ) {
+      chrome.runtime.onMessage.addListener((message: { type: string }) => {
+        if (message.type === "VAULT_LOCKED") {
+          console.debug(
+            "[Popup] Received VAULT_LOCKED message from background",
+          );
+          storeActions.lock();
+        } else if (message.type === "VAULT_LOGGED_OUT") {
+          console.debug(
+            "[Popup] Received VAULT_LOGGED_OUT message from background",
+          );
+          storeActions.logout();
+        }
+      });
+    }
+
+    // Reset inactivity timeout on user interaction
+    const resetTimeout = () => {
+      chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
+    };
+
+    resetTimeout();
+    window.addEventListener("click", resetTimeout);
+    window.addEventListener("keydown", resetTimeout);
   });
 
   return (
@@ -111,6 +143,12 @@ const App: Component = () => {
                 <TransitionView when={store.view === View.Theme}>
                   <Theme />
                 </TransitionView>
+                <TransitionView when={store.view === View.AccountSecurity}>
+                  <AccountSecurity />
+                </TransitionView>
+                <TransitionView when={store.view === View.ChangeMasterPassword}>
+                  <ChangeMasterPassword />
+                </TransitionView>
               </div>
 
               {/* Bottom Nav Bar (hidden when viewing/editing details) */}
@@ -167,6 +205,9 @@ const App: Component = () => {
 
         {/* Reusable Confirmation Modal */}
         <ConfirmModal />
+
+        {/* Master Password Reprompt Modal */}
+        <RepromptModal />
 
         {/* Global Loading Overlay */}
         <Show when={store.globalLoading}>

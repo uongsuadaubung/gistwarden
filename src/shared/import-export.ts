@@ -1,8 +1,6 @@
 import {
-  ImportArraySchema,
   type ImportItem,
   ImportItemSchema,
-  ImportObjectSchema,
   type VaultItem,
   VaultItemType,
   VaultListSchema,
@@ -23,32 +21,30 @@ export function parseAndValidateImportJson(
   try {
     console.log(`[${APP_NAME} Import] Bắt đầu đọc file JSON...`);
     const parsed = JSON.parse(jsonString);
-    let itemsToImport: ImportItem[] = [];
+    const itemsToImport: ImportItem[] = [];
 
     // Extract raw items list
-    let rawItems: any[] = [];
+    let rawItems: unknown[] = [];
     if (Array.isArray(parsed)) {
       rawItems = parsed;
-    } else if (parsed && typeof parsed === "object" && Array.isArray(parsed.items)) {
+    } else if (
+      parsed && typeof parsed === "object" && Array.isArray(parsed.items)
+    ) {
       rawItems = parsed.items;
     } else {
       throw new Error("Định dạng JSON không hợp lệ hoặc không được hỗ trợ");
     }
 
-    // Validate and parse supported items individually, skipping unsupported types (Cards: 3, Identities: 4, etc.)
+    // Validate and parse supported items individually using the existing ImportItemSchema
     for (const rawItem of rawItems) {
-      if (rawItem && typeof rawItem === "object") {
-        const type = rawItem.type;
-        if (type === VaultItemType.Login || type === VaultItemType.SecureNote) {
-          const parseResult = ImportItemSchema.safeParse(rawItem);
-          if (parseResult.success) {
-            itemsToImport.push(parseResult.data);
-          } else {
-            console.warn(`[${APP_NAME} Import] Bỏ qua item lỗi định dạng:`, parseResult.error.issues);
-          }
-        } else {
-          console.log(`[${APP_NAME} Import] Bỏ qua item không hỗ trợ (type: ${type})`);
-        }
+      const parseResult = ImportItemSchema.safeParse(rawItem);
+      if (parseResult.success) {
+        itemsToImport.push(parseResult.data);
+      } else {
+        console.warn(
+          `[${APP_NAME} Import] Bỏ qua item không hỗ trợ hoặc lỗi định dạng:`,
+          parseResult.error.issues,
+        );
       }
     }
 
@@ -77,6 +73,7 @@ export function parseAndValidateImportJson(
           name: item.name || "Chưa đặt tên note",
           notes: item.notes || "",
           favorite: item.favorite || false,
+          reprompt: item.reprompt,
           fields: item.fields
             ? item.fields.map((f) => ({
               name: f.name || "",
@@ -84,6 +81,33 @@ export function parseAndValidateImportJson(
               type: f.type || 0,
             }))
             : [],
+          creationDate: now,
+          revisionDate: now,
+        };
+      } else if (item.type === VaultItemType.Card) {
+        const cardData = item.card || {};
+        return {
+          id: crypto.randomUUID(),
+          type: VaultItemType.Card,
+          name: item.name || "Chưa đặt tên card",
+          notes: item.notes || "",
+          favorite: item.favorite || false,
+          reprompt: item.reprompt,
+          fields: item.fields
+            ? item.fields.map((f) => ({
+              name: f.name || "",
+              value: f.value || "",
+              type: f.type || 0,
+            }))
+            : [],
+          card: {
+            cardholderName: cardData.cardholderName || "",
+            brand: cardData.brand || "",
+            number: cardData.number || "",
+            expMonth: cardData.expMonth || "",
+            expYear: cardData.expYear || "",
+            code: cardData.code || "",
+          },
           creationDate: now,
           revisionDate: now,
         };
@@ -96,6 +120,7 @@ export function parseAndValidateImportJson(
           name: item.name || "Chưa đặt tên login",
           notes: item.notes || "",
           favorite: item.favorite || false,
+          reprompt: item.reprompt,
           fields: item.fields
             ? item.fields.map((f) => ({
               name: f.name || "",

@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { VaultTimeoutActionSchema } from "./types.ts";
+import { SupportLanguage, SupportLanguageSchema } from "./i18n.ts";
 
 export const GithubUserSchema = z.object({
   login: z.string(),
@@ -14,8 +16,17 @@ export const SettingsSchema = z.object({
   lastSync: z.number().default(0),
   lastSyncedHash: z.string().default(""),
   cachedGithubUser: GithubUserSchema.nullable().default(null),
-  language: z.enum(["en", "vi"]).default("en"),
+  language: SupportLanguageSchema.default(SupportLanguage.En),
   welcomeAccepted: z.boolean().default(false),
+  // PIN settings
+  pinUnlockEnabled: z.boolean().default(false),
+  pinUnlockValue: z.string().default(""),
+  pinUnlockIv: z.string().default(""),
+  pinUnlockSalt: z.string().default(""),
+  requireMasterPasswordOnRestart: z.boolean().default(true),
+  // Session timeout settings
+  vaultTimeout: z.string().default("onRestart"),
+  vaultTimeoutAction: VaultTimeoutActionSchema.default("lock"),
 });
 
 export type AppSettings = z.infer<typeof SettingsSchema>;
@@ -92,6 +103,37 @@ export async function clearMasterPassword(): Promise<void> {
     await chrome.storage.session.remove("masterPassword");
   } catch (e) {
     console.debug("[Storage] Failed to clear session storage:", e);
+  }
+}
+
+export async function isSessionUnlocked(): Promise<boolean> {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
+  ) {
+    return false;
+  }
+  try {
+    const res = await chrome.storage.session.get("sessionUnlocked");
+    return res && typeof res === "object" && res.sessionUnlocked === "true";
+  } catch (_e) {
+    return false;
+  }
+}
+
+export async function setSessionUnlocked(unlocked: boolean): Promise<void> {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
+  ) {
+    return;
+  }
+  try {
+    if (unlocked) {
+      await chrome.storage.session.set({ sessionUnlocked: "true" });
+    } else {
+      await chrome.storage.session.remove("sessionUnlocked");
+    }
+  } catch (e) {
+    console.debug("[Storage] Failed to update sessionUnlocked storage:", e);
   }
 }
 

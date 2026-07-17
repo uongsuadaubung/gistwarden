@@ -1,7 +1,8 @@
 import { type Component, Show } from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
-import { ArrowLeftIcon } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
+import DetailHeader from "@/components/DetailHeader.tsx";
+import { ThemeMode } from "@/shared/types.ts";
 
 export const Theme: Component = () => {
   const handleBack = () => {
@@ -12,25 +13,20 @@ export const Theme: Component = () => {
     <div class="app-container">
       <div class="app-body">
         {/* Header */}
-        <div class="detail-header mt-0 mb-16">
-          <div class="back-btn" onClick={handleBack}>
-            <ArrowLeftIcon />
-          </div>
-          <div class="detail-title">{t("settings_theme_label")}</div>
-        </div>
+        <DetailHeader title={t("settings_theme_label")} onBack={handleBack} />
 
         <div class="card card-list">
           <div
             class="setting-row"
             onClick={() => {
-              storeActions.updateTheme("dark");
+              storeActions.updateTheme(ThemeMode.Dark);
               storeActions.navigate(View.Settings);
             }}
           >
             <div class="setting-row-left">
               <span class="font-sz-14">{t("settings_theme_dark")}</span>
             </div>
-            <Show when={store.theme === "dark"}>
+            <Show when={store.theme === ThemeMode.Dark}>
               <svg
                 class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"
@@ -49,14 +45,14 @@ export const Theme: Component = () => {
           <div
             class="setting-row"
             onClick={() => {
-              storeActions.updateTheme("light");
+              storeActions.updateTheme(ThemeMode.Light);
               storeActions.navigate(View.Settings);
             }}
           >
             <div class="setting-row-left">
               <span class="font-sz-14">{t("settings_theme_light")}</span>
             </div>
-            <Show when={store.theme === "light"}>
+            <Show when={store.theme === ThemeMode.Light}>
               <svg
                 class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"
