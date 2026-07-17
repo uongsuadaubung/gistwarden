@@ -53,31 +53,33 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
               value={props.privateKey}
               readonly={true}
               placeholder={t("ssh_import_from_clipboard") || "Paste unencrypted OpenSSH Private Key from clipboard..."}
-              class="w-100 pr-80"
+              class="w-100"
+              rightActions={
+                <>
+                  <button
+                    type="button"
+                    class="action-btn input-action-btn"
+                    onClick={() => setShowPrivateKey(!showPrivateKey())}
+                    title={t("detail_ssh_private_key")}
+                  >
+                    <Show
+                      fallback={<EyeIcon class="icon-inline" />}
+                      when={showPrivateKey()}
+                    >
+                      <EyeOffIcon class="icon-inline" />
+                    </Show>
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn input-action-btn"
+                    onClick={handlePasteSshKey}
+                    title={t("ssh_import_from_clipboard") || "Paste from clipboard"}
+                  >
+                    <UploadIcon class="icon-inline" />
+                  </button>
+                </>
+              }
             />
-            <div class="input-right-actions">
-              <button
-                type="button"
-                class="action-btn input-action-btn"
-                onClick={() => setShowPrivateKey(!showPrivateKey())}
-                title={t("detail_ssh_private_key")}
-              >
-                <Show
-                  fallback={<EyeIcon class="icon-inline" />}
-                  when={showPrivateKey()}
-                >
-                  <EyeOffIcon class="icon-inline" />
-                </Show>
-              </button>
-              <button
-                type="button"
-                class="action-btn input-action-btn"
-                onClick={handlePasteSshKey}
-                title={t("ssh_import_from_clipboard") || "Paste from clipboard"}
-              >
-                <UploadIcon class="icon-inline" />
-              </button>
-            </div>
           </div>
         </FormField>
 

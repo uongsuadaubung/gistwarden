@@ -11,6 +11,7 @@ import { t } from "@/shared/i18n.ts";
 import { APP_NAME } from "@/shared/constants.ts";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/shared/totp-utils.ts";
+import { store } from "@/shared/store.ts";
 import {
   CopyIcon,
   ExternalLinkIcon,
@@ -39,7 +40,7 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
 
   const updateTotp = () => {
     const rawSecret = props.item.login.totp || "";
-    const epoch = Math.floor(Date.now() / 1000);
+    const epoch = Math.floor((Date.now() + store.timeOffset) / 1000);
     const remaining = 30 - (epoch % 30);
     setTotpRemaining(remaining);
 
@@ -54,7 +55,7 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
       const totp = new OTPAuth.TOTP({
         secret: OTPAuth.Secret.fromBase32(secret),
       });
-      const rawCode = totp.generate();
+      const rawCode = totp.generate({ timestamp: Date.now() + store.timeOffset });
       const formatted = rawCode.slice(0, 3) + " " + rawCode.slice(3);
       setTotpCode(formatted);
     } catch (err) {

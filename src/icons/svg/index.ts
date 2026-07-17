@@ -13,6 +13,7 @@ export { default as SearchIcon } from "./SearchIcon.tsx";
 export { default as PlusIcon } from "./PlusIcon.tsx";
 export { default as SyncIcon } from "./SyncIcon.tsx";
 export { default as ThemeIcon } from "./ThemeIcon.tsx";
+export { default as PaletteIcon } from "./PaletteIcon.tsx";
 export { default as KeyIcon } from "./KeyIcon.tsx";
 export { default as UploadIcon } from "./UploadIcon.tsx";
 export { default as TrashIcon } from "./TrashIcon.tsx";

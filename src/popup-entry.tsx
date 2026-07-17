@@ -26,6 +26,9 @@ import VaultOptions from "@/views/VaultOptions.tsx";
 import Fido2Prompt from "@/views/Fido2Prompt.tsx";
 import Language from "@/views/Language.tsx";
 import Theme from "@/views/Theme.tsx";
+import Appearance from "@/views/Appearance.tsx";
+import About from "@/views/About.tsx";
+import Troubleshooting from "@/views/Troubleshooting.tsx";
 import Welcome from "@/views/Welcome.tsx";
 import AccountSecurity from "@/views/AccountSecurity.tsx";
 import ChangeMasterPassword from "@/views/ChangeMasterPassword.tsx";
@@ -142,6 +145,15 @@ const App: Component = () => {
                 </TransitionView>
                 <TransitionView when={store.view === View.Theme}>
                   <Theme />
+                </TransitionView>
+                <TransitionView when={store.view === View.Appearance}>
+                  <Appearance />
+                </TransitionView>
+                <TransitionView when={store.view === View.About}>
+                  <About />
+                </TransitionView>
+                <TransitionView when={store.view === View.Troubleshooting}>
+                  <Troubleshooting />
                 </TransitionView>
                 <TransitionView when={store.view === View.AccountSecurity}>
                   <AccountSecurity />

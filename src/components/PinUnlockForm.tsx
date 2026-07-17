@@ -33,21 +33,21 @@ export const PinUnlockForm: Component<PinUnlockFormProps> = (props) => {
             value={pin()}
             onInput={(e) => setPin(e.currentTarget.value)}
             disabled={props.loading}
-            class="w-100 pr-40 font-mono"
+            class="w-100 font-mono"
             autofocus
             required
+            rightActions={
+              <button
+                type="button"
+                class="action-btn input-action-btn"
+                onClick={() => setShowPin(!showPin())}
+              >
+                <Show fallback={<EyeIcon class="icon-inline" />} when={showPin()}>
+                  <EyeOffIcon class="icon-inline" />
+                </Show>
+              </button>
+            }
           />
-          <div class="input-right-actions">
-            <button
-              type="button"
-              class="action-btn input-action-btn"
-              onClick={() => setShowPin(!showPin())}
-            >
-              <Show fallback={<EyeIcon class="icon-inline" />} when={showPin()}>
-                <EyeOffIcon class="icon-inline" />
-              </Show>
-            </button>
-          </div>
         </div>
       </div>
 

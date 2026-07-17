@@ -34,7 +34,7 @@ import {
 import { setLanguage, SupportLanguage, t } from "./i18n.ts";
 import { parseAndValidateImportJson } from "./import-export.ts";
 import { syncVaultToGist } from "./sync-utils.ts";
-import { APP_NAME } from "./constants.ts";
+import { APP_NAME, OAUTH_WORKER_URL } from "./constants.ts";
 export { View };
 
 export interface AppStore {
@@ -87,6 +87,7 @@ export interface AppStore {
   vaultTimeout: string;
   vaultTimeoutAction: VaultTimeoutAction;
   sessionUnlocked: boolean;
+  timeOffset: number;
 }
 
 const [store, setStore] = createStore<AppStore>({
@@ -134,6 +135,7 @@ const [store, setStore] = createStore<AppStore>({
   vaultTimeout: "onRestart",
   vaultTimeoutAction: "lock",
   sessionUnlocked: false,
+  timeOffset: 0,
 });
 
 export { store };
@@ -148,9 +150,12 @@ const viewDepths: Record<View, number> = {
   [View.Settings]: 3,
   [View.ItemDetail]: 2,
   [View.ItemEdit]: 3,
-  [View.Language]: 4,
+  [View.Appearance]: 4,
+  [View.About]: 4,
+  [View.Troubleshooting]: 5,
+  [View.Language]: 5,
   [View.VaultOptions]: 4,
-  [View.Theme]: 4,
+  [View.Theme]: 5,
   [View.Fido2Prompt]: 5,
   [View.Welcome]: 0,
   [View.AccountSecurity]: 4,
@@ -199,6 +204,7 @@ export const storeActions = {
       vaultTimeout: settings.vaultTimeout,
       vaultTimeoutAction: settings.vaultTimeoutAction,
       sessionUnlocked: sessionUnlockedVal,
+      timeOffset: settings.timeOffset || 0,
     });
 
     setLanguage(
@@ -1051,5 +1057,28 @@ export const storeActions = {
       vaultTimeoutAction: action,
     });
     chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
+  },
+
+  async syncTimeOffset(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(`${OAUTH_WORKER_URL}/time`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.unixtime === "number") {
+          const serverTime = data.unixtime * 1000;
+          const localTime = Date.now();
+          const offset = serverTime - localTime;
+          console.log(`[Store] Time sync successful. Offset: ${offset}ms`);
+          setStore("timeOffset", offset);
+          await updateSettings({ timeOffset: offset });
+          return { success: true };
+        }
+      }
+      return { success: false, error: "Không thể đọc dữ liệu thời gian từ phản hồi" };
+    } catch (err) {
+      console.warn("[Store] Failed to sync time offset:", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      return { success: false, error: errMsg };
+    }
   },
 };

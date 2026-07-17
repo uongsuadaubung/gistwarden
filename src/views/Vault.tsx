@@ -173,7 +173,7 @@ export const Vault: Component = () => {
       const totp = new OTPAuth.TOTP({
         secret: OTPAuth.Secret.fromBase32(parseTotpSecret(rawSecret)),
       });
-      const code = totp.generate();
+      const code = totp.generate({ timestamp: Date.now() + store.timeOffset });
       await navigator.clipboard.writeText(code);
       storeActions.showToast(t("detail_totp_copied"), "success");
     } catch (err) {

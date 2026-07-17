@@ -5,7 +5,7 @@ import DetailHeader from "@/components/DetailHeader.tsx";
 
 export const Language: Component = () => {
   const handleBack = () => {
-    storeActions.navigate(View.Settings);
+    storeActions.navigate(View.Appearance);
   };
 
   return (
@@ -22,7 +22,7 @@ export const Language: Component = () => {
             class="setting-row"
             onClick={() => {
               storeActions.updateLanguage("en");
-              storeActions.navigate(View.Settings);
+              storeActions.navigate(View.Appearance);
             }}
           >
             <div class="setting-row-left">
@@ -48,7 +48,7 @@ export const Language: Component = () => {
             class="setting-row"
             onClick={() => {
               storeActions.updateLanguage("vi");
-              storeActions.navigate(View.Settings);
+              storeActions.navigate(View.Appearance);
             }}
           >
             <div class="setting-row-left">

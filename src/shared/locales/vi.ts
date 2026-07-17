@@ -257,8 +257,21 @@ export default {
   settings_sync_never: "Chưa bao giờ",
   settings_label_oauth: "Cơ chế đăng nhập",
   settings_version: "Phiên bản: {ver}",
-  settings_theme_label: "Giao diện",
+  settings_theme_label: "Chủ đề",
   settings_theme_sub: "Hiện tại: {theme}",
+  settings_appearance_label: "Giao diện",
+  settings_appearance_sub: "Ngôn ngữ và chủ đề sáng/tối",
+  settings_about_label: "Giới thiệu",
+  settings_about_sub: "Thông tin phiên bản và trang chủ dự án",
+  settings_rate_label: "Đánh giá ứng dụng",
+  settings_rate_sub: "Ủng hộ chúng tôi trên cửa hàng ứng dụng",
+  settings_sync_time_label: "Đồng bộ thời gian",
+  settings_sync_time_sub: "Đồng bộ đồng hồ với máy chủ cho mã TOTP",
+  settings_sync_time_loading: "Đang đồng bộ thời gian...",
+  settings_sync_time_success: "Đồng bộ thời gian thành công!",
+  settings_sync_time_error: "Đồng bộ thời gian thất bại. Vui lòng kiểm tra kết nối mạng.",
+  settings_troubleshooting_label: "Xử lý sự cố",
+  settings_troubleshooting_sub: "Khắc phục các lỗi về đồng bộ và thời gian",
   settings_theme_dark: "Tối",
   settings_theme_light: "Sáng",
   settings_vault_options_label: "Tùy chọn két sắt",
@@ -489,8 +502,9 @@ export default {
   guide_totp_step2_title: "Bước 2: Tự động lưu và hiển thị mã OTP",
   guide_totp_step2_desc:
     "Sau khi quét, khóa bí mật sẽ tự động được giải mã và lưu lại. {APP_NAME} sẽ bắt đầu sinh mã xác thực 6 chữ số và đếm ngược 30 giây. Bạn chỉ cần click chuột vào mã này để sao chép nhanh và dán vào ô xác thực của website.",
-  guide_totp_step2_img_info:
-    "Mã xác thực tự động tạo và có nút click sao chép tiện lợi",
+  guide_totp_step2_img_info: "Mã xác thực tự động tạo và có nút click sao chép tiện lợi",
+  guide_totp_step3_title: "Bước 3: Sửa lỗi mã bị sai (Đồng bộ thời gian)",
+  guide_totp_step3_desc: "Nếu mã 2FA sinh ra bị báo không chính xác trên website, có thể đồng hồ máy tính của bạn bị lệch. Bạn có thể tự sửa nhanh bằng cách vào Cài đặt -> Giới thiệu -> Xử lý sự cố -> nhấn 'Đồng bộ thời gian' để lấy lại giờ chuẩn từ máy chủ.",
 
   // Guide Security Tab
   guide_sec_title: "Kiến trúc Bảo mật",
@@ -528,7 +542,7 @@ export default {
     "Mở ứng dụng hoặc tiện ích Bitwarden -> Vào Cài đặt -> Xuất két sắt -> Chọn định dạng '.json (Không mã hóa)' và tải về máy tính.",
   guide_ie_import_step2_title: "Bước 2: Nạp vào {APP_NAME}",
   guide_ie_import_step2_desc:
-    "Mở {APP_NAME} -> Vào mục Cài đặt -> Nhập tài khoản (Import JSON) -> Chọn file JSON vừa tải về ở Bước 1.",
+    "Mở {APP_NAME} -> Vào mục Cài đặt -> Tùy chọn két sắt (Vault Options) -> Nhập tài khoản (Import JSON) -> Chọn file JSON vừa tải về ở Bước 1.",
   guide_ie_import_step3_title: "Bước 3: Lưu trữ và đồng bộ",
   guide_ie_import_step3_desc:
     "Hệ thống sẽ mã hóa toàn bộ dữ liệu này bằng Master Password của bạn và đẩy trực tiếp lên GitHub Gist. File JSON thô của Bitwarden trên máy tính nên được xóa đi ngay lập tức để bảo mật.",
@@ -536,7 +550,7 @@ export default {
   guide_ie_export_desc:
     "Để có thêm bản lưu trữ offline đề phòng trường hợp mất tài khoản GitHub hoặc hỏng máy:",
   guide_ie_export_step1:
-    "Vào Cài đặt của {APP_NAME} -> Chọn 'Xuất tài khoản (Export JSON)'.",
+    "Vào Cài đặt của {APP_NAME} -> Tùy chọn két sắt (Vault Options) -> Chọn 'Xuất tài khoản (Export JSON)'.",
   guide_ie_export_step2: "Nhập mật khẩu Master để giải mã cơ sở dữ liệu.",
   guide_ie_export_step3:
     "Bấm 'Giải mã & Tải xuống' để lưu file `accounts.json` chưa mã hóa về máy. Hãy bảo vệ file này cẩn thận vì nó chứa toàn bộ mật khẩu dạng chữ rõ!",

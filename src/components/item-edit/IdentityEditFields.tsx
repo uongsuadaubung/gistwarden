@@ -119,19 +119,19 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
               type={showSsn() ? "text" : "password"}
               value={props.ssn}
               onInput={(e) => props.setSsn(e.currentTarget.value)}
-              class="w-100 pr-40"
+              class="w-100"
+              rightActions={
+                <button
+                  type="button"
+                  class="action-btn input-action-btn"
+                  onClick={() => setShowSsn(!showSsn())}
+                >
+                  <Show fallback={<EyeIcon class="icon-inline" />} when={showSsn()}>
+                    <EyeOffIcon class="icon-inline" />
+                  </Show>
+                </button>
+              }
             />
-            <div class="input-right-actions">
-              <button
-                type="button"
-                class="action-btn input-action-btn"
-                onClick={() => setShowSsn(!showSsn())}
-              >
-                <Show fallback={<EyeIcon class="icon-inline" />} when={showSsn()}>
-                  <EyeOffIcon class="icon-inline" />
-                </Show>
-              </button>
-            </div>
           </div>
         </FormField>
 
@@ -142,19 +142,19 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
               type={showPassport() ? "text" : "password"}
               value={props.passportNumber}
               onInput={(e) => props.setPassportNumber(e.currentTarget.value)}
-              class="w-100 pr-40"
+              class="w-100"
+              rightActions={
+                <button
+                  type="button"
+                  class="action-btn input-action-btn"
+                  onClick={() => setShowPassport(!showPassport())}
+                >
+                  <Show fallback={<EyeIcon class="icon-inline" />} when={showPassport()}>
+                    <EyeOffIcon class="icon-inline" />
+                  </Show>
+                </button>
+              }
             />
-            <div class="input-right-actions">
-              <button
-                type="button"
-                class="action-btn input-action-btn"
-                onClick={() => setShowPassport(!showPassport())}
-              >
-                <Show fallback={<EyeIcon class="icon-inline" />} when={showPassport()}>
-                  <EyeOffIcon class="icon-inline" />
-                </Show>
-              </button>
-            </div>
           </div>
         </FormField>
 

@@ -95,24 +95,24 @@ export default function SetPinModal(props: SetPinModalProps) {
                   value={pin()}
                   onInput={(e) => setPin(e.currentTarget.value)}
                   placeholder={t("login_pin_placeholder")}
-                  class="w-100 pr-40 font-mono"
+                  class="w-100 font-mono"
                   autofocus
                   required
-                />
-                <div class="input-right-actions">
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    onClick={() => setShowPin(!showPin())}
-                  >
-                    <Show
-                      fallback={<EyeIcon class="icon-inline" />}
-                      when={showPin()}
+                  rightActions={
+                    <button
+                      type="button"
+                      class="action-btn input-action-btn"
+                      onClick={() => setShowPin(!showPin())}
                     >
-                      <EyeOffIcon class="icon-inline" />
-                    </Show>
-                  </button>
-                </div>
+                      <Show
+                        fallback={<EyeIcon class="icon-inline" />}
+                        when={showPin()}
+                      >
+                        <EyeOffIcon class="icon-inline" />
+                      </Show>
+                    </button>
+                  }
+                />
               </div>
             </div>
 

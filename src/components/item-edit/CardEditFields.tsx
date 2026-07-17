@@ -46,26 +46,26 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
             <Input
               id="card-number"
               type={showCardNumber() ? "text" : "password"}
-              class="password-font pr-40"
+              class="password-font"
               value={props.cardNumber}
               onInput={(e) => props.setCardNumber(e.currentTarget.value)}
               placeholder="•••• •••• •••• ••••"
-            />
-            <div class="input-right-actions">
-              <button
-                type="button"
-                class="action-btn input-action-btn"
-                onClick={() => setShowCardNumber(!showCardNumber())}
-                title={t("detail_card_number")}
-              >
-                <Show
-                  when={showCardNumber()}
-                  fallback={<EyeIcon class="icon-inline" />}
+              rightActions={
+                <button
+                  type="button"
+                  class="action-btn input-action-btn"
+                  onClick={() => setShowCardNumber(!showCardNumber())}
+                  title={t("detail_card_number")}
                 >
-                  <EyeOffIcon class="icon-inline" />
-                </Show>
-              </button>
-            </div>
+                  <Show
+                    when={showCardNumber()}
+                    fallback={<EyeIcon class="icon-inline" />}
+                  >
+                    <EyeOffIcon class="icon-inline" />
+                  </Show>
+                </button>
+              }
+            />
           </div>
         </FormField>
 
@@ -131,26 +131,26 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
             <Input
               id="card-code"
               type={showCardCode() ? "text" : "password"}
-              class="password-font pr-40"
+              class="password-font"
               value={props.cardCode}
               onInput={(e) => props.setCardCode(e.currentTarget.value)}
               placeholder="123"
-            />
-            <div class="input-right-actions">
-              <button
-                type="button"
-                class="action-btn input-action-btn"
-                onClick={() => setShowCardCode(!showCardCode())}
-                title={t("detail_card_security_code")}
-              >
-                <Show
-                  when={showCardCode()}
-                  fallback={<EyeIcon class="icon-inline" />}
+              rightActions={
+                <button
+                  type="button"
+                  class="action-btn input-action-btn"
+                  onClick={() => setShowCardCode(!showCardCode())}
+                  title={t("detail_card_security_code")}
                 >
-                  <EyeOffIcon class="icon-inline" />
-                </Show>
-              </button>
-            </div>
+                  <Show
+                    when={showCardCode()}
+                    fallback={<EyeIcon class="icon-inline" />}
+                  >
+                    <EyeOffIcon class="icon-inline" />
+                  </Show>
+                </button>
+              }
+            />
           </div>
         </FormField>
       </div>

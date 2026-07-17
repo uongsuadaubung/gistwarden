@@ -27,6 +27,7 @@ export const SettingsSchema = z.object({
   // Session timeout settings
   vaultTimeout: z.string().default("onRestart"),
   vaultTimeoutAction: VaultTimeoutActionSchema.default("lock"),
+  timeOffset: z.number().default(0),
 });
 
 export type AppSettings = z.infer<typeof SettingsSchema>;

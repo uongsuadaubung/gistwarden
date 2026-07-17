@@ -89,24 +89,24 @@ export default function RepromptModal() {
                   value={password()}
                   onInput={(e) => setPassword(e.currentTarget.value)}
                   placeholder={t("reprompt_modal_placeholder")}
-                  class="w-100 pr-40"
+                  class="w-100"
                   autofocus
                   required
-                />
-                <div class="input-right-actions">
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    onClick={() => setShowPassword(!showPassword())}
-                  >
-                    <Show
-                      fallback={<EyeIcon class="icon-inline" />}
-                      when={showPassword()}
+                  rightActions={
+                    <button
+                      type="button"
+                      class="action-btn input-action-btn"
+                      onClick={() => setShowPassword(!showPassword())}
                     >
-                      <EyeOffIcon class="icon-inline" />
-                    </Show>
-                  </button>
-                </div>
+                      <Show
+                        fallback={<EyeIcon class="icon-inline" />}
+                        when={showPassword()}
+                      >
+                        <EyeOffIcon class="icon-inline" />
+                      </Show>
+                    </button>
+                  }
+                />
               </div>
             </div>
 

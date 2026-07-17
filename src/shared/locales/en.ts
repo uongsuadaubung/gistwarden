@@ -259,6 +259,19 @@ export default {
   settings_version: "Version: {ver}",
   settings_theme_label: "Theme",
   settings_theme_sub: "Current: {theme}",
+  settings_appearance_label: "Appearance",
+  settings_appearance_sub: "Language and theme settings",
+  settings_about_label: "About",
+  settings_about_sub: "Version and homepage information",
+  settings_rate_label: "Rate & Review",
+  settings_rate_sub: "Support us on the web store",
+  settings_sync_time_label: "Sync Time",
+  settings_sync_time_sub: "Synchronize clock with server for TOTP",
+  settings_sync_time_loading: "Syncing time...",
+  settings_sync_time_success: "Time synchronized successfully!",
+  settings_sync_time_error: "Failed to synchronize time. Please check your internet connection.",
+  settings_troubleshooting_label: "Troubleshooting",
+  settings_troubleshooting_sub: "Fix sync and time issues",
   settings_theme_dark: "Dark",
   settings_theme_light: "Light",
   settings_vault_options_label: "Vault Options",
@@ -489,6 +502,9 @@ export default {
     "After scanning, the secret key is decoded and saved. {APP_NAME} will start generating 6-digit authentication codes that refresh every 30 seconds. Click on the code to copy it, then paste it directly into the website's verification box.",
   guide_totp_step2_img_info:
     "Verification code is generated automatically with a one-click copy button",
+  guide_totp_step3_title: "Step 3: Fix incorrect codes (Time Sync)",
+  guide_totp_step3_desc:
+    "If the generated 2FA codes are rejected by websites, your computer clock might be out of sync. You can easily fix this by going to Settings -> About -> Troubleshooting -> Sync Time to align your extension with the correct server time.",
 
   // Guide Security Tab
   guide_sec_title: "Security Architecture",
@@ -526,7 +542,7 @@ export default {
     "Open Bitwarden -> Go to Settings -> Export Vault -> Choose '.json (unencrypted)' format and download it to your computer.",
   guide_ie_import_step2_title: "Step 2: Load into {APP_NAME}",
   guide_ie_import_step2_desc:
-    "Open {APP_NAME} -> Settings -> Import Accounts (Import JSON) -> Select the JSON file you downloaded in Step 1.",
+    "Open {APP_NAME} -> Settings -> Vault Options -> Import Accounts (Import JSON) -> Select the JSON file you downloaded in Step 1.",
   guide_ie_import_step3_title: "Step 3: Encrypt and Sync",
   guide_ie_import_step3_desc:
     "The system will encrypt all imported accounts using your Master Password and push them directly to GitHub Gist. You should delete the unencrypted Bitwarden JSON file from your disk immediately for security.",
@@ -534,7 +550,7 @@ export default {
   guide_ie_export_desc:
     "To have an offline backup copy in case you lose access to your GitHub account:",
   guide_ie_export_step1:
-    "Go to {APP_NAME} Settings -> Choose 'Export Accounts (Export JSON)'.",
+    "Go to {APP_NAME} Settings -> Vault Options -> Choose 'Export Accounts (Export JSON)'.",
   guide_ie_export_step2:
     "Enter your Master Password to decrypt the local database.",
   guide_ie_export_step3:

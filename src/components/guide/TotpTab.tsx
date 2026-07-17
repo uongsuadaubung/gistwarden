@@ -75,6 +75,15 @@ export const TotpTab: Component = () => {
             </div>
           </div>
         </div>
+
+        {/* STEP 3 */}
+        <div class="vertical-step-card">
+          <div class="step-index">3</div>
+          <div class="step-content">
+            <h3>{t("guide_totp_step3_title")}</h3>
+            <p>{t("guide_totp_step3_desc")}</p>
+          </div>
+        </div>
       </div>
     </section>
   );

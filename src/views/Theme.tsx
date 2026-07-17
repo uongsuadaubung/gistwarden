@@ -6,7 +6,7 @@ import { ThemeMode } from "@/shared/types.ts";
 
 export const Theme: Component = () => {
   const handleBack = () => {
-    storeActions.navigate(View.Settings);
+    storeActions.navigate(View.Appearance);
   };
 
   return (
@@ -20,7 +20,7 @@ export const Theme: Component = () => {
             class="setting-row"
             onClick={() => {
               storeActions.updateTheme(ThemeMode.Dark);
-              storeActions.navigate(View.Settings);
+              storeActions.navigate(View.Appearance);
             }}
           >
             <div class="setting-row-left">
@@ -46,7 +46,7 @@ export const Theme: Component = () => {
             class="setting-row"
             onClick={() => {
               storeActions.updateTheme(ThemeMode.Light);
-              storeActions.navigate(View.Settings);
+              storeActions.navigate(View.Appearance);
             }}
           >
             <div class="setting-row-left">
