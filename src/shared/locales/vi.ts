@@ -391,6 +391,23 @@ export default {
   gen_error_charset_empty: "Chọn ít nhất một kiểu ký tự!",
   gen_btn_generate: "Tạo mật khẩu",
   gen_btn_copy: "Sao chép",
+  gen_tab_password: "Mật khẩu",
+  gen_tab_passphrase: "Cụm mật khẩu",
+  gen_tab_username: "Tên đăng nhập",
+  gen_options_title: "Tùy chọn",
+  gen_include_title: "Bao gồm",
+  gen_min_numbers: "Tối thiểu chữ số",
+  gen_min_specials: "Tối thiểu ký tự đặc biệt",
+  gen_error_min_exceeds_length: "Số lượng tối thiểu vượt quá độ dài mật khẩu!",
+  gen_tab_passphrase_placeholder:
+    "Bộ sinh cụm mật khẩu đang được phát triển...",
+  gen_tab_username_placeholder: "Bộ sinh tên đăng nhập đang được phát triển...",
+  gen_label_num_words: "Số lượng từ",
+  gen_label_word_separator: "Ký tự phân tách từ",
+  gen_opt_capitalize: "Viết hoa chữ cái đầu",
+  gen_opt_include_number: "Bao gồm số",
+  gen_passphrase_hint:
+    "Giá trị phải từ 3 đến 20. Sử dụng từ 6 từ trở lên để tạo cụm mật khẩu mạnh.",
 
   // FIDO2 Prompt View
   fido2_title: "Xác thực Passkey",
