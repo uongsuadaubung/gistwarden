@@ -389,6 +389,22 @@ export default {
   gen_error_charset_empty: "Choose at least one character type!",
   gen_btn_generate: "Generate Password",
   gen_btn_copy: "Copy",
+  gen_tab_password: "Password",
+  gen_tab_passphrase: "Passphrase",
+  gen_tab_username: "Username",
+  gen_options_title: "Options",
+  gen_include_title: "Include",
+  gen_min_numbers: "Minimum numbers",
+  gen_min_specials: "Minimum special",
+  gen_error_min_exceeds_length: "Min options exceed length!",
+  gen_tab_passphrase_placeholder: "Passphrase generator is coming soon...",
+  gen_tab_username_placeholder: "Username generator is coming soon...",
+  gen_label_num_words: "Number of words",
+  gen_label_word_separator: "Word separator",
+  gen_opt_capitalize: "Capitalize",
+  gen_opt_include_number: "Include number",
+  gen_passphrase_hint:
+    "Value must be between 3 and 20. Use 6 words or more to generate a strong passphrase.",
 
   // FIDO2 Prompt View
   fido2_title: "Passkey Authentication",
