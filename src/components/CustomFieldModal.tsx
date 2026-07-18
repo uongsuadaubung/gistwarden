@@ -2,6 +2,7 @@ import { createEffect, createSignal, Show } from "solid-js";
 import { t } from "../shared/i18n.ts";
 import Input from "./Input.tsx";
 import Button from "./Button.tsx";
+import Select from "./Select.tsx";
 import { CustomFieldType, type VaultField } from "../shared/types.ts";
 
 interface CustomFieldModalProps {
@@ -17,6 +18,14 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
   const [value, setValue] = createSignal("");
   const [type, setType] = createSignal<CustomFieldType>(CustomFieldType.Text);
   const [isClosing, setIsClosing] = createSignal(false);
+
+  const fieldTypeOptions = () => [
+    { value: CustomFieldType.Text, label: t("edit_field_type_text") },
+    { value: CustomFieldType.Hidden, label: t("edit_field_type_hidden") },
+    { value: CustomFieldType.Boolean, label: t("edit_field_type_boolean") },
+    { value: CustomFieldType.Linked, label: t("edit_field_type_linked") },
+    { value: CustomFieldType.Divider, label: t("edit_field_type_divider") },
+  ];
 
   createEffect(() => {
     if (props.isOpen) {
@@ -88,8 +97,7 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
           <div class="modal-panel-body">
             <div class="form-group">
               <label>{t("edit_field_modal_label_type")}</label>
-              <select
-                class="input-control"
+              <Select
                 value={type()}
                 onChange={(e) => {
                   const val = parseInt(e.currentTarget.value);
@@ -103,23 +111,8 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
                     setType(val);
                   }
                 }}
-              >
-                <option value={CustomFieldType.Text}>
-                  {t("edit_field_type_text")}
-                </option>
-                <option value={CustomFieldType.Hidden}>
-                  {t("edit_field_type_hidden")}
-                </option>
-                <option value={CustomFieldType.Boolean}>
-                  {t("edit_field_type_boolean")}
-                </option>
-                <option value={CustomFieldType.Linked}>
-                  {t("edit_field_type_linked")}
-                </option>
-                <option value={CustomFieldType.Divider}>
-                  {t("edit_field_type_divider")}
-                </option>
-              </select>
+                options={fieldTypeOptions()}
+              />
             </div>
 
             <div class="form-group">
