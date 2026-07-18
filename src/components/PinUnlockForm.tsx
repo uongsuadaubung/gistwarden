@@ -42,7 +42,10 @@ export const PinUnlockForm: Component<PinUnlockFormProps> = (props) => {
                 class="action-btn input-action-btn"
                 onClick={() => setShowPin(!showPin())}
               >
-                <Show fallback={<EyeIcon class="icon-inline" />} when={showPin()}>
+                <Show
+                  fallback={<EyeIcon class="icon-inline" />}
+                  when={showPin()}
+                >
                   <EyeOffIcon class="icon-inline" />
                 </Show>
               </button>

@@ -43,7 +43,9 @@ interface IdentityEditFieldsProps {
   setCountry: (val: string) => void;
 }
 
-export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) => {
+export const IdentityEditFields: Component<IdentityEditFieldsProps> = (
+  props,
+) => {
   const [showSsn, setShowSsn] = createSignal(false);
   const [showPassport, setShowPassport] = createSignal(false);
 
@@ -55,7 +57,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
       </div>
       <div class="card p-16 mb-16 d-flex flex-column gap-12">
         <div class="grid-2">
-          <FormField id="id-title" label={t("detail_identity_title")} class="mb-0">
+          <FormField
+            id="id-title"
+            label={t("detail_identity_title")}
+            class="mb-0"
+          >
             <Input
               id="id-title"
               value={props.identityTitle}
@@ -63,7 +69,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
               placeholder="e.g. Mr., Ms."
             />
           </FormField>
-          <FormField id="id-first-name" label={t("detail_identity_first_name")} class="mb-0">
+          <FormField
+            id="id-first-name"
+            label={t("detail_identity_first_name")}
+            class="mb-0"
+          >
             <Input
               id="id-first-name"
               value={props.firstName}
@@ -73,14 +83,22 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
         </div>
 
         <div class="grid-2">
-          <FormField id="id-middle-name" label={t("detail_identity_middle_name")} class="mb-0">
+          <FormField
+            id="id-middle-name"
+            label={t("detail_identity_middle_name")}
+            class="mb-0"
+          >
             <Input
               id="id-middle-name"
               value={props.middleName}
               onInput={(e) => props.setMiddleName(e.currentTarget.value)}
             />
           </FormField>
-          <FormField id="id-last-name" label={t("detail_identity_last_name")} class="mb-0">
+          <FormField
+            id="id-last-name"
+            label={t("detail_identity_last_name")}
+            class="mb-0"
+          >
             <Input
               id="id-last-name"
               value={props.lastName}
@@ -90,14 +108,22 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
         </div>
 
         <div class="grid-2">
-          <FormField id="id-username" label={t("detail_identity_username")} class="mb-0">
+          <FormField
+            id="id-username"
+            label={t("detail_identity_username")}
+            class="mb-0"
+          >
             <Input
               id="id-username"
               value={props.identityUsername}
               onInput={(e) => props.setIdentityUsername(e.currentTarget.value)}
             />
           </FormField>
-          <FormField id="id-company" label={t("detail_identity_company")} class="mb-0">
+          <FormField
+            id="id-company"
+            label={t("detail_identity_company")}
+            class="mb-0"
+          >
             <Input
               id="id-company"
               value={props.company}
@@ -112,7 +138,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
         {t("detail_identity_identification_section")}
       </div>
       <div class="card p-16 mb-16 d-flex flex-column gap-12">
-        <FormField id="id-ssn" label={t("detail_identity_ssn")} class="mb-0 pos-relative">
+        <FormField
+          id="id-ssn"
+          label={t("detail_identity_ssn")}
+          class="mb-0 pos-relative"
+        >
           <div class="pos-relative d-flex align-center">
             <Input
               id="id-ssn"
@@ -126,7 +156,10 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
                   class="action-btn input-action-btn"
                   onClick={() => setShowSsn(!showSsn())}
                 >
-                  <Show fallback={<EyeIcon class="icon-inline" />} when={showSsn()}>
+                  <Show
+                    fallback={<EyeIcon class="icon-inline" />}
+                    when={showSsn()}
+                  >
                     <EyeOffIcon class="icon-inline" />
                   </Show>
                 </button>
@@ -135,7 +168,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
           </div>
         </FormField>
 
-        <FormField id="id-passport" label={t("detail_identity_passport")} class="mb-0 pos-relative">
+        <FormField
+          id="id-passport"
+          label={t("detail_identity_passport")}
+          class="mb-0 pos-relative"
+        >
           <div class="pos-relative d-flex align-center">
             <Input
               id="id-passport"
@@ -149,7 +186,10 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
                   class="action-btn input-action-btn"
                   onClick={() => setShowPassport(!showPassport())}
                 >
-                  <Show fallback={<EyeIcon class="icon-inline" />} when={showPassport()}>
+                  <Show
+                    fallback={<EyeIcon class="icon-inline" />}
+                    when={showPassport()}
+                  >
                     <EyeOffIcon class="icon-inline" />
                   </Show>
                 </button>
@@ -158,7 +198,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
           </div>
         </FormField>
 
-        <FormField id="id-license" label={t("detail_identity_license")} class="mb-0">
+        <FormField
+          id="id-license"
+          label={t("detail_identity_license")}
+          class="mb-0"
+        >
           <Input
             id="id-license"
             value={props.licenseNumber}
@@ -173,7 +217,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
       </div>
       <div class="card p-16 mb-16 d-flex flex-column gap-12">
         <div class="grid-2">
-          <FormField id="id-email" label={t("detail_identity_email")} class="mb-0">
+          <FormField
+            id="id-email"
+            label={t("detail_identity_email")}
+            class="mb-0"
+          >
             <Input
               id="id-email"
               type="email"
@@ -182,7 +230,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
               placeholder="name@example.com"
             />
           </FormField>
-          <FormField id="id-phone" label={t("detail_identity_phone")} class="mb-0">
+          <FormField
+            id="id-phone"
+            label={t("detail_identity_phone")}
+            class="mb-0"
+          >
             <Input
               id="id-phone"
               type="tel"
@@ -198,7 +250,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
         {t("detail_identity_address")}
       </div>
       <div class="card p-16 mb-12 d-flex flex-column gap-12">
-        <FormField id="id-address1" label={`${t("detail_identity_address")} 1`} class="mb-0">
+        <FormField
+          id="id-address1"
+          label={`${t("detail_identity_address")} 1`}
+          class="mb-0"
+        >
           <Input
             id="id-address1"
             value={props.address1}
@@ -206,7 +262,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
           />
         </FormField>
 
-        <FormField id="id-address2" label={`${t("detail_identity_address")} 2`} class="mb-0">
+        <FormField
+          id="id-address2"
+          label={`${t("detail_identity_address")} 2`}
+          class="mb-0"
+        >
           <Input
             id="id-address2"
             value={props.address2}
@@ -214,7 +274,11 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
           />
         </FormField>
 
-        <FormField id="id-address3" label={`${t("detail_identity_address")} 3`} class="mb-0">
+        <FormField
+          id="id-address3"
+          label={`${t("detail_identity_address")} 3`}
+          class="mb-0"
+        >
           <Input
             id="id-address3"
             value={props.address3}
@@ -223,14 +287,22 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
         </FormField>
 
         <div class="grid-2">
-          <FormField id="id-city" label={t("detail_identity_city")} class="mb-0">
+          <FormField
+            id="id-city"
+            label={t("detail_identity_city")}
+            class="mb-0"
+          >
             <Input
               id="id-city"
               value={props.city}
               onInput={(e) => props.setCity(e.currentTarget.value)}
             />
           </FormField>
-          <FormField id="id-state" label={t("detail_identity_state")} class="mb-0">
+          <FormField
+            id="id-state"
+            label={t("detail_identity_state")}
+            class="mb-0"
+          >
             <Input
               id="id-state"
               value={props.state}
@@ -240,14 +312,22 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (props) =>
         </div>
 
         <div class="grid-2">
-          <FormField id="id-postal-code" label={t("detail_identity_postal_code")} class="mb-0">
+          <FormField
+            id="id-postal-code"
+            label={t("detail_identity_postal_code")}
+            class="mb-0"
+          >
             <Input
               id="id-postal-code"
               value={props.postalCode}
               onInput={(e) => props.setPostalCode(e.currentTarget.value)}
             />
           </FormField>
-          <FormField id="id-country" label={t("detail_identity_country")} class="mb-0">
+          <FormField
+            id="id-country"
+            label={t("detail_identity_country")}
+            class="mb-0"
+          >
             <Input
               id="id-country"
               value={props.country}

@@ -25,7 +25,10 @@ export async function syncVaultToGist(
     );
 
     if (!res.success) {
-      return { success: false, error: res.error || "Lỗi đồng bộ lên GitHub Gist" };
+      return {
+        success: false,
+        error: res.error || "Lỗi đồng bộ lên GitHub Gist",
+      };
     }
 
     return { success: true, validatedList };

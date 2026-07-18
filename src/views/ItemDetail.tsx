@@ -1,4 +1,11 @@
-import { type Component, createSignal, For, type JSX, onMount, Show } from "solid-js";
+import {
+  type Component,
+  createSignal,
+  For,
+  type JSX,
+  onMount,
+  Show,
+} from "solid-js";
 import { store, storeActions, View } from "@/shared/store.ts";
 import {
   type CardVaultItem,
@@ -12,7 +19,14 @@ import {
   VaultItemType,
 } from "@/shared/types.ts";
 import Button from "@/components/Button.tsx";
-import { CopyIcon, EyeIcon, EyeOffIcon, TrashIcon, NoteIcon, KeyIcon } from "@/icons/svg/index.ts";
+import {
+  CopyIcon,
+  EyeIcon,
+  EyeOffIcon,
+  KeyIcon,
+  NoteIcon,
+  TrashIcon,
+} from "@/icons/svg/index.ts";
 import { formatDateTime, t } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
 import LoginDetailFields from "@/components/item-detail/LoginDetailFields.tsx";
@@ -62,7 +76,9 @@ const getDomain = (item: LoginVaultItem): string | null => {
   }
 };
 
-const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (props) => {
+const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (
+  props,
+) => {
   const [hasError, setHasError] = createSignal(false);
   return (
     <Show when={!hasError()} fallback={props.fallback}>
@@ -207,7 +223,9 @@ export const ItemDetail: Component = () => {
                       when={domainStr}
                       fallback={<KeyIcon />}
                     >
-                      {(dom) => <Favicon domain={dom()} fallback={<KeyIcon />} />}
+                      {(dom) => (
+                        <Favicon domain={dom()} fallback={<KeyIcon />} />
+                      )}
                     </Show>
                   );
                 }

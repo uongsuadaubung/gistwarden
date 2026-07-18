@@ -222,6 +222,7 @@ Deno.test("Import Schema - validate Login and SecureNote separately", () => {
     favorite: false,
     notes: "",
     fields: [],
+    reprompt: 0,
     login: {
       uris: [{ uri: "" }],
       fido2Credentials: [],
@@ -236,6 +237,7 @@ Deno.test("Import Schema - validate Login and SecureNote separately", () => {
     favorite: false,
     notes: "",
     fields: [],
+    reprompt: 0,
     secureNote: {
       type: 0,
     },

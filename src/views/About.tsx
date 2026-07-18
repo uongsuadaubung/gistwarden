@@ -2,7 +2,12 @@ import { type Component } from "solid-js";
 import { storeActions, View } from "@/shared/store.ts";
 import { t } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
-import { ChevronRightIcon, GithubIcon, HeartOutlineIcon, QuestionIcon } from "@/icons/svg/index.ts";
+import {
+  ChevronRightIcon,
+  GithubIcon,
+  HeartOutlineIcon,
+  QuestionIcon,
+} from "@/icons/svg/index.ts";
 import { APP_NAME, FIREFOX_ADDON_SLUG } from "@/shared/constants.ts";
 
 export const About: Component = () => {
@@ -11,7 +16,10 @@ export const About: Component = () => {
   };
 
   const getAppVersion = () => {
-    if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest) {
+    if (
+      typeof chrome !== "undefined" && chrome.runtime &&
+      chrome.runtime.getManifest
+    ) {
       return chrome.runtime.getManifest().version || "1.0.0";
     }
     return "1.0.0";

@@ -23,11 +23,17 @@ export const Troubleshooting: Component = () => {
           <div
             class="setting-row"
             onClick={async () => {
-              storeActions.setGlobalLoading(true, t("settings_sync_time_loading"));
+              storeActions.setGlobalLoading(
+                true,
+                t("settings_sync_time_loading"),
+              );
               const res = await storeActions.syncTimeOffset();
               storeActions.setGlobalLoading(false);
               if (res.success) {
-                storeActions.showToast(t("settings_sync_time_success"), "success");
+                storeActions.showToast(
+                  t("settings_sync_time_success"),
+                  "success",
+                );
               } else {
                 storeActions.showToast(t("settings_sync_time_error"), "error");
               }

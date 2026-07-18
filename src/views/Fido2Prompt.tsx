@@ -521,26 +521,40 @@ export const Fido2Prompt: Component = () => {
                                     {(cred, cIdx) => (
                                       <PasskeySelectRow
                                         icon={<ShieldIcon />}
-                                        title={t("fido2_register_passkey_info", {
-                                          index: cIdx() + 1,
-                                          date: cred.creationDate
-                                            ? formatDateTime(cred.creationDate)
-                                            : "N/A",
-                                        })}
-                                        subtitle={`ID: ${cred.credentialId.substring(0, 16)}...`}
-                                        active={selectedPasskeyOption() === cred.credentialId}
+                                        title={t(
+                                          "fido2_register_passkey_info",
+                                          {
+                                            index: cIdx() + 1,
+                                            date: cred.creationDate
+                                              ? formatDateTime(
+                                                cred.creationDate,
+                                              )
+                                              : "N/A",
+                                          },
+                                        )}
+                                        subtitle={`ID: ${
+                                          cred.credentialId.substring(0, 16)
+                                        }...`}
+                                        active={selectedPasskeyOption() ===
+                                          cred.credentialId}
                                         subItem={true}
-                                        onClick={() => setSelectedPasskeyOption(cred.credentialId)}
+                                        onClick={() =>
+                                          setSelectedPasskeyOption(
+                                            cred.credentialId,
+                                          )}
                                       />
                                     )}
                                   </For>
                                   <PasskeySelectRow
                                     icon={<QuestionIcon />}
                                     title={t("fido2_register_option_add")}
-                                    subtitle={t("fido2_register_option_add_sub")}
+                                    subtitle={t(
+                                      "fido2_register_option_add_sub",
+                                    )}
                                     active={selectedPasskeyOption() === "add"}
                                     subItem={true}
-                                    onClick={() => setSelectedPasskeyOption("add")}
+                                    onClick={() =>
+                                      setSelectedPasskeyOption("add")}
                                   />
                                 </>
                               }
@@ -554,9 +568,13 @@ export const Fido2Prompt: Component = () => {
                                     ? formatDateTime(creds[0].creationDate)
                                     : "N/A",
                                 })}
-                                active={selectedPasskeyOption() === creds[0].credentialId}
+                                active={selectedPasskeyOption() ===
+                                  creds[0].credentialId}
                                 subItem={true}
-                                onClick={() => setSelectedPasskeyOption(creds[0].credentialId)}
+                                onClick={() =>
+                                  setSelectedPasskeyOption(
+                                    creds[0].credentialId,
+                                  )}
                               />
 
                               <PasskeySelectRow
@@ -620,7 +638,7 @@ export const Fido2Prompt: Component = () => {
                             {(item, idx) => (
                               <PasskeySelectRow
                                 icon={<QuestionIcon />}
-                              title={item.credential.userName || ""}
+                                title={item.credential.userName || ""}
                                 subtitle={item.vaultItemName}
                                 active={selectedCredIndex() === idx()}
                                 onClick={() => setSelectedCredIndex(idx())}

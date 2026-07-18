@@ -2,8 +2,8 @@ import { type Component, createSignal, type JSX, Show } from "solid-js";
 import {
   type CardVaultItem,
   type IdentityVaultItem,
-  type SshKeyVaultItem,
   type LoginVaultItem,
+  type SshKeyVaultItem,
   type VaultItem,
   VaultItemType,
   View,

@@ -112,53 +112,60 @@ export async function getOrDeriveKey(
   return derivedCryptoKey;
 }
 
-export async function parseSshKey(privateKeyText: string): Promise<{
-  publicKey: string;
-  keyFingerprint: string;
-} | null> {
+export async function parseSshKey(privateKeyText: string): Promise<
+  {
+    publicKey: string;
+    keyFingerprint: string;
+  } | null
+> {
   try {
     const trimmed = privateKeyText.trim();
     if (!trimmed.includes("-----BEGIN OPENSSH PRIVATE KEY-----")) {
       return null;
     }
-    
+
     // Extract base64 content
     const lines = trimmed.split("\n");
-    const base64Lines = lines.filter(line => !line.trim().startsWith("-----"));
+    const base64Lines = lines.filter((line) =>
+      !line.trim().startsWith("-----")
+    );
     const base64Str = base64Lines.join("").replace(/\s/g, "");
-    
+
     const buffer = base64ToArrayBuffer(base64Str);
     const bytes = new Uint8Array(buffer);
-    
+
     // Read offset 39 (length of publickey_blob)
     if (bytes.length < 43) return null;
-    
+
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const pubKeyLen = view.getUint32(39);
-    
+
     if (bytes.length < 43 + pubKeyLen) return null;
-    
+
     const pubKeyBlob = bytes.slice(43, 43 + pubKeyLen);
-    const pubKeyBlobBuffer = pubKeyBlob.buffer.slice(pubKeyBlob.byteOffset, pubKeyBlob.byteOffset + pubKeyBlob.byteLength);
-    
+    const pubKeyBlobBuffer = pubKeyBlob.buffer.slice(
+      pubKeyBlob.byteOffset,
+      pubKeyBlob.byteOffset + pubKeyBlob.byteLength,
+    );
+
     // Read type string
     const typeLen = view.getUint32(43);
     const typeBytes = bytes.slice(47, 47 + typeLen);
     const typeStr = new TextDecoder().decode(typeBytes);
-    
+
     // Encode public key
     const pubKeyBase64 = arrayBufferToBase64(pubKeyBlobBuffer);
     const publicKey = `${typeStr} ${pubKeyBase64}`;
-    
+
     // Compute fingerprint (SHA-256)
     const hashBuffer = await crypto.subtle.digest("SHA-256", pubKeyBlobBuffer);
     const hashBytes = new Uint8Array(hashBuffer);
     const hashBase64 = arrayBufferToBase64(hashBytes.buffer);
     const keyFingerprint = `SHA256:${hashBase64.replace(/=+$/, "")}`;
-    
+
     return {
       publicKey,
-      keyFingerprint
+      keyFingerprint,
     };
   } catch (e) {
     console.error("Failed to parse SSH key", e);

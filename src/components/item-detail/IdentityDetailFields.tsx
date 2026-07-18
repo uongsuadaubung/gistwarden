@@ -8,7 +8,9 @@ interface IdentityDetailFieldsProps {
   onCopy: (text: string, label: string) => void;
 }
 
-export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props) => {
+export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (
+  props,
+) => {
   const [showSsn, setShowSsn] = createSignal(false);
   const [showPassport, setShowPassport] = createSignal(false);
 
@@ -18,7 +20,7 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
       props.item.identity.firstName,
       props.item.identity.middleName,
       props.item.identity.lastName,
-    ].map(p => p?.trim()).filter(Boolean);
+    ].map((p) => p?.trim()).filter(Boolean);
     return parts.join(" ");
   };
 
@@ -31,25 +33,27 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
       props.item.identity.state,
       props.item.identity.postalCode,
       props.item.identity.country,
-    ].map(p => p?.trim()).filter(Boolean);
+    ].map((p) => p?.trim()).filter(Boolean);
     return parts.join("\n");
   };
 
   const hasPersonalDetails = () => {
-    return !!(getFullName() || props.item.identity.username || props.item.identity.company);
+    return !!(getFullName() || props.item.identity.username ||
+      props.item.identity.company);
   };
 
   const hasIdentificationDetails = () => {
-    return !!(props.item.identity.ssn || props.item.identity.passportNumber || props.item.identity.licenseNumber);
+    return !!(props.item.identity.ssn || props.item.identity.passportNumber ||
+      props.item.identity.licenseNumber);
   };
 
   const hasContactDetails = () => {
-    return !!(props.item.identity.email || props.item.identity.phone || getFullAddress());
+    return !!(props.item.identity.email || props.item.identity.phone ||
+      getFullAddress());
   };
 
   return (
     <>
-
       {/* 1. Personal Details */}
       <Show when={hasPersonalDetails()}>
         <div class="detail-section-title">
@@ -66,7 +70,8 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
               <button
                 type="button"
                 class="action-btn"
-                onClick={() => props.onCopy(getFullName(), t("detail_identity_first_name"))}
+                onClick={() =>
+                  props.onCopy(getFullName(), t("detail_identity_first_name"))}
                 title={t("btn_copy")}
               >
                 <CopyIcon />
@@ -79,12 +84,18 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
             <div class="detail-row">
               <div class="field-content">
                 <div class="field-label">{t("detail_identity_username")}</div>
-                <div class="field-value text-break">{props.item.identity.username}</div>
+                <div class="field-value text-break">
+                  {props.item.identity.username}
+                </div>
               </div>
               <button
                 type="button"
                 class="action-btn"
-                onClick={() => props.onCopy(props.item.identity.username || "", t("detail_identity_username"))}
+                onClick={() =>
+                  props.onCopy(
+                    props.item.identity.username || "",
+                    t("detail_identity_username"),
+                  )}
                 title={t("btn_copy")}
               >
                 <CopyIcon />
@@ -97,12 +108,18 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
             <div class="detail-row">
               <div class="field-content">
                 <div class="field-label">{t("detail_identity_company")}</div>
-                <div class="field-value text-break">{props.item.identity.company}</div>
+                <div class="field-value text-break">
+                  {props.item.identity.company}
+                </div>
               </div>
               <button
                 type="button"
                 class="action-btn"
-                onClick={() => props.onCopy(props.item.identity.company || "", t("detail_identity_company"))}
+                onClick={() =>
+                  props.onCopy(
+                    props.item.identity.company || "",
+                    t("detail_identity_company"),
+                  )}
                 title={t("btn_copy")}
               >
                 <CopyIcon />
@@ -136,14 +153,21 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
                   onClick={() => setShowSsn(!showSsn())}
                   title={t("detail_identity_ssn")}
                 >
-                  <Show when={showSsn()} fallback={<EyeIcon class="icon-inline" />}>
+                  <Show
+                    when={showSsn()}
+                    fallback={<EyeIcon class="icon-inline" />}
+                  >
                     <EyeOffIcon class="icon-inline" />
                   </Show>
                 </button>
                 <button
                   type="button"
                   class="action-btn"
-                  onClick={() => props.onCopy(props.item.identity.ssn || "", t("detail_identity_ssn"))}
+                  onClick={() =>
+                    props.onCopy(
+                      props.item.identity.ssn || "",
+                      t("detail_identity_ssn"),
+                    )}
                   title={t("btn_copy")}
                 >
                   <CopyIcon />
@@ -160,7 +184,10 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
                 <div class="field-value password-font text-break">
                   {showPassport()
                     ? props.item.identity.passportNumber
-                    : (props.item.identity.passportNumber || "").replace(/./g, "•")}
+                    : (props.item.identity.passportNumber || "").replace(
+                      /./g,
+                      "•",
+                    )}
                 </div>
               </div>
               <div class="field-actions">
@@ -170,14 +197,21 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
                   onClick={() => setShowPassport(!showPassport())}
                   title={t("detail_identity_passport")}
                 >
-                  <Show when={showPassport()} fallback={<EyeIcon class="icon-inline" />}>
+                  <Show
+                    when={showPassport()}
+                    fallback={<EyeIcon class="icon-inline" />}
+                  >
                     <EyeOffIcon class="icon-inline" />
                   </Show>
                 </button>
                 <button
                   type="button"
                   class="action-btn"
-                  onClick={() => props.onCopy(props.item.identity.passportNumber || "", t("detail_identity_passport"))}
+                  onClick={() =>
+                    props.onCopy(
+                      props.item.identity.passportNumber || "",
+                      t("detail_identity_passport"),
+                    )}
                   title={t("btn_copy")}
                 >
                   <CopyIcon />
@@ -191,12 +225,18 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
             <div class="detail-row">
               <div class="field-content">
                 <div class="field-label">{t("detail_identity_license")}</div>
-                <div class="field-value text-break">{props.item.identity.licenseNumber}</div>
+                <div class="field-value text-break">
+                  {props.item.identity.licenseNumber}
+                </div>
               </div>
               <button
                 type="button"
                 class="action-btn"
-                onClick={() => props.onCopy(props.item.identity.licenseNumber || "", t("detail_identity_license"))}
+                onClick={() =>
+                  props.onCopy(
+                    props.item.identity.licenseNumber || "",
+                    t("detail_identity_license"),
+                  )}
                 title={t("btn_copy")}
               >
                 <CopyIcon />
@@ -217,12 +257,18 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
             <div class="detail-row">
               <div class="field-content">
                 <div class="field-label">{t("detail_identity_email")}</div>
-                <div class="field-value text-break">{props.item.identity.email}</div>
+                <div class="field-value text-break">
+                  {props.item.identity.email}
+                </div>
               </div>
               <button
                 type="button"
                 class="action-btn"
-                onClick={() => props.onCopy(props.item.identity.email || "", t("detail_identity_email"))}
+                onClick={() =>
+                  props.onCopy(
+                    props.item.identity.email || "",
+                    t("detail_identity_email"),
+                  )}
                 title={t("btn_copy")}
               >
                 <CopyIcon />
@@ -235,12 +281,18 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
             <div class="detail-row">
               <div class="field-content">
                 <div class="field-label">{t("detail_identity_phone")}</div>
-                <div class="field-value text-break">{props.item.identity.phone}</div>
+                <div class="field-value text-break">
+                  {props.item.identity.phone}
+                </div>
               </div>
               <button
                 type="button"
                 class="action-btn"
-                onClick={() => props.onCopy(props.item.identity.phone || "", t("detail_identity_phone"))}
+                onClick={() =>
+                  props.onCopy(
+                    props.item.identity.phone || "",
+                    t("detail_identity_phone"),
+                  )}
                 title={t("btn_copy")}
               >
                 <CopyIcon />
@@ -253,12 +305,15 @@ export const IdentityDetailFields: Component<IdentityDetailFieldsProps> = (props
             <div class="detail-row">
               <div class="field-content">
                 <div class="field-label">{t("detail_identity_address")}</div>
-                <div class="field-value text-break notes-display mt-4">{getFullAddress()}</div>
+                <div class="field-value text-break notes-display mt-4">
+                  {getFullAddress()}
+                </div>
               </div>
               <button
                 type="button"
                 class="action-btn align-self-start mt-8"
-                onClick={() => props.onCopy(getFullAddress(), t("detail_identity_address"))}
+                onClick={() =>
+                  props.onCopy(getFullAddress(), t("detail_identity_address"))}
                 title={t("btn_copy")}
               >
                 <CopyIcon />

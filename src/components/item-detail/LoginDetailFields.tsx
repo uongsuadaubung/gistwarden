@@ -55,7 +55,9 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
       const totp = new OTPAuth.TOTP({
         secret: OTPAuth.Secret.fromBase32(secret),
       });
-      const rawCode = totp.generate({ timestamp: Date.now() + store.timeOffset });
+      const rawCode = totp.generate({
+        timestamp: Date.now() + store.timeOffset,
+      });
       const formatted = rawCode.slice(0, 3) + " " + rawCode.slice(3);
       setTotpCode(formatted);
     } catch (err) {

@@ -228,8 +228,10 @@ export default {
   detail_ssh_private_key: "Khóa riêng tư (Private key)",
   detail_ssh_public_key: "Khóa công khai (Public key)",
   detail_ssh_fingerprint: "Mã vân tay khóa (Fingerprint)",
-  ssh_invalid_key: "Khóa riêng tư SSH không hợp lệ hoặc định dạng không hỗ trợ (yêu cầu định dạng OpenSSH không mã hóa)",
-  ssh_import_from_clipboard: "Dán Khóa riêng tư OpenSSH không mã hóa từ bộ nhớ tạm",
+  ssh_invalid_key:
+    "Khóa riêng tư SSH không hợp lệ hoặc định dạng không hỗ trợ (yêu cầu định dạng OpenSSH không mã hóa)",
+  ssh_import_from_clipboard:
+    "Dán Khóa riêng tư OpenSSH không mã hóa từ bộ nhớ tạm",
   detail_copy_ssh_private_key: "Sao chép khóa riêng tư",
   detail_copy_ssh_public_key: "Sao chép khóa công khai",
   detail_copy_ssh_fingerprint: "Sao chép vân tay khóa",
@@ -269,7 +271,8 @@ export default {
   settings_sync_time_sub: "Đồng bộ đồng hồ với máy chủ cho mã TOTP",
   settings_sync_time_loading: "Đang đồng bộ thời gian...",
   settings_sync_time_success: "Đồng bộ thời gian thành công!",
-  settings_sync_time_error: "Đồng bộ thời gian thất bại. Vui lòng kiểm tra kết nối mạng.",
+  settings_sync_time_error:
+    "Đồng bộ thời gian thất bại. Vui lòng kiểm tra kết nối mạng.",
   settings_troubleshooting_label: "Xử lý sự cố",
   settings_troubleshooting_sub: "Khắc phục các lỗi về đồng bộ và thời gian",
   settings_theme_dark: "Tối",
@@ -350,10 +353,32 @@ export default {
   vault_import_error_fail: "Lỗi nhập file JSON",
   vault_export_error_fail: "Lỗi xuất file JSON",
   vault_options_sync_manual: "Đồng bộ thủ công",
-  vault_options_import: "Nhập tài khoản (Import JSON)",
-  vault_options_import_sub: "Hỗ trợ file accounts.json hoặc xuất từ Bitwarden",
-  vault_options_export: "Xuất tài khoản (Export JSON)",
-  vault_options_export_sub: "Lưu trữ danh sách tài khoản hiện tại ra file JSON",
+  vault_options_import: "Nhập dữ liệu (Import)",
+  vault_options_import_sub: "Nhập tài khoản từ trình duyệt hoặc file sao lưu",
+  vault_options_export: "Xuất dữ liệu (Export)",
+  vault_options_export_sub: "Xuất mật khẩu ra CSV hoặc tệp sao lưu JSON",
+  settings_import_accounts_title: "Nhập dữ liệu",
+  import_option_browser: "Nhập từ Trình duyệt (CSV)",
+  import_option_browser_sub:
+    "Hỗ trợ tự động nhận diện Chrome, Edge, Firefox...",
+  import_option_bitwarden_csv: "Bitwarden (CSV)",
+  import_option_bitwarden_csv_sub: "Nhập mật khẩu xuất từ Bitwarden dạng CSV",
+  import_option_json: "Gistwarden / Bitwarden (JSON)",
+  import_option_json_sub: "Nhập file sao lưu dạng JSON",
+  import_error_browser_invalid:
+    "File CSV thiếu các cột bắt buộc: url, username, password.",
+  import_error_bitwarden_invalid:
+    "Tiêu đề cột không khớp với định dạng Bitwarden CSV.",
+  vault_import_csv_error_fail:
+    "Lỗi nhập file CSV từ trình duyệt hoặc Bitwarden.",
+  settings_export_accounts_title: "Xuất dữ liệu",
+  export_option_browser: "Xuất ra Trình duyệt (CSV)",
+  export_option_browser_sub:
+    "Tệp CSV tương thích với Google Chrome, Microsoft Edge...",
+  export_option_bitwarden_csv: "Bitwarden (CSV)",
+  export_option_bitwarden_csv_sub: "Tệp CSV tương thích để nhập vào Bitwarden",
+  export_option_json: "Gistwarden / Bitwarden (JSON)",
+  export_option_json_sub: "Xuất tệp sao lưu JSON không mã hóa",
 
   // Password Generator View
   gen_title: "Bộ sinh mật khẩu",
@@ -502,9 +527,11 @@ export default {
   guide_totp_step2_title: "Bước 2: Tự động lưu và hiển thị mã OTP",
   guide_totp_step2_desc:
     "Sau khi quét, khóa bí mật sẽ tự động được giải mã và lưu lại. {APP_NAME} sẽ bắt đầu sinh mã xác thực 6 chữ số và đếm ngược 30 giây. Bạn chỉ cần click chuột vào mã này để sao chép nhanh và dán vào ô xác thực của website.",
-  guide_totp_step2_img_info: "Mã xác thực tự động tạo và có nút click sao chép tiện lợi",
+  guide_totp_step2_img_info:
+    "Mã xác thực tự động tạo và có nút click sao chép tiện lợi",
   guide_totp_step3_title: "Bước 3: Sửa lỗi mã bị sai (Đồng bộ thời gian)",
-  guide_totp_step3_desc: "Nếu mã 2FA sinh ra bị báo không chính xác trên website, có thể đồng hồ máy tính của bạn bị lệch. Bạn có thể tự sửa nhanh bằng cách vào Cài đặt -> Giới thiệu -> Xử lý sự cố -> nhấn 'Đồng bộ thời gian' để lấy lại giờ chuẩn từ máy chủ.",
+  guide_totp_step3_desc:
+    "Nếu mã 2FA sinh ra bị báo không chính xác trên website, có thể đồng hồ máy tính của bạn bị lệch. Bạn có thể tự sửa nhanh bằng cách vào Cài đặt -> Giới thiệu -> Xử lý sự cố -> nhấn 'Đồng bộ thời gian' để lấy lại giờ chuẩn từ máy chủ.",
 
   // Guide Security Tab
   guide_sec_title: "Kiến trúc Bảo mật",

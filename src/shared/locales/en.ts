@@ -228,8 +228,10 @@ export default {
   detail_ssh_private_key: "Private key",
   detail_ssh_public_key: "Public key",
   detail_ssh_fingerprint: "Fingerprint",
-  ssh_invalid_key: "Invalid SSH Private Key or format unsupported (requires unencrypted OpenSSH format)",
-  ssh_import_from_clipboard: "Paste unencrypted OpenSSH Private Key from clipboard",
+  ssh_invalid_key:
+    "Invalid SSH Private Key or format unsupported (requires unencrypted OpenSSH format)",
+  ssh_import_from_clipboard:
+    "Paste unencrypted OpenSSH Private Key from clipboard",
   detail_copy_ssh_private_key: "Copy private key",
   detail_copy_ssh_public_key: "Copy public key",
   detail_copy_ssh_fingerprint: "Copy fingerprint",
@@ -269,7 +271,8 @@ export default {
   settings_sync_time_sub: "Synchronize clock with server for TOTP",
   settings_sync_time_loading: "Syncing time...",
   settings_sync_time_success: "Time synchronized successfully!",
-  settings_sync_time_error: "Failed to synchronize time. Please check your internet connection.",
+  settings_sync_time_error:
+    "Failed to synchronize time. Please check your internet connection.",
   settings_troubleshooting_label: "Troubleshooting",
   settings_troubleshooting_sub: "Fix sync and time issues",
   settings_theme_dark: "Dark",
@@ -348,10 +351,32 @@ export default {
   vault_import_error_fail: "Failed to import JSON file",
   vault_export_error_fail: "Failed to export JSON file",
   vault_options_sync_manual: "Manual Sync",
-  vault_options_import: "Import Accounts (Import JSON)",
-  vault_options_import_sub: "Supports accounts.json or exported Bitwarden file",
-  vault_options_export: "Export Accounts (Export JSON)",
-  vault_options_export_sub: "Save current accounts list to JSON file",
+  vault_options_import: "Import Data",
+  vault_options_import_sub: "Import passwords from browsers or backups",
+  vault_options_export: "Export Data",
+  vault_options_export_sub: "Export passwords to CSV or backup JSON file",
+  settings_import_accounts_title: "Import Data",
+  import_option_browser: "Import from Browser (CSV)",
+  import_option_browser_sub: "Supports auto-detecting Chrome, Edge, Firefox...",
+  import_option_bitwarden_csv: "Bitwarden (CSV)",
+  import_option_bitwarden_csv_sub:
+    "Import credentials exported from Bitwarden as CSV",
+  import_option_json: "Gistwarden / Bitwarden (JSON)",
+  import_option_json_sub: "Import backup file as JSON",
+  import_error_browser_invalid:
+    "CSV file is missing mandatory columns: url, username, password.",
+  import_error_bitwarden_invalid:
+    "Column headers do not match Bitwarden CSV format.",
+  vault_import_csv_error_fail: "Error importing browser or Bitwarden CSV file.",
+  settings_export_accounts_title: "Export Data",
+  export_option_browser: "Export to Browser (CSV)",
+  export_option_browser_sub:
+    "CSV file compatible with Google Chrome, Microsoft Edge...",
+  export_option_bitwarden_csv: "Bitwarden (CSV)",
+  export_option_bitwarden_csv_sub:
+    "CSV file compatible for importing into Bitwarden",
+  export_option_json: "Gistwarden / Bitwarden (JSON)",
+  export_option_json_sub: "Export unencrypted backup JSON file",
 
   // Password Generator View
   gen_title: "Password Generator",

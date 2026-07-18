@@ -1,7 +1,7 @@
 import { type Component, createSignal, Show } from "solid-js";
 import { t } from "@/shared/i18n.ts";
 import Input from "@/components/Input.tsx";
-import { UploadIcon, EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
+import { EyeIcon, EyeOffIcon, UploadIcon } from "@/icons/svg/index.ts";
 import { parseSshKey } from "@/shared/crypto.ts";
 import FormField from "@/components/FormField.tsx";
 
@@ -28,7 +28,10 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
         props.setPublicKey(parsed.publicKey);
         props.setKeyFingerprint(parsed.keyFingerprint);
       } else {
-        setErrorMsg(t("ssh_invalid_key") || "Invalid SSH Private Key or format unsupported (requires unencrypted OpenSSH format)");
+        setErrorMsg(
+          t("ssh_invalid_key") ||
+            "Invalid SSH Private Key or format unsupported (requires unencrypted OpenSSH format)",
+        );
       }
     } catch (err) {
       console.error("Clipboard read error:", err);
@@ -52,7 +55,8 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
               type={showPrivateKey() ? "text" : "password"}
               value={props.privateKey}
               readonly={true}
-              placeholder={t("ssh_import_from_clipboard") || "Paste unencrypted OpenSSH Private Key from clipboard..."}
+              placeholder={t("ssh_import_from_clipboard") ||
+                "Paste unencrypted OpenSSH Private Key from clipboard..."}
               class="w-100"
               rightActions={
                 <>
@@ -73,7 +77,8 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
                     type="button"
                     class="action-btn input-action-btn"
                     onClick={handlePasteSshKey}
-                    title={t("ssh_import_from_clipboard") || "Paste from clipboard"}
+                    title={t("ssh_import_from_clipboard") ||
+                      "Paste from clipboard"}
                   >
                     <UploadIcon class="icon-inline" />
                   </button>

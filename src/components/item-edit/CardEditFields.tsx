@@ -93,7 +93,10 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
 
         {/* Expiration date */}
         <div class="grid-2">
-          <FormField id="card-exp-month" label={t("detail_card_expiration") || "Expiration month"}>
+          <FormField
+            id="card-exp-month"
+            label={t("detail_card_expiration") || "Expiration month"}
+          >
             <select
               id="card-exp-month"
               class="input-control"

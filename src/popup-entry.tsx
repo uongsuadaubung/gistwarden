@@ -23,6 +23,8 @@ import ItemEdit from "@/views/ItemEdit.tsx";
 import Generator from "@/views/Generator.tsx";
 import Settings from "@/views/Settings.tsx";
 import VaultOptions from "@/views/VaultOptions.tsx";
+import ImportAccounts from "@/views/ImportAccounts.tsx";
+import ExportAccounts from "@/views/ExportAccounts.tsx";
 import Fido2Prompt from "@/views/Fido2Prompt.tsx";
 import Language from "@/views/Language.tsx";
 import Theme from "@/views/Theme.tsx";
@@ -139,6 +141,12 @@ const App: Component = () => {
                 </TransitionView>
                 <TransitionView when={store.view === View.VaultOptions}>
                   <VaultOptions />
+                </TransitionView>
+                <TransitionView when={store.view === View.ImportAccounts}>
+                  <ImportAccounts />
+                </TransitionView>
+                <TransitionView when={store.view === View.ExportAccounts}>
+                  <ExportAccounts />
                 </TransitionView>
                 <TransitionView when={store.view === View.Language}>
                   <Language />

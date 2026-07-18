@@ -15,7 +15,6 @@ export const SshKeyDetailFields: Component<SshKeyDetailFieldsProps> = (
 
   return (
     <>
-
       <div class="detail-section-title">
         {t("vault_item_ssh_key")}
       </div>

@@ -32,7 +32,11 @@ import {
   View,
 } from "./types.ts";
 import { setLanguage, SupportLanguage, t } from "./i18n.ts";
-import { parseAndValidateImportJson } from "./import-export.ts";
+import {
+  parseAndValidateBitwardenCsv,
+  parseAndValidateBrowserCsv,
+  parseAndValidateImportJson,
+} from "./import-export.ts";
 import { syncVaultToGist } from "./sync-utils.ts";
 import { APP_NAME, OAUTH_WORKER_URL } from "./constants.ts";
 export { View };
@@ -142,7 +146,6 @@ export { store };
 
 let toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-
 const viewDepths: Record<View, number> = {
   [View.Login]: 0,
   [View.Vault]: 1,
@@ -160,6 +163,8 @@ const viewDepths: Record<View, number> = {
   [View.Welcome]: 0,
   [View.AccountSecurity]: 4,
   [View.ChangeMasterPassword]: 5,
+  [View.ImportAccounts]: 5,
+  [View.ExportAccounts]: 5,
 };
 
 let transitionToggle = false;
@@ -550,71 +555,85 @@ export const storeActions = {
         updatedList = store.vaultItems.map((v) => {
           if (v.id !== item.id) return v;
 
-          const targetType = item.type !== undefined ? Number(item.type) : Number(v.type);
-          
+          const targetType = item.type !== undefined
+            ? Number(item.type)
+            : Number(v.type);
+
           const baseItem: Record<string, unknown> = {
             id: v.id,
             type: targetType,
             name: item.name !== undefined ? item.name : v.name,
             notes: item.notes !== undefined ? item.notes : v.notes,
             favorite: item.favorite !== undefined ? item.favorite : v.favorite,
-            reprompt: item.reprompt !== undefined ? item.reprompt : (v.reprompt !== undefined ? v.reprompt : 0),
+            reprompt: item.reprompt !== undefined
+              ? item.reprompt
+              : (v.reprompt !== undefined ? v.reprompt : 0),
             fields: item.fields !== undefined ? item.fields : v.fields,
             creationDate: v.creationDate,
             revisionDate: now,
           };
 
           if (targetType === VaultItemType.Login) {
-            baseItem.login = "login" in item ? item.login : ("login" in v ? v.login : {
-              username: "",
-              password: "",
-              totp: "",
-              uris: [],
-              fido2Credentials: [],
-            });
+            baseItem.login = "login" in item
+              ? item.login
+              : ("login" in v ? v.login : {
+                username: "",
+                password: "",
+                totp: "",
+                uris: [],
+                fido2Credentials: [],
+              });
           } else if (targetType === VaultItemType.Card) {
-            baseItem.card = "card" in item ? item.card : ("card" in v ? v.card : {
-              cardholderName: "",
-              brand: "",
-              number: "",
-              expMonth: "",
-              expYear: "",
-              code: "",
-            });
+            baseItem.card = "card" in item
+              ? item.card
+              : ("card" in v ? v.card : {
+                cardholderName: "",
+                brand: "",
+                number: "",
+                expMonth: "",
+                expYear: "",
+                code: "",
+              });
           } else if (targetType === VaultItemType.Identity) {
-            baseItem.identity = "identity" in item ? item.identity : ("identity" in v ? v.identity : {
-              title: "",
-              firstName: "",
-              middleName: "",
-              lastName: "",
-              username: "",
-              company: "",
-              ssn: "",
-              passportNumber: "",
-              licenseNumber: "",
-              email: "",
-              phone: "",
-              address1: "",
-              address2: "",
-              address3: "",
-              city: "",
-              state: "",
-              postalCode: "",
-              country: "",
-            });
+            baseItem.identity = "identity" in item
+              ? item.identity
+              : ("identity" in v ? v.identity : {
+                title: "",
+                firstName: "",
+                middleName: "",
+                lastName: "",
+                username: "",
+                company: "",
+                ssn: "",
+                passportNumber: "",
+                licenseNumber: "",
+                email: "",
+                phone: "",
+                address1: "",
+                address2: "",
+                address3: "",
+                city: "",
+                state: "",
+                postalCode: "",
+                country: "",
+              });
           } else if (targetType === VaultItemType.SshKey) {
-            baseItem.sshKey = "sshKey" in item ? item.sshKey : ("sshKey" in v ? v.sshKey : {
-              privateKey: "",
-              publicKey: "",
-              keyFingerprint: "",
-            });
+            baseItem.sshKey = "sshKey" in item
+              ? item.sshKey
+              : ("sshKey" in v ? v.sshKey : {
+                privateKey: "",
+                publicKey: "",
+                keyFingerprint: "",
+              });
           }
 
           return VaultItemSchema.parse(baseItem);
         });
       } else {
         // New
-        const targetType = item.type !== undefined ? Number(item.type) : VaultItemType.Login;
+        const targetType = item.type !== undefined
+          ? Number(item.type)
+          : VaultItemType.Login;
         const baseItem: Record<string, unknown> = {
           id: crypto.randomUUID(),
           type: targetType,
@@ -740,7 +759,11 @@ export const storeActions = {
       // 2. Derive new key
       const newKey = await deriveKey(newPass, rawSalt);
 
-      const uploadRes = await syncVaultToGist(store.vaultItems, newKey, newSaltBase64);
+      const uploadRes = await syncVaultToGist(
+        store.vaultItems,
+        newKey,
+        newSaltBase64,
+      );
 
       if (!uploadRes.success) {
         throw new Error(uploadRes.error || "Lỗi đồng bộ mật khẩu mới lên Gist");
@@ -854,19 +877,70 @@ export const storeActions = {
       const key = await getOrDeriveKey(password, store.salt);
 
       console.log(`[${APP_NAME} Import] Dang tai len Gist...`);
-      const uploadRes = await syncVaultToGist(importRes.combinedItems, key, store.salt);
+      const uploadRes = await syncVaultToGist(
+        importRes.combinedItems,
+        key,
+        store.salt,
+      );
 
       if (!uploadRes.success) {
         throw new Error(uploadRes.error || "Loi dong bo len Gist");
       }
 
-      setStore("vaultItems", reconcile(uploadRes.validatedList || importRes.combinedItems));
+      setStore(
+        "vaultItems",
+        reconcile(uploadRes.validatedList || importRes.combinedItems),
+      );
       console.log(`[${APP_NAME} Import] Import HOAN TAT thanh cong!`);
       return { success: true, importedCount: importRes.importedCount };
     } catch (err) {
       console.error(`[${APP_NAME} Import] Loi import:`, err);
       const errMsg = err instanceof Error ? err.message : String(err);
       return { success: false, error: errMsg || "Loi nhap file JSON" };
+    } finally {
+      storeActions.setGlobalLoading(false);
+    }
+  },
+
+  async importCsvData(
+    csvString: string,
+    type: "browser" | "bitwarden",
+  ): Promise<{ success: boolean; importedCount?: number; error?: string }> {
+    storeActions.setGlobalLoading(true, t("vault_importing"));
+    try {
+      const importRes = type === "bitwarden"
+        ? parseAndValidateBitwardenCsv(csvString, store.vaultItems)
+        : parseAndValidateBrowserCsv(csvString, store.vaultItems);
+
+      if (!importRes.success) {
+        throw new Error(importRes.error);
+      }
+
+      const password = await getMasterPassword();
+      if (!password || !store.salt) throw new Error("Vault is locked");
+      const key = await getOrDeriveKey(password, store.salt);
+
+      console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
+      const uploadRes = await syncVaultToGist(
+        importRes.combinedItems,
+        key,
+        store.salt,
+      );
+
+      if (!uploadRes.success) {
+        throw new Error(uploadRes.error || "Lỗi đồng bộ lên Gist");
+      }
+
+      setStore(
+        "vaultItems",
+        reconcile(uploadRes.validatedList || importRes.combinedItems),
+      );
+      console.log(`[${APP_NAME} Import] Import CSV HOÀN TẤT thành công!`);
+      return { success: true, importedCount: importRes.importedCount };
+    } catch (err) {
+      console.error(`[${APP_NAME} Import] Lỗi import CSV:`, err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      return { success: false, error: errMsg };
     } finally {
       storeActions.setGlobalLoading(false);
     }
@@ -1074,7 +1148,10 @@ export const storeActions = {
           return { success: true };
         }
       }
-      return { success: false, error: "Không thể đọc dữ liệu thời gian từ phản hồi" };
+      return {
+        success: false,
+        error: "Không thể đọc dữ liệu thời gian từ phản hồi",
+      };
     } catch (err) {
       console.warn("[Store] Failed to sync time offset:", err);
       const errMsg = err instanceof Error ? err.message : String(err);

@@ -70,7 +70,10 @@ export const ItemEdit: Component = () => {
     country: "",
   });
 
-  const updateForm = <K extends keyof typeof formState>(key: K, value: typeof formState[K]) => {
+  const updateForm = <K extends keyof typeof formState>(
+    key: K,
+    value: typeof formState[K],
+  ) => {
     setFormState(key, value);
   };
 
@@ -106,7 +109,10 @@ export const ItemEdit: Component = () => {
     if (idx === null) {
       updateForm("fields", [...formState.fields, field]);
     } else {
-      updateForm("fields", formState.fields.map((f, i) => (i === idx ? field : f)));
+      updateForm(
+        "fields",
+        formState.fields.map((f, i) => (i === idx ? field : f)),
+      );
     }
     setShowEditFieldModal(false);
     setSelectedFieldIndex(null);
@@ -130,38 +136,100 @@ export const ItemEdit: Component = () => {
         favorite: item.favorite || false,
         reprompt: item.reprompt || 0,
         fields: item.fields ? JSON.parse(JSON.stringify(item.fields)) : [],
-        username: item.type === VaultItemType.Login ? item.login.username || "" : "",
-        password: item.type === VaultItemType.Login ? item.login.password || "" : "",
-        uri: item.type === VaultItemType.Login ? item.login.uris?.[0]?.uri || "" : "",
-        totpSecret: item.type === VaultItemType.Login ? item.login.totp || "" : "",
-        fidoCredentials: item.type === VaultItemType.Login ? item.login.fido2Credentials || [] : [],
-        cardholderName: item.type === VaultItemType.Card ? item.card.cardholderName || "" : "",
-        cardNumber: item.type === VaultItemType.Card ? item.card.number || "" : "",
-        cardBrand: item.type === VaultItemType.Card ? item.card.brand || "Visa" : "Visa",
-        cardExpMonth: item.type === VaultItemType.Card ? item.card.expMonth || "1" : "1",
-        cardExpYear: item.type === VaultItemType.Card ? item.card.expYear || String(new Date().getFullYear()) : String(new Date().getFullYear()),
+        username: item.type === VaultItemType.Login
+          ? item.login.username || ""
+          : "",
+        password: item.type === VaultItemType.Login
+          ? item.login.password || ""
+          : "",
+        uri: item.type === VaultItemType.Login
+          ? item.login.uris?.[0]?.uri || ""
+          : "",
+        totpSecret: item.type === VaultItemType.Login
+          ? item.login.totp || ""
+          : "",
+        fidoCredentials: item.type === VaultItemType.Login
+          ? item.login.fido2Credentials || []
+          : [],
+        cardholderName: item.type === VaultItemType.Card
+          ? item.card.cardholderName || ""
+          : "",
+        cardNumber: item.type === VaultItemType.Card
+          ? item.card.number || ""
+          : "",
+        cardBrand: item.type === VaultItemType.Card
+          ? item.card.brand || "Visa"
+          : "Visa",
+        cardExpMonth: item.type === VaultItemType.Card
+          ? item.card.expMonth || "1"
+          : "1",
+        cardExpYear: item.type === VaultItemType.Card
+          ? item.card.expYear || String(new Date().getFullYear())
+          : String(new Date().getFullYear()),
         cardCode: item.type === VaultItemType.Card ? item.card.code || "" : "",
-        sshPrivateKey: item.type === VaultItemType.SshKey ? item.sshKey.privateKey || "" : "",
-        sshPublicKey: item.type === VaultItemType.SshKey ? item.sshKey.publicKey || "" : "",
-        sshFingerprint: item.type === VaultItemType.SshKey ? item.sshKey.keyFingerprint || "" : "",
-        identityTitle: item.type === VaultItemType.Identity ? item.identity.title || "" : "",
-        firstName: item.type === VaultItemType.Identity ? item.identity.firstName || "" : "",
-        middleName: item.type === VaultItemType.Identity ? item.identity.middleName || "" : "",
-        lastName: item.type === VaultItemType.Identity ? item.identity.lastName || "" : "",
-        identityUsername: item.type === VaultItemType.Identity ? item.identity.username || "" : "",
-        company: item.type === VaultItemType.Identity ? item.identity.company || "" : "",
-        ssn: item.type === VaultItemType.Identity ? item.identity.ssn || "" : "",
-        passportNumber: item.type === VaultItemType.Identity ? item.identity.passportNumber || "" : "",
-        licenseNumber: item.type === VaultItemType.Identity ? item.identity.licenseNumber || "" : "",
-        email: item.type === VaultItemType.Identity ? item.identity.email || "" : "",
-        phone: item.type === VaultItemType.Identity ? item.identity.phone || "" : "",
-        address1: item.type === VaultItemType.Identity ? item.identity.address1 || "" : "",
-        address2: item.type === VaultItemType.Identity ? item.identity.address2 || "" : "",
-        address3: item.type === VaultItemType.Identity ? item.identity.address3 || "" : "",
-        city: item.type === VaultItemType.Identity ? item.identity.city || "" : "",
-        state: item.type === VaultItemType.Identity ? item.identity.state || "" : "",
-        postalCode: item.type === VaultItemType.Identity ? item.identity.postalCode || "" : "",
-        country: item.type === VaultItemType.Identity ? item.identity.country || "" : "",
+        sshPrivateKey: item.type === VaultItemType.SshKey
+          ? item.sshKey.privateKey || ""
+          : "",
+        sshPublicKey: item.type === VaultItemType.SshKey
+          ? item.sshKey.publicKey || ""
+          : "",
+        sshFingerprint: item.type === VaultItemType.SshKey
+          ? item.sshKey.keyFingerprint || ""
+          : "",
+        identityTitle: item.type === VaultItemType.Identity
+          ? item.identity.title || ""
+          : "",
+        firstName: item.type === VaultItemType.Identity
+          ? item.identity.firstName || ""
+          : "",
+        middleName: item.type === VaultItemType.Identity
+          ? item.identity.middleName || ""
+          : "",
+        lastName: item.type === VaultItemType.Identity
+          ? item.identity.lastName || ""
+          : "",
+        identityUsername: item.type === VaultItemType.Identity
+          ? item.identity.username || ""
+          : "",
+        company: item.type === VaultItemType.Identity
+          ? item.identity.company || ""
+          : "",
+        ssn: item.type === VaultItemType.Identity
+          ? item.identity.ssn || ""
+          : "",
+        passportNumber: item.type === VaultItemType.Identity
+          ? item.identity.passportNumber || ""
+          : "",
+        licenseNumber: item.type === VaultItemType.Identity
+          ? item.identity.licenseNumber || ""
+          : "",
+        email: item.type === VaultItemType.Identity
+          ? item.identity.email || ""
+          : "",
+        phone: item.type === VaultItemType.Identity
+          ? item.identity.phone || ""
+          : "",
+        address1: item.type === VaultItemType.Identity
+          ? item.identity.address1 || ""
+          : "",
+        address2: item.type === VaultItemType.Identity
+          ? item.identity.address2 || ""
+          : "",
+        address3: item.type === VaultItemType.Identity
+          ? item.identity.address3 || ""
+          : "",
+        city: item.type === VaultItemType.Identity
+          ? item.identity.city || ""
+          : "",
+        state: item.type === VaultItemType.Identity
+          ? item.identity.state || ""
+          : "",
+        postalCode: item.type === VaultItemType.Identity
+          ? item.identity.postalCode || ""
+          : "",
+        country: item.type === VaultItemType.Identity
+          ? item.identity.country || ""
+          : "",
       });
     } else {
       setFormState({
@@ -303,7 +371,8 @@ export const ItemEdit: Component = () => {
         "danger",
       ))
     ) return;
-    updateForm("fidoCredentials",
+    updateForm(
+      "fidoCredentials",
       formState.fidoCredentials.filter((c) => c.credentialId !== credId),
     );
   };
@@ -804,7 +873,8 @@ export const ItemEdit: Component = () => {
                 <Checkbox
                   id="item-reprompt"
                   checked={formState.reprompt === 1}
-                  onChange={(checked) => updateForm("reprompt", checked ? 1 : 0)}
+                  onChange={(checked) =>
+                    updateForm("reprompt", checked ? 1 : 0)}
                   label={t("edit_label_reprompt")}
                 />
               </div>

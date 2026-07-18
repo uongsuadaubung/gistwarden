@@ -12,7 +12,8 @@ export const Input: Component<InputProps> = (props) => {
     const custom = local.class || "";
     // Bỏ các class padding-right cứng nếu có rightActions
     const filtered = local.rightActions
-      ? custom.split(" ").filter(c => !c.startsWith("pr-") && c !== "w-100").join(" ")
+      ? custom.split(" ").filter((c) => !c.startsWith("pr-") && c !== "w-100")
+        .join(" ")
       : custom;
     return `${base} ${filtered}`.trim();
   };
@@ -22,7 +23,9 @@ export const Input: Component<InputProps> = (props) => {
       const base = "input-container";
       const custom = local.class || "";
       // w-100 và các class margin ngoài (mb-, mt-, etc.) nên được áp dụng ở wrapper
-      const layoutClasses = custom.split(" ").filter(c => c === "w-100" || c.startsWith("mb-") || c.startsWith("mt-")).join(" ");
+      const layoutClasses = custom.split(" ").filter((c) =>
+        c === "w-100" || c.startsWith("mb-") || c.startsWith("mt-")
+      ).join(" ");
       return `${base} ${layoutClasses}`.trim();
     };
 
@@ -48,4 +51,3 @@ export const Input: Component<InputProps> = (props) => {
 };
 
 export default Input;
-

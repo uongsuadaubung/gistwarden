@@ -153,7 +153,6 @@ export const Settings: Component = () => {
             <ChevronRightIcon />
           </div>
 
-
           {/* About */}
           <div
             class="setting-row"

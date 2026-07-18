@@ -12,7 +12,9 @@ interface PasskeySelectRowProps {
 export const PasskeySelectRow: Component<PasskeySelectRowProps> = (props) => {
   return (
     <div
-      class={`passkey-item ${props.subItem ? "sub-item" : ""} ${props.active ? "active" : ""}`}
+      class={`passkey-item ${props.subItem ? "sub-item" : ""} ${
+        props.active ? "active" : ""
+      }`}
       onClick={props.onClick}
     >
       <div class="passkey-item-icon">{props.icon}</div>
