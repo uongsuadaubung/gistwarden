@@ -337,6 +337,10 @@ export const Login: Component = () => {
                 </Button>
               </Show>
 
+              <div class="login-or-divider">
+                <span>{t("login_or")}</span>
+              </div>
+
               <Button
                 type="button"
                 variant="secondary"
@@ -344,7 +348,7 @@ export const Login: Component = () => {
                 onClick={handleResetToken}
                 disabled={loading()}
               >
-                {t("login_reset_token")}
+                {t("settings_logout_title")}
               </Button>
 
               <div class="mt-16 text-center">

@@ -281,12 +281,6 @@ export const ItemEdit: Component = () => {
             />
           </Show>
 
-          {/* Custom Fields in Edit Mode */}
-          <CustomFieldsEdit
-            fields={formState.fields}
-            onChange={(fs) => updateForm("fields", fs)}
-          />
-
           {/* Notes Section (Common to Login and Card) */}
           <Show when={formState.itemType !== VaultItemType.SecureNote}>
             <div class="detail-section-title">
@@ -315,6 +309,12 @@ export const ItemEdit: Component = () => {
               </div>
             </div>
           </Show>
+
+          {/* Custom Fields in Edit Mode */}
+          <CustomFieldsEdit
+            fields={formState.fields}
+            onChange={(fs) => updateForm("fields", fs)}
+          />
         </div>
 
         {/* Footer */}

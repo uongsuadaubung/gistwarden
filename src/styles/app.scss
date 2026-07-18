@@ -1,4 +1,5 @@
 @use "./components/custom-field-modal";
+@use "./components/header";
 @use "./components/page-transitions";
 @use "./components/input";
 @use "./components/button";
@@ -184,38 +185,6 @@ html.mode-responsive #root {
   flex-direction: column;
   height: 100%;
   position: relative;
-}
-
-/* Header */
-.app-header {
-  background-color: var(--header-bg);
-  color: var(--white);
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  font-size: 15px;
-  height: 48px;
-  flex-shrink: 0;
-
-  .header-actions {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-
-    svg {
-      cursor: pointer;
-      fill: currentColor;
-      width: 18px;
-      height: 18px;
-      opacity: 0.85;
-      transition: opacity 0.2s;
-      &:hover {
-        opacity: 1;
-      }
-    }
-  }
 }
 
 /* Body / Main Area */

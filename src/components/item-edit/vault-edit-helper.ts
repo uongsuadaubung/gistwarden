@@ -3,6 +3,7 @@ import {
   type CardVaultItem,
   Fido2CredentialSchema,
   type IdentityVaultItem,
+  LoginUriSchema,
   type LoginVaultItem,
   type SecureNoteVaultItem,
   type SshKeyVaultItem,
@@ -20,7 +21,7 @@ export const ItemEditFormSchema = z.object({
   fields: z.array(VaultFieldSchema),
   username: z.string(),
   password: z.string(),
-  uri: z.string(),
+  uris: z.array(LoginUriSchema),
   totpSecret: z.string(),
   fidoCredentials: z.array(Fido2CredentialSchema),
   cardholderName: z.string(),
@@ -71,9 +72,11 @@ export function getInitialFormState(
       password: item.type === VaultItemType.Login
         ? (item.login.password ?? "")
         : "",
-      uri: item.type === VaultItemType.Login
-        ? (item.login.uris?.[0]?.uri ?? "")
-        : "",
+      uris: item.type === VaultItemType.Login
+        ? (item.login.uris && item.login.uris.length > 0
+          ? item.login.uris.map((u) => ({ uri: u.uri }))
+          : [{ uri: "" }])
+        : [],
       totpSecret: item.type === VaultItemType.Login
         ? (item.login.totp ?? "")
         : "",
@@ -171,7 +174,7 @@ export function getInitialFormState(
     fields: [],
     username: "",
     password: "",
-    uri: "",
+    uris: [{ uri: "" }],
     totpSecret: "",
     fidoCredentials: [],
     cardholderName: "",
@@ -272,14 +275,11 @@ export function mapFormStateToVaultItem(
       }
     }
 
-    const originalUris = originalLogin?.uris ?? [];
-    const newUri = validatedForm.uri.trim();
-    const mappedUris = newUri
-      ? [{
-        uri: newUri,
-        match: originalUris[0]?.uri === newUri ? originalUris[0]?.match : null,
-      }]
-      : [];
+    const mappedUris = validatedForm.uris
+      .map((u) => ({
+        uri: u.uri.trim(),
+      }))
+      .filter((u) => u.uri);
 
     return {
       ...commonData,
