@@ -31,11 +31,11 @@ interface Fido2Request {
   origin: string;
   options: {
     rpId?: string;
-    rp: {
+    rp?: {
       id?: string;
       name: string;
     };
-    user: {
+    user?: {
       id: string;
       name: string;
       displayName?: string;
@@ -183,7 +183,7 @@ export const Fido2Prompt: Component = () => {
           }
           findMatchingPasskeys(rpId);
         } else if (res.type === "create") {
-          const rpId = res.options.rp.id || res.options.rp.name;
+          const rpId = res.options.rp?.id || res.options.rp?.name || "";
           findMatchingAccounts(rpId, res.origin);
         }
       } else {
@@ -260,12 +260,27 @@ export const Fido2Prompt: Component = () => {
   const handleConfirmRegister = async () => {
     const req = pendingReq();
     if (!req) return;
+    const rp = req.options.rp;
+    const user = req.options.user;
+    const challenge = req.options.challenge;
+    if (!rp || !user || !challenge) {
+      setError(
+        "Missing required registration parameters (rp, user, challenge)",
+      );
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
       const { newCred, result } = await generatePasskeyRegisterResponse(
-        req.options,
+        {
+          ...req.options,
+          rp,
+          user,
+          challenge,
+        },
         req.origin,
       );
 
@@ -301,10 +316,10 @@ export const Fido2Prompt: Component = () => {
         saveRes = await saveItem(updatedItem);
       } else {
         const newItem: Partial<VaultItem> = {
-          name: req.options.rp.name || req.options.rp.id,
+          name: rp.name || rp.id || "",
           type: VaultItemType.Login,
           login: {
-            username: req.options.user.name,
+            username: user.name,
             password: "",
             uris: [{ uri: req.origin }],
             fido2Credentials: [newCred],
@@ -448,9 +463,9 @@ export const Fido2Prompt: Component = () => {
                       <div
                         class="prompt-subtitle"
                         innerHTML={t("fido2_register_subtitle_new", {
-                          rp: pendingReq()?.options.rp.name ||
-                            pendingReq()?.options.rp.id || "",
-                          user: pendingReq()?.options.user.name || "",
+                          rp: pendingReq()?.options.rp?.name ||
+                            pendingReq()?.options.rp?.id || "",
+                          user: pendingReq()?.options.user?.name || "",
                         })}
                       />
                     }
@@ -458,7 +473,7 @@ export const Fido2Prompt: Component = () => {
                     <div
                       class="prompt-subtitle"
                       innerHTML={t("fido2_register_subtitle_choose", {
-                        user: pendingReq()?.options.user.name || "",
+                        user: pendingReq()?.options.user?.name || "",
                       })}
                     />
                   </Show>

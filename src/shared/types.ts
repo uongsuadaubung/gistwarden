@@ -357,12 +357,12 @@ export const GetPendingFido2RequestResponseSchema = z.object({
     rp: z.object({
       id: z.string().optional(),
       name: z.string(),
-    }),
+    }).optional(),
     user: z.object({
       id: z.string(),
       name: z.string(),
       displayName: z.string().optional(),
-    }),
+    }).optional(),
     challenge: z.string(),
     userVerification: z.enum(["required", "preferred", "discouraged"])
       .optional(),
