@@ -17,7 +17,13 @@ import {
   generateSalt,
   getOrDeriveKey,
 } from "./crypto.ts";
-import { VaultListSchema, type VaultTimeoutAction, View } from "./types.ts";
+import {
+  DownloadFromGistResponseSchema,
+  ValidateTokenResponseSchema,
+  VaultListSchema,
+  type VaultTimeoutAction,
+  View,
+} from "./types.ts";
 import { setLanguage, SupportLanguage } from "./i18n.ts";
 import { syncVaultToGist } from "./sync-utils.ts";
 import { APP_NAME } from "./constants.ts";
@@ -80,11 +86,10 @@ export async function init() {
   if (settings.githubToken && masterPassword && settings.salt) {
     try {
       const key = await getOrDeriveKey(masterPassword, settings.salt);
-      const res = await new Promise<{ success: boolean; content?: string }>(
-        (resolve) => {
-          chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
-        },
-      );
+      const rawRes = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
+      });
+      const res = DownloadFromGistResponseSchema.parse(rawRes);
 
       if (res && res.success && res.content) {
         const payload = JSON.parse(res.content);
@@ -182,11 +187,10 @@ export async function unlock(
 
     // 1. Nếu salt cục bộ bị trống (ví dụ sau khi logout), tải Gist từ GitHub về để trích xuất salt cũ
     if (!saltBase64) {
-      const downloadRes = await new Promise<
-        { success: boolean; content?: string; error?: string }
-      >((resolve) => {
+      const rawDownloadRes = await new Promise((resolve) => {
         chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
       });
+      const downloadRes = DownloadFromGistResponseSchema.parse(rawDownloadRes);
 
       if (downloadRes.success && downloadRes.content) {
         try {
@@ -204,11 +208,10 @@ export async function unlock(
       }
     } else {
       // Nếu đã có salt cục bộ, tải dữ liệu két sắt từ Gist về bình thường
-      const downloadRes = await new Promise<
-        { success: boolean; content?: string; error?: string }
-      >((resolve) => {
+      const rawDownloadRes = await new Promise((resolve) => {
         chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
       });
+      const downloadRes = DownloadFromGistResponseSchema.parse(rawDownloadRes);
       if (downloadRes.success && downloadRes.content) {
         existingGistContent = downloadRes.content;
         hasExistingGist = true;
@@ -311,16 +314,10 @@ export async function unlock(
 export async function setupGithub(
   token: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const res = await new Promise<
-    {
-      success: boolean;
-      username?: string;
-      avatarUrl?: string;
-      error?: string;
-    }
-  >((resolve) => {
+  const rawRes = await new Promise((resolve) => {
     chrome.runtime.sendMessage({ type: "VALIDATE_TOKEN", token }, resolve);
   });
+  const res = ValidateTokenResponseSchema.parse(rawRes);
 
   if (res.success) {
     await updateSettings({
