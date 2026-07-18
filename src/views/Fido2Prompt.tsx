@@ -1,5 +1,7 @@
 import { type Component, createSignal, For, onMount, Show } from "solid-js";
-import { store, storeActions } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { unlock } from "@/shared/auth-service.ts";
+import { saveItem } from "@/shared/vault-service.ts";
 import { APP_NAME } from "@/shared/constants.ts";
 import {
   generatePasskeyAssertResponse,
@@ -246,7 +248,7 @@ export const Fido2Prompt: Component = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await storeActions.unlock(masterPassword());
+      const res = await unlock(masterPassword());
       if (res.success) {
         setMasterPassword("");
         await loadPendingRequest();
@@ -302,7 +304,7 @@ export const Fido2Prompt: Component = () => {
             fido2Credentials: updatedCredentials,
           },
         };
-        saveRes = await storeActions.saveItem(updatedItem);
+        saveRes = await saveItem(updatedItem);
       } else {
         const newItem: Partial<VaultItem> = {
           name: req.options.rp.name || req.options.rp.id,
@@ -314,7 +316,7 @@ export const Fido2Prompt: Component = () => {
             fido2Credentials: [newCred],
           },
         };
-        saveRes = await storeActions.saveItem(newItem);
+        saveRes = await saveItem(newItem);
       }
 
       if (!saveRes.success) {
@@ -375,7 +377,7 @@ export const Fido2Prompt: Component = () => {
         },
       };
 
-      const saveRes = await storeActions.saveItem(updatedItem);
+      const saveRes = await saveItem(updatedItem);
       if (!saveRes.success) {
         throw new Error(
           saveRes.error || t("fido2_error_counter_update_failed"),

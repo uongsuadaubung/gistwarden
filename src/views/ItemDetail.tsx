@@ -6,7 +6,11 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import { store, storeActions, View } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import { deleteItem } from "@/shared/vault-service.ts";
+import { confirm, showToast } from "@/shared/ui-service.ts";
 import {
   type CardVaultItem,
   CustomFieldType,
@@ -143,13 +147,13 @@ export const ItemDetail: Component = () => {
   const handleCopy = async (text: string, _type: string) => {
     if (!text) return;
     await navigator.clipboard.writeText(text);
-    storeActions.showToast(t("detail_copied"), "success");
+    showToast(t("detail_copied"), "success");
   };
 
   const handleDelete = async () => {
     if (!store.selectedItem?.id) return;
     if (
-      !(await storeActions.confirm(
+      !(await confirm(
         t("edit_confirm_delete_title"),
         t("edit_confirm_delete_msg", { name: name() }),
         "danger",
@@ -159,20 +163,20 @@ export const ItemDetail: Component = () => {
     }
 
     setError("");
-    const res = await storeActions.deleteItem(store.selectedItem.id);
+    const res = await deleteItem(store.selectedItem.id);
     if (res.success) {
-      storeActions.navigate(View.Vault);
+      navigate(View.Vault);
     } else {
       setError(res.error || t("edit_error_delete_failed"));
     }
   };
 
   const handleBackToVault = () => {
-    storeActions.navigate(View.Vault);
+    navigate(View.Vault);
   };
 
   const handleGoToEdit = () => {
-    storeActions.navigate(View.ItemEdit);
+    navigate(View.ItemEdit);
   };
 
   return (

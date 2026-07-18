@@ -1,7 +1,9 @@
 import { type Component, createSignal, onMount, Show } from "solid-js";
 import { t } from "@/shared/i18n.ts";
 import { APP_NAME } from "@/shared/constants.ts";
-import { store, storeActions } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { init } from "@/shared/auth-service.ts";
+import { updateLanguage } from "@/shared/ui-service.ts";
 import Button from "@/components/Button.tsx";
 import GeneralTab from "@/components/guide/GeneralTab.tsx";
 import GistTab from "@/components/guide/GistTab.tsx";
@@ -31,11 +33,11 @@ export const Guide: Component = () => {
   onMount(async () => {
     // Add native guide body class for layout
     document.body.classList.add("guide-body-native");
-    await storeActions.init();
+    await init();
   });
 
   const handleLangChange = (val: "en" | "vi") => {
-    storeActions.updateLanguage(val);
+    updateLanguage(val);
   };
 
   const handleOpenGist = () => {

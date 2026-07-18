@@ -1,5 +1,9 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { store, storeActions, View } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import { syncVault } from "@/shared/vault-service.ts";
+import { showToast } from "@/shared/ui-service.ts";
 import {
   ChevronRightIcon,
   DownloadIcon,
@@ -14,16 +18,16 @@ export const VaultOptions: Component = () => {
   const [loading, setLoading] = createSignal(false);
 
   const handleBack = () => {
-    storeActions.navigate(View.Settings);
+    navigate(View.Settings);
   };
 
   const handleSync = async () => {
     setLoading(true);
     setError("");
-    const res = await storeActions.syncVault();
+    const res = await syncVault();
     setLoading(false);
     if (res.success) {
-      storeActions.showToast(t("vault_sync_success"), "success");
+      showToast(t("vault_sync_success"), "success");
     } else {
       setError(res.error || t("vault_sync_error"));
     }
@@ -64,7 +68,7 @@ export const VaultOptions: Component = () => {
           {/* Import */}
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.ImportAccounts)}
+            onClick={() => navigate(View.ImportAccounts)}
           >
             <div class="setting-row-left">
               <UploadIcon />
@@ -81,7 +85,7 @@ export const VaultOptions: Component = () => {
           {/* Export */}
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.ExportAccounts)}
+            onClick={() => navigate(View.ExportAccounts)}
           >
             <div class="setting-row-left">
               <DownloadIcon />

@@ -1,5 +1,6 @@
 import { type Component } from "solid-js";
-import { storeActions, View } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
 import { t } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
 import {
@@ -12,7 +13,7 @@ import { APP_NAME, FIREFOX_ADDON_SLUG } from "@/shared/constants.ts";
 
 export const About: Component = () => {
   const handleBack = () => {
-    storeActions.navigate(View.Settings);
+    navigate(View.Settings);
   };
 
   const getAppVersion = () => {
@@ -123,7 +124,7 @@ export const About: Component = () => {
           {/* Troubleshooting */}
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.Troubleshooting)}
+            onClick={() => navigate(View.Troubleshooting)}
           >
             <div class="setting-row-left">
               <QuestionIcon />
