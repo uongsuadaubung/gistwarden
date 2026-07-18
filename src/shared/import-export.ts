@@ -199,7 +199,6 @@ export function parseAndValidateImportJson(
             uris: loginData.uris
               ? loginData.uris.map((u) => ({
                 uri: u.uri || "",
-                match: typeof u.match === "number" ? u.match : null,
               }))
               : [],
             fido2Credentials: loginData.fido2Credentials || [],

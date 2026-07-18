@@ -55,9 +55,13 @@ export default {
   login_forgot_password_msg:
     "{APP_NAME} sử dụng cơ chế mã hóa đầu-cuối (Zero-Knowledge). Mật khẩu Master không bao giờ được gửi đi hay lưu trữ trên máy chủ, do đó <strong class='text-error'>KHÔNG CÓ CÁCH NÀO</strong> để khôi phục hoặc đặt lại.<br/><br/>Để bắt đầu lại, hệ thống sẽ <strong>ĐĂNG XUẤT</strong> và <strong>XÓA DỮ LIỆU CỤC BỘ</strong>.<br/><br/>Nếu bạn muốn tiếp tục sử dụng tài khoản GitHub này, hệ thống sẽ mở trang GitHub Gist chứa két sắt cũ để bạn có thể <strong>SAO LƯU</strong> dữ liệu hoặc tiến hành <strong class='text-error'>XÓA THỦ CÔNG</strong> Gist này trên GitHub trước khi đăng nhập lại.<br/><br/>Bạn có chắc chắn muốn đăng xuất và mở trang Gist cũ không?",
   app_loading: "Đang tải {APP_NAME}...",
+  login_or: "Hoặc",
 
   // Vault Page
   vault_search_placeholder: "Tìm kiếm tài khoản...",
+  vault_filter_title: "Bộ lọc",
+  vault_filter_type: "Loại",
+  vault_filter_all_types: "Tất cả các loại",
   vault_empty_title: "Chưa có tài khoản nào",
   vault_empty_subtitle:
     "Két sắt của bạn trống rỗng. Thêm mới tài khoản bằng nút + bên dưới.",
@@ -132,7 +136,9 @@ export default {
   edit_field_type_linked: "Liên kết",
   edit_field_name_placeholder: "Tên trường",
   edit_field_val_placeholder: "Giá trị trường",
-  edit_btn_add_field: "Thêm trường tùy chỉnh",
+  edit_btn_add_field: "Thêm trường",
+  edit_btn_add_website: "Thêm website",
+  edit_btn_delete_website: "Xóa website",
   edit_label_passkeys: "Mã khóa (Passkeys)",
   edit_passkey_creation_date: "Ngày tạo: {date}",
   edit_passkey_counter: "Bộ đếm: {count}",
@@ -239,7 +245,7 @@ export default {
   detail_section_login: "Thông tin đăng nhập",
   detail_no_value: "Không có",
   detail_section_security: "Bảo mật & OTP",
-  detail_totp_label: "Mã xác thực hiện tại (TOTP)",
+  detail_totp_label: "Mã xác thực (TOTP)",
   detail_section_autofill: "Tùy chọn tự động điền",
   detail_visit_website: "Truy cập trang web",
 

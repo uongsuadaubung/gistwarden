@@ -1,5 +1,6 @@
 import { type Component, createSignal, Index, onMount, Show } from "solid-js";
 import { t } from "@/shared/i18n.ts";
+import { Header } from "@/components/Header.tsx";
 import Input from "@/components/Input.tsx";
 import Checkbox from "@/components/Checkbox.tsx";
 import FormField from "@/components/FormField.tsx";
@@ -78,7 +79,7 @@ export const Generator: Component = () => {
 
     if (minNum + minSpec > len) {
       setPassword(
-        t("gen_error_min_exceeds_length") || "Min options exceed length",
+        t("gen_error_min_exceeds_length"),
       );
       return;
     }
@@ -154,7 +155,7 @@ export const Generator: Component = () => {
     const pwd = password();
     if (
       !pwd || pwd === t("gen_error_charset_empty") ||
-      pwd === (t("gen_error_min_exceeds_length") || "Min options exceed length")
+      pwd === t("gen_error_min_exceeds_length")
     ) {
       return;
     }
@@ -203,7 +204,7 @@ export const Generator: Component = () => {
   const renderHighlightedPassword = (pwd: string) => {
     if (
       pwd === t("gen_error_charset_empty") ||
-      pwd === (t("gen_error_min_exceeds_length") || "Min options exceed length")
+      pwd === t("gen_error_min_exceeds_length")
     ) {
       return <span class="text-error font-sz-13">{pwd}</span>;
     }
@@ -234,6 +235,7 @@ export const Generator: Component = () => {
 
   return (
     <div class="app-container">
+      <Header title={t("nav_generator")} />
       <div class="app-body">
         {/* Segmented Tab Bar */}
         <div class="generator-tabs">
@@ -247,7 +249,7 @@ export const Generator: Component = () => {
               generate();
             }}
           >
-            {t("gen_tab_password") || "Password"}
+            {t("gen_tab_password")}
           </button>
           <button
             type="button"
@@ -259,7 +261,7 @@ export const Generator: Component = () => {
               generate();
             }}
           >
-            {t("gen_tab_passphrase") || "Passphrase"}
+            {t("gen_tab_passphrase")}
           </button>
         </div>
 
@@ -290,13 +292,13 @@ export const Generator: Component = () => {
           </div>
 
           {/* Options */}
-          <div class="options-title">{t("gen_options_title") || "Options"}</div>
+          <div class="options-title">{t("gen_options_title")}</div>
 
           <div class="card mb-16 overflow-visible">
             {/* Length input */}
             <FormField
               id="gen-length"
-              label={t("gen_label_length") || "Length"}
+              label={t("gen_label_length")}
             >
               <Input
                 id="gen-length"
@@ -314,7 +316,7 @@ export const Generator: Component = () => {
           <div class="card mb-16 overflow-visible">
             {/* Include checkboxes */}
             <div class="options-group-title">
-              {t("gen_include_title") || "Include"}
+              {t("gen_include_title")}
             </div>
             <div class="checkbox-grid">
               <Checkbox
@@ -369,7 +371,7 @@ export const Generator: Component = () => {
             <div class="grid-2">
               <FormField
                 id="gen-min-numbers"
-                label={t("gen_min_numbers") || "Minimum numbers"}
+                label={t("gen_min_numbers")}
               >
                 <Input
                   id="gen-min-numbers"
@@ -384,7 +386,7 @@ export const Generator: Component = () => {
               </FormField>
               <FormField
                 id="gen-min-specials"
-                label={t("gen_min_specials") || "Minimum special"}
+                label={t("gen_min_specials")}
               >
                 <Input
                   id="gen-min-specials"
@@ -408,8 +410,7 @@ export const Generator: Component = () => {
                 setAvoidAmbiguous(val);
                 generate();
               }}
-              label={t("gen_opt_avoid_ambiguous") ||
-                "Avoid ambiguous characters"}
+              label={t("gen_opt_avoid_ambiguous")}
               class="mt-16"
             />
           </div>
@@ -442,13 +443,13 @@ export const Generator: Component = () => {
           </div>
 
           {/* Options */}
-          <div class="options-title">{t("gen_options_title") || "Options"}</div>
+          <div class="options-title">{t("gen_options_title")}</div>
 
           <div class="card mb-16 overflow-visible">
             {/* Number of words input */}
             <FormField
               id="gen-num-words"
-              label={t("gen_label_num_words") || "Number of words"}
+              label={t("gen_label_num_words")}
             >
               <Input
                 id="gen-num-words"
@@ -460,8 +461,7 @@ export const Generator: Component = () => {
                   handleNumWordsChange(parseInt(e.currentTarget.value) || 0)}
               />
               <div class="options-hint">
-                {t("gen_passphrase_hint") ||
-                  "Value must be between 3 and 20. Use 6 words or more to generate a strong passphrase."}
+                {t("gen_passphrase_hint")}
               </div>
             </FormField>
           </div>
@@ -470,7 +470,7 @@ export const Generator: Component = () => {
             {/* Word separator input */}
             <FormField
               id="gen-word-separator"
-              label={t("gen_label_word_separator") || "Word separator"}
+              label={t("gen_label_word_separator")}
               class="mb-16"
             >
               <Input
@@ -489,7 +489,7 @@ export const Generator: Component = () => {
                 setCapitalize(val);
                 generate();
               }}
-              label={t("gen_opt_capitalize") || "Capitalize"}
+              label={t("gen_opt_capitalize")}
               class="mb-12"
             />
 
@@ -500,7 +500,7 @@ export const Generator: Component = () => {
                 setIncludeNumber(val);
                 generate();
               }}
-              label={t("gen_opt_include_number") || "Include number"}
+              label={t("gen_opt_include_number")}
             />
           </div>
         </Show>

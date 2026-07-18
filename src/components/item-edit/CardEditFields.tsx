@@ -98,7 +98,7 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
         </FormField>
 
         {/* Brand dropdown */}
-        <FormField id="card-brand" label={t("detail_card_brand") || "Brand"}>
+        <FormField id="card-brand" label={t("detail_card_brand")}>
           <Select
             id="card-brand"
             value={props.formState.cardBrand}
@@ -112,7 +112,7 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
         <div class="grid-2">
           <FormField
             id="card-exp-month"
-            label={t("detail_card_expiration") || "Expiration month"}
+            label={t("detail_card_expiration")}
           >
             <Select
               id="card-exp-month"

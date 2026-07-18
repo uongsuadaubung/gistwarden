@@ -19,7 +19,7 @@ Deno.test("Export CSV - Browser CSV format", () => {
       login: {
         username: "user1",
         password: 'password"123',
-        uris: [{ uri: "https://google.com", match: null }],
+        uris: [{ uri: "https://google.com" }],
         fido2Credentials: [],
         passwordRevisionDate: null,
         passwordHistory: [],
@@ -69,7 +69,7 @@ Deno.test("Export CSV - Bitwarden CSV format", () => {
       login: {
         username: "user1",
         password: "pass1",
-        uris: [{ uri: "https://google.com", match: null }],
+        uris: [{ uri: "https://google.com" }],
         totp: "secret123",
         fido2Credentials: [],
         passwordRevisionDate: null,

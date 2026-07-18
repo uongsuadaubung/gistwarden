@@ -162,6 +162,10 @@ async function runBuild() {
     background: join(srcDir, "extension/background.ts"),
     "fido2-content-script": join(srcDir, "extension/fido2-content-script.ts"),
     "fido2-page-script": join(srcDir, "extension/fido2-page-script.ts"),
+    "autofill-content-script": join(
+      srcDir,
+      "extension/autofill-content-script.ts",
+    ),
     popup: join(srcDir, "popup-entry.tsx"),
     guide: join(srcDir, "guide-entry.tsx"),
   };

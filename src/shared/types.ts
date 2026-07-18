@@ -32,7 +32,6 @@ export enum VaultItemType {
 // 1. URIs
 export const LoginUriSchema = z.object({
   uri: z.string(),
-  match: z.number().nullish(),
 });
 export type LoginUri = z.infer<typeof LoginUriSchema>;
 

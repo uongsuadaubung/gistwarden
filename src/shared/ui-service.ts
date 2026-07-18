@@ -3,7 +3,6 @@ import { type ConfirmType, type ToastType } from "./types.ts";
 import { setLanguage, SupportLanguage } from "./i18n.ts";
 import { updateSettings } from "./storage.ts";
 import {
-  APP_NAME,
   LOCAL_STORAGE_KEY_THEME,
   OAUTH_WORKER_URL,
   STORE_KEY_CONFIRM_MODAL,

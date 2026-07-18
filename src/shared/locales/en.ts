@@ -55,9 +55,13 @@ export default {
   login_forgot_password_msg:
     "{APP_NAME} uses end-to-end encryption (Zero-Knowledge). The Master Password is never sent or stored on any server, hence there is <strong class='text-error'>NO WAY</strong> to recover or reset it.<br/><br/>To start over, the system will <strong>LOG OUT</strong> and <strong>CLEAR LOCAL DATA</strong>.<br/><br/>If you want to continue using this GitHub account, the system will open the GitHub Gist page containing the old vault so you can <strong>BACK UP</strong> the data or <strong class='text-error'>MANUALLY DELETE</strong> this Gist on GitHub before logging in again.<br/><br/>Are you sure you want to log out and open the old Gist page?",
   app_loading: "Loading {APP_NAME}...",
+  login_or: "Or",
 
   // Vault Page
   vault_search_placeholder: "Search accounts...",
+  vault_filter_title: "Filter",
+  vault_filter_type: "Type",
+  vault_filter_all_types: "All types",
   vault_empty_title: "No accounts yet",
   vault_empty_subtitle:
     "Your vault is empty. Click the + button below to add a new account.",
@@ -132,7 +136,9 @@ export default {
   edit_field_type_linked: "Linked",
   edit_field_name_placeholder: "Field Name",
   edit_field_val_placeholder: "Field Value",
-  edit_btn_add_field: "Add Custom Field",
+  edit_btn_add_field: "Add field",
+  edit_btn_add_website: "Add website",
+  edit_btn_delete_website: "Delete website",
   edit_label_passkeys: "Passkeys (WebAuthn)",
   edit_passkey_creation_date: "Created: {date}",
   edit_passkey_counter: "Counter: {count}",
@@ -239,7 +245,7 @@ export default {
   detail_section_login: "Login Credentials",
   detail_no_value: "None",
   detail_section_security: "Security & OTP",
-  detail_totp_label: "Current Authenticator Code (TOTP)",
+  detail_totp_label: "Verification code (TOTP)",
   detail_section_autofill: "Auto-fill Options",
   detail_visit_website: "Visit website",
 

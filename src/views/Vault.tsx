@@ -8,29 +8,47 @@ import {
 } from "solid-js";
 import { store } from "@/shared/store.ts";
 import { navigate, selectItem } from "@/shared/navigation.ts";
-import { lock } from "@/shared/auth-service.ts";
-import { deleteItem, saveItem, syncVault } from "@/shared/vault-service.ts";
+import { deleteItem, saveItem } from "@/shared/vault-service.ts";
 import { confirm, showToast } from "@/shared/ui-service.ts";
+import { Header } from "@/components/Header.tsx";
 import { createDefaultVaultItem } from "@/components/item-edit/vault-edit-helper.ts";
 import {
   APP_NAME,
+  MSG_AUTOFILL_CREDENTIALS,
+  SESSION_KEY_SELECTED_FILTER_TYPE,
+  SESSION_KEY_SHOW_FILTER_PANEL,
   SESSION_KEY_VAULT_SEARCH_QUERY,
 } from "@/shared/constants.ts";
 import { type VaultItem, VaultItemType, View } from "@/shared/types.ts";
-import { handlePopout, isPopout } from "@/shared/popout-utils.ts";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/shared/totp-utils.ts";
 import {
+  CardIcon,
+  ChevronDownIcon,
   CloseIcon,
-  ExternalLinkIcon,
-  LockIcon,
-  PlusIcon,
+  FilterIcon,
+  GlobeIcon,
+  IdentityIcon,
+  KeyIcon,
+  ListIcon,
+  NoteIcon,
   SearchIcon,
-  SyncIcon,
 } from "@/icons/svg/index.ts";
 import { Input } from "@/components/Input.tsx";
 import { VaultItemRow } from "@/components/VaultItemRow.tsx";
 import { t } from "@/shared/i18n.ts";
+import { getBaseDomain } from "@/shared/domain-utils.ts";
+
+function isVaultItemType(val: number): val is VaultItemType {
+  return (
+    val === VaultItemType.Login ||
+    val === VaultItemType.SecureNote ||
+    val === VaultItemType.Card ||
+    val === VaultItemType.Identity ||
+    val === VaultItemType.SshKey
+  );
+}
+
 export const Vault: Component = () => {
   const [search, setSearch] = createSignal(
     sessionStorage.getItem(SESSION_KEY_VAULT_SEARCH_QUERY) || "",
@@ -43,18 +61,62 @@ export const Vault: Component = () => {
   const [activeMenuId, setActiveMenuId] = createSignal("");
   const [activeOptionsMenuId, setActiveOptionsMenuId] = createSignal("");
   const [currentTabDomain, setCurrentTabDomain] = createSignal("");
-  const [showAddMenu, setShowAddMenu] = createSignal(false);
+
+  const [showFilterPanel, setShowFilterPanel] = createSignal(
+    sessionStorage.getItem(SESSION_KEY_SHOW_FILTER_PANEL) === "true",
+  );
+  const [selectedFilterType, setSelectedFilterType] = createSignal<
+    VaultItemType | "all"
+  >(
+    (() => {
+      const saved = sessionStorage.getItem(SESSION_KEY_SELECTED_FILTER_TYPE);
+      if (saved && saved !== "all") {
+        const parsed = parseInt(saved, 10);
+        if (isVaultItemType(parsed)) {
+          return parsed;
+        }
+      }
+      return "all";
+    })(),
+  );
+  const [showTypeDropdown, setShowTypeDropdown] = createSignal(false);
+
+  const toggleFilterPanel = () => {
+    const nextVal = !showFilterPanel();
+    setShowFilterPanel(nextVal);
+    sessionStorage.setItem(SESSION_KEY_SHOW_FILTER_PANEL, String(nextVal));
+    if (!nextVal) {
+      selectFilterType("all");
+    }
+  };
+
+  const selectFilterType = (type: VaultItemType | "all") => {
+    setSelectedFilterType(type);
+    sessionStorage.setItem(SESSION_KEY_SELECTED_FILTER_TYPE, String(type));
+    setShowTypeDropdown(false);
+  };
+
+  const getTypeLabel = (type: VaultItemType | "all") => {
+    switch (type) {
+      case VaultItemType.Login:
+        return t("vault_item_login");
+      case VaultItemType.Card:
+        return t("vault_item_card");
+      case VaultItemType.Identity:
+        return t("vault_item_identity");
+      case VaultItemType.SecureNote:
+        return t("vault_item_note");
+      case VaultItemType.SshKey:
+        return t("vault_item_ssh_key");
+      default:
+        return t("vault_filter_type");
+    }
+  };
 
   onMount(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target;
       if (target instanceof Element) {
-        if (
-          target.closest(".add-new-header-btn") ||
-          target.closest(".add-dropdown")
-        ) {
-          return;
-        }
         if (
           target.closest(".action-btn") ||
           target.closest(".copy-dropdown") ||
@@ -62,10 +124,16 @@ export const Vault: Component = () => {
         ) {
           return;
         }
+        if (
+          target.closest(".filter-dropdown-trigger") ||
+          target.closest(".filter-dropdown-menu")
+        ) {
+          return;
+        }
       }
       setActiveMenuId("");
       setActiveOptionsMenuId("");
-      setShowAddMenu(false);
+      setShowTypeDropdown(false);
     };
     document.addEventListener("click", handleGlobalClick);
     onCleanup(() => {
@@ -94,10 +162,15 @@ export const Vault: Component = () => {
 
   const isMatchingDomain = (item: VaultItem, domain: string) => {
     if (!domain) return false;
-    const d = domain.toLowerCase();
-    if (item.name.toLowerCase().includes(d)) return true;
+    const targetBase = getBaseDomain(domain);
+    if (!targetBase) return false;
+
+    if (item.name.toLowerCase().includes(targetBase)) return true;
     if (item.type === VaultItemType.Login && item.login.uris) {
-      return item.login.uris.some((u) => u.uri.toLowerCase().includes(d));
+      return item.login.uris.some((u) => {
+        const itemBase = getBaseDomain(u.uri);
+        return itemBase && itemBase === targetBase;
+      });
     }
     return false;
   };
@@ -114,17 +187,24 @@ export const Vault: Component = () => {
   const matchingItems = () => {
     const domain = currentTabDomain();
     if (!domain) return [];
-    const filtered = store.vaultItems.filter((item) =>
-      isMatchingDomain(item, domain)
-    );
+    let list = store.vaultItems;
+    const filterType = selectedFilterType();
+    if (filterType && filterType !== "all") {
+      list = list.filter((item) => item.type === filterType);
+    }
+    const filtered = list.filter((item) => isMatchingDomain(item, domain));
     return sortByName(filtered);
   };
 
   const allItems = () => {
     const q = search().toLowerCase().trim();
+    const filterType = selectedFilterType();
     let list = store.vaultItems;
+    if (filterType && filterType !== "all") {
+      list = list.filter((item) => item.type === filterType);
+    }
     if (q) {
-      list = store.vaultItems.filter((item) => {
+      list = list.filter((item) => {
         const nameMatch = item.name.toLowerCase().includes(q);
         const usernameMatch = item.type === VaultItemType.Login &&
           item.login.username?.toLowerCase().includes(q);
@@ -265,128 +345,173 @@ export const Vault: Component = () => {
     }
   };
 
+  const handleFillItem = (item: VaultItem, e: MouseEvent) => {
+    e.stopPropagation();
+    if (item.type !== VaultItemType.Login) return;
+
+    const username = item.login.username || "";
+    const password = item.login.password || "";
+
+    if (typeof chrome !== "undefined" && chrome.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const activeTab = tabs[0];
+        if (activeTab && activeTab.id !== undefined) {
+          chrome.tabs.sendMessage(
+            activeTab.id,
+            {
+              type: MSG_AUTOFILL_CREDENTIALS,
+              username,
+              password,
+            },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                console.warn(
+                  "Autofill failed:",
+                  chrome.runtime.lastError.message,
+                );
+                showToast(t("toast_error"), "error");
+              } else if (response && response.success) {
+                showToast(t("toast_success"), "success");
+              }
+            },
+          );
+        }
+      });
+    }
+  };
+
   const handleAddNewItem = (type: VaultItemType) => {
     selectItem(createDefaultVaultItem(type));
     navigate(View.ItemEdit);
-    setShowAddMenu(false);
-  };
-
-  const handleLock = () => {
-    lock();
-  };
-
-  const handleSync = async () => {
-    if (store.syncing) return;
-    await syncVault();
   };
 
   return (
     <div class="app-container">
       {/* Header */}
-      <header class="app-header">
-        <span>{APP_NAME}</span>
-        <div class="header-actions">
-          {/* Add New dropdown */}
-          <div class="add-menu-container">
-            <button
-              class="add-new-header-btn"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAddMenu(!showAddMenu());
-              }}
-              title={t("vault_btn_add")}
-            >
-              <PlusIcon />
-              {t("vault_btn_add")}
-            </button>
-            <Show when={showAddMenu()}>
-              <div class="add-dropdown" onClick={(e) => e.stopPropagation()}>
-                <div
-                  class="dropdown-item"
-                  onClick={() => handleAddNewItem(VaultItemType.Login)}
-                >
-                  {t("vault_item_login")}
-                </div>
-                <div
-                  class="dropdown-item"
-                  onClick={() => handleAddNewItem(VaultItemType.SecureNote)}
-                >
-                  {t("vault_item_note")}
-                </div>
-                <div
-                  class="dropdown-item"
-                  onClick={() => handleAddNewItem(VaultItemType.Card)}
-                >
-                  {t("vault_item_card")}
-                </div>
-                <div
-                  class="dropdown-item"
-                  onClick={() => handleAddNewItem(VaultItemType.Identity)}
-                >
-                  {t("vault_item_identity")}
-                </div>
-                <div
-                  class="dropdown-item"
-                  onClick={() => handleAddNewItem(VaultItemType.SshKey)}
-                >
-                  {t("vault_item_ssh_key")}
-                </div>
-              </div>
-            </Show>
-          </div>
-
-          {/* Popout Button */}
-          <Show when={!isPopout()}>
-            <span
-              class="d-flex align-center cursor-pointer"
-              onClick={handlePopout}
-              title={t("vault_popout_title")}
-            >
-              <ExternalLinkIcon />
-            </span>
-          </Show>
-          {/* Sync Button */}
-          <span
-            class="d-flex align-center cursor-pointer"
-            onClick={handleSync}
-            title={t("vault_btn_sync")}
-          >
-            <SyncIcon class={store.syncing ? "spinning" : ""} />
-          </span>
-          {/* Lock Button */}
-          <span
-            class="d-flex align-center cursor-pointer"
-            onClick={handleLock}
-            title={t("vault_lock_title")}
-          >
-            <LockIcon />
-          </span>
-        </div>
-      </header>
+      <Header
+        title={t("nav_vault")}
+        showAdd={true}
+        onAddNewItem={handleAddNewItem}
+      />
 
       {/* Main Body */}
       <div class="app-body">
         {/* Search */}
-        <div class="search-container">
-          <SearchIcon class="search-icon" />
-          <Input
-            type="text"
-            placeholder={t("vault_search_placeholder")}
-            value={search()}
-            onInput={(e) => updateSearch(e.currentTarget.value)}
-          />
-          <Show when={search()}>
-            <button
-              type="button"
-              class="search-clear-btn"
-              onClick={() => updateSearch("")}
-              title={t("btn_clear") || "Clear"}
-            >
-              <CloseIcon />
-            </button>
-          </Show>
+        <div class="search-row">
+          <div class="search-container">
+            <SearchIcon class="search-icon" />
+            <Input
+              type="text"
+              placeholder={t("vault_search_placeholder")}
+              value={search()}
+              onInput={(e) => updateSearch(e.currentTarget.value)}
+            />
+            <Show when={search()}>
+              <button
+                type="button"
+                class="search-clear-btn"
+                onClick={() => updateSearch("")}
+                title={t("btn_clear")}
+              >
+                <CloseIcon />
+              </button>
+            </Show>
+          </div>
+          <button
+            type="button"
+            class={`filter-toggle-btn ${showFilterPanel() ? "active" : ""}`}
+            onClick={toggleFilterPanel}
+            title={t("vault_filter_title")}
+          >
+            <FilterIcon />
+          </button>
         </div>
+
+        {/* Filter Panel */}
+        <Show when={showFilterPanel()}>
+          <div class="filter-panel">
+            <div
+              class="filter-dropdown-trigger"
+              onClick={() => setShowTypeDropdown(!showTypeDropdown())}
+            >
+              <ListIcon class="dropdown-icon" />
+              <span class="dropdown-label">
+                {getTypeLabel(selectedFilterType())}
+              </span>
+              <ChevronDownIcon
+                class={`chevron-icon ${showTypeDropdown() ? "open" : ""}`}
+              />
+            </div>
+            <Show when={showTypeDropdown()}>
+              <div class="filter-dropdown-menu">
+                <div
+                  class={`dropdown-item ${
+                    selectedFilterType() === "all" ? "selected" : ""
+                  }`}
+                  onClick={() => selectFilterType("all")}
+                >
+                  <ListIcon class="item-icon" />
+                  <span>{t("vault_filter_all_types")}</span>
+                </div>
+                <div
+                  class={`dropdown-item ${
+                    selectedFilterType() === VaultItemType.Login
+                      ? "selected"
+                      : ""
+                  }`}
+                  onClick={() => selectFilterType(VaultItemType.Login)}
+                >
+                  <GlobeIcon class="item-icon" />
+                  <span>{t("vault_item_login")}</span>
+                </div>
+                <div
+                  class={`dropdown-item ${
+                    selectedFilterType() === VaultItemType.Card
+                      ? "selected"
+                      : ""
+                  }`}
+                  onClick={() => selectFilterType(VaultItemType.Card)}
+                >
+                  <CardIcon class="item-icon" />
+                  <span>{t("vault_item_card")}</span>
+                </div>
+                <div
+                  class={`dropdown-item ${
+                    selectedFilterType() === VaultItemType.Identity
+                      ? "selected"
+                      : ""
+                  }`}
+                  onClick={() => selectFilterType(VaultItemType.Identity)}
+                >
+                  <IdentityIcon class="item-icon" />
+                  <span>{t("vault_item_identity")}</span>
+                </div>
+                <div
+                  class={`dropdown-item ${
+                    selectedFilterType() === VaultItemType.SecureNote
+                      ? "selected"
+                      : ""
+                  }`}
+                  onClick={() => selectFilterType(VaultItemType.SecureNote)}
+                >
+                  <NoteIcon class="item-icon" />
+                  <span>{t("vault_item_note")}</span>
+                </div>
+                <div
+                  class={`dropdown-item ${
+                    selectedFilterType() === VaultItemType.SshKey
+                      ? "selected"
+                      : ""
+                  }`}
+                  onClick={() => selectFilterType(VaultItemType.SshKey)}
+                >
+                  <KeyIcon class="item-icon" />
+                  <span>{t("vault_item_ssh_key")}</span>
+                </div>
+              </div>
+            </Show>
+          </div>
+        </Show>
 
         {/* Sync Error */}
         <Show when={store.syncError}>
@@ -420,6 +545,8 @@ export const Vault: Component = () => {
                   onFavoriteItem={handleFavoriteItem}
                   onCloneItem={handleCloneItem}
                   onDeleteItem={handleDeleteItem}
+                  isSuggested={true}
+                  onFillItem={handleFillItem}
                 />
               )}
             </For>

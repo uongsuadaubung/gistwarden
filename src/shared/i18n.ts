@@ -57,9 +57,13 @@ const LangSchema = z.object({
   login_forgot_password_title: z.string(),
   login_forgot_password_msg: z.string(),
   app_loading: z.string(),
+  login_or: z.string(),
 
   // Vault Page
   vault_search_placeholder: z.string(),
+  vault_filter_title: z.string(),
+  vault_filter_type: z.string(),
+  vault_filter_all_types: z.string(),
   vault_empty_title: z.string(),
   vault_empty_subtitle: z.string(),
   vault_btn_sync: z.string(),
@@ -133,6 +137,8 @@ const LangSchema = z.object({
   edit_field_name_placeholder: z.string(),
   edit_field_val_placeholder: z.string(),
   edit_btn_add_field: z.string(),
+  edit_btn_add_website: z.string(),
+  edit_btn_delete_website: z.string(),
   edit_label_passkeys: z.string(),
   edit_passkey_creation_date: z.string(),
   edit_passkey_counter: z.string(),

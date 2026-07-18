@@ -1,7 +1,15 @@
-import { type Component, createSignal, For, Show } from "solid-js";
+import { type Component, createSignal, For, Index, Show } from "solid-js";
 import { t } from "@/shared/i18n.ts";
 import Input from "@/components/Input.tsx";
-import { EyeIcon, EyeOffIcon, QrIcon, TrashIcon } from "@/icons/svg/index.ts";
+import {
+  DragIcon,
+  EyeIcon,
+  EyeOffIcon,
+  MinusCircleIcon,
+  PlusIcon,
+  QrIcon,
+  TrashIcon,
+} from "@/icons/svg/index.ts";
 import FormField from "@/components/FormField.tsx";
 import type { ItemEditFormState } from "./vault-edit-helper.ts";
 
@@ -19,6 +27,51 @@ interface LoginEditFieldsProps {
 export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
   const [showPassword, setShowPassword] = createSignal(false);
   const [showTotpSecret, setShowTotpSecret] = createSignal(false);
+  const [draggedIndex, setDraggedIndex] = createSignal<number | null>(null);
+
+  const handleAddWebsite = () => {
+    const currentUris = props.formState.uris || [];
+    const newUris = [...currentUris, { uri: "", match: null }];
+    props.updateForm("uris", newUris);
+  };
+
+  const handleUpdateWebsiteUri = (index: number, value: string) => {
+    const currentUris = props.formState.uris || [];
+    const newUris = currentUris.map((u, i) =>
+      i === index ? { ...u, uri: value } : u
+    );
+    props.updateForm("uris", newUris);
+  };
+
+  const handleDeleteWebsite = (index: number) => {
+    const currentUris = props.formState.uris || [];
+    const newUris = currentUris.filter((_, i) => i !== index);
+    props.updateForm("uris", newUris);
+  };
+
+  const handleDragStart = (index: number, e: DragEvent) => {
+    setDraggedIndex(index);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(index));
+    }
+  };
+
+  const handleDragOver = (index: number, e: DragEvent) => {
+    e.preventDefault();
+    const dragged = draggedIndex();
+    if (dragged === null || dragged === index) return;
+
+    const currentUris = [...(props.formState.uris || [])];
+    const item = currentUris.splice(dragged, 1)[0];
+    currentUris.splice(index, 0, item);
+    props.updateForm("uris", currentUris);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
 
   return (
     <>
@@ -145,16 +198,61 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
       <div class="detail-section-title">
         {t("detail_section_autofill")}
       </div>
-      <div class="card mb-16">
-        <FormField id="item-uri" label={t("edit_label_website")}>
-          <Input
-            id="item-uri"
-            type="text"
-            value={props.formState.uri}
-            onInput={(e) => props.updateForm("uri", e.currentTarget.value)}
-            placeholder="https://example.com"
-          />
-        </FormField>
+      <div class="card mb-16 autofill-card">
+        <Index each={props.formState.uris || []}>
+          {(u, idx) => (
+            <FormField
+              id={`item-uri-${idx}`}
+              label={idx === 0
+                ? t("edit_label_website")
+                : `${t("edit_label_website")} ${idx + 1}`}
+            >
+              <div
+                class="website-input-row"
+                draggable={props.formState.uris.length > 1}
+                onDragStart={(e) => handleDragStart(idx, e)}
+                onDragOver={(e) => handleDragOver(idx, e)}
+                onDragEnd={handleDragEnd}
+              >
+                <div class="flex-grow">
+                  <Input
+                    id={`item-uri-${idx}`}
+                    type="text"
+                    value={u().uri}
+                    onInput={(e) =>
+                      handleUpdateWebsiteUri(idx, e.currentTarget.value)}
+                    placeholder="https://example.com"
+                    rightActions={
+                      <Show when={props.formState.uris.length > 1}>
+                        <button
+                          type="button"
+                          class="action-btn input-action-btn"
+                          onClick={() => handleDeleteWebsite(idx)}
+                          title={t("edit_btn_delete_website")}
+                        >
+                          <MinusCircleIcon class="icon-inline text-error" />
+                        </button>
+                      </Show>
+                    }
+                  />
+                </div>
+                <Show when={props.formState.uris.length > 1}>
+                  <div class="website-drag-handle" title="Drag to reorder">
+                    <DragIcon class="icon-inline" />
+                  </div>
+                </Show>
+              </div>
+            </FormField>
+          )}
+        </Index>
+        <button
+          type="button"
+          class="add-website-btn"
+          onClick={handleAddWebsite}
+        >
+          <PlusIcon class="icon-inline mr-4" />
+          {t("edit_btn_add_website")}
+        </button>
       </div>
     </>
   );

@@ -54,7 +54,7 @@ export const ExportAccounts: Component = () => {
                 totp: item.login.totp || "",
                 uris: item.login.uris?.map((u) => ({
                   uri: u.uri,
-                  match: typeof u.match === "number" ? u.match : null,
+                  match: null,
                 })) || [],
                 fido2Credentials: item.login.fido2Credentials || [],
                 passwordRevisionDate: item.login.passwordRevisionDate || null,

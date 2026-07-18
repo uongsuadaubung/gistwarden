@@ -1,0 +1,225 @@
+/* Common Header Styling (Bitwarden Style) */
+
+.app-header {
+  background-color: #0b101f; /* Dark navy blue from screenshots */
+  color: var(--white);
+  padding: 0 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 48px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+
+  .header-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    /* + New Button style */
+    .add-menu-container {
+      position: relative;
+    }
+
+    .header-btn-new {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background-color: #5b9cf4; /* Pill background */
+      border: none;
+      color: #0c1322; /* Dark text for contrast */
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #4a8be3;
+      }
+
+      svg {
+        width: 14px;
+        height: 14px;
+        fill: currentColor;
+      }
+    }
+
+    /* Popout Icon Button */
+    .header-icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: var(--white);
+      }
+
+      svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+    }
+
+    /* Profile menu container */
+    .profile-menu-container {
+      position: relative;
+    }
+
+    .profile-avatar-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: #7b1fa2; /* Purple Bitwarden style */
+      color: var(--white);
+      border: none;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: opacity 0.2s ease;
+      overflow: hidden;
+
+      &:hover {
+        opacity: 0.9;
+      }
+
+      &.has-image {
+        background-color: transparent;
+      }
+
+      .profile-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: inherit;
+      }
+    }
+
+    /* Dropdowns */
+    .add-dropdown,
+    .profile-dropdown {
+      position: absolute;
+      top: 100%;
+      margin-top: 8px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: var(--shadow-dropdown);
+      z-index: 1000;
+      padding: 6px 0;
+      display: flex;
+      flex-direction: column;
+      min-width: 140px;
+    }
+
+    .add-dropdown {
+      left: 0; /* Align with "+ New" button left edge */
+      width: 150px;
+    }
+
+    .profile-dropdown {
+      right: 0; /* Align with avatar right edge */
+      width: 170px;
+    }
+
+    .profile-info {
+      padding: 6px 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      word-break: break-all;
+
+      .profile-username {
+        display: block;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 2px;
+      }
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background-color: var(--border-light, var(--border));
+      margin: 6px 0;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 12px;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: var(--hover-bg);
+      }
+
+      svg {
+        width: 14px;
+        height: 14px;
+        fill: currentColor;
+        color: var(--text-muted);
+      }
+
+      span {
+        flex: 1;
+      }
+    }
+  }
+}
+
+/* Light theme overrides */
+body.light-theme {
+  .app-header {
+    background-color: var(--header-bg); /* Use standard light-theme header-bg (#175ddc) */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+    .header-btn-new {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: var(--white);
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+    .header-icon-btn {
+      color: rgba(255, 255, 255, 0.75);
+      &:hover {
+        color: var(--white);
+      }
+    }
+
+    .profile-avatar-btn {
+      background-color: #8e24aa;
+      color: var(--white);
+    }
+  }
+}
