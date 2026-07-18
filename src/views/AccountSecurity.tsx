@@ -1,5 +1,13 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { store, storeActions, View } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import {
+  disablePinUnlock,
+  setPinUnlock,
+  updateSessionTimeout,
+} from "@/shared/auth-service.ts";
+import { confirm, showToast } from "@/shared/ui-service.ts";
 import { updateSettings } from "@/shared/storage.ts";
 import { ChevronRightIcon, KeyIcon } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
@@ -13,7 +21,7 @@ export const AccountSecurity: Component = () => {
   const [error, setError] = createSignal("");
 
   const handleBack = () => {
-    storeActions.navigate(View.Settings);
+    navigate(View.Settings);
   };
 
   const handlePinToggle = async (checked: boolean) => {
@@ -21,7 +29,7 @@ export const AccountSecurity: Component = () => {
       setIsPinModalOpen(true);
     } else {
       if (
-        await storeActions.confirm(
+        await confirm(
           t("confirm_title"),
           store.language === "vi"
             ? "Bạn có chắc chắn muốn tắt tính năng mở khóa bằng mã PIN?"
@@ -29,8 +37,8 @@ export const AccountSecurity: Component = () => {
           "warning",
         )
       ) {
-        await storeActions.disablePinUnlock();
-        storeActions.showToast(
+        await disablePinUnlock();
+        showToast(
           store.language === "vi"
             ? "Đã tắt mở khóa bằng mã PIN"
             : "PIN unlock disabled",
@@ -43,9 +51,9 @@ export const AccountSecurity: Component = () => {
   const handleSavePin = async (pin: string, requireRestart: boolean) => {
     setIsPinModalOpen(false);
     setError("");
-    const res = await storeActions.setPinUnlock(pin, requireRestart);
+    const res = await setPinUnlock(pin, requireRestart);
     if (res.success) {
-      storeActions.showToast(
+      showToast(
         store.language === "vi"
           ? "Mã PIN đã được thiết lập thành công!"
           : "PIN set successfully!",
@@ -65,8 +73,8 @@ export const AccountSecurity: Component = () => {
     timeout: string,
     action: "lock" | "logout",
   ) => {
-    await storeActions.updateSessionTimeout(timeout, action);
-    storeActions.showToast(
+    await updateSessionTimeout(timeout, action);
+    showToast(
       store.language === "vi"
         ? "Cài đặt thời gian chờ đã cập nhật"
         : "Timeout settings updated",
@@ -131,7 +139,7 @@ export const AccountSecurity: Component = () => {
         <div class="card card-list mb-0">
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.ChangeMasterPassword)}
+            onClick={() => navigate(View.ChangeMasterPassword)}
           >
             <div class="setting-row-left">
               <KeyIcon />

@@ -1,12 +1,18 @@
 import { type Component } from "solid-js";
-import { storeActions, View } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import {
+  setGlobalLoading,
+  showToast,
+  syncTimeOffset,
+} from "@/shared/ui-service.ts";
 import { t } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
 import { ChevronRightIcon, SyncIcon } from "@/icons/svg/index.ts";
 
 export const Troubleshooting: Component = () => {
   const handleBack = () => {
-    storeActions.navigate(View.About);
+    navigate(View.About);
   };
 
   return (
@@ -23,19 +29,19 @@ export const Troubleshooting: Component = () => {
           <div
             class="setting-row"
             onClick={async () => {
-              storeActions.setGlobalLoading(
+              setGlobalLoading(
                 true,
                 t("settings_sync_time_loading"),
               );
-              const res = await storeActions.syncTimeOffset();
-              storeActions.setGlobalLoading(false);
+              const res = await syncTimeOffset();
+              setGlobalLoading(false);
               if (res.success) {
-                storeActions.showToast(
+                showToast(
                   t("settings_sync_time_success"),
                   "success",
                 );
               } else {
-                storeActions.showToast(t("settings_sync_time_error"), "error");
+                showToast(t("settings_sync_time_error"), "error");
               }
             }}
           >

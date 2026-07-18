@@ -7,7 +7,10 @@ import {
   Show,
   Switch,
 } from "solid-js";
-import { store, storeActions, View } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { init, lock, logout } from "@/shared/auth-service.ts";
+import { navigate } from "@/shared/navigation.ts";
 import {
   GeneratorIcon,
   SettingsIcon,
@@ -57,7 +60,7 @@ const App: Component = () => {
     if (mode === "tab" || mode === "fido2-prompt") {
       document.documentElement.classList.add("mode-responsive");
     }
-    await storeActions.init();
+    await init();
 
     // Listen for background lock events
     if (
@@ -69,12 +72,12 @@ const App: Component = () => {
           console.debug(
             "[Popup] Received VAULT_LOCKED message from background",
           );
-          storeActions.lock();
+          lock();
         } else if (message.type === "VAULT_LOGGED_OUT") {
           console.debug(
             "[Popup] Received VAULT_LOGGED_OUT message from background",
           );
-          storeActions.logout();
+          logout();
         }
       });
     }
@@ -184,7 +187,7 @@ const App: Component = () => {
                     class={`nav-item ${
                       store.view === View.Vault ? "active" : ""
                     }`}
-                    onClick={() => storeActions.navigate(View.Vault)}
+                    onClick={() => navigate(View.Vault)}
                   >
                     <VaultIcon />
                     <span>{t("nav_vault")}</span>
@@ -193,7 +196,7 @@ const App: Component = () => {
                     class={`nav-item ${
                       store.view === View.Generator ? "active" : ""
                     }`}
-                    onClick={() => storeActions.navigate(View.Generator)}
+                    onClick={() => navigate(View.Generator)}
                   >
                     <GeneratorIcon />
                     <span>{t("nav_generator")}</span>
@@ -205,7 +208,7 @@ const App: Component = () => {
                         ? "active"
                         : ""
                     }`}
-                    onClick={() => storeActions.navigate(View.Settings)}
+                    onClick={() => navigate(View.Settings)}
                   >
                     <SettingsIcon />
                     <span>{t("nav_settings")}</span>

@@ -1,6 +1,8 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { store, storeActions, View } from "@/shared/store.ts";
-import { VaultItemType } from "@/shared/types.ts";
+import { store } from "@/shared/store.ts";
+import { VaultItemType, View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import { requestReprompt, showToast } from "@/shared/ui-service.ts";
 import { ChevronRightIcon, DownloadIcon } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
 import { APP_NAME } from "@/shared/constants.ts";
@@ -14,13 +16,13 @@ export const ExportAccounts: Component = () => {
   const [error, setError] = createSignal("");
 
   const handleBack = () => {
-    storeActions.navigate(View.VaultOptions);
+    navigate(View.VaultOptions);
   };
 
   const handleExportClick = async (type: "browser" | "bitwarden" | "json") => {
     setError("");
     try {
-      const verified = await storeActions.requestReprompt();
+      const verified = await requestReprompt();
       if (!verified) return;
 
       let fileContent = "";
@@ -157,7 +159,7 @@ export const ExportAccounts: Component = () => {
       a.download = fileName;
       a.click();
       URL.revokeObjectURL(url);
-      storeActions.showToast(t("settings_export_success"), "success");
+      showToast(t("settings_export_success"), "success");
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       setError(errMsg || t("vault_export_error_fail"));

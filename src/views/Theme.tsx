@@ -1,12 +1,14 @@
 import { type Component, Show } from "solid-js";
-import { store, storeActions, View } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
 import { t } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
-import { ThemeMode } from "@/shared/types.ts";
+import { ThemeMode, View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import { updateTheme } from "@/shared/ui-service.ts";
 
 export const Theme: Component = () => {
   const handleBack = () => {
-    storeActions.navigate(View.Appearance);
+    navigate(View.Appearance);
   };
 
   return (
@@ -19,8 +21,8 @@ export const Theme: Component = () => {
           <div
             class="setting-row"
             onClick={() => {
-              storeActions.updateTheme(ThemeMode.Dark);
-              storeActions.navigate(View.Appearance);
+              updateTheme(ThemeMode.Dark);
+              navigate(View.Appearance);
             }}
           >
             <div class="setting-row-left">
@@ -45,8 +47,8 @@ export const Theme: Component = () => {
           <div
             class="setting-row"
             onClick={() => {
-              storeActions.updateTheme(ThemeMode.Light);
-              storeActions.navigate(View.Appearance);
+              updateTheme(ThemeMode.Light);
+              navigate(View.Appearance);
             }}
           >
             <div class="setting-row-left">

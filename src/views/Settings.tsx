@@ -1,5 +1,10 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { store, storeActions, View } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import { lock, logout } from "@/shared/auth-service.ts";
+import { clearVault } from "@/shared/vault-service.ts";
+import { confirm, showToast } from "@/shared/ui-service.ts";
 import {
   ChevronRightIcon,
   InfoIcon,
@@ -18,24 +23,24 @@ export const Settings: Component = () => {
   const [_loading, setLoading] = createSignal(false);
 
   const handleLock = () => {
-    storeActions.lock();
+    lock();
   };
 
   const handleLogout = async () => {
     if (
-      await storeActions.confirm(
+      await confirm(
         t("settings_logout_title"),
         t("settings_logout_msg"),
         "warning",
       )
     ) {
-      storeActions.logout();
+      logout();
     }
   };
 
   const handleClearVault = async () => {
     if (
-      !(await storeActions.confirm(
+      !(await confirm(
         t("settings_clear_vault"),
         t("settings_clear_vault_msg"),
         "danger",
@@ -44,7 +49,7 @@ export const Settings: Component = () => {
       return;
     }
     if (
-      !(await storeActions.confirm(
+      !(await confirm(
         t("settings_clear_vault_confirm_title"),
         t("settings_clear_vault_confirm_msg"),
         "danger",
@@ -56,9 +61,9 @@ export const Settings: Component = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await storeActions.clearVault();
+      const res = await clearVault();
       if (res.success) {
-        storeActions.showToast(
+        showToast(
           t("settings_clear_vault_success"),
           "success",
         );
@@ -137,7 +142,7 @@ export const Settings: Component = () => {
           {/* Appearance Settings */}
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.Appearance)}
+            onClick={() => navigate(View.Appearance)}
           >
             <div class="setting-row-left">
               <PaletteIcon />
@@ -156,7 +161,7 @@ export const Settings: Component = () => {
           {/* About */}
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.About)}
+            onClick={() => navigate(View.About)}
           >
             <div class="setting-row-left">
               <InfoIcon />
@@ -178,7 +183,7 @@ export const Settings: Component = () => {
           {/* Account Security */}
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.AccountSecurity)}
+            onClick={() => navigate(View.AccountSecurity)}
           >
             <div class="setting-row-left">
               <ShieldIcon />
@@ -197,7 +202,7 @@ export const Settings: Component = () => {
           {/* Vault Options */}
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.VaultOptions)}
+            onClick={() => navigate(View.VaultOptions)}
           >
             <div class="setting-row-left">
               <VaultIcon />

@@ -16,7 +16,7 @@ import {
   MoreVerticalIcon,
   NoteIcon,
 } from "@/icons/svg/index.ts";
-import { storeActions } from "@/shared/store.ts";
+import { openItem } from "@/shared/navigation.ts";
 import { t } from "@/shared/i18n.ts";
 import CardBrandIcon from "./CardBrandIcon.tsx";
 
@@ -119,7 +119,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
   return (
     <div
       class="vault-item-row"
-      onClick={() => storeActions.openItem(props.item, View.ItemDetail)}
+      onClick={() => openItem(props.item, View.ItemDetail)}
     >
       {/* Icon Container */}
       <div class="item-icon-container">
@@ -397,7 +397,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
               class="dropdown-item"
               onClick={(e) => {
                 e.stopPropagation();
-                storeActions.openItem(props.item, View.ItemEdit);
+                openItem(props.item, View.ItemEdit);
               }}
             >
               {t("btn_edit")}

@@ -1,5 +1,7 @@
 import { type Component, createEffect, createSignal, Show } from "solid-js";
-import { store, storeActions } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { logout, setupGithub, unlock } from "@/shared/auth-service.ts";
+import { confirm, updateLanguage } from "@/shared/ui-service.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
 import PinUnlockForm from "@/components/PinUnlockForm.tsx";
@@ -54,7 +56,7 @@ export const Login: Component = () => {
         pinKey,
       );
 
-      const res = await storeActions.unlock(decryptedMp);
+      const res = await unlock(decryptedMp);
       if (res.success) {
         setMasterPassword("");
       } else {
@@ -80,7 +82,7 @@ export const Login: Component = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await storeActions.setupGithub(token().trim());
+      const res = await setupGithub(token().trim());
       if (!res.success) {
         setError(res.error || t("login_error_invalid_token"));
       }
@@ -112,7 +114,7 @@ export const Login: Component = () => {
       }
 
       // Setup GitHub with the obtained token
-      const res = await storeActions.setupGithub(oauthRes.token);
+      const res = await setupGithub(oauthRes.token);
       if (!res.success) {
         setError(res.error || t("login_error_invalid_token"));
       }
@@ -133,10 +135,10 @@ export const Login: Component = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await storeActions.unlock(masterPassword());
+      const res = await unlock(masterPassword());
       if (res.success) {
         setMasterPassword("");
-        // If from FIDO2 Prompt, we will stay in FIDO2 Prompt View, otherwise storeActions automatically navigates to Vault
+        // If from FIDO2 Prompt, we will stay in FIDO2 Prompt View, otherwise auth service automatically navigates to Vault
       } else {
         setError(res.error || t("login_error_wrong_mp"));
       }
@@ -150,13 +152,13 @@ export const Login: Component = () => {
 
   const handleResetToken = () => {
     setError("");
-    storeActions.logout();
+    logout();
   };
 
   const handleForgotPassword = async () => {
     const gistId = store.gistId;
     if (
-      await storeActions.confirm(
+      await confirm(
         t("login_forgot_password_title"),
         t("login_forgot_password_msg"),
         "danger",
@@ -165,7 +167,7 @@ export const Login: Component = () => {
       if (gistId) {
         window.open(`https://gist.github.com/${gistId}`, "_blank");
       }
-      storeActions.logout();
+      logout();
     }
   };
 
@@ -176,7 +178,7 @@ export const Login: Component = () => {
         <button
           type="button"
           class={`lang-toggle-btn ${store.language === "en" ? "active" : ""}`}
-          onClick={() => storeActions.updateLanguage("en")}
+          onClick={() => updateLanguage("en")}
         >
           EN
         </button>
@@ -184,7 +186,7 @@ export const Login: Component = () => {
         <button
           type="button"
           class={`lang-toggle-btn ${store.language === "vi" ? "active" : ""}`}
-          onClick={() => storeActions.updateLanguage("vi")}
+          onClick={() => updateLanguage("vi")}
         >
           VI
         </button>

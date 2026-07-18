@@ -1,6 +1,7 @@
 import { createEffect, createSignal, Show } from "solid-js";
 import { t } from "@/shared/i18n.ts";
-import { store, storeActions } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { resolveReprompt } from "@/shared/ui-service.ts";
 import { getMasterPassword } from "@/shared/storage.ts";
 import Input from "@/components/Input.tsx";
 import Button from "@/components/Button.tsx";
@@ -25,7 +26,7 @@ export default function RepromptModal() {
     if (isClosing()) return;
     setIsClosing(true);
     setTimeout(() => {
-      storeActions.resolveReprompt(false);
+      resolveReprompt(false);
     }, 250);
   };
 
@@ -44,7 +45,7 @@ export default function RepromptModal() {
     if (value === storedPassword) {
       setIsClosing(true);
       setTimeout(() => {
-        storeActions.resolveReprompt(true);
+        resolveReprompt(true);
       }, 250);
     } else {
       setError(t("login_error_wrong_mp"));

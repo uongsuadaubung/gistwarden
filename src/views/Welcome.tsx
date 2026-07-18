@@ -1,5 +1,7 @@
 import { type Component, createSignal } from "solid-js";
-import { store, storeActions } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { acceptWelcome } from "@/shared/auth-service.ts";
+import { updateLanguage } from "@/shared/ui-service.ts";
 import Button from "@/components/Button.tsx";
 import { AppIcon } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
@@ -9,7 +11,7 @@ export const Welcome: Component = () => {
   const [agree, setAgree] = createSignal(false);
 
   const handleAcceptWelcome = () => {
-    storeActions.acceptWelcome();
+    acceptWelcome();
   };
 
   return (
@@ -19,7 +21,7 @@ export const Welcome: Component = () => {
         <button
           type="button"
           class={`lang-toggle-btn ${store.language === "en" ? "active" : ""}`}
-          onClick={() => storeActions.updateLanguage("en")}
+          onClick={() => updateLanguage("en")}
         >
           EN
         </button>
@@ -27,7 +29,7 @@ export const Welcome: Component = () => {
         <button
           type="button"
           class={`lang-toggle-btn ${store.language === "vi" ? "active" : ""}`}
-          onClick={() => storeActions.updateLanguage("vi")}
+          onClick={() => updateLanguage("vi")}
         >
           VI
         </button>

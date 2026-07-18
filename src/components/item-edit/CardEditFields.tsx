@@ -3,20 +3,14 @@ import { t } from "@/shared/i18n.ts";
 import Input from "@/components/Input.tsx";
 import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
 import FormField from "@/components/FormField.tsx";
+import type { ItemEditFormState } from "./vault-edit-helper.ts";
 
 interface CardEditFieldsProps {
-  cardholderName: string;
-  setCardholderName: (v: string) => void;
-  cardNumber: string;
-  setCardNumber: (v: string) => void;
-  cardBrand: string;
-  setCardBrand: (v: string) => void;
-  cardExpMonth: string;
-  setCardExpMonth: (v: string) => void;
-  cardExpYear: string;
-  setCardExpYear: (v: string) => void;
-  cardCode: string;
-  setCardCode: (v: string) => void;
+  formState: ItemEditFormState;
+  updateForm: <K extends keyof ItemEditFormState>(
+    key: K,
+    val: ItemEditFormState[K],
+  ) => void;
 }
 
 export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
@@ -26,7 +20,9 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
   return (
     <>
       <div class="detail-section-title">
-        {t("detail_card_details_title", { brand: props.cardBrand || "Card" })}
+        {t("detail_card_details_title", {
+          brand: props.formState.cardBrand || "Card",
+        })}
       </div>
       <div class="card mb-16">
         {/* Cardholder name */}
@@ -34,8 +30,9 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
           <Input
             id="card-holder"
             type="text"
-            value={props.cardholderName}
-            onInput={(e) => props.setCardholderName(e.currentTarget.value)}
+            value={props.formState.cardholderName}
+            onInput={(e) =>
+              props.updateForm("cardholderName", e.currentTarget.value)}
             placeholder="e.g. John Doe"
           />
         </FormField>
@@ -47,8 +44,9 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
               id="card-number"
               type={showCardNumber() ? "text" : "password"}
               class="password-font"
-              value={props.cardNumber}
-              onInput={(e) => props.setCardNumber(e.currentTarget.value)}
+              value={props.formState.cardNumber}
+              onInput={(e) =>
+                props.updateForm("cardNumber", e.currentTarget.value)}
               placeholder="•••• •••• •••• ••••"
               rightActions={
                 <button
@@ -74,8 +72,9 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
           <select
             id="card-brand"
             class="input-control"
-            value={props.cardBrand}
-            onChange={(e) => props.setCardBrand(e.currentTarget.value)}
+            value={props.formState.cardBrand}
+            onChange={(e) =>
+              props.updateForm("cardBrand", e.currentTarget.value)}
           >
             <option value="">-- Select --</option>
             <option value="Visa">Visa</option>
@@ -100,8 +99,9 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
             <select
               id="card-exp-month"
               class="input-control"
-              value={props.cardExpMonth}
-              onChange={(e) => props.setCardExpMonth(e.currentTarget.value)}
+              value={props.formState.cardExpMonth}
+              onChange={(e) =>
+                props.updateForm("cardExpMonth", e.currentTarget.value)}
             >
               <option value="1">01 - January</option>
               <option value="2">02 - February</option>
@@ -121,8 +121,9 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
             <Input
               id="card-exp-year"
               type="number"
-              value={props.cardExpYear}
-              onInput={(e) => props.setCardExpYear(e.currentTarget.value)}
+              value={props.formState.cardExpYear}
+              onInput={(e) =>
+                props.updateForm("cardExpYear", e.currentTarget.value)}
               placeholder="2026"
             />
           </FormField>
@@ -135,8 +136,9 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
               id="card-code"
               type={showCardCode() ? "text" : "password"}
               class="password-font"
-              value={props.cardCode}
-              onInput={(e) => props.setCardCode(e.currentTarget.value)}
+              value={props.formState.cardCode}
+              onInput={(e) =>
+                props.updateForm("cardCode", e.currentTarget.value)}
               placeholder="123"
               rightActions={
                 <button

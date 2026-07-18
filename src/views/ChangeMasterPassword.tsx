@@ -1,5 +1,8 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { storeActions, View } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import { changeMasterPassword } from "@/shared/vault-service.ts";
+import { showToast } from "@/shared/ui-service.ts";
 import { t } from "@/shared/i18n.ts";
 import Input from "@/components/Input.tsx";
 import Button from "@/components/Button.tsx";
@@ -13,7 +16,7 @@ export const ChangeMasterPassword: Component = () => {
   const [loading, setLoading] = createSignal(false);
 
   const handleBack = () => {
-    storeActions.navigate(View.AccountSecurity);
+    navigate(View.AccountSecurity);
   };
 
   const handleChangePassword = async (e: Event) => {
@@ -30,19 +33,19 @@ export const ChangeMasterPassword: Component = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await storeActions.changeMasterPassword(
+      const res = await changeMasterPassword(
         currentPassword(),
         newPassword(),
       );
       if (res.success) {
-        storeActions.showToast(
+        showToast(
           t("settings_mp_success"),
           "success",
         );
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
-        storeActions.navigate(View.AccountSecurity);
+        navigate(View.AccountSecurity);
       } else {
         setError(res.error || t("settings_error_mp_fail"));
       }
