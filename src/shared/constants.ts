@@ -29,9 +29,12 @@ export const MSG_VAULT_LOGGED_OUT = "VAULT_LOGGED_OUT";
 export const MSG_FIDO2_CREDENTIAL_CREATION_REQUEST =
   "FIDO2_CREDENTIAL_CREATION_REQUEST";
 export const MSG_FIDO2_CREDENTIAL_GET_REQUEST = "FIDO2_CREDENTIAL_GET_REQUEST";
+export const MSG_AUTOFILL_CREDENTIALS = "AUTOFILL_CREDENTIALS";
 
 // Browser Session Storage Keys
 export const SESSION_KEY_VAULT_SEARCH_QUERY = "vault_search_query";
+export const SESSION_KEY_SHOW_FILTER_PANEL = "showFilterPanel";
+export const SESSION_KEY_SELECTED_FILTER_TYPE = "selectedFilterType";
 
 // Browser Local Storage Keys
 export const LOCAL_STORAGE_KEY_THEME = "gistwarden_theme";

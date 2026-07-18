@@ -121,3 +121,72 @@ input[type="number"] {
     stroke-width: 3.5px;
   }
 }
+
+/* Website list edit styles */
+.autofill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.website-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+
+  svg.text-error {
+    fill: none !important;
+  }
+}
+
+.flex-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.website-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: grab;
+  padding: 8px 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s, color 0.2s;
+
+  &:hover {
+    opacity: 1;
+    color: var(--text);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.add-website-btn,
+.add-field-btn {
+  background: none;
+  border: none;
+  color: var(--primary-accent, var(--primary));
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  width: fit-content;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2.5px;
+  }
+}

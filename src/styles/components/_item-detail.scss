@@ -237,7 +237,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 5px 8px;
+    padding: 0;
     position: relative;
     cursor: pointer;
     flex-shrink: 0;
@@ -246,8 +246,8 @@
       content: "";
       position: absolute;
       bottom: 0;
-      left: 8px;
-      right: 8px;
+      left: 0;
+      right: 0;
       border-bottom: 1px solid var(--border-light, var(--border));
     }
 
@@ -269,7 +269,7 @@
       .totp-code {
         font-size: 20px;
         font-weight: 700;
-        color: var(--success);
+        color: var(--text);
         letter-spacing: 1px;
         font-family: monospace;
       }
@@ -296,7 +296,7 @@
           stroke-width: 3;
 
           &.progress {
-            stroke: var(--success);
+            stroke: var(--text);
             transition: stroke-dashoffset 0.1s linear;
           }
         }
@@ -336,7 +336,7 @@
       .totp-code {
         font-size: 20px;
         font-weight: 700;
-        color: var(--success);
+        color: var(--text);
         letter-spacing: 1px;
         font-family: monospace;
       }
@@ -363,7 +363,7 @@
           stroke-width: 3;
 
           &.progress {
-            stroke: var(--success);
+            stroke: var(--text);
             transition: stroke-dashoffset 0.1s linear;
           }
         }

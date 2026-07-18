@@ -29,6 +29,7 @@ import {
 } from "@/icons/svg/index.ts";
 import { formatDateTime, t } from "@/shared/i18n.ts";
 import PasskeySelectRow from "@/components/PasskeySelectRow.tsx";
+import { getBaseDomain } from "@/shared/domain-utils.ts";
 
 interface Fido2Request {
   success: boolean;
@@ -109,11 +110,9 @@ export const Fido2Prompt: Component = () => {
   };
 
   const isDomainMatch = (domainA: string, domainB: string): boolean => {
-    const d1 = domainA.trim().toLowerCase();
-    const d2 = domainB.trim().toLowerCase();
-    if (!d1 || !d2) return false;
-    if (d1 === d2) return true;
-    return d1.endsWith("." + d2) || d2.endsWith("." + d1);
+    const baseA = getBaseDomain(domainA);
+    const baseB = getBaseDomain(domainB);
+    return !!baseA && baseA === baseB;
   };
 
   const findMatchingAccounts = (

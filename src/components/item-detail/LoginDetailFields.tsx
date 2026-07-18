@@ -75,10 +75,6 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
     if (timerId) clearInterval(timerId);
   });
 
-  const getUri = (): string => {
-    return props.item.login.uris?.[0]?.uri || "";
-  };
-
   const getFidoCredentials = () => {
     return props.item.login.fido2Credentials || [];
   };
@@ -222,41 +218,58 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
         {t("detail_section_autofill")}
       </div>
       <div class="card mb-16">
-        {/* URI Field */}
-        <div class="detail-row">
-          <div class="field-content">
-            <div class="field-label">{t("edit_label_website")}</div>
-            <div class="field-value text-break">
-              {getUri() || t("detail_no_value")}
+        <Show
+          when={props.item.login.uris && props.item.login.uris.length > 0}
+          fallback={
+            <div class="detail-row">
+              <div class="field-content">
+                <div class="field-label">{t("edit_label_website")}</div>
+                <div class="field-value text-break">{t("detail_no_value")}</div>
+              </div>
             </div>
-          </div>
-          <Show when={getUri()}>
-            <div class="field-actions">
-              <button
-                type="button"
-                class="action-btn"
-                onClick={() => {
-                  let target = getUri();
-                  if (!/^https?:\/\//i.test(target)) {
-                    target = "https://" + target;
-                  }
-                  window.open(target, "_blank");
-                }}
-                title={t("detail_visit_website")}
-              >
-                <ExternalLinkIcon class="icon-inline" />
-              </button>
-              <button
-                type="button"
-                class="action-btn"
-                onClick={() => props.onCopy(getUri(), t("edit_label_website"))}
-                title={t("edit_label_website")}
-              >
-                <CopyIcon />
-              </button>
-            </div>
-          </Show>
-        </div>
+          }
+        >
+          <For each={props.item.login.uris}>
+            {(u, idx) => (
+              <div class="detail-row">
+                <div class="field-content">
+                  <div class="field-label">
+                    {idx() === 0
+                      ? t("edit_label_website")
+                      : `${t("edit_label_website")} ${idx() + 1}`}
+                  </div>
+                  <div class="field-value text-break">
+                    {u.uri}
+                  </div>
+                </div>
+                <div class="field-actions">
+                  <button
+                    type="button"
+                    class="action-btn"
+                    onClick={() => {
+                      let target = u.uri;
+                      if (!/^https?:\/\//i.test(target)) {
+                        target = "https://" + target;
+                      }
+                      window.open(target, "_blank");
+                    }}
+                    title={t("detail_visit_website")}
+                  >
+                    <ExternalLinkIcon class="icon-inline" />
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn"
+                    onClick={() => props.onCopy(u.uri, t("edit_label_website"))}
+                    title={t("edit_label_website")}
+                  >
+                    <CopyIcon />
+                  </button>
+                </div>
+              </div>
+            )}
+          </For>
+        </Show>
       </div>
     </>
   );

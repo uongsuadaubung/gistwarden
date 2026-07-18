@@ -1,15 +1,13 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { store } from "@/shared/store.ts";
+import { Header } from "@/components/Header.tsx";
 import { View } from "@/shared/types.ts";
 import { navigate } from "@/shared/navigation.ts";
-import { lock, logout } from "@/shared/auth-service.ts";
+
 import { clearVault } from "@/shared/vault-service.ts";
 import { confirm, showToast } from "@/shared/ui-service.ts";
 import {
   ChevronRightIcon,
   InfoIcon,
-  LockIcon,
-  LogoutIcon,
   PaletteIcon,
   QuestionIcon,
   ShieldIcon,
@@ -21,22 +19,6 @@ import { t } from "@/shared/i18n.ts";
 export const Settings: Component = () => {
   const [error, setError] = createSignal("");
   const [_loading, setLoading] = createSignal(false);
-
-  const handleLock = () => {
-    lock();
-  };
-
-  const handleLogout = async () => {
-    if (
-      await confirm(
-        t("settings_logout_title"),
-        t("settings_logout_msg"),
-        "warning",
-      )
-    ) {
-      logout();
-    }
-  };
 
   const handleClearVault = async () => {
     if (
@@ -78,67 +60,16 @@ export const Settings: Component = () => {
     }
   };
 
-  const handleOpenGist = () => {
-    if (store.gistId) {
-      window.open(`https://gist.github.com/${store.gistId}`, "_blank");
-    }
-  };
-
   return (
     <div class="app-container">
+      <Header title={t("settings_header")} />
       <div class="app-body pb-24">
-        <h3 class="mt-0 mb-16 font-sz-15 font-w-600">
-          {t("settings_header")}
-        </h3>
-
         <Show when={error()}>
           <div class="alert alert-danger mb-16">{error()}</div>
         </Show>
 
-        {/* User profile */}
-        <Show when={store.cachedGithubUser}>
-          <div class="user-panel">
-            <img
-              class="avatar"
-              src={store.cachedGithubUser?.avatar_url}
-              alt="avatar"
-            />
-            <div class="user-info">
-              <div
-                class="username"
-                onClick={handleOpenGist}
-                title={t("settings_open_gist_title")}
-              >
-                @{store.cachedGithubUser?.login}
-              </div>
-            </div>
-          </div>
-        </Show>
-
-        {/* Settings options list - Group 1: General & Personalization */}
+        {/* Group 2: Security, Data & Appearance */}
         <div class="card card-list">
-          {/* User Guide */}
-          <div
-            class="setting-row"
-            onClick={() =>
-              chrome.tabs.create({
-                url: chrome.runtime.getURL("guide.html"),
-              })}
-          >
-            <div class="setting-row-left">
-              <QuestionIcon />
-              <div>
-                <div class="setting-label">
-                  {t("settings_user_guide")}
-                </div>
-                <div class="setting-sub">
-                  {t("settings_user_guide_sub")}
-                </div>
-              </div>
-            </div>
-            <ChevronRightIcon />
-          </div>
-
           {/* Appearance Settings */}
           <div
             class="setting-row"
@@ -158,28 +89,6 @@ export const Settings: Component = () => {
             <ChevronRightIcon />
           </div>
 
-          {/* About */}
-          <div
-            class="setting-row"
-            onClick={() => navigate(View.About)}
-          >
-            <div class="setting-row-left">
-              <InfoIcon />
-              <div>
-                <div class="setting-label">
-                  {t("settings_about_label")}
-                </div>
-                <div class="setting-sub">
-                  {t("settings_about_sub")}
-                </div>
-              </div>
-            </div>
-            <ChevronRightIcon />
-          </div>
-        </div>
-
-        {/* Group 2: Security & Data */}
-        <div class="card card-list">
           {/* Account Security */}
           <div
             class="setting-row"
@@ -218,18 +127,6 @@ export const Settings: Component = () => {
             <ChevronRightIcon />
           </div>
 
-          {/* Lock Vault */}
-          <div class="setting-row" onClick={handleLock}>
-            <div class="setting-row-left">
-              <LockIcon />
-              <div>
-                <div class="setting-label">{t("vault_lock_title")}</div>
-                <div class="setting-sub">{t("settings_lock_sub")}</div>
-              </div>
-            </div>
-            <ChevronRightIcon />
-          </div>
-
           {/* Clear Vault */}
           <div class="setting-row" onClick={handleClearVault}>
             <div class="setting-row-left">
@@ -244,20 +141,49 @@ export const Settings: Component = () => {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Disconnect/Logout */}
-          <div class="setting-row" onClick={handleLogout}>
+        {/* Group 1: General & Personalization */}
+        <div class="card card-list">
+          {/* User Guide */}
+          <div
+            class="setting-row"
+            onClick={() =>
+              chrome.tabs.create({
+                url: chrome.runtime.getURL("guide.html"),
+              })}
+          >
             <div class="setting-row-left">
-              <LogoutIcon class="text-error" />
+              <QuestionIcon />
               <div>
-                <div class="setting-label text-error">
-                  {t("settings_logout_title")}
+                <div class="setting-label">
+                  {t("settings_user_guide")}
                 </div>
                 <div class="setting-sub">
-                  {t("settings_logout_sub")}
+                  {t("settings_user_guide_sub")}
                 </div>
               </div>
             </div>
+            <ChevronRightIcon />
+          </div>
+
+          {/* About */}
+          <div
+            class="setting-row"
+            onClick={() => navigate(View.About)}
+          >
+            <div class="setting-row-left">
+              <InfoIcon />
+              <div>
+                <div class="setting-label">
+                  {t("settings_about_label")}
+                </div>
+                <div class="setting-sub">
+                  {t("settings_about_sub")}
+                </div>
+              </div>
+            </div>
+            <ChevronRightIcon />
           </div>
         </div>
       </div>

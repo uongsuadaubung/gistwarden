@@ -29,8 +29,7 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
         props.updateForm("sshFingerprint", parsed.keyFingerprint);
       } else {
         setErrorMsg(
-          t("ssh_invalid_key") ||
-            "Invalid SSH Private Key or format unsupported (requires unencrypted OpenSSH format)",
+          t("ssh_invalid_key"),
         );
       }
     } catch (err) {
@@ -55,8 +54,7 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
               type={showPrivateKey() ? "text" : "password"}
               value={props.formState.sshPrivateKey}
               readonly={true}
-              placeholder={t("ssh_import_from_clipboard") ||
-                "Paste unencrypted OpenSSH Private Key from clipboard..."}
+              placeholder={t("ssh_import_from_clipboard")}
               class="w-100"
               rightActions={
                 <>
@@ -77,8 +75,7 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
                     type="button"
                     class="action-btn input-action-btn"
                     onClick={handlePasteSshKey}
-                    title={t("ssh_import_from_clipboard") ||
-                      "Paste from clipboard"}
+                    title={t("ssh_import_from_clipboard")}
                   >
                     <UploadIcon class="icon-inline" />
                   </button>
