@@ -2,7 +2,20 @@ import { setStore, store } from "./store.ts";
 import { type ConfirmType, type ToastType } from "./types.ts";
 import { setLanguage, SupportLanguage } from "./i18n.ts";
 import { updateSettings } from "./storage.ts";
-import { APP_NAME, OAUTH_WORKER_URL } from "./constants.ts";
+import {
+  APP_NAME,
+  LOCAL_STORAGE_KEY_THEME,
+  OAUTH_WORKER_URL,
+  STORE_KEY_CONFIRM_MODAL,
+  STORE_KEY_GLOBAL_LOADING,
+  STORE_KEY_GLOBAL_LOADING_TEXT,
+  STORE_KEY_LANGUAGE,
+  STORE_KEY_REPROMPT_MODAL,
+  STORE_KEY_THEME,
+  STORE_KEY_TIME_OFFSET,
+  STORE_KEY_TOAST_MESSAGE,
+  STORE_KEY_TOAST_TYPE,
+} from "./constants.ts";
 
 let toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -10,14 +23,20 @@ export function showToast(message: string, type: ToastType = "success") {
   if (toastTimeoutId) {
     clearTimeout(toastTimeoutId);
   }
-  setStore({ toastMessage: message, toastType: type });
+  setStore({
+    [STORE_KEY_TOAST_MESSAGE]: message,
+    [STORE_KEY_TOAST_TYPE]: type,
+  });
   toastTimeoutId = setTimeout(() => {
-    setStore("toastMessage", "");
+    setStore(STORE_KEY_TOAST_MESSAGE, "");
   }, 2000);
 }
 
 export function setGlobalLoading(val: boolean, text = "") {
-  setStore({ globalLoading: val, globalLoadingText: text });
+  setStore({
+    [STORE_KEY_GLOBAL_LOADING]: val,
+    [STORE_KEY_GLOBAL_LOADING_TEXT]: text,
+  });
 }
 
 export function confirm(
@@ -26,7 +45,7 @@ export function confirm(
   type: ConfirmType = "info",
 ): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    setStore("confirmModal", {
+    setStore(STORE_KEY_CONFIRM_MODAL, {
       isOpen: true,
       title,
       message,
@@ -41,7 +60,7 @@ export function resolveConfirm(result: boolean) {
   if (modal.resolve) {
     modal.resolve(result);
   }
-  setStore("confirmModal", {
+  setStore(STORE_KEY_CONFIRM_MODAL, {
     isOpen: false,
     title: "",
     message: "",
@@ -52,7 +71,7 @@ export function resolveConfirm(result: boolean) {
 
 export function requestReprompt(): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    setStore("repromptModal", {
+    setStore(STORE_KEY_REPROMPT_MODAL, {
       isOpen: true,
       resolve,
     });
@@ -64,20 +83,20 @@ export function resolveReprompt(success: boolean) {
   if (modal.resolve) {
     modal.resolve(success);
   }
-  setStore("repromptModal", {
+  setStore(STORE_KEY_REPROMPT_MODAL, {
     isOpen: false,
     resolve: null,
   });
 }
 
 export async function updateLanguage(lang: "en" | "vi") {
-  setStore("language", lang);
+  setStore(STORE_KEY_LANGUAGE, lang);
   setLanguage(lang === "vi" ? SupportLanguage.Vi : SupportLanguage.En);
   await updateSettings({ language: lang });
 }
 
 export async function updateTheme(newTheme: "dark" | "light") {
-  setStore("theme", newTheme);
+  setStore(STORE_KEY_THEME, newTheme);
   if (newTheme === "light") {
     document.body.classList.add("light-theme");
   } else {
@@ -85,7 +104,7 @@ export async function updateTheme(newTheme: "dark" | "light") {
   }
   if (typeof chrome !== "undefined" && chrome.storage) {
     await chrome.storage.local.set({
-      [`${APP_NAME.toLowerCase()}_theme`]: newTheme,
+      [LOCAL_STORAGE_KEY_THEME]: newTheme,
     });
   }
 }
@@ -102,7 +121,7 @@ export async function syncTimeOffset(): Promise<
         const localTime = Date.now();
         const offset = serverTime - localTime;
         console.log(`[Store] Time sync successful. Offset: ${offset}ms`);
-        setStore("timeOffset", offset);
+        setStore(STORE_KEY_TIME_OFFSET, offset);
         await updateSettings({ timeOffset: offset });
         return { success: true };
       }

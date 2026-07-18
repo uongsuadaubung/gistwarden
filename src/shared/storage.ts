@@ -32,7 +32,11 @@ export const SettingsSchema = z.object({
 
 export type AppSettings = z.infer<typeof SettingsSchema>;
 
-import { APP_NAME } from "./constants.ts";
+import {
+  APP_NAME,
+  SESSION_KEY_MASTER_PASSWORD,
+  SESSION_KEY_SESSION_UNLOCKED,
+} from "./constants.ts";
 
 export const STORAGE_KEY = `${APP_NAME.toLowerCase()}_settings`;
 
@@ -59,82 +63,107 @@ export async function updateSettings(patch: Partial<AppSettings>) {
   await chrome.storage.local.set({ [STORAGE_KEY]: safeNext });
 }
 
-// Session Storage (Master Password in-memory only, cleared on browser close)
-export async function getMasterPassword(): Promise<string> {
+// General Session Storage Helpers
+export async function getSessionItem(key: string): Promise<unknown> {
   if (
     typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
   ) {
-    return "";
+    return null;
   }
   try {
-    const res = await chrome.storage.session.get("masterPassword");
-    if (res && typeof res === "object" && "masterPassword" in res) {
-      const val = res.masterPassword;
-      return typeof val === "string" ? val : "";
-    }
-    return "";
+    const res = await chrome.storage.session.get(key);
+    return res && typeof res === "object" && key in res ? res[key] : null;
   } catch (_e) {
-    console.debug(
-      "[Storage] Failed to read from session storage (probably not supported yet)",
-    );
-    return "";
+    return null;
   }
+}
+
+export async function setSessionItem(
+  key: string,
+  value: unknown,
+): Promise<void> {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
+  ) {
+    return;
+  }
+  try {
+    await chrome.storage.session.set({ [key]: value });
+  } catch (_e) {
+    // Ignored
+  }
+}
+
+export async function getSessionItems(
+  keys: string[],
+): Promise<Record<string, unknown>> {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
+  ) {
+    return {};
+  }
+  try {
+    const res = await chrome.storage.session.get(keys);
+    return res && typeof res === "object" ? res : {};
+  } catch (_e) {
+    return {};
+  }
+}
+
+export async function setSessionItems(
+  items: Record<string, unknown>,
+): Promise<void> {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
+  ) {
+    return;
+  }
+  try {
+    await chrome.storage.session.set(items);
+  } catch (_e) {
+    // Ignored
+  }
+}
+
+export async function removeSessionItem(
+  keys: string | string[],
+): Promise<void> {
+  if (
+    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
+  ) {
+    return;
+  }
+  try {
+    await chrome.storage.session.remove(keys);
+  } catch (_e) {
+    // Ignored
+  }
+}
+
+// Session Storage (Master Password in-memory only, cleared on browser close)
+export async function getMasterPassword(): Promise<string> {
+  const val = await getSessionItem(SESSION_KEY_MASTER_PASSWORD);
+  return typeof val === "string" ? val : "";
 }
 
 export async function setMasterPassword(password: string): Promise<void> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
-  ) {
-    return;
-  }
-  try {
-    await chrome.storage.session.set({ masterPassword: password });
-  } catch (e) {
-    console.debug("[Storage] Failed to write to session storage:", e);
-  }
+  await setSessionItem(SESSION_KEY_MASTER_PASSWORD, password);
 }
 
 export async function clearMasterPassword(): Promise<void> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
-  ) {
-    return;
-  }
-  try {
-    await chrome.storage.session.remove("masterPassword");
-  } catch (e) {
-    console.debug("[Storage] Failed to clear session storage:", e);
-  }
+  await removeSessionItem(SESSION_KEY_MASTER_PASSWORD);
 }
 
 export async function isSessionUnlocked(): Promise<boolean> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
-  ) {
-    return false;
-  }
-  try {
-    const res = await chrome.storage.session.get("sessionUnlocked");
-    return res && typeof res === "object" && res.sessionUnlocked === "true";
-  } catch (_e) {
-    return false;
-  }
+  const val = await getSessionItem(SESSION_KEY_SESSION_UNLOCKED);
+  return val === "true";
 }
 
 export async function setSessionUnlocked(unlocked: boolean): Promise<void> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
-  ) {
-    return;
-  }
-  try {
-    if (unlocked) {
-      await chrome.storage.session.set({ sessionUnlocked: "true" });
-    } else {
-      await chrome.storage.session.remove("sessionUnlocked");
-    }
-  } catch (e) {
-    console.debug("[Storage] Failed to update sessionUnlocked storage:", e);
+  if (unlocked) {
+    await setSessionItem(SESSION_KEY_SESSION_UNLOCKED, "true");
+  } else {
+    await removeSessionItem(SESSION_KEY_SESSION_UNLOCKED);
   }
 }
 

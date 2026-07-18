@@ -1,4 +1,8 @@
-import { APP_NAME } from "@/shared/constants.ts";
+import {
+  APP_NAME,
+  MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
+  MSG_FIDO2_CREDENTIAL_GET_REQUEST,
+} from "@/shared/constants.ts";
 
 (function () {
   // Prevent duplicate injection
@@ -147,7 +151,7 @@ import { APP_NAME } from "@/shared/constants.ts";
 
     try {
       const response = await sendToContentScript(
-        "FIDO2_CREDENTIAL_CREATION_REQUEST",
+        MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
         serializedOptions,
       );
 
@@ -224,7 +228,7 @@ import { APP_NAME } from "@/shared/constants.ts";
 
     try {
       const response = await sendToContentScript(
-        "FIDO2_CREDENTIAL_GET_REQUEST",
+        MSG_FIDO2_CREDENTIAL_GET_REQUEST,
         serializedOptions,
       );
 

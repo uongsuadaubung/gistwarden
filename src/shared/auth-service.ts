@@ -1,10 +1,15 @@
+import { z } from "zod";
 import { setStore, store } from "./store.ts";
 import {
   clearMasterPassword,
   getAllSettings,
   getMasterPassword,
+  getSessionItem,
+  getSessionItems,
   isSessionUnlocked,
+  removeSessionItem,
   setMasterPassword,
+  setSessionItem,
   setSessionUnlocked,
   subscribeToSettings,
   updateSettings,
@@ -26,7 +31,20 @@ import {
 } from "./types.ts";
 import { setLanguage, SupportLanguage } from "./i18n.ts";
 import { syncVaultToGist } from "./sync-utils.ts";
-import { APP_NAME } from "./constants.ts";
+import {
+  APP_NAME,
+  LOCAL_STORAGE_KEY_THEME,
+  MSG_DOWNLOAD_FROM_GIST,
+  MSG_RESET_TIMEOUT,
+  MSG_VALIDATE_TOKEN,
+  SESSION_KEY_ENCRYPTED_VAULT,
+  SESSION_KEY_LAST_SELECTED_ITEM_ID,
+  SESSION_KEY_LAST_VIEW,
+  STORE_KEY_IS_LOADED,
+  STORE_KEY_IS_LOCKED,
+  STORE_KEY_SALT,
+  STORE_KEY_VIEW,
+} from "./constants.ts";
 import { setGlobalLoading } from "./ui-service.ts";
 
 export async function init() {
@@ -37,12 +55,8 @@ export async function init() {
 
   let currentTheme: "dark" | "light" = "dark";
   if (typeof chrome !== "undefined" && chrome.storage) {
-    const res = await chrome.storage.local.get(
-      `${APP_NAME.toLowerCase()}_theme`,
-    );
-    currentTheme = res[`${APP_NAME.toLowerCase()}_theme`] === "light"
-      ? "light"
-      : "dark";
+    const res = await chrome.storage.local.get(LOCAL_STORAGE_KEY_THEME);
+    currentTheme = res[LOCAL_STORAGE_KEY_THEME] === "light" ? "light" : "dark";
   }
 
   if (currentTheme === "light") {
@@ -80,15 +94,35 @@ export async function init() {
   const isFido2Prompt = params.get("mode") === "fido2-prompt";
 
   if (isFido2Prompt) {
-    setStore("view", View.Fido2Prompt);
+    setStore(STORE_KEY_VIEW, View.Fido2Prompt);
   }
 
   if (settings.githubToken && masterPassword && settings.salt) {
     try {
       const key = await getOrDeriveKey(masterPassword, settings.salt);
-      const rawRes = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
-      });
+
+      let rawRes: unknown;
+      const cachedVal = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
+      const cachedContent = typeof cachedVal === "string"
+        ? cachedVal
+        : undefined;
+
+      if (cachedContent) {
+        rawRes = { success: true, content: cachedContent };
+      } else {
+        const fetchRes = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({ type: MSG_DOWNLOAD_FROM_GIST }, resolve);
+        });
+        const parsedFetchRes = DownloadFromGistResponseSchema.parse(fetchRes);
+        if (parsedFetchRes.success && parsedFetchRes.content) {
+          await setSessionItem(
+            SESSION_KEY_ENCRYPTED_VAULT,
+            parsedFetchRes.content,
+          );
+        }
+        rawRes = fetchRes;
+      }
+
       const res = DownloadFromGistResponseSchema.parse(rawRes);
 
       if (res && res.success && res.content) {
@@ -110,6 +144,36 @@ export async function init() {
             selectedItem = foundItem;
             targetView = View.ItemDetail;
           }
+        } else if (!isFido2Prompt) {
+          const sessionData = await getSessionItems([
+            SESSION_KEY_LAST_VIEW,
+            SESSION_KEY_LAST_SELECTED_ITEM_ID,
+          ]);
+          const savedView = sessionData[SESSION_KEY_LAST_VIEW];
+          const savedItemId = sessionData[SESSION_KEY_LAST_SELECTED_ITEM_ID];
+
+          const ViewSchema = z.nativeEnum(View);
+          const viewParsed = ViewSchema.safeParse(savedView);
+          if (viewParsed.success) {
+            const viewVal = viewParsed.data;
+            if (viewVal !== View.Login && viewVal !== View.Welcome) {
+              targetView = viewVal;
+            }
+          }
+
+          if (typeof savedItemId === "string") {
+            const foundItem = items.find((i) => i.id === savedItemId);
+            if (foundItem) {
+              selectedItem = foundItem;
+            } else {
+              if (
+                targetView === View.ItemDetail ||
+                targetView === View.ItemEdit
+              ) {
+                targetView = View.Vault;
+              }
+            }
+          }
         }
 
         setStore({
@@ -118,27 +182,27 @@ export async function init() {
           view: targetView,
           selectedItem,
         });
-        chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
+        chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
       } else {
         // If downloading fails but we have setup, it could be network issue or empty gist
         setStore({
           isLocked: false,
           view: isFido2Prompt ? View.Fido2Prompt : View.Vault,
         });
-        chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
+        chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
       }
     } catch (err) {
       console.error("[Store] Decryption on load failed:", err);
-      setStore("isLocked", true);
-      if (!isFido2Prompt) setStore("view", View.Login);
+      setStore(STORE_KEY_IS_LOCKED, true);
+      if (!isFido2Prompt) setStore(STORE_KEY_VIEW, View.Login);
     }
   } else {
-    setStore("isLocked", true);
+    setStore(STORE_KEY_IS_LOCKED, true);
     if (!isFido2Prompt) {
       if (!settings.githubToken && !settings.welcomeAccepted) {
-        setStore("view", View.Welcome);
+        setStore(STORE_KEY_VIEW, View.Welcome);
       } else {
-        setStore("view", View.Login);
+        setStore(STORE_KEY_VIEW, View.Login);
       }
     }
   }
@@ -169,7 +233,7 @@ export async function init() {
     }
   });
 
-  setStore("isLoaded", true);
+  setStore(STORE_KEY_IS_LOADED, true);
 }
 
 export async function unlock(
@@ -188,7 +252,7 @@ export async function unlock(
     // 1. Nếu salt cục bộ bị trống (ví dụ sau khi logout), tải Gist từ GitHub về để trích xuất salt cũ
     if (!saltBase64) {
       const rawDownloadRes = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
+        chrome.runtime.sendMessage({ type: MSG_DOWNLOAD_FROM_GIST }, resolve);
       });
       const downloadRes = DownloadFromGistResponseSchema.parse(rawDownloadRes);
 
@@ -198,7 +262,7 @@ export async function unlock(
           if (payload.salt) {
             saltBase64 = payload.salt;
             await updateSettings({ salt: saltBase64 });
-            setStore("salt", saltBase64);
+            setStore(STORE_KEY_SALT, saltBase64);
             existingGistContent = downloadRes.content;
             hasExistingGist = true;
           }
@@ -209,7 +273,7 @@ export async function unlock(
     } else {
       // Nếu đã có salt cục bộ, tải dữ liệu két sắt từ Gist về bình thường
       const rawDownloadRes = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
+        chrome.runtime.sendMessage({ type: MSG_DOWNLOAD_FROM_GIST }, resolve);
       });
       const downloadRes = DownloadFromGistResponseSchema.parse(rawDownloadRes);
       if (downloadRes.success && downloadRes.content) {
@@ -225,7 +289,7 @@ export async function unlock(
       const rawSalt = generateSalt();
       saltBase64 = btoa(String.fromCharCode(...rawSalt));
       await updateSettings({ salt: saltBase64 });
-      setStore("salt", saltBase64);
+      setStore(STORE_KEY_SALT, saltBase64);
 
       const key = await getOrDeriveKey(password, saltBase64);
       const uploadRes = await syncVaultToGist([], key, saltBase64);
@@ -241,7 +305,7 @@ export async function unlock(
         view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
         sessionUnlocked: true,
       });
-      chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
+      chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
       return { success: true };
     }
 
@@ -267,7 +331,7 @@ export async function unlock(
         view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
         sessionUnlocked: true,
       });
-      chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
+      chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
       return { success: true };
     }
 
@@ -293,6 +357,8 @@ export async function unlock(
 
     await setMasterPassword(password);
     await setSessionUnlocked(true);
+    await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, existingGistContent);
+
     setStore({
       vaultItems: items,
       isLocked: false,
@@ -300,7 +366,7 @@ export async function unlock(
       selectedItem,
       sessionUnlocked: true,
     });
-    chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
+    chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
 
     return { success: true };
   } catch (err) {
@@ -315,7 +381,7 @@ export async function setupGithub(
   token: string,
 ): Promise<{ success: boolean; error?: string }> {
   const rawRes = await new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: "VALIDATE_TOKEN", token }, resolve);
+    chrome.runtime.sendMessage({ type: MSG_VALIDATE_TOKEN, token }, resolve);
   });
   const res = ValidateTokenResponseSchema.parse(rawRes);
 
@@ -343,6 +409,13 @@ export async function setupGithub(
 export async function lock() {
   await clearMasterPassword();
   clearDerivedKey();
+
+  await removeSessionItem([
+    SESSION_KEY_ENCRYPTED_VAULT,
+    SESSION_KEY_LAST_VIEW,
+    SESSION_KEY_LAST_SELECTED_ITEM_ID,
+  ]);
+
   setStore({
     vaultItems: [],
     isLocked: true,
@@ -354,6 +427,13 @@ export async function logout() {
   await clearMasterPassword();
   await setSessionUnlocked(false);
   clearDerivedKey();
+
+  await removeSessionItem([
+    SESSION_KEY_ENCRYPTED_VAULT,
+    SESSION_KEY_LAST_VIEW,
+    SESSION_KEY_LAST_SELECTED_ITEM_ID,
+  ]);
+
   if (typeof chrome !== "undefined" && chrome.storage) {
     await chrome.storage.local.clear();
   }
@@ -436,5 +516,5 @@ export async function updateSessionTimeout(
     vaultTimeout: timeout,
     vaultTimeoutAction: action,
   });
-  chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
+  chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
 }

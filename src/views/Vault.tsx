@@ -12,7 +12,10 @@ import { lock } from "@/shared/auth-service.ts";
 import { deleteItem, saveItem, syncVault } from "@/shared/vault-service.ts";
 import { confirm, showToast } from "@/shared/ui-service.ts";
 import { createDefaultVaultItem } from "@/components/item-edit/vault-edit-helper.ts";
-import { APP_NAME } from "@/shared/constants.ts";
+import {
+  APP_NAME,
+  SESSION_KEY_VAULT_SEARCH_QUERY,
+} from "@/shared/constants.ts";
 import { type VaultItem, VaultItemType, View } from "@/shared/types.ts";
 import { handlePopout, isPopout } from "@/shared/popout-utils.ts";
 import * as OTPAuth from "otpauth";
@@ -30,12 +33,12 @@ import { VaultItemRow } from "@/components/VaultItemRow.tsx";
 import { t } from "@/shared/i18n.ts";
 export const Vault: Component = () => {
   const [search, setSearch] = createSignal(
-    sessionStorage.getItem("vault_search_query") || "",
+    sessionStorage.getItem(SESSION_KEY_VAULT_SEARCH_QUERY) || "",
   );
 
   const updateSearch = (val: string) => {
     setSearch(val);
-    sessionStorage.setItem("vault_search_query", val);
+    sessionStorage.setItem(SESSION_KEY_VAULT_SEARCH_QUERY, val);
   };
   const [activeMenuId, setActiveMenuId] = createSignal("");
   const [activeOptionsMenuId, setActiveOptionsMenuId] = createSignal("");

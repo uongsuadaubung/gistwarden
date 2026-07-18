@@ -17,6 +17,11 @@ import {
   SyncIcon,
   VaultIcon,
 } from "@/icons/svg/index.ts";
+import {
+  MSG_RESET_TIMEOUT,
+  MSG_VAULT_LOCKED,
+  MSG_VAULT_LOGGED_OUT,
+} from "@/shared/constants.ts";
 
 // Import Views
 import Login from "@/views/Login.tsx";
@@ -68,12 +73,12 @@ const App: Component = () => {
       chrome.runtime.onMessage
     ) {
       chrome.runtime.onMessage.addListener((message: { type: string }) => {
-        if (message.type === "VAULT_LOCKED") {
+        if (message.type === MSG_VAULT_LOCKED) {
           console.debug(
             "[Popup] Received VAULT_LOCKED message from background",
           );
           lock();
-        } else if (message.type === "VAULT_LOGGED_OUT") {
+        } else if (message.type === MSG_VAULT_LOGGED_OUT) {
           console.debug(
             "[Popup] Received VAULT_LOGGED_OUT message from background",
           );
@@ -84,7 +89,7 @@ const App: Component = () => {
 
     // Reset inactivity timeout on user interaction
     const resetTimeout = () => {
-      chrome.runtime.sendMessage({ type: "RESET_TIMEOUT" }).catch(() => {});
+      chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
     };
 
     resetTimeout();

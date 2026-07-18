@@ -14,6 +14,7 @@ import {
 } from "@/shared/crypto.ts";
 import {
   APP_NAME,
+  MSG_START_GITHUB_OAUTH,
   OAUTH_CLIENT_ID,
   OAUTH_WORKER_URL,
 } from "@/shared/constants.ts";
@@ -103,7 +104,7 @@ export const Login: Component = () => {
         { success: boolean; token?: string; error?: string }
       >((resolve) => {
         chrome.runtime.sendMessage({
-          type: "START_GITHUB_OAUTH",
+          type: MSG_START_GITHUB_OAUTH,
           content: OAUTH_CLIENT_ID,
           token: OAUTH_WORKER_URL,
         }, resolve);

@@ -4,8 +4,28 @@ import {
   uploadToGist,
   validateToken,
 } from "@/domains/github/api.ts";
-import { FIDO2_PROMPT_HEIGHT, POPUP_WIDTH } from "@/shared/constants.ts";
-import { getAllSettings } from "@/shared/storage.ts";
+import {
+  FIDO2_PROMPT_HEIGHT,
+  MSG_DELETE_GIST,
+  MSG_DOWNLOAD_FROM_GIST,
+  MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
+  MSG_FIDO2_CREDENTIAL_GET_REQUEST,
+  MSG_GET_PENDING_FIDO2_REQUEST,
+  MSG_REJECT_FIDO2_REQUEST,
+  MSG_RESET_TIMEOUT,
+  MSG_RESOLVE_FIDO2_REQUEST,
+  MSG_START_GITHUB_OAUTH,
+  MSG_UPLOAD_TO_GIST,
+  MSG_VALIDATE_TOKEN,
+  MSG_VAULT_LOCKED,
+  MSG_VAULT_LOGGED_OUT,
+  POPUP_WIDTH,
+  SESSION_KEY_ENCRYPTED_VAULT,
+  SESSION_KEY_LAST_SELECTED_ITEM_ID,
+  SESSION_KEY_LAST_VIEW,
+  SESSION_KEY_MASTER_PASSWORD,
+} from "@/shared/constants.ts";
+import { getAllSettings, removeSessionItem } from "@/shared/storage.ts";
 
 // Pending FIDO2 request state
 interface PendingRequest {
@@ -41,15 +61,15 @@ chrome.runtime.onMessage.addListener(
       sender.url.startsWith(extensionPageOrigin);
 
     const internalMessages = [
-      "UPLOAD_TO_GIST",
-      "DELETE_GIST",
-      "DOWNLOAD_FROM_GIST",
-      "VALIDATE_TOKEN",
-      "START_GITHUB_OAUTH",
-      "GET_PENDING_FIDO2_REQUEST",
-      "RESOLVE_FIDO2_REQUEST",
-      "REJECT_FIDO2_REQUEST",
-      "RESET_TIMEOUT",
+      MSG_UPLOAD_TO_GIST,
+      MSG_DELETE_GIST,
+      MSG_DOWNLOAD_FROM_GIST,
+      MSG_VALIDATE_TOKEN,
+      MSG_START_GITHUB_OAUTH,
+      MSG_GET_PENDING_FIDO2_REQUEST,
+      MSG_RESOLVE_FIDO2_REQUEST,
+      MSG_REJECT_FIDO2_REQUEST,
+      MSG_RESET_TIMEOUT,
     ];
 
     if (internalMessages.includes(message.type) && !isExtensionSender) {
@@ -62,23 +82,23 @@ chrome.runtime.onMessage.addListener(
     }
 
     switch (message.type) {
-      case "UPLOAD_TO_GIST":
+      case MSG_UPLOAD_TO_GIST:
         uploadToGist(message.content || "").then(sendResponse);
         return true; // Keep channel open
 
-      case "DELETE_GIST":
+      case MSG_DELETE_GIST:
         deleteGist(message.content || "").then(sendResponse);
         return true;
 
-      case "DOWNLOAD_FROM_GIST":
+      case MSG_DOWNLOAD_FROM_GIST:
         downloadFromGist().then(sendResponse);
         return true;
 
-      case "VALIDATE_TOKEN":
+      case MSG_VALIDATE_TOKEN:
         validateToken(message.token || "").then(sendResponse);
         return true;
 
-      case "START_GITHUB_OAUTH": {
+      case MSG_START_GITHUB_OAUTH: {
         const clientId = message.content || "";
         const redirectUri = chrome.identity.getRedirectURL();
         const authUrl =
@@ -119,9 +139,9 @@ chrome.runtime.onMessage.addListener(
       }
 
       // FIDO2 / Passkey Messages
-      case "FIDO2_CREDENTIAL_CREATION_REQUEST":
-      case "FIDO2_CREDENTIAL_GET_REQUEST": {
-        const type = message.type === "FIDO2_CREDENTIAL_CREATION_REQUEST"
+      case MSG_FIDO2_CREDENTIAL_CREATION_REQUEST:
+      case MSG_FIDO2_CREDENTIAL_GET_REQUEST: {
+        const type = message.type === MSG_FIDO2_CREDENTIAL_CREATION_REQUEST
           ? "create"
           : "get";
         if (!sender.tab || sender.tab.id === undefined) {
@@ -149,7 +169,7 @@ chrome.runtime.onMessage.addListener(
         return true;
       }
 
-      case "GET_PENDING_FIDO2_REQUEST":
+      case MSG_GET_PENDING_FIDO2_REQUEST:
         if (pendingFido2Request) {
           sendResponse({
             success: true,
@@ -162,7 +182,7 @@ chrome.runtime.onMessage.addListener(
         }
         return false;
 
-      case "RESOLVE_FIDO2_REQUEST":
+      case MSG_RESOLVE_FIDO2_REQUEST:
         if (pendingFido2Request) {
           pendingFido2Request.sendResponse({
             success: true,
@@ -178,7 +198,7 @@ chrome.runtime.onMessage.addListener(
         }
         return false;
 
-      case "REJECT_FIDO2_REQUEST":
+      case MSG_REJECT_FIDO2_REQUEST:
         if (pendingFido2Request) {
           pendingFido2Request.sendResponse({
             success: false,
@@ -194,7 +214,7 @@ chrome.runtime.onMessage.addListener(
         }
         return false;
 
-      case "RESET_TIMEOUT":
+      case MSG_RESET_TIMEOUT:
         updateTimeoutAlarm().then(() => sendResponse({ success: true }));
         return true;
 
@@ -216,8 +236,10 @@ async function updateTimeoutAlarm() {
     if (timeout !== "onRestart" && timeout !== "never") {
       const minutes = parseInt(timeout, 10);
       if (!isNaN(minutes) && minutes > 0) {
-        const session = await chrome.storage.session.get("masterPassword");
-        if (session && session.masterPassword) {
+        const session = await chrome.storage.session.get(
+          SESSION_KEY_MASTER_PASSWORD,
+        );
+        if (session && session[SESSION_KEY_MASTER_PASSWORD]) {
           chrome.alarms.create("vaultTimeout", { delayInMinutes: minutes });
           console.debug(
             `[Background] Set vaultTimeout alarm for ${minutes} minutes`,
@@ -240,16 +262,23 @@ if (typeof chrome !== "undefined" && chrome.alarms) {
         const settings = await getAllSettings();
         const action = settings.vaultTimeoutAction || "lock";
 
-        // Clear masterPassword from session storage
-        await chrome.storage.session.remove("masterPassword");
+        // Clear session data and navigation state
+        await removeSessionItem([
+          SESSION_KEY_MASTER_PASSWORD,
+          SESSION_KEY_ENCRYPTED_VAULT,
+          SESSION_KEY_LAST_VIEW,
+          SESSION_KEY_LAST_SELECTED_ITEM_ID,
+        ]);
 
         if (action === "logout") {
           await chrome.storage.local.clear();
-          chrome.runtime.sendMessage({ type: "VAULT_LOGGED_OUT" }).catch(
+          chrome.runtime.sendMessage({ type: MSG_VAULT_LOGGED_OUT }).catch(
             () => {},
           );
         } else {
-          chrome.runtime.sendMessage({ type: "VAULT_LOCKED" }).catch(() => {});
+          chrome.runtime.sendMessage({ type: MSG_VAULT_LOCKED }).catch(
+            () => {},
+          );
         }
       } catch (err) {
         console.error("[Background] Failed to execute timeout action:", err);
