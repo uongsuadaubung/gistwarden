@@ -41,11 +41,8 @@ export async function encryptData(
     encoder.encode(data),
   );
 
-  // Convert binary to base64
-  const ivBase64 = btoa(String.fromCharCode(...iv));
-  const ciphertextBase64 = btoa(
-    String.fromCharCode(...new Uint8Array(ciphertextBuffer)),
-  );
+  const ivBase64 = arrayBufferToBase64(iv.buffer);
+  const ciphertextBase64 = arrayBufferToBase64(ciphertextBuffer);
 
   return { iv: ivBase64, ciphertext: ciphertextBase64 };
 }
@@ -56,11 +53,8 @@ export async function decryptData(
   key: CryptoKey,
 ): Promise<string> {
   const decoder = new TextDecoder();
-  const iv = Uint8Array.from(atob(ivBase64), (c) => c.charCodeAt(0));
-  const ciphertext = Uint8Array.from(
-    atob(ciphertextBase64),
-    (c) => c.charCodeAt(0),
-  );
+  const iv = new Uint8Array(base64ToArrayBuffer(ivBase64));
+  const ciphertext = new Uint8Array(base64ToArrayBuffer(ciphertextBase64));
 
   const decryptedBuffer = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv },
@@ -77,7 +71,13 @@ export function generateSalt(): Uint8Array {
 
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  return btoa(String.fromCharCode(...bytes));
+  const chunks: string[] = [];
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    chunks.push(String.fromCharCode(...chunk));
+  }
+  return btoa(chunks.join(""));
 }
 
 export function base64ToArrayBuffer(base64: string): ArrayBuffer {
