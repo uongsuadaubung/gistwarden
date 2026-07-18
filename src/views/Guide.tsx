@@ -5,6 +5,7 @@ import { store } from "@/shared/store.ts";
 import { init } from "@/shared/auth-service.ts";
 import { updateLanguage } from "@/shared/ui-service.ts";
 import Button from "@/components/Button.tsx";
+import Select from "@/components/Select.tsx";
 import GeneralTab from "@/components/guide/GeneralTab.tsx";
 import GistTab from "@/components/guide/GistTab.tsx";
 import SecurityTab from "@/components/guide/SecurityTab.tsx";
@@ -13,6 +14,11 @@ import ImportExportTab from "@/components/guide/ImportExportTab.tsx";
 import FaqTab from "@/components/guide/FaqTab.tsx";
 import TotpTab from "@/components/guide/TotpTab.tsx";
 import PrivacyTab from "@/components/guide/PrivacyTab.tsx";
+
+const LANG_OPTIONS = [
+  { value: "en", label: "English" },
+  { value: "vi", label: "Tiếng Việt" },
+];
 
 export const Guide: Component = () => {
   const GuideTab = {
@@ -69,7 +75,7 @@ export const Guide: Component = () => {
             {/* Quick Language Switcher */}
             <div class="lang-selector">
               <span>🌐</span>
-              <select
+              <Select
                 value={store.language}
                 onChange={(e) => {
                   const val = e.currentTarget.value;
@@ -77,15 +83,8 @@ export const Guide: Component = () => {
                     handleLangChange(val);
                   }
                 }}
-                class="guide-select-field"
-              >
-                <option value="en">
-                  English
-                </option>
-                <option value="vi">
-                  Tiếng Việt
-                </option>
-              </select>
+                options={LANG_OPTIONS}
+              />
             </div>
 
             <Button
