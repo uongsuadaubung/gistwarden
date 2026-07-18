@@ -12,6 +12,13 @@ import {
     writable: true,
   });
 
+  // Read nonce from script element's dataset safely
+  const currentScript = document.currentScript;
+  let nonce = "";
+  if (currentScript instanceof HTMLScriptElement) {
+    nonce = currentScript.dataset.nonce || "";
+  }
+
   interface Fido2Response {
     id: string;
     rawId: string;
@@ -81,7 +88,8 @@ import {
   window.addEventListener("message", (event) => {
     if (
       event.source !== window || !event.data ||
-      event.data.source !== `${APP_NAME.toLowerCase()}-content-script`
+      event.data.source !== `${APP_NAME.toLowerCase()}-content-script` ||
+      event.data.nonce !== nonce
     ) {
       return;
     }
@@ -101,6 +109,7 @@ import {
     }
   });
 
+  // Send request to content script with nonce
   function sendToContentScript(
     type: string,
     data: unknown,
@@ -112,6 +121,7 @@ import {
       window.postMessage(
         {
           source: `${APP_NAME.toLowerCase()}-page-script`,
+          nonce,
           requestId,
           type,
           data,

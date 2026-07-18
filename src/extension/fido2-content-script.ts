@@ -1,9 +1,12 @@
 import { APP_NAME } from "@/shared/constants.ts";
 
 // Inject fido2-page-script.js into the main page context
+const fido2Nonce = crypto.randomUUID();
+
 try {
   const script = document.createElement("script");
   script.src = chrome.runtime.getURL("fido2-page-script.js");
+  script.dataset.nonce = fido2Nonce;
   script.onload = () => {
     script.remove();
   };
@@ -14,10 +17,11 @@ try {
 
 // Forward messages between main-world (page-script) and extension-world (background)
 window.addEventListener("message", (event) => {
-  // Only handle messages coming from our own page script
+  // Only handle messages coming from our own page script with correct nonce
   if (
     event.source !== window || !event.data ||
-    event.data.source !== `${APP_NAME.toLowerCase()}-page-script`
+    event.data.source !== `${APP_NAME.toLowerCase()}-page-script` ||
+    event.data.nonce !== fido2Nonce
   ) {
     return;
   }
@@ -31,6 +35,7 @@ window.addEventListener("message", (event) => {
       window.postMessage(
         {
           source: `${APP_NAME.toLowerCase()}-content-script`,
+          nonce: fido2Nonce,
           requestId,
           success: false,
           error: chrome.runtime.lastError.message ||
@@ -45,6 +50,7 @@ window.addEventListener("message", (event) => {
     window.postMessage(
       {
         source: `${APP_NAME.toLowerCase()}-content-script`,
+        nonce: fido2Nonce,
         requestId,
         success: response?.success || false,
         result: response?.result,
