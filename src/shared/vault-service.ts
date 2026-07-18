@@ -3,6 +3,7 @@ import { reconcile } from "solid-js/store";
 import {
   getMasterPassword,
   setMasterPassword,
+  setSessionItem,
   updateSettings,
 } from "./storage.ts";
 import {
@@ -27,7 +28,15 @@ import {
 } from "./import-export.ts";
 import { syncVaultToGist } from "./sync-utils.ts";
 import { setGlobalLoading } from "./ui-service.ts";
-import { APP_NAME } from "./constants.ts";
+import {
+  APP_NAME,
+  MSG_DELETE_GIST,
+  MSG_DOWNLOAD_FROM_GIST,
+  SESSION_KEY_ENCRYPTED_VAULT,
+  STORE_KEY_SYNC_ERROR,
+  STORE_KEY_SYNCING,
+  STORE_KEY_VAULT_ITEMS,
+} from "./constants.ts";
 
 export async function saveItem(
   item: Partial<VaultItem>,
@@ -190,7 +199,10 @@ export async function saveItem(
       throw new Error(uploadRes.error || "Lỗi đồng bộ lên GitHub Gist");
     }
 
-    setStore("vaultItems", reconcile(uploadRes.validatedList || updatedList));
+    setStore(
+      STORE_KEY_VAULT_ITEMS,
+      reconcile(uploadRes.validatedList || updatedList),
+    );
     return { success: true };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -216,7 +228,10 @@ export async function deleteItem(
       throw new Error(uploadRes.error || "Lỗi đồng bộ lên GitHub Gist");
     }
 
-    setStore("vaultItems", reconcile(uploadRes.validatedList || filtered));
+    setStore(
+      STORE_KEY_VAULT_ITEMS,
+      reconcile(uploadRes.validatedList || filtered),
+    );
     return { success: true };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -288,7 +303,7 @@ export async function clearVault(): Promise<
       const res = await new Promise<{ success: boolean; error?: string }>(
         (resolve) => {
           chrome.runtime.sendMessage({
-            type: "DELETE_GIST",
+            type: MSG_DELETE_GIST,
             content: gistId,
           }, resolve);
         },
@@ -319,8 +334,8 @@ export async function clearVault(): Promise<
 export async function syncVault(): Promise<
   { success: boolean; error?: string }
 > {
-  setStore("syncing", true);
-  setStore("syncError", "");
+  setStore(STORE_KEY_SYNCING, true);
+  setStore(STORE_KEY_SYNC_ERROR, "");
   setGlobalLoading(true, t("vault_syncing"));
   try {
     const password = await getMasterPassword();
@@ -328,7 +343,7 @@ export async function syncVault(): Promise<
     const key = await getOrDeriveKey(password, store.salt);
 
     const rawRes = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
+      chrome.runtime.sendMessage({ type: MSG_DOWNLOAD_FROM_GIST }, resolve);
     });
     const res = DownloadFromGistResponseSchema.parse(rawRes);
 
@@ -336,17 +351,19 @@ export async function syncVault(): Promise<
       throw new Error(res.error || "Không thể tải dữ liệu Gist");
     }
 
+    await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, res.content);
+
     const payload = JSON.parse(res.content || "{}");
     const decrypted = await decryptData(payload.ciphertext, payload.iv, key);
     const items = VaultListSchema.parse(JSON.parse(decrypted));
 
-    setStore("vaultItems", reconcile(items));
-    setStore("syncing", false);
+    setStore(STORE_KEY_VAULT_ITEMS, reconcile(items));
+    setStore(STORE_KEY_SYNCING, false);
     return { success: true };
   } catch (err) {
-    setStore("syncing", false);
+    setStore(STORE_KEY_SYNCING, false);
     const errMsg = err instanceof Error ? err.message : String(err);
-    setStore("syncError", errMsg || "Lỗi đồng bộ");
+    setStore(STORE_KEY_SYNC_ERROR, errMsg || "Lỗi đồng bộ");
     return { success: false, error: errMsg || "Lỗi đồng bộ" };
   } finally {
     setGlobalLoading(false);

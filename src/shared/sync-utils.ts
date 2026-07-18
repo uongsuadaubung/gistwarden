@@ -1,5 +1,10 @@
 import { encryptData } from "./crypto.ts";
 import { type VaultItem, VaultListSchema } from "./types.ts";
+import { setSessionItem } from "./storage.ts";
+import {
+  MSG_UPLOAD_TO_GIST,
+  SESSION_KEY_ENCRYPTED_VAULT,
+} from "./constants.ts";
 
 export async function syncVaultToGist(
   items: VaultItem[],
@@ -18,7 +23,7 @@ export async function syncVaultToGist(
     const res = await new Promise<{ success: boolean; error?: string }>(
       (resolve) => {
         chrome.runtime.sendMessage({
-          type: "UPLOAD_TO_GIST",
+          type: MSG_UPLOAD_TO_GIST,
           content: payload,
         }, resolve);
       },
@@ -30,6 +35,8 @@ export async function syncVaultToGist(
         error: res.error || "Lỗi đồng bộ lên GitHub Gist",
       };
     }
+
+    await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, payload);
 
     return { success: true, validatedList };
   } catch (err) {

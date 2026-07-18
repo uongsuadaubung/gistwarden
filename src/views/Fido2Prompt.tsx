@@ -2,7 +2,12 @@ import { type Component, createSignal, For, onMount, Show } from "solid-js";
 import { store } from "@/shared/store.ts";
 import { unlock } from "@/shared/auth-service.ts";
 import { saveItem } from "@/shared/vault-service.ts";
-import { APP_NAME } from "@/shared/constants.ts";
+import {
+  APP_NAME,
+  MSG_GET_PENDING_FIDO2_REQUEST,
+  MSG_REJECT_FIDO2_REQUEST,
+  MSG_RESOLVE_FIDO2_REQUEST,
+} from "@/shared/constants.ts";
 import {
   generatePasskeyAssertResponse,
   generatePasskeyRegisterResponse,
@@ -159,7 +164,7 @@ export const Fido2Prompt: Component = () => {
     try {
       const rawRes = await new Promise((resolve) => {
         chrome.runtime.sendMessage(
-          { type: "GET_PENDING_FIDO2_REQUEST" },
+          { type: MSG_GET_PENDING_FIDO2_REQUEST },
           resolve,
         );
       });
@@ -334,7 +339,7 @@ export const Fido2Prompt: Component = () => {
 
       // Resolve FIDO2 request in background
       await chrome.runtime.sendMessage({
-        type: "RESOLVE_FIDO2_REQUEST",
+        type: MSG_RESOLVE_FIDO2_REQUEST,
         result,
       });
 
@@ -402,7 +407,7 @@ export const Fido2Prompt: Component = () => {
 
       // Resolve FIDO2 request in background
       await chrome.runtime.sendMessage({
-        type: "RESOLVE_FIDO2_REQUEST",
+        type: MSG_RESOLVE_FIDO2_REQUEST,
         result,
       });
 
@@ -417,7 +422,7 @@ export const Fido2Prompt: Component = () => {
   const handleReject = async () => {
     try {
       await chrome.runtime.sendMessage({
-        type: "REJECT_FIDO2_REQUEST",
+        type: MSG_REJECT_FIDO2_REQUEST,
         error: "NotAllowedError: User cancelled the request",
       });
     } catch (_e) {
