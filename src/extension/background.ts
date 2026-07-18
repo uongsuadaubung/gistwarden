@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
   deleteGist,
   downloadFromGist,
@@ -10,6 +11,7 @@ import {
   MSG_DOWNLOAD_FROM_GIST,
   MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
   MSG_FIDO2_CREDENTIAL_GET_REQUEST,
+  MSG_FIDO2_HEARTBEAT,
   MSG_GET_PENDING_FIDO2_REQUEST,
   MSG_REJECT_FIDO2_REQUEST,
   MSG_RESET_TIMEOUT,
@@ -27,14 +29,12 @@ import {
 } from "@/shared/constants.ts";
 import { getAllSettings, removeSessionItem } from "@/shared/storage.ts";
 
-// Pending FIDO2 request state
-interface PendingRequest {
-  type: "create" | "get";
-  options: unknown;
-  origin: string;
-  senderTabId: number;
-  sendResponse: (response: unknown) => void;
-}
+const PendingFido2RequestSchema = z.object({
+  type: z.enum(["create", "get"]),
+  options: z.unknown(),
+  origin: z.string(),
+  senderTabId: z.number(),
+});
 
 interface ChromeMessage {
   type: string;
@@ -45,7 +45,7 @@ interface ChromeMessage {
   data?: unknown;
 }
 
-let pendingFido2Request: PendingRequest | null = null;
+let pendingFido2Callback: ((response: unknown) => void) | null = null;
 
 // Message listener
 chrome.runtime.onMessage.addListener(
@@ -70,6 +70,7 @@ chrome.runtime.onMessage.addListener(
       MSG_RESOLVE_FIDO2_REQUEST,
       MSG_REJECT_FIDO2_REQUEST,
       MSG_RESET_TIMEOUT,
+      MSG_FIDO2_HEARTBEAT,
     ];
 
     if (internalMessages.includes(message.type) && !isExtensionSender) {
@@ -149,14 +150,21 @@ chrome.runtime.onMessage.addListener(
           return false;
         }
 
-        // Save pending request
-        pendingFido2Request = {
+        const requestData = {
           type,
           options: message.data,
           origin: sender.origin || new URL(sender.tab.url || "").origin,
           senderTabId: sender.tab.id,
-          sendResponse,
         };
+
+        // Save to chrome.storage.session for durability
+        chrome.storage.session.set({ pending_fido2_request: requestData })
+          .catch((err) =>
+            console.error("[Background] Failed to save pending request:", err)
+          );
+
+        // Save callback in memory
+        pendingFido2Callback = sendResponse;
 
         // Open a popup window for verification
         chrome.windows.create({
@@ -170,48 +178,70 @@ chrome.runtime.onMessage.addListener(
       }
 
       case MSG_GET_PENDING_FIDO2_REQUEST:
-        if (pendingFido2Request) {
-          sendResponse({
-            success: true,
-            type: pendingFido2Request.type,
-            options: pendingFido2Request.options,
-            origin: pendingFido2Request.origin,
-          });
-        } else {
-          sendResponse({ success: false, error: "No pending request" });
-        }
-        return false;
+        chrome.storage.session.get("pending_fido2_request").then((res) => {
+          const saved = res?.pending_fido2_request;
+          const parsed = PendingFido2RequestSchema.safeParse(saved);
+          if (parsed.success) {
+            sendResponse({
+              success: true,
+              type: parsed.data.type,
+              options: parsed.data.options,
+              origin: parsed.data.origin,
+            });
+          } else {
+            sendResponse({ success: false, error: "No pending request" });
+          }
+        }).catch((err) => {
+          sendResponse({ success: false, error: String(err) });
+        });
+        return true;
 
       case MSG_RESOLVE_FIDO2_REQUEST:
-        if (pendingFido2Request) {
-          pendingFido2Request.sendResponse({
+        chrome.storage.session.remove("pending_fido2_request")
+          .catch((err) =>
+            console.error("[Background] Failed to remove pending request:", err)
+          );
+
+        if (pendingFido2Callback) {
+          pendingFido2Callback({
             success: true,
             result: message.result,
           });
-          pendingFido2Request = null;
+          pendingFido2Callback = null;
           sendResponse({ success: true });
         } else {
           sendResponse({
             success: false,
-            error: "No pending request to resolve",
+            error: "No pending request callback found in memory",
           });
         }
         return false;
 
       case MSG_REJECT_FIDO2_REQUEST:
-        if (pendingFido2Request) {
-          pendingFido2Request.sendResponse({
+        chrome.storage.session.remove("pending_fido2_request")
+          .catch((err) =>
+            console.error("[Background] Failed to remove pending request:", err)
+          );
+
+        if (pendingFido2Callback) {
+          pendingFido2Callback({
             success: false,
             error: message.error || "User cancelled",
           });
-          pendingFido2Request = null;
+          pendingFido2Callback = null;
           sendResponse({ success: true });
         } else {
           sendResponse({
             success: false,
-            error: "No pending request to reject",
+            error: "No pending request callback found in memory",
           });
         }
+        return false;
+
+      case MSG_FIDO2_HEARTBEAT:
+        // Heartbeat to keep service worker alive during prompt
+        console.debug("[Background] Heartbeat received");
+        sendResponse({ success: true });
         return false;
 
       case MSG_RESET_TIMEOUT:

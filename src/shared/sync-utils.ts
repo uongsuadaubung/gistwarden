@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { encryptData } from "./crypto.ts";
 import { type VaultItem, VaultListSchema } from "./types.ts";
 import { setSessionItem } from "./storage.ts";
@@ -5,6 +6,11 @@ import {
   MSG_UPLOAD_TO_GIST,
   SESSION_KEY_ENCRYPTED_VAULT,
 } from "./constants.ts";
+
+const SyncResponseSchema = z.object({
+  success: z.boolean(),
+  error: z.string().optional(),
+});
 
 export async function syncVaultToGist(
   items: VaultItem[],
@@ -20,14 +26,14 @@ export async function syncVaultToGist(
       ciphertext: encrypted.ciphertext,
     });
 
-    const res = await new Promise<{ success: boolean; error?: string }>(
-      (resolve) => {
-        chrome.runtime.sendMessage({
-          type: MSG_UPLOAD_TO_GIST,
-          content: payload,
-        }, resolve);
-      },
-    );
+    const rawRes = await new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        type: MSG_UPLOAD_TO_GIST,
+        content: payload,
+      }, resolve);
+    });
+
+    const res = SyncResponseSchema.parse(rawRes);
 
     if (!res.success) {
       return {
