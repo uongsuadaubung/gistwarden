@@ -69,3 +69,55 @@
 select.input-control {
   cursor: pointer;
 }
+
+/* Ẩn các nút tăng giảm ở input type number */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+.number-spinners {
+  display: flex;
+  flex-direction: column;
+  height: 28px;
+  width: 18px;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+}
+
+.spinner-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 100%;
+  height: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover:not(:disabled) {
+    color: var(--primary-accent, var(--primary));
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 10px;
+    height: 10px;
+    stroke: currentColor;
+    stroke-width: 3.5px;
+  }
+}

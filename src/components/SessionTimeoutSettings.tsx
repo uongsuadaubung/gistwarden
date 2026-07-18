@@ -1,5 +1,6 @@
 import { type Component, createEffect, createSignal } from "solid-js";
 import { t } from "../shared/i18n.ts";
+import Select from "./Select.tsx";
 
 interface SessionTimeoutSettingsProps {
   timeout: string;
@@ -13,13 +14,29 @@ export const SessionTimeoutSettings: Component<SessionTimeoutSettingsProps> = (
   const [selectedTimeout, setSelectedTimeout] = createSignal(props.timeout);
   const [selectedAction, setSelectedAction] = createSignal(props.action);
 
+  const timeoutOptions = () => [
+    { value: "onRestart", label: t("timeout_on_restart") },
+    { value: "1", label: t("timeout_1min") },
+    { value: "5", label: t("timeout_5min") },
+    { value: "15", label: t("timeout_15min") },
+    { value: "30", label: t("timeout_30min") },
+    { value: "60", label: t("timeout_1hr") },
+    { value: "240", label: t("timeout_4hr") },
+    { value: "never", label: t("timeout_never") },
+  ];
+
+  const actionOptions = () => [
+    { value: "lock", label: t("timeout_action_lock") },
+    { value: "logout", label: t("timeout_action_logout") },
+  ];
+
   createEffect(() => {
     setSelectedTimeout(props.timeout);
     setSelectedAction(props.action);
   });
 
   const handleTimeoutChange = (
-    e: Event & { currentTarget: HTMLSelectElement },
+    e: { currentTarget: { value: string } },
   ) => {
     const val = e.currentTarget.value;
     setSelectedTimeout(val);
@@ -27,12 +44,13 @@ export const SessionTimeoutSettings: Component<SessionTimeoutSettingsProps> = (
   };
 
   const handleActionChange = (
-    e: Event & { currentTarget: HTMLSelectElement },
+    e: { currentTarget: { value: string } },
   ) => {
     const val = e.currentTarget.value;
     if (val === "lock" || val === "logout") {
-      setSelectedAction(val);
-      props.onChange(selectedTimeout(), val);
+      const actionVal: "lock" | "logout" = val;
+      setSelectedAction(actionVal);
+      props.onChange(selectedTimeout(), actionVal);
     }
   };
 
@@ -40,36 +58,26 @@ export const SessionTimeoutSettings: Component<SessionTimeoutSettingsProps> = (
     <>
       <div class="form-group mb-16">
         <label for="timeout-select">{t("timeout_label")}</label>
-        <select
+        <Select
           id="timeout-select"
-          class="input-control w-100"
+          class="w-100"
           value={selectedTimeout()}
           onChange={handleTimeoutChange}
-        >
-          <option value="onRestart">{t("timeout_on_restart")}</option>
-          <option value="1">{t("timeout_1min")}</option>
-          <option value="5">{t("timeout_5min")}</option>
-          <option value="15">{t("timeout_15min")}</option>
-          <option value="30">{t("timeout_30min")}</option>
-          <option value="60">{t("timeout_1hr")}</option>
-          <option value="240">{t("timeout_4hr")}</option>
-          <option value="never">{t("timeout_never")}</option>
-        </select>
+          options={timeoutOptions()}
+        />
       </div>
 
       <div class="form-group mb-0">
         <label for="timeout-action-select">
           {t("timeout_action_label")} <span class="text-error">*</span>
         </label>
-        <select
+        <Select
           id="timeout-action-select"
-          class="input-control w-100"
+          class="w-100"
           value={selectedAction()}
           onChange={handleActionChange}
-        >
-          <option value="lock">{t("timeout_action_lock")}</option>
-          <option value="logout">{t("timeout_action_logout")}</option>
-        </select>
+          options={actionOptions()}
+        />
       </div>
     </>
   );

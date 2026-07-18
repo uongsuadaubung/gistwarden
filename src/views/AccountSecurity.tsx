@@ -126,7 +126,7 @@ export const AccountSecurity: Component = () => {
 
         {/* Section 2: Session Timeout */}
         <div class="detail-section-title">{t("session_timeout_header")}</div>
-        <div class="card p-16 mb-20">
+        <div class="card p-16 mb-20 overflow-visible">
           <SessionTimeoutSettings
             timeout={currentTimeout()}
             action={currentTimeoutAction()}

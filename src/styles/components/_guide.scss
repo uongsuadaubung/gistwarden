@@ -117,29 +117,33 @@ body.light-theme.guide-body-native {
         flex-shrink: 0;
       }
 
-      .custom-select {
-        width: 105px;
-        flex-shrink: 0;
+      .select-container {
+        flex: 1;
+        width: auto;
+      }
 
-        .select-trigger {
-          background: transparent;
+      .select-control {
+        background: transparent;
+        border: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text);
+        padding: 2px 20px 2px 4px;
+        height: auto;
+        width: 100%;
+        box-shadow: none !important;
+
+        &:focus {
           border: none;
-          padding: 2px 0;
-          font-size: 0.82rem;
-          font-weight: 600;
-          color: var(--text);
-          height: auto;
-
-          &:focus {
-            box-shadow: none;
-          }
+          box-shadow: none;
         }
+      }
 
-        .options-list {
-          width: 120px;
-          right: 0;
-          left: auto;
-        }
+      .select-arrow {
+        right: 4px;
+        width: 12px;
+        height: 12px;
+        color: var(--text-muted);
       }
     }
   }

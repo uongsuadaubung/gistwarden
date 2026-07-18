@@ -12,6 +12,7 @@
 @use "./components/confirm-modal";
 @use "./components/guide";
 @use "./components/checkbox";
+@use "./components/select";
 
 :root {
   /* Constant colors */
@@ -678,20 +679,6 @@ body.light-theme {
   width: 16px;
   height: 16px;
   color: var(--primary-accent);
-}
-.guide-select-field {
-  background: transparent;
-  border: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
-  outline: none;
-  cursor: pointer;
-  padding: 2px 4px;
-}
-.guide-select-field option {
-  background: var(--surface);
-  color: var(--text);
 }
 
 .loading-screen {

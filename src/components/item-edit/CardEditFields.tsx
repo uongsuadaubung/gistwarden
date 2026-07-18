@@ -1,9 +1,39 @@
 import { type Component, createSignal, Show } from "solid-js";
 import { t } from "@/shared/i18n.ts";
 import Input from "@/components/Input.tsx";
+import Select from "@/components/Select.tsx";
 import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
 import FormField from "@/components/FormField.tsx";
 import type { ItemEditFormState } from "./vault-edit-helper.ts";
+
+const BRAND_OPTIONS = [
+  { value: "", label: "-- Select --" },
+  { value: "Visa", label: "Visa" },
+  { value: "Mastercard", label: "Mastercard" },
+  { value: "American Express", label: "American Express" },
+  { value: "Discover", label: "Discover" },
+  { value: "Diners Club", label: "Diners Club" },
+  { value: "JCB", label: "JCB" },
+  { value: "Maestro", label: "Maestro" },
+  { value: "UnionPay", label: "UnionPay" },
+  { value: "RuPay", label: "RuPay" },
+  { value: "Other", label: "Other" },
+];
+
+const EXP_MONTH_OPTIONS = [
+  { value: "1", label: "01 - January" },
+  { value: "2", label: "02 - February" },
+  { value: "3", label: "03 - March" },
+  { value: "4", label: "04 - April" },
+  { value: "5", label: "05 - May" },
+  { value: "6", label: "06 - June" },
+  { value: "7", label: "07 - July" },
+  { value: "8", label: "08 - August" },
+  { value: "9", label: "09 - September" },
+  { value: "10", label: "10 - October" },
+  { value: "11", label: "11 - November" },
+  { value: "12", label: "12 - December" },
+];
 
 interface CardEditFieldsProps {
   formState: ItemEditFormState;
@@ -24,7 +54,7 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
           brand: props.formState.cardBrand || "Card",
         })}
       </div>
-      <div class="card mb-16">
+      <div class="card mb-16 overflow-visible">
         {/* Cardholder name */}
         <FormField id="card-holder" label={t("detail_card_cardholder")}>
           <Input
@@ -69,25 +99,13 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
 
         {/* Brand dropdown */}
         <FormField id="card-brand" label={t("detail_card_brand") || "Brand"}>
-          <select
+          <Select
             id="card-brand"
-            class="input-control"
             value={props.formState.cardBrand}
             onChange={(e) =>
               props.updateForm("cardBrand", e.currentTarget.value)}
-          >
-            <option value="">-- Select --</option>
-            <option value="Visa">Visa</option>
-            <option value="Mastercard">Mastercard</option>
-            <option value="American Express">American Express</option>
-            <option value="Discover">Discover</option>
-            <option value="Diners Club">Diners Club</option>
-            <option value="JCB">JCB</option>
-            <option value="Maestro">Maestro</option>
-            <option value="UnionPay">UnionPay</option>
-            <option value="RuPay">RuPay</option>
-            <option value="Other">Other</option>
-          </select>
+            options={BRAND_OPTIONS}
+          />
         </FormField>
 
         {/* Expiration date */}
@@ -96,26 +114,13 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
             id="card-exp-month"
             label={t("detail_card_expiration") || "Expiration month"}
           >
-            <select
+            <Select
               id="card-exp-month"
-              class="input-control"
               value={props.formState.cardExpMonth}
               onChange={(e) =>
                 props.updateForm("cardExpMonth", e.currentTarget.value)}
-            >
-              <option value="1">01 - January</option>
-              <option value="2">02 - February</option>
-              <option value="3">03 - March</option>
-              <option value="4">04 - April</option>
-              <option value="5">05 - May</option>
-              <option value="6">06 - June</option>
-              <option value="7">07 - July</option>
-              <option value="8">08 - August</option>
-              <option value="9">09 - September</option>
-              <option value="10">10 - October</option>
-              <option value="11">11 - November</option>
-              <option value="12">12 - December</option>
-            </select>
+              options={EXP_MONTH_OPTIONS}
+            />
           </FormField>
           <FormField id="card-exp-year" label="Year">
             <Input
