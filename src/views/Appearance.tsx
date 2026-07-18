@@ -1,12 +1,14 @@
 import { type Component } from "solid-js";
-import { store, storeActions, View } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
 import { t } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
 import { ChevronRightIcon, GlobeIcon, ThemeIcon } from "@/icons/svg/index.ts";
 
 export const Appearance: Component = () => {
   const handleBack = () => {
-    storeActions.navigate(View.Settings);
+    navigate(View.Settings);
   };
 
   return (
@@ -22,7 +24,7 @@ export const Appearance: Component = () => {
           {/* Language Settings */}
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.Language)}
+            onClick={() => navigate(View.Language)}
           >
             <div class="setting-row-left">
               <GlobeIcon />
@@ -41,7 +43,7 @@ export const Appearance: Component = () => {
           {/* Theme Settings */}
           <div
             class="setting-row"
-            onClick={() => storeActions.navigate(View.Theme)}
+            onClick={() => navigate(View.Theme)}
           >
             <div class="setting-row-left">
               <ThemeIcon />

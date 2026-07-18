@@ -4,14 +4,14 @@ import Input from "@/components/Input.tsx";
 import { EyeIcon, EyeOffIcon, UploadIcon } from "@/icons/svg/index.ts";
 import { parseSshKey } from "@/shared/crypto.ts";
 import FormField from "@/components/FormField.tsx";
+import type { ItemEditFormState } from "./vault-edit-helper.ts";
 
 interface SshKeyEditFieldsProps {
-  privateKey: string;
-  setPrivateKey: (val: string) => void;
-  publicKey: string;
-  setPublicKey: (val: string) => void;
-  keyFingerprint: string;
-  setKeyFingerprint: (val: string) => void;
+  formState: ItemEditFormState;
+  updateForm: <K extends keyof ItemEditFormState>(
+    key: K,
+    val: ItemEditFormState[K],
+  ) => void;
 }
 
 export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
@@ -24,9 +24,9 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
       const text = await navigator.clipboard.readText();
       const parsed = await parseSshKey(text);
       if (parsed) {
-        props.setPrivateKey(text);
-        props.setPublicKey(parsed.publicKey);
-        props.setKeyFingerprint(parsed.keyFingerprint);
+        props.updateForm("sshPrivateKey", text);
+        props.updateForm("sshPublicKey", parsed.publicKey);
+        props.updateForm("sshFingerprint", parsed.keyFingerprint);
       } else {
         setErrorMsg(
           t("ssh_invalid_key") ||
@@ -53,7 +53,7 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
             <Input
               id="ssh-private-key"
               type={showPrivateKey() ? "text" : "password"}
-              value={props.privateKey}
+              value={props.formState.sshPrivateKey}
               readonly={true}
               placeholder={t("ssh_import_from_clipboard") ||
                 "Paste unencrypted OpenSSH Private Key from clipboard..."}
@@ -94,7 +94,7 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
             id="ssh-public-key"
             class="input-control"
             rows="4"
-            value={props.publicKey}
+            value={props.formState.sshPublicKey}
             readonly={true}
             placeholder="Parsed automatically from Private Key..."
           />
@@ -104,7 +104,7 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
         <FormField id="ssh-fingerprint" label={t("detail_ssh_fingerprint")}>
           <Input
             id="ssh-fingerprint"
-            value={props.keyFingerprint}
+            value={props.formState.sshFingerprint}
             readonly={true}
             placeholder="Parsed automatically from Private Key..."
           />

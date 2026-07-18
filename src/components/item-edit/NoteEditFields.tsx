@@ -2,12 +2,14 @@ import { type Component } from "solid-js";
 import { t } from "@/shared/i18n.ts";
 import Checkbox from "@/components/Checkbox.tsx";
 import FormField from "@/components/FormField.tsx";
+import type { ItemEditFormState } from "./vault-edit-helper.ts";
 
 interface NoteEditFieldsProps {
-  notes: string;
-  setNotes: (v: string) => void;
-  reprompt: number;
-  setReprompt: (v: number) => void;
+  formState: ItemEditFormState;
+  updateForm: <K extends keyof ItemEditFormState>(
+    key: K,
+    val: ItemEditFormState[K],
+  ) => void;
 }
 
 export const NoteEditFields: Component<NoteEditFieldsProps> = (props) => {
@@ -20,16 +22,17 @@ export const NoteEditFields: Component<NoteEditFieldsProps> = (props) => {
             id="item-notes"
             class="input-control"
             rows="8"
-            value={props.notes}
-            onInput={(e) => props.setNotes(e.currentTarget.value)}
+            value={props.formState.notes}
+            onInput={(e) => props.updateForm("notes", e.currentTarget.value)}
             placeholder={t("edit_placeholder_notes")}
           />
         </FormField>
         <div class="form-group mt-12">
           <Checkbox
             id="item-reprompt-note"
-            checked={props.reprompt === 1}
-            onChange={(checked) => props.setReprompt(checked ? 1 : 0)}
+            checked={props.formState.reprompt === 1}
+            onChange={(checked) =>
+              props.updateForm("reprompt", checked ? 1 : 0)}
             label={t("edit_label_reprompt")}
           />
         </div>

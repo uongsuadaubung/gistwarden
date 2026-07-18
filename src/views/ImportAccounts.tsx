@@ -1,5 +1,8 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { storeActions, View } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import { importCsvData, importJsonData } from "@/shared/vault-service.ts";
+import { showToast } from "@/shared/ui-service.ts";
 import { ChevronRightIcon, UploadIcon } from "@/icons/svg/index.ts";
 import { t, type TranslationKey } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
@@ -13,7 +16,7 @@ export const ImportAccounts: Component = () => {
   let jsonInputRef: HTMLInputElement | undefined;
 
   const handleBack = () => {
-    storeActions.navigate(View.VaultOptions);
+    navigate(View.VaultOptions);
   };
 
   const handleImportClick = (type: "browser" | "bitwarden" | "json") => {
@@ -47,17 +50,17 @@ export const ImportAccounts: Component = () => {
       try {
         let res;
         if (type === "json") {
-          res = await storeActions.importJsonData(text);
+          res = await importJsonData(text);
         } else {
-          res = await storeActions.importCsvData(text, type);
+          res = await importCsvData(text, type);
         }
 
         if (res.success) {
-          storeActions.showToast(
+          showToast(
             t("vault_import_success", { count: res.importedCount ?? 0 }),
             "success",
           );
-          storeActions.navigate(View.Vault);
+          navigate(View.Vault);
         } else {
           let errorKey: TranslationKey;
           if (type === "json") {

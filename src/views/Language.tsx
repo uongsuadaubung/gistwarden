@@ -1,11 +1,14 @@
 import { type Component, Show } from "solid-js";
-import { store, storeActions, View } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { View } from "@/shared/types.ts";
+import { navigate } from "@/shared/navigation.ts";
+import { updateLanguage } from "@/shared/ui-service.ts";
 import { t } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
 
 export const Language: Component = () => {
   const handleBack = () => {
-    storeActions.navigate(View.Appearance);
+    navigate(View.Appearance);
   };
 
   return (
@@ -21,8 +24,8 @@ export const Language: Component = () => {
           <div
             class="setting-row"
             onClick={() => {
-              storeActions.updateLanguage("en");
-              storeActions.navigate(View.Appearance);
+              updateLanguage("en");
+              navigate(View.Appearance);
             }}
           >
             <div class="setting-row-left">
@@ -47,8 +50,8 @@ export const Language: Component = () => {
           <div
             class="setting-row"
             onClick={() => {
-              storeActions.updateLanguage("vi");
-              storeActions.navigate(View.Appearance);
+              updateLanguage("vi");
+              navigate(View.Appearance);
             }}
           >
             <div class="setting-row-left">

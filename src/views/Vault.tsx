@@ -6,7 +6,12 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import { store, storeActions } from "@/shared/store.ts";
+import { store } from "@/shared/store.ts";
+import { navigate, selectItem } from "@/shared/navigation.ts";
+import { lock } from "@/shared/auth-service.ts";
+import { deleteItem, saveItem, syncVault } from "@/shared/vault-service.ts";
+import { confirm, showToast } from "@/shared/ui-service.ts";
+import { createDefaultVaultItem } from "@/components/item-edit/vault-edit-helper.ts";
 import { APP_NAME } from "@/shared/constants.ts";
 import { type VaultItem, VaultItemType, View } from "@/shared/types.ts";
 import { handlePopout, isPopout } from "@/shared/popout-utils.ts";
@@ -158,7 +163,7 @@ export const Vault: Component = () => {
     e.stopPropagation();
     if (!text) return;
     await navigator.clipboard.writeText(text);
-    storeActions.showToast(t("detail_copied"), "success");
+    showToast(t("detail_copied"), "success");
     setActiveMenuId(""); // Close menu
   };
 
@@ -175,10 +180,10 @@ export const Vault: Component = () => {
       });
       const code = totp.generate({ timestamp: Date.now() + store.timeOffset });
       await navigator.clipboard.writeText(code);
-      storeActions.showToast(t("detail_totp_copied"), "success");
+      showToast(t("detail_totp_copied"), "success");
     } catch (err) {
       console.error(`[${APP_NAME}] Vault copy TOTP error:`, err);
-      storeActions.showToast(t("toast_error"), "error");
+      showToast(t("toast_error"), "error");
     }
     setActiveMenuId(""); // Close menu
   };
@@ -209,11 +214,11 @@ export const Vault: Component = () => {
       ...item,
       favorite: !item.favorite,
     };
-    const res = await storeActions.saveItem(updated);
+    const res = await saveItem(updated);
     if (res.success) {
-      storeActions.showToast(t("toast_success"), "success");
+      showToast(t("toast_success"), "success");
     } else {
-      storeActions.showToast(res.error || t("toast_error"), "error");
+      showToast(res.error || t("toast_error"), "error");
     }
     setActiveOptionsMenuId(""); // Close options dropdown
   };
@@ -229,11 +234,11 @@ export const Vault: Component = () => {
       name: `${name} - ${t("vault_item_clone_suffix")}`,
     };
 
-    const res = await storeActions.saveItem(cloned);
+    const res = await saveItem(cloned);
     if (res.success) {
-      storeActions.showToast(t("toast_success"), "success");
+      showToast(t("toast_success"), "success");
     } else {
-      storeActions.showToast(res.error || t("toast_error"), "error");
+      showToast(res.error || t("toast_error"), "error");
     }
     setActiveOptionsMenuId(""); // Close options dropdown
   };
@@ -242,148 +247,34 @@ export const Vault: Component = () => {
     e.stopPropagation();
     setActiveOptionsMenuId(""); // Close options dropdown immediately
 
-    const confirmed = await storeActions.confirm(
+    const confirmed = await confirm(
       t("edit_confirm_delete_title"),
       t("edit_confirm_delete_msg", { name: item.name }),
       "danger",
     );
     if (confirmed) {
-      const res = await storeActions.deleteItem(item.id);
+      const res = await deleteItem(item.id);
       if (res.success) {
-        storeActions.showToast(t("toast_success"), "success");
+        showToast(t("toast_success"), "success");
       } else {
-        storeActions.showToast(res.error || t("toast_error"), "error");
+        showToast(res.error || t("toast_error"), "error");
       }
     }
   };
 
-  const handleAddNewLogin = () => {
-    storeActions.selectItem({
-      id: "",
-      type: VaultItemType.Login,
-      name: "",
-      notes: "",
-      favorite: false,
-      reprompt: 0,
-      fields: [],
-      creationDate: "",
-      revisionDate: "",
-      login: {
-        username: "",
-        password: "",
-        totp: "",
-        uris: [],
-        fido2Credentials: [],
-      },
-    });
-    storeActions.navigate(View.ItemEdit);
-    setShowAddMenu(false);
-  };
-
-  const handleAddNewNote = () => {
-    storeActions.selectItem({
-      id: "",
-      type: VaultItemType.SecureNote,
-      name: "",
-      notes: "",
-      favorite: false,
-      reprompt: 0,
-      fields: [],
-      creationDate: "",
-      revisionDate: "",
-    });
-    storeActions.navigate(View.ItemEdit);
-    setShowAddMenu(false);
-  };
-
-  const handleAddNewCard = () => {
-    storeActions.selectItem({
-      id: "",
-      type: VaultItemType.Card,
-      name: "",
-      notes: "",
-      favorite: false,
-      reprompt: 0,
-      fields: [],
-      creationDate: "",
-      revisionDate: "",
-      card: {
-        cardholderName: "",
-        brand: "Visa",
-        number: "",
-        expMonth: "1",
-        expYear: String(new Date().getFullYear()),
-        code: "",
-      },
-    });
-    storeActions.navigate(View.ItemEdit);
-    setShowAddMenu(false);
-  };
-
-  const handleAddNewIdentity = () => {
-    storeActions.selectItem({
-      id: "",
-      type: VaultItemType.Identity,
-      name: "",
-      notes: "",
-      favorite: false,
-      reprompt: 0,
-      fields: [],
-      creationDate: "",
-      revisionDate: "",
-      identity: {
-        title: "",
-        firstName: "",
-        middleName: "",
-        lastName: "",
-        username: "",
-        company: "",
-        ssn: "",
-        passportNumber: "",
-        licenseNumber: "",
-        email: "",
-        phone: "",
-        address1: "",
-        address2: "",
-        address3: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        country: "",
-      },
-    });
-    storeActions.navigate(View.ItemEdit);
-    setShowAddMenu(false);
-  };
-
-  const handleAddNewSshKey = () => {
-    storeActions.selectItem({
-      id: "",
-      type: VaultItemType.SshKey,
-      name: "",
-      notes: "",
-      favorite: false,
-      reprompt: 0,
-      fields: [],
-      creationDate: "",
-      revisionDate: "",
-      sshKey: {
-        privateKey: "",
-        publicKey: "",
-        keyFingerprint: "",
-      },
-    });
-    storeActions.navigate(View.ItemEdit);
+  const handleAddNewItem = (type: VaultItemType) => {
+    selectItem(createDefaultVaultItem(type));
+    navigate(View.ItemEdit);
     setShowAddMenu(false);
   };
 
   const handleLock = () => {
-    storeActions.lock();
+    lock();
   };
 
   const handleSync = async () => {
     if (store.syncing) return;
-    await storeActions.syncVault();
+    await syncVault();
   };
 
   return (
@@ -408,19 +299,34 @@ export const Vault: Component = () => {
             </button>
             <Show when={showAddMenu()}>
               <div class="add-dropdown" onClick={(e) => e.stopPropagation()}>
-                <div class="dropdown-item" onClick={handleAddNewLogin}>
+                <div
+                  class="dropdown-item"
+                  onClick={() => handleAddNewItem(VaultItemType.Login)}
+                >
                   {t("vault_item_login")}
                 </div>
-                <div class="dropdown-item" onClick={handleAddNewNote}>
+                <div
+                  class="dropdown-item"
+                  onClick={() => handleAddNewItem(VaultItemType.SecureNote)}
+                >
                   {t("vault_item_note")}
                 </div>
-                <div class="dropdown-item" onClick={handleAddNewCard}>
+                <div
+                  class="dropdown-item"
+                  onClick={() => handleAddNewItem(VaultItemType.Card)}
+                >
                   {t("vault_item_card")}
                 </div>
-                <div class="dropdown-item" onClick={handleAddNewIdentity}>
+                <div
+                  class="dropdown-item"
+                  onClick={() => handleAddNewItem(VaultItemType.Identity)}
+                >
                   {t("vault_item_identity")}
                 </div>
-                <div class="dropdown-item" onClick={handleAddNewSshKey}>
+                <div
+                  class="dropdown-item"
+                  onClick={() => handleAddNewItem(VaultItemType.SshKey)}
+                >
                   {t("vault_item_ssh_key")}
                 </div>
               </div>

@@ -1,20 +1,16 @@
 import { type Component, createSignal, For, Show } from "solid-js";
-import { type Fido2Credential } from "@/shared/types.ts";
 import { t } from "@/shared/i18n.ts";
 import Input from "@/components/Input.tsx";
 import { EyeIcon, EyeOffIcon, QrIcon, TrashIcon } from "@/icons/svg/index.ts";
 import FormField from "@/components/FormField.tsx";
+import type { ItemEditFormState } from "./vault-edit-helper.ts";
 
 interface LoginEditFieldsProps {
-  username: string;
-  setUsername: (v: string) => void;
-  password: string;
-  setPassword: (v: string) => void;
-  uri: string;
-  setUri: (v: string) => void;
-  totpSecret: string;
-  setTotpSecret: (v: string) => void;
-  fidoCredentials: Fido2Credential[];
+  formState: ItemEditFormState;
+  updateForm: <K extends keyof ItemEditFormState>(
+    key: K,
+    val: ItemEditFormState[K],
+  ) => void;
   onDeleteFido: (id: string) => void;
   scanning: boolean;
   onScanQr: () => void;
@@ -32,8 +28,8 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
           <Input
             id="item-username"
             type="text"
-            value={props.username}
-            onInput={(e) => props.setUsername(e.currentTarget.value)}
+            value={props.formState.username}
+            onInput={(e) => props.updateForm("username", e.currentTarget.value)}
             placeholder={t("edit_placeholder_username")}
           />
         </FormField>
@@ -44,8 +40,9 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
               id="item-password"
               type={showPassword() ? "text" : "password"}
               class="password-font"
-              value={props.password}
-              onInput={(e) => props.setPassword(e.currentTarget.value)}
+              value={props.formState.password}
+              onInput={(e) =>
+                props.updateForm("password", e.currentTarget.value)}
               placeholder={t("edit_placeholder_password")}
               rightActions={
                 <button
@@ -68,12 +65,12 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
       </div>
 
       {/* FIDO2/Passkey credentials (Read-only display of existing credentials with delete option) */}
-      <Show when={props.fidoCredentials.length > 0}>
+      <Show when={(props.formState.fidoCredentials || []).length > 0}>
         <div class="detail-section-title">
           {t("detail_passkey_webauthn")}
         </div>
         <div class="card mb-16 fido2-credentials-list">
-          <For each={props.fidoCredentials}>
+          <For each={props.formState.fidoCredentials || []}>
             {(cred) => (
               <div class="fido2-cred-row">
                 <div>
@@ -105,8 +102,9 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
               id="item-totp"
               type={showTotpSecret() ? "text" : "password"}
               class="password-font"
-              value={props.totpSecret}
-              onInput={(e) => props.setTotpSecret(e.currentTarget.value)}
+              value={props.formState.totpSecret}
+              onInput={(e) =>
+                props.updateForm("totpSecret", e.currentTarget.value)}
               placeholder={t("edit_placeholder_totp")}
               rightActions={
                 <>
@@ -152,8 +150,8 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
           <Input
             id="item-uri"
             type="text"
-            value={props.uri}
-            onInput={(e) => props.setUri(e.currentTarget.value)}
+            value={props.formState.uri}
+            onInput={(e) => props.updateForm("uri", e.currentTarget.value)}
             placeholder="https://example.com"
           />
         </FormField>
