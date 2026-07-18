@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { getAllSettings, updateSettings } from "@/shared/storage.ts";
+import {
+  getAllSettings,
+  GithubUserSchema,
+  updateSettings,
+} from "@/shared/storage.ts";
 import { APP_NAME } from "@/shared/constants.ts";
 
 const GITHUB_API_BASE = "https://api.github.com";
@@ -84,10 +88,17 @@ export async function validateToken(
     }
 
     const data = await response.json();
+    const parsed = GithubUserSchema.safeParse(data);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid GitHub user profile data format",
+      };
+    }
     return {
       success: true,
-      username: data.login,
-      avatarUrl: data.avatar_url,
+      username: parsed.data.login,
+      avatarUrl: parsed.data.avatar_url,
     };
   } catch (error) {
     return {

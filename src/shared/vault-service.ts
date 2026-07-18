@@ -13,6 +13,7 @@ import {
   setDerivedKey,
 } from "./crypto.ts";
 import {
+  DownloadFromGistResponseSchema,
   type VaultItem,
   VaultItemSchema,
   VaultItemType,
@@ -326,11 +327,10 @@ export async function syncVault(): Promise<
     if (!password || !store.salt) throw new Error("Vault is locked");
     const key = await getOrDeriveKey(password, store.salt);
 
-    const res = await new Promise<
-      { success: boolean; content?: string; error?: string }
-    >((resolve) => {
+    const rawRes = await new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: "DOWNLOAD_FROM_GIST" }, resolve);
     });
+    const res = DownloadFromGistResponseSchema.parse(rawRes);
 
     if (!res.success) {
       throw new Error(res.error || "Không thể tải dữ liệu Gist");

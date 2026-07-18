@@ -9,6 +9,7 @@ import {
 } from "@/shared/passkey-crypto.ts";
 import {
   type Fido2Credential,
+  GetPendingFido2RequestResponseSchema,
   type LoginVaultItem,
   type VaultItem,
   VaultItemType,
@@ -156,20 +157,13 @@ export const Fido2Prompt: Component = () => {
 
   const loadPendingRequest = async () => {
     try {
-      const res = await new Promise<
-        {
-          success: boolean;
-          type?: "create" | "get";
-          options?: Fido2Request["options"];
-          origin?: string;
-          error?: string;
-        }
-      >((resolve) => {
+      const rawRes = await new Promise((resolve) => {
         chrome.runtime.sendMessage(
           { type: "GET_PENDING_FIDO2_REQUEST" },
           resolve,
         );
       });
+      const res = GetPendingFido2RequestResponseSchema.parse(rawRes);
 
       if (res && res.success && res.type && res.options && res.origin) {
         setPendingReq({

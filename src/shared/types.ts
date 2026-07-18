@@ -330,3 +330,50 @@ export type LoginMethod = z.infer<typeof LoginMethodSchema>;
 // Login View Mode Types
 export const LoginViewModeSchema = z.enum(["masterPassword", "pin"]);
 export type LoginViewMode = z.infer<typeof LoginViewModeSchema>;
+
+// IPC Message Response Schemas
+export const ValidateTokenResponseSchema = z.object({
+  success: z.boolean(),
+  username: z.string().optional(),
+  avatarUrl: z.string().optional(),
+  error: z.string().optional(),
+});
+export type ValidateTokenResponse = z.infer<typeof ValidateTokenResponseSchema>;
+
+export const DownloadFromGistResponseSchema = z.object({
+  success: z.boolean(),
+  content: z.string().optional(),
+  error: z.string().optional(),
+});
+export type DownloadFromGistResponse = z.infer<
+  typeof DownloadFromGistResponseSchema
+>;
+
+export const GetPendingFido2RequestResponseSchema = z.object({
+  success: z.boolean(),
+  type: z.enum(["create", "get"]).optional(),
+  options: z.object({
+    rpId: z.string().optional(),
+    rp: z.object({
+      id: z.string().optional(),
+      name: z.string(),
+    }),
+    user: z.object({
+      id: z.string(),
+      name: z.string(),
+      displayName: z.string().optional(),
+    }),
+    challenge: z.string(),
+    userVerification: z.enum(["required", "preferred", "discouraged"])
+      .optional(),
+    allowCredentials: z.array(z.object({
+      id: z.string(),
+      type: z.string(),
+    })).optional(),
+  }).optional(),
+  origin: z.string().optional(),
+  error: z.string().optional(),
+});
+export type GetPendingFido2RequestResponse = z.infer<
+  typeof GetPendingFido2RequestResponseSchema
+>;
