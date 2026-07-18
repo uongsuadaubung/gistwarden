@@ -1,6 +1,12 @@
 import { setStore, store } from "./store.ts";
 import { type VaultItem, View } from "./types.ts";
 import { requestReprompt } from "./ui-service.ts";
+import { removeSessionItem, setSessionItem } from "./storage.ts";
+import {
+  SESSION_KEY_LAST_SELECTED_ITEM_ID,
+  SESSION_KEY_LAST_VIEW,
+  STORE_KEY_SELECTED_ITEM,
+} from "./constants.ts";
 
 export const viewDepths: Record<View, number> = {
   [View.Login]: 0,
@@ -47,10 +53,19 @@ export function navigate(newView: View) {
     view: newView,
     transitionClass,
   });
+
+  // Save navigation state
+  const skipViews = [View.Login, View.Welcome, View.Fido2Prompt];
+  if (!skipViews.includes(newView)) {
+    setSessionItem(SESSION_KEY_LAST_VIEW, newView).catch(() => {});
+    if (newView !== View.ItemDetail && newView !== View.ItemEdit) {
+      removeSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID).catch(() => {});
+    }
+  }
 }
 
 export function selectItem(item: VaultItem | null) {
-  setStore("selectedItem", item);
+  setStore(STORE_KEY_SELECTED_ITEM, item);
   if (item) {
     transitionToggle = !transitionToggle;
     const suffix = transitionToggle ? "a" : "b";
@@ -58,6 +73,12 @@ export function selectItem(item: VaultItem | null) {
       view: View.ItemDetail,
       transitionClass: `slide-forward-${suffix}`,
     });
+
+    // Save navigation state
+    setSessionItem(SESSION_KEY_LAST_VIEW, View.ItemDetail).catch(() => {});
+    setSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID, item.id).catch(() => {});
+  } else {
+    removeSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID).catch(() => {});
   }
 }
 
@@ -69,11 +90,18 @@ export async function openItem(
     const authorized = await requestReprompt();
     if (!authorized) return;
   }
-  setStore("selectedItem", item);
+  setStore(STORE_KEY_SELECTED_ITEM, item);
   transitionToggle = !transitionToggle;
   const suffix = transitionToggle ? "a" : "b";
   setStore({
     view: targetView,
     transitionClass: `slide-forward-${suffix}`,
   });
+
+  // Save navigation state
+  const skipViews = [View.Login, View.Welcome, View.Fido2Prompt];
+  if (!skipViews.includes(targetView)) {
+    setSessionItem(SESSION_KEY_LAST_VIEW, targetView).catch(() => {});
+    setSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID, item.id).catch(() => {});
+  }
 }
