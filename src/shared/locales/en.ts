@@ -254,7 +254,7 @@ export default {
   settings_header: "Settings",
   settings_change_mp: "Change Master Password",
   settings_export: "Export Vault (JSON)",
-  settings_clear_vault: "Clear Vault (Reset)",
+  settings_clear_vault: "Clear Vault",
   settings_logout: "Logout GitHub Account",
   settings_label_language: "Language / Ngôn ngữ",
   settings_lang_vi: "Tiếng Việt",
@@ -590,7 +590,7 @@ export default {
     "Open Bitwarden -> Go to Settings -> Export Vault -> Choose '.json (unencrypted)' format and download it to your computer.",
   guide_ie_import_step2_title: "Step 2: Load into {APP_NAME}",
   guide_ie_import_step2_desc:
-    "Open {APP_NAME} -> Settings -> Vault Options -> Import Accounts (Import JSON) -> Select the JSON file you downloaded in Step 1.",
+    "Open {APP_NAME} -> Settings -> Vault Options -> Import Data -> Select the JSON file you downloaded in Step 1.",
   guide_ie_import_step3_title: "Step 3: Encrypt and Sync",
   guide_ie_import_step3_desc:
     "The system will encrypt all imported accounts using your Master Password and push them directly to GitHub Gist. You should delete the unencrypted Bitwarden JSON file from your disk immediately for security.",
@@ -598,7 +598,7 @@ export default {
   guide_ie_export_desc:
     "To have an offline backup copy in case you lose access to your GitHub account:",
   guide_ie_export_step1:
-    "Go to {APP_NAME} Settings -> Vault Options -> Choose 'Export Accounts (Export JSON)'.",
+    "Go to {APP_NAME} Settings -> Vault Options -> Choose 'Export Data'.",
   guide_ie_export_step2:
     "Enter your Master Password to decrypt the local database.",
   guide_ie_export_step3:
