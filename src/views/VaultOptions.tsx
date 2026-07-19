@@ -12,6 +12,9 @@ import {
 } from "@/icons/svg/index.ts";
 import { t } from "@/shared/i18n.ts";
 import DetailHeader from "@/components/DetailHeader.tsx";
+import { handlePopout, isPopout } from "@/shared/popout-utils.ts";
+import { setSessionItem } from "@/shared/storage.ts";
+import { SESSION_KEY_LAST_VIEW } from "@/shared/constants.ts";
 
 export const VaultOptions: Component = () => {
   const [error, setError] = createSignal("");
@@ -68,7 +71,18 @@ export const VaultOptions: Component = () => {
           {/* Import */}
           <div
             class="setting-row"
-            onClick={() => navigate(View.ImportAccounts)}
+            onClick={async () => {
+              const isFirefox = navigator.userAgent.includes("Firefox");
+              if (isFirefox && !isPopout()) {
+                await setSessionItem(
+                  SESSION_KEY_LAST_VIEW,
+                  View.ImportAccounts,
+                );
+                handlePopout();
+              } else {
+                navigate(View.ImportAccounts);
+              }
+            }}
           >
             <div class="setting-row-left">
               <UploadIcon />
