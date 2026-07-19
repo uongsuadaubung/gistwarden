@@ -35,7 +35,7 @@ export const ConfirmModal: Component = () => {
                 : "primary"}
               onClick={() => resolveConfirm(true)}
             >
-              {t("confirm_title")}
+              {t("btn_confirm")}
             </Button>
           </div>
         </div>

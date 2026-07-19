@@ -6,6 +6,7 @@ import {
   validateToken,
 } from "@/domains/github/api.ts";
 import {
+  ALARM_NAME_VAULT_TIMEOUT,
   FIDO2_PROMPT_HEIGHT,
   MSG_DELETE_GIST,
   MSG_DOWNLOAD_FROM_GIST,
@@ -27,10 +28,21 @@ import {
   SESSION_KEY_GITHUB_TOKEN,
   SESSION_KEY_LAST_SELECTED_ITEM_ID,
   SESSION_KEY_LAST_VIEW,
+  SESSION_KEY_PENDING_FIDO2_REQUEST,
+  SESSION_KEY_SESSION_INITIALIZED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
 } from "@/shared/constants.ts";
-import { getAllSettings, removeSessionItem } from "@/shared/storage.ts";
+import {
+  getAllSettings,
+  getSessionItem,
+  hasAlarms,
+  hasSessionStorage,
+  hasStorageOnChanged,
+  removeSessionItem,
+  setSessionItem,
+  STORAGE_KEY,
+} from "@/shared/storage.ts";
 
 const PendingFido2RequestSchema = z.object({
   type: z.enum(["create", "get"]),
@@ -161,10 +173,7 @@ chrome.runtime.onMessage.addListener(
         };
 
         // Save to chrome.storage.session for durability
-        chrome.storage.session.set({ pending_fido2_request: requestData })
-          .catch((err) =>
-            console.error("[Background] Failed to save pending request:", err)
-          );
+        setSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST, requestData);
 
         // Save callback in memory
         pendingFido2Callback = sendResponse;
@@ -181,8 +190,7 @@ chrome.runtime.onMessage.addListener(
       }
 
       case MSG_GET_PENDING_FIDO2_REQUEST:
-        chrome.storage.session.get("pending_fido2_request").then((res) => {
-          const saved = res?.pending_fido2_request;
+        getSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST).then((saved) => {
           const parsed = PendingFido2RequestSchema.safeParse(saved);
           if (parsed.success) {
             sendResponse({
@@ -200,10 +208,7 @@ chrome.runtime.onMessage.addListener(
         return true;
 
       case MSG_RESOLVE_FIDO2_REQUEST:
-        chrome.storage.session.remove("pending_fido2_request")
-          .catch((err) =>
-            console.error("[Background] Failed to remove pending request:", err)
-          );
+        removeSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST);
 
         if (pendingFido2Callback) {
           pendingFido2Callback({
@@ -221,10 +226,7 @@ chrome.runtime.onMessage.addListener(
         return false;
 
       case MSG_REJECT_FIDO2_REQUEST:
-        chrome.storage.session.remove("pending_fido2_request")
-          .catch((err) =>
-            console.error("[Background] Failed to remove pending request:", err)
-          );
+        removeSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST);
 
         if (pendingFido2Callback) {
           pendingFido2Callback({
@@ -259,8 +261,8 @@ chrome.runtime.onMessage.addListener(
 
 // Timeout Alarm Management
 async function updateTimeoutAlarm() {
-  if (typeof chrome === "undefined" || !chrome.alarms) return;
-  await chrome.alarms.clear("vaultTimeout");
+  if (!hasAlarms()) return;
+  await chrome.alarms.clear(ALARM_NAME_VAULT_TIMEOUT);
 
   try {
     const settings = await getAllSettings();
@@ -269,13 +271,13 @@ async function updateTimeoutAlarm() {
     if (timeout !== "onRestart" && timeout !== "never") {
       const minutes = parseInt(timeout, 10);
       if (!isNaN(minutes) && minutes > 0) {
-        const session = await chrome.storage.session.get(
-          SESSION_KEY_DERIVED_KEY,
-        );
-        if (session && session[SESSION_KEY_DERIVED_KEY]) {
-          chrome.alarms.create("vaultTimeout", { delayInMinutes: minutes });
+        const derivedKey = await getSessionItem(SESSION_KEY_DERIVED_KEY);
+        if (derivedKey) {
+          chrome.alarms.create(ALARM_NAME_VAULT_TIMEOUT, {
+            delayInMinutes: minutes,
+          });
           console.debug(
-            `[Background] Set vaultTimeout alarm for ${minutes} minutes`,
+            `[Background] Set ${ALARM_NAME_VAULT_TIMEOUT} alarm for ${minutes} minutes`,
           );
         }
       }
@@ -285,11 +287,11 @@ async function updateTimeoutAlarm() {
   }
 }
 
-if (typeof chrome !== "undefined" && chrome.alarms) {
+if (hasAlarms()) {
   chrome.alarms.onAlarm.addListener(async (alarm) => {
-    if (alarm.name === "vaultTimeout") {
+    if (alarm.name === ALARM_NAME_VAULT_TIMEOUT) {
       console.debug(
-        "[Background] vaultTimeout alarm fired. Locking/Logging out...",
+        `[Background] ${ALARM_NAME_VAULT_TIMEOUT} alarm fired. Locking/Logging out...`,
       );
       try {
         const settings = await getAllSettings();
@@ -323,12 +325,41 @@ if (typeof chrome !== "undefined" && chrome.alarms) {
   });
 }
 
-if (
-  typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged
-) {
+if (hasStorageOnChanged()) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === "local" && changes["gistwarden_settings"]) {
+    if (areaName === "local" && changes[STORAGE_KEY]) {
       updateTimeoutAlarm();
     }
   });
 }
+
+// Khởi tạo phiên làm việc và xử lý đăng xuất khi khởi động lại trình duyệt
+async function initSession() {
+  if (!hasSessionStorage()) {
+    return;
+  }
+  try {
+    const res = await chrome.storage.session.get(
+      SESSION_KEY_SESSION_INITIALIZED,
+    );
+    if (!res || !res[SESSION_KEY_SESSION_INITIALIZED]) {
+      // Lần đầu tiên chạy service worker trong phiên trình duyệt này (trình duyệt khởi động lại)
+      const settings = await getAllSettings();
+      const action = settings.vaultTimeoutAction || "lock";
+      if (action === "logout") {
+        console.debug(
+          "[Background] Trình duyệt khởi động lại và vaultTimeoutAction là logout. Đang đăng xuất...",
+        );
+        await chrome.storage.local.clear();
+        await chrome.storage.session.clear();
+      }
+      await chrome.storage.session.set({
+        [SESSION_KEY_SESSION_INITIALIZED]: true,
+      });
+    }
+  } catch (err) {
+    console.error("[Background] Lỗi khi khởi tạo phiên làm việc:", err);
+  }
+}
+
+initSession();

@@ -9,6 +9,7 @@ export default {
   btn_copy: "Copy",
   btn_copied: "Copied!",
   btn_clear: "Clear",
+  btn_confirm: "Confirm",
   confirm_title: "Confirmation",
   dialog_loading: "Processing...",
   toast_success: "Success!",

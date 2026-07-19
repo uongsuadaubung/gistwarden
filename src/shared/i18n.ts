@@ -15,6 +15,7 @@ const LangSchema = z.object({
   btn_copy: z.string(),
   btn_copied: z.string(),
   btn_clear: z.string(),
+  btn_confirm: z.string(),
   confirm_title: z.string(),
   dialog_loading: z.string(),
   toast_success: z.string(),
