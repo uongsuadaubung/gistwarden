@@ -651,15 +651,15 @@ export default {
   welcome_feat_backup_desc:
     "Import or export your vault seamlessly via JSON format, fully compatible with Bitwarden exports.",
   welcome_security_notice_title: "⚠️ IMPORTANT SECURITY NOTICE",
-  welcome_security_notice_desc:
-    "The app operates on end-to-end Zero-Knowledge encryption. Your Master Password is the only key to decrypt your vault data locally.",
   welcome_warning_bold:
-    "If you forget your Master Password, your data will be PERMANENTLY LOST and CANNOT be recovered under any circumstances.",
+    "Forgetting your Master Password results in PERMANENT DATA LOSS with NO recovery.",
   welcome_warning_sub:
     "We do not store your password on any server, and GitHub only sees your vault data as meaningless encrypted cipher text. (Note: You can still change your Master Password anytime in Settings if needed).",
   welcome_checkbox_label:
     "I understand and agree that if I forget my Master Password, I accept losing all my data permanently.",
   welcome_btn_continue: "Get Started",
+  welcome_btn_next: "Next",
+  welcome_btn_prev: "Back",
 
   // Privacy & Policy
   guide_privacy_title: "Privacy & Data Policy",
