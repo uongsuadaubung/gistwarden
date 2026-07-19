@@ -238,7 +238,7 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
                       ? t("edit_label_website")
                       : `${t("edit_label_website")} ${idx() + 1}`}
                   </div>
-                  <div class="field-value text-break">
+                  <div class="field-value">
                     {u.uri}
                   </div>
                 </div>

@@ -83,7 +83,7 @@ function copyAssets() {
         if (isFirefox) {
           manifest.browser_specific_settings = {
             gecko: {
-              id: `${appNameLower}@kien.hm`,
+              id: `${appNameLower}@uongsuadaubung.github.io`,
               strict_min_version: "109.0",
             },
           };

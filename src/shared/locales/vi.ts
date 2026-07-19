@@ -254,7 +254,7 @@ export default {
   settings_header: "Cài đặt",
   settings_change_mp: "Đổi mật khẩu Master",
   settings_export: "Xuất mật khẩu (JSON)",
-  settings_clear_vault: "Xóa sạch két sắt (Reset)",
+  settings_clear_vault: "Xóa sạch két sắt",
   settings_logout: "Đăng xuất tài khoản GitHub",
   settings_label_language: "Language / Ngôn ngữ",
   settings_lang_vi: "Tiếng Việt",
@@ -593,7 +593,7 @@ export default {
     "Mở ứng dụng hoặc tiện ích Bitwarden -> Vào Cài đặt -> Xuất két sắt -> Chọn định dạng '.json (Không mã hóa)' và tải về máy tính.",
   guide_ie_import_step2_title: "Bước 2: Nạp vào {APP_NAME}",
   guide_ie_import_step2_desc:
-    "Mở {APP_NAME} -> Vào mục Cài đặt -> Tùy chọn két sắt (Vault Options) -> Nhập tài khoản (Import JSON) -> Chọn file JSON vừa tải về ở Bước 1.",
+    "Mở {APP_NAME} -> Vào mục Cài đặt -> Tùy chọn két sắt (Vault Options) -> Nhập dữ liệu (Import) -> Chọn file JSON vừa tải về ở Bước 1.",
   guide_ie_import_step3_title: "Bước 3: Lưu trữ và đồng bộ",
   guide_ie_import_step3_desc:
     "Hệ thống sẽ mã hóa toàn bộ dữ liệu này bằng Master Password của bạn và đẩy trực tiếp lên GitHub Gist. File JSON thô của Bitwarden trên máy tính nên được xóa đi ngay lập tức để bảo mật.",
@@ -601,7 +601,7 @@ export default {
   guide_ie_export_desc:
     "Để có thêm bản lưu trữ offline đề phòng trường hợp mất tài khoản GitHub hoặc hỏng máy:",
   guide_ie_export_step1:
-    "Vào Cài đặt của {APP_NAME} -> Tùy chọn két sắt (Vault Options) -> Chọn 'Xuất tài khoản (Export JSON)'.",
+    "Vào Cài đặt của {APP_NAME} -> Tùy chọn két sắt (Vault Options) -> Chọn 'Xuất dữ liệu (Export)'.",
   guide_ie_export_step2: "Nhập mật khẩu Master để giải mã cơ sở dữ liệu.",
   guide_ie_export_step3:
     "Bấm 'Giải mã & Tải xuống' để lưu file `accounts.json` chưa mã hóa về máy. Hãy bảo vệ file này cẩn thận vì nó chứa toàn bộ mật khẩu dạng chữ rõ!",
