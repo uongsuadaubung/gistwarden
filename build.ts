@@ -85,6 +85,9 @@ function copyAssets() {
             gecko: {
               id: `${appNameLower}@uongsuadaubung.github.io`,
               strict_min_version: "109.0",
+              data_collection_permissions: {
+                required: ["none"],
+              },
             },
           };
           manifest.background = {
