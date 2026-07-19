@@ -4,7 +4,7 @@
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },
   "name": "Gistwarden",
-  "version": "1.0.0",
+  "version": "2026.7.19",
   "description": "Secure password, passkey, and TOTP manager synced to your private GitHub Gist.",
   "permissions": [
     "storage",
@@ -33,14 +33,24 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["fido2-content-script.js"],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "fido2-content-script.js"
+      ],
       "run_at": "document_start",
       "all_frames": true
     },
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["autofill-content-script.js"],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "autofill-content-script.js"
+      ],
       "run_at": "document_end",
       "all_frames": true
     }
@@ -50,7 +60,9 @@
       "resources": [
         "fido2-page-script.js"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "icons": {
