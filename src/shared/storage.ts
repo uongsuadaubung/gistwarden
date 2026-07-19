@@ -41,10 +41,27 @@ import {
 
 export const STORAGE_KEY = `${APP_NAME.toLowerCase()}_settings`;
 
+export function hasLocalStorage(): boolean {
+  return typeof chrome !== "undefined" && !!chrome.storage &&
+    !!chrome.storage.local;
+}
+
+export function hasSessionStorage(): boolean {
+  return typeof chrome !== "undefined" && !!chrome.storage &&
+    !!chrome.storage.session;
+}
+
+export function hasStorageOnChanged(): boolean {
+  return typeof chrome !== "undefined" && !!chrome.storage &&
+    !!chrome.storage.onChanged;
+}
+
+export function hasAlarms(): boolean {
+  return typeof chrome !== "undefined" && !!chrome.alarms;
+}
+
 export async function getAllSettings(): Promise<AppSettings> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local
-  ) {
+  if (!hasLocalStorage()) {
     return SettingsSchema.parse({});
   }
   const result = await chrome.storage.local.get(STORAGE_KEY);
@@ -53,9 +70,7 @@ export async function getAllSettings(): Promise<AppSettings> {
 }
 
 export async function updateSettings(patch: Partial<AppSettings>) {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local
-  ) {
+  if (!hasLocalStorage()) {
     return;
   }
   const current = await getAllSettings();
@@ -64,11 +79,8 @@ export async function updateSettings(patch: Partial<AppSettings>) {
   await chrome.storage.local.set({ [STORAGE_KEY]: safeNext });
 }
 
-// General Session Storage Helpers
 export async function getSessionItem(key: string): Promise<unknown> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
-  ) {
+  if (!hasSessionStorage()) {
     return null;
   }
   try {
@@ -83,9 +95,7 @@ export async function setSessionItem(
   key: string,
   value: unknown,
 ): Promise<void> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
-  ) {
+  if (!hasSessionStorage()) {
     return;
   }
   try {
@@ -98,9 +108,7 @@ export async function setSessionItem(
 export async function getSessionItems(
   keys: string[],
 ): Promise<Record<string, unknown>> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
-  ) {
+  if (!hasSessionStorage()) {
     return {};
   }
   try {
@@ -114,9 +122,7 @@ export async function getSessionItems(
 export async function setSessionItems(
   items: Record<string, unknown>,
 ): Promise<void> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
-  ) {
+  if (!hasSessionStorage()) {
     return;
   }
   try {
@@ -129,9 +135,7 @@ export async function setSessionItems(
 export async function removeSessionItem(
   keys: string | string[],
 ): Promise<void> {
-  if (
-    typeof chrome === "undefined" || !chrome.storage || !chrome.storage.session
-  ) {
+  if (!hasSessionStorage()) {
     return;
   }
   try {
@@ -160,11 +164,7 @@ export async function setSessionUnlocked(unlocked: boolean): Promise<void> {
 }
 
 export function subscribeToSettings(callback: (settings: AppSettings) => void) {
-  if (
-    typeof chrome === "undefined" ||
-    !chrome.storage ||
-    !chrome.storage.onChanged
-  ) {
+  if (!hasStorageOnChanged()) {
     return;
   }
   chrome.storage.onChanged.addListener((changes, areaName) => {

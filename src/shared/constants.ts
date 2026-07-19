@@ -16,6 +16,8 @@ export const SESSION_KEY_ENCRYPTED_VAULT = "encryptedVault";
 export const SESSION_KEY_LAST_VIEW = "lastView";
 export const SESSION_KEY_LAST_SELECTED_ITEM_ID = "lastSelectedItemId";
 export const SESSION_KEY_GITHUB_TOKEN = "githubToken";
+export const SESSION_KEY_SESSION_INITIALIZED = "session_initialized";
+export const SESSION_KEY_PENDING_FIDO2_REQUEST = "pending_fido2_request";
 
 // IPC Message Types
 export const MSG_START_GITHUB_OAUTH = "START_GITHUB_OAUTH";
@@ -62,3 +64,6 @@ export const STORE_KEY_CONFIRM_MODAL = "confirmModal";
 export const STORE_KEY_REPROMPT_MODAL = "repromptModal";
 export const STORE_KEY_LANGUAGE = "language";
 export const STORE_KEY_TIME_OFFSET = "timeOffset";
+
+// Alarm Names
+export const ALARM_NAME_VAULT_TIMEOUT = "vaultTimeout";
