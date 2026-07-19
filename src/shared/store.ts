@@ -12,6 +12,7 @@ import {
 
 export interface AppStore {
   githubToken: string;
+  githubConfigured: boolean;
   gistId: string;
   salt: string;
   cachedGithubUser: GithubUser | null;
@@ -65,6 +66,7 @@ export interface AppStore {
 
 export const [store, setStore] = createStore<AppStore>({
   githubToken: "",
+  githubConfigured: false,
   gistId: "",
   salt: "",
   cachedGithubUser: null,

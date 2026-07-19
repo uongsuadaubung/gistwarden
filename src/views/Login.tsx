@@ -1,6 +1,11 @@
 import { type Component, createEffect, createSignal, Show } from "solid-js";
 import { store } from "@/shared/store.ts";
-import { logout, setupGithub, unlock } from "@/shared/auth-service.ts";
+import {
+  logout,
+  setupGithub,
+  unlock,
+  unlockWithKey,
+} from "@/shared/auth-service.ts";
 import { confirm, updateLanguage } from "@/shared/ui-service.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
@@ -51,16 +56,23 @@ export const Login: Component = () => {
 
       const saltBuffer = base64ToArrayBuffer(store.pinUnlockSalt);
       const pinKey = await deriveKey(pin, new Uint8Array(saltBuffer));
-      const decryptedMp = await decryptData(
+      const decryptedKeyBytesB64 = await decryptData(
         store.pinUnlockValue,
         store.pinUnlockIv,
         pinKey,
       );
 
-      const res = await unlock(decryptedMp);
-      if (res.success) {
-        setMasterPassword("");
-      } else {
+      const buffer = base64ToArrayBuffer(decryptedKeyBytesB64);
+      const key = await crypto.subtle.importKey(
+        "raw",
+        buffer,
+        { name: "AES-GCM", length: 256 },
+        true, // extractable
+        ["encrypt", "decrypt"],
+      );
+
+      const res = await unlockWithKey(key);
+      if (!res.success) {
         setError(res.error || t("login_error_wrong_pin"));
       }
     } catch (err) {
@@ -198,7 +210,7 @@ export const Login: Component = () => {
         <h2 class="login-brand-title">{APP_NAME}</h2>
         <p class="login-subtitle">
           <Show
-            when={store.githubToken}
+            when={store.githubConfigured}
             fallback={t("login_title_setup")}
           >
             {t("login_title_locked")}
@@ -211,7 +223,7 @@ export const Login: Component = () => {
       </Show>
 
       <Show
-        when={store.githubToken}
+        when={store.githubConfigured}
         fallback={
           <div class="card mb-0 p-16">
             {/* Method Tabs */}

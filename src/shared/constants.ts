@@ -8,11 +8,14 @@ export const OAUTH_WORKER_URL = "https://gistwarden.uongsuadaubung.workers.dev";
 export const FIREFOX_ADDON_SLUG = "gistwarden";
 
 // Chrome Session Storage Keys
-export const SESSION_KEY_MASTER_PASSWORD = "masterPassword";
+export const SESSION_KEY_DERIVED_KEY = "derivedKey";
+export const SESSION_KEY_VERIFICATION_IV = "verificationIv";
+export const SESSION_KEY_VERIFICATION_CIPHERTEXT = "verificationCiphertext";
 export const SESSION_KEY_SESSION_UNLOCKED = "sessionUnlocked";
 export const SESSION_KEY_ENCRYPTED_VAULT = "encryptedVault";
 export const SESSION_KEY_LAST_VIEW = "lastView";
 export const SESSION_KEY_LAST_SELECTED_ITEM_ID = "lastSelectedItemId";
+export const SESSION_KEY_GITHUB_TOKEN = "githubToken";
 
 // IPC Message Types
 export const MSG_START_GITHUB_OAUTH = "START_GITHUB_OAUTH";
