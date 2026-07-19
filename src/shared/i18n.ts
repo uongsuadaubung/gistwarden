@@ -573,11 +573,12 @@ const LangSchema = z.object({
   welcome_feat_backup_title: z.string(),
   welcome_feat_backup_desc: z.string(),
   welcome_security_notice_title: z.string(),
-  welcome_security_notice_desc: z.string(),
   welcome_warning_bold: z.string(),
   welcome_warning_sub: z.string(),
   welcome_checkbox_label: z.string(),
   welcome_btn_continue: z.string(),
+  welcome_btn_next: z.string(),
+  welcome_btn_prev: z.string(),
 
   // Privacy & Policy
   guide_privacy_title: z.string(),

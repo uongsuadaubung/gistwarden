@@ -655,15 +655,15 @@ export default {
   welcome_feat_backup_desc:
     "Dễ dàng sao lưu két sắt hoặc di chuyển dữ liệu từ Bitwarden thông qua tính năng nhập xuất file JSON tương thích tốt.",
   welcome_security_notice_title: "⚠️ LƯU Ý BẢO MẬT QUAN TRỌNG",
-  welcome_security_notice_desc:
-    "Ứng dụng hoạt động theo cơ chế mã hóa đầu-cuối Zero-Knowledge. Mật khẩu Master là chìa khóa duy nhất để giải mã dữ liệu két sắt của bạn cục bộ.",
   welcome_warning_bold:
-    "Nếu bạn quên Mật khẩu Master, dữ liệu của bạn sẽ BỊ MẤT VĨNH VIỄN và KHÔNG THỂ khôi phục dưới bất kỳ hình thức nào.",
+    "Quên mật khẩu Master sẽ làm MẤT DỮ LIỆU VĨNH VIỄN, KHÔNG thể khôi phục.",
   welcome_warning_sub:
     "Chúng tôi không lưu trữ mật khẩu của bạn trên bất kỳ máy chủ nào và GitHub cũng chỉ thấy dữ liệu két sắt dưới dạng các ký tự mã hóa vô nghĩa. (Lưu ý: Bạn vẫn có thể đổi Mật khẩu Master trong phần Cài đặt bất cứ lúc nào nếu muốn).",
   welcome_checkbox_label:
     "Tôi đã hiểu rằng nếu quên Mật khẩu Master, tôi chấp nhận mất toàn bộ dữ liệu vĩnh viễn và không thể khôi phục.",
   welcome_btn_continue: "Bắt đầu thiết lập",
+  welcome_btn_next: "Tiếp tục",
+  welcome_btn_prev: "Quay lại",
 
   // Privacy & Policy
   guide_privacy_title: "Chính sách Quyền riêng tư & Dữ liệu",
