@@ -2,7 +2,7 @@ import { createEffect, createSignal, Show } from "solid-js";
 import { t } from "@/shared/i18n.ts";
 import { store } from "@/shared/store.ts";
 import { resolveReprompt } from "@/shared/ui-service.ts";
-import { getMasterPassword } from "@/shared/storage.ts";
+import { verifyMasterPassword } from "@/shared/crypto.ts";
 import Input from "@/components/Input.tsx";
 import Button from "@/components/Button.tsx";
 import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
@@ -41,8 +41,8 @@ export default function RepromptModal() {
       return;
     }
 
-    const storedPassword = await getMasterPassword();
-    if (value === storedPassword) {
+    const isCorrect = await verifyMasterPassword(value);
+    if (isCorrect) {
       setIsClosing(true);
       setTimeout(() => {
         resolveReprompt(true);
