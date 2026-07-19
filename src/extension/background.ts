@@ -268,7 +268,7 @@ async function updateTimeoutAlarm() {
     const settings = await getAllSettings();
     const timeout = settings.vaultTimeout || "onRestart";
 
-    if (timeout !== "onRestart" && timeout !== "never") {
+    if (timeout !== "onRestart") {
       const minutes = parseInt(timeout, 10);
       if (!isNaN(minutes) && minutes > 0) {
         const derivedKey = await getSessionItem(SESSION_KEY_DERIVED_KEY);

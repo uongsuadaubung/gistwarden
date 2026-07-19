@@ -2,6 +2,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import { Header } from "@/components/Header.tsx";
 import { View } from "@/shared/types.ts";
 import { navigate } from "@/shared/navigation.ts";
+import { store } from "@/shared/store.ts";
 
 import { clearVault } from "@/shared/vault-service.ts";
 import { confirm, showToast } from "@/shared/ui-service.ts";
@@ -128,19 +129,21 @@ export const Settings: Component = () => {
           </div>
 
           {/* Clear Vault */}
-          <div class="setting-row" onClick={handleClearVault}>
-            <div class="setting-row-left">
-              <TrashIcon class="text-error" />
-              <div>
-                <div class="setting-label text-error">
-                  {t("settings_clear_vault")}
-                </div>
-                <div class="setting-sub">
-                  {t("settings_clear_vault_sub")}
+          <Show when={store.vaultItems.length > 0}>
+            <div class="setting-row" onClick={handleClearVault}>
+              <div class="setting-row-left">
+                <TrashIcon class="text-error" />
+                <div>
+                  <div class="setting-label text-error">
+                    {t("settings_clear_vault")}
+                  </div>
+                  <div class="setting-sub">
+                    {t("settings_clear_vault_sub")}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Show>
         </div>
 
         {/* Group 1: General & Personalization */}

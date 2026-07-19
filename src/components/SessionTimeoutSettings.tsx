@@ -22,7 +22,6 @@ export const SessionTimeoutSettings: Component<SessionTimeoutSettingsProps> = (
     { value: "30", label: t("timeout_30min") },
     { value: "60", label: t("timeout_1hr") },
     { value: "240", label: t("timeout_4hr") },
-    { value: "never", label: t("timeout_never") },
   ];
 
   const actionOptions = () => [
