@@ -10,7 +10,8 @@ export const GithubUserSchema = z.object({
 export type GithubUser = z.infer<typeof GithubUserSchema>;
 
 export const SettingsSchema = z.object({
-  githubToken: z.string().default(""),
+  githubTokenEncrypted: z.string().default(""),
+  githubTokenIv: z.string().default(""),
   gistId: z.string().default(""),
   salt: z.string().default(""),
   lastSync: z.number().default(0),
@@ -34,7 +35,7 @@ export type AppSettings = z.infer<typeof SettingsSchema>;
 
 import {
   APP_NAME,
-  SESSION_KEY_MASTER_PASSWORD,
+  SESSION_KEY_GITHUB_TOKEN,
   SESSION_KEY_SESSION_UNLOCKED,
 } from "./constants.ts";
 
@@ -140,18 +141,9 @@ export async function removeSessionItem(
   }
 }
 
-// Session Storage (Master Password in-memory only, cleared on browser close)
-export async function getMasterPassword(): Promise<string> {
-  const val = await getSessionItem(SESSION_KEY_MASTER_PASSWORD);
-  return typeof val === "string" ? val : "";
-}
-
-export async function setMasterPassword(password: string): Promise<void> {
-  await setSessionItem(SESSION_KEY_MASTER_PASSWORD, password);
-}
-
-export async function clearMasterPassword(): Promise<void> {
-  await removeSessionItem(SESSION_KEY_MASTER_PASSWORD);
+export async function getGithubToken(): Promise<string> {
+  const sessionToken = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  return typeof sessionToken === "string" ? sessionToken : "";
 }
 
 export async function isSessionUnlocked(): Promise<boolean> {

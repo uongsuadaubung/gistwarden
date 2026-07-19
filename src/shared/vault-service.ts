@@ -1,17 +1,14 @@
 import { setStore, store } from "./store.ts";
 import { reconcile } from "solid-js/store";
-import {
-  getMasterPassword,
-  setMasterPassword,
-  setSessionItem,
-  updateSettings,
-} from "./storage.ts";
+import { getGithubToken, setSessionItem, updateSettings } from "./storage.ts";
 import {
   decryptData,
   deriveKey,
+  encryptData,
   generateSalt,
-  getOrDeriveKey,
+  getSessionKey,
   setDerivedKey,
+  verifyMasterPassword,
 } from "./crypto.ts";
 import {
   DownloadFromGistResponseSchema,
@@ -33,6 +30,8 @@ import {
   MSG_DELETE_GIST,
   MSG_DOWNLOAD_FROM_GIST,
   SESSION_KEY_ENCRYPTED_VAULT,
+  SESSION_KEY_VERIFICATION_CIPHERTEXT,
+  SESSION_KEY_VERIFICATION_IV,
   STORE_KEY_SYNC_ERROR,
   STORE_KEY_SYNCING,
   STORE_KEY_VAULT_ITEMS,
@@ -43,9 +42,8 @@ export async function saveItem(
 ): Promise<{ success: boolean; error?: string }> {
   setGlobalLoading(true);
   try {
-    const password = await getMasterPassword();
-    if (!password || !store.salt) throw new Error("Vault is locked");
-    const key = await getOrDeriveKey(password, store.salt);
+    const key = await getSessionKey();
+    if (!key || !store.salt) throw new Error("Vault is locked");
 
     let updatedList: VaultItem[];
     const now = new Date().toISOString();
@@ -217,9 +215,8 @@ export async function deleteItem(
 ): Promise<{ success: boolean; error?: string }> {
   setGlobalLoading(true);
   try {
-    const password = await getMasterPassword();
-    if (!password || !store.salt) throw new Error("Vault is locked");
-    const key = await getOrDeriveKey(password, store.salt);
+    const key = await getSessionKey();
+    if (!key || !store.salt) throw new Error("Vault is locked");
 
     const filtered = store.vaultItems.filter((v) => v.id !== id);
     const uploadRes = await syncVaultToGist(filtered, key, store.salt);
@@ -247,8 +244,8 @@ export async function changeMasterPassword(
 ): Promise<{ success: boolean; error?: string }> {
   setGlobalLoading(true);
   try {
-    const activePass = await getMasterPassword();
-    if (currentPass !== activePass) {
+    const isCurrentPasswordCorrect = await verifyMasterPassword(currentPass);
+    if (!isCurrentPasswordCorrect) {
       return { success: false, error: "Mật khẩu Master hiện tại không đúng" };
     }
     if (!newPass.trim()) {
@@ -275,10 +272,39 @@ export async function changeMasterPassword(
       throw new Error(uploadRes.error || "Lỗi đồng bộ mật khẩu mới lên Gist");
     }
 
-    // 5. Update local state, session, and settings
-    setDerivedKey(newKey); // Update in-memory key reference
-    await setMasterPassword(newPass);
-    await updateSettings({ salt: newSaltBase64 });
+    // 3. Update session key and verification ciphertext
+    await setDerivedKey(newKey);
+    const verificationStr = "verification_token";
+    const { iv: vIv, ciphertext: vCiphertext } = await encryptData(
+      verificationStr,
+      newKey,
+    );
+    await setSessionItem(SESSION_KEY_VERIFICATION_IV, vIv);
+    await setSessionItem(SESSION_KEY_VERIFICATION_CIPHERTEXT, vCiphertext);
+
+    // 4. Re-encrypt GitHub token with the new key and save to settings
+    const githubToken = await getGithubToken();
+    if (githubToken) {
+      const { iv, ciphertext } = await encryptData(githubToken, newKey);
+      await updateSettings({
+        githubTokenEncrypted: ciphertext,
+        githubTokenIv: iv,
+        salt: newSaltBase64,
+        pinUnlockEnabled: false,
+        pinUnlockValue: "",
+        pinUnlockIv: "",
+        pinUnlockSalt: "",
+      });
+    } else {
+      await updateSettings({
+        salt: newSaltBase64,
+        pinUnlockEnabled: false,
+        pinUnlockValue: "",
+        pinUnlockIv: "",
+        pinUnlockSalt: "",
+      });
+    }
+
     setStore({
       salt: newSaltBase64,
     });
@@ -338,9 +364,8 @@ export async function syncVault(): Promise<
   setStore(STORE_KEY_SYNC_ERROR, "");
   setGlobalLoading(true, t("vault_syncing"));
   try {
-    const password = await getMasterPassword();
-    if (!password || !store.salt) throw new Error("Vault is locked");
-    const key = await getOrDeriveKey(password, store.salt);
+    const key = await getSessionKey();
+    if (!key || !store.salt) throw new Error("Vault is locked");
 
     const rawRes = await new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: MSG_DOWNLOAD_FROM_GIST }, resolve);
@@ -383,9 +408,8 @@ export async function importJsonData(
       throw new Error(importRes.error);
     }
 
-    const password = await getMasterPassword();
-    if (!password || !store.salt) throw new Error("Vault is locked");
-    const key = await getOrDeriveKey(password, store.salt);
+    const key = await getSessionKey();
+    if (!key || !store.salt) throw new Error("Vault is locked");
 
     console.log(`[${APP_NAME} Import] Dang tai len Gist...`);
     const uploadRes = await syncVaultToGist(
@@ -427,9 +451,8 @@ export async function importCsvData(
       throw new Error(importRes.error);
     }
 
-    const password = await getMasterPassword();
-    if (!password || !store.salt) throw new Error("Vault is locked");
-    const key = await getOrDeriveKey(password, store.salt);
+    const key = await getSessionKey();
+    if (!key || !store.salt) throw new Error("Vault is locked");
 
     console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
     const uploadRes = await syncVaultToGist(

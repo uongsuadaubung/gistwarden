@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   getAllSettings,
+  getGithubToken,
   GithubUserSchema,
   updateSettings,
 } from "@/shared/storage.ts";
@@ -34,8 +35,7 @@ async function githubRequest(
   path: string,
   options: RequestInit = {},
 ): Promise<unknown> {
-  const settings = await getAllSettings();
-  const token = settings.githubToken;
+  const token = await getGithubToken();
   if (!token) throw new Error("GitHub Token is not configured");
 
   const response = await fetch(`${GITHUB_API_BASE}${path}`, {

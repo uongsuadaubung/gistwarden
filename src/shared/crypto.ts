@@ -1,4 +1,15 @@
 import { argon2id } from "hash-wasm";
+import {
+  getAllSettings,
+  getSessionItem,
+  removeSessionItem,
+  setSessionItem,
+} from "./storage.ts";
+import {
+  SESSION_KEY_DERIVED_KEY,
+  SESSION_KEY_VERIFICATION_CIPHERTEXT,
+  SESSION_KEY_VERIFICATION_IV,
+} from "./constants.ts";
 
 export const ARGON2_ITERATIONS = 3;
 export const ARGON2_MEMORY = 65536; // 64MB
@@ -24,7 +35,7 @@ export async function deriveKey(
     "raw",
     buffer,
     { name: "AES-GCM", length: 256 },
-    false,
+    true, // extractable = true to allow exportKey to Base64
     ["encrypt", "decrypt"],
   );
 }
@@ -95,8 +106,19 @@ export function clearDerivedKey(): void {
   derivedCryptoKey = null;
 }
 
-export function setDerivedKey(key: CryptoKey | null): void {
+export async function setDerivedKey(key: CryptoKey | null): Promise<void> {
   derivedCryptoKey = key;
+  if (key) {
+    try {
+      const raw = await crypto.subtle.exportKey("raw", key);
+      const base64 = arrayBufferToBase64(raw);
+      await setSessionItem(SESSION_KEY_DERIVED_KEY, base64);
+    } catch (e) {
+      console.error("[Crypto] Failed to export and save derived key:", e);
+    }
+  } else {
+    await removeSessionItem(SESSION_KEY_DERIVED_KEY);
+  }
 }
 
 export async function getOrDeriveKey(
@@ -109,7 +131,65 @@ export async function getOrDeriveKey(
   const salt = new Uint8Array(saltBuffer);
 
   derivedCryptoKey = await deriveKey(password, salt);
+
+  // Export raw bytes and save as Base64 to Session Storage
+  try {
+    const raw = await crypto.subtle.exportKey("raw", derivedCryptoKey);
+    const base64 = arrayBufferToBase64(raw);
+    await setSessionItem(SESSION_KEY_DERIVED_KEY, base64);
+  } catch (e) {
+    console.error("[Crypto] Failed to export and save derived key:", e);
+  }
+
   return derivedCryptoKey;
+}
+
+export async function getSessionKey(): Promise<CryptoKey | null> {
+  if (derivedCryptoKey) return derivedCryptoKey;
+
+  const base64 = await getSessionItem(SESSION_KEY_DERIVED_KEY);
+  if (typeof base64 === "string" && base64) {
+    try {
+      const buffer = base64ToArrayBuffer(base64);
+      derivedCryptoKey = await crypto.subtle.importKey(
+        "raw",
+        buffer,
+        { name: "AES-GCM", length: 256 },
+        true, // extractable
+        ["encrypt", "decrypt"],
+      );
+      return derivedCryptoKey;
+    } catch (e) {
+      console.error("[Crypto] Failed to import key from session storage:", e);
+      return null;
+    }
+  }
+  return null;
+}
+
+export async function verifyMasterPassword(password: string): Promise<boolean> {
+  const ivB64 = await getSessionItem(SESSION_KEY_VERIFICATION_IV);
+  const ciphertextB64 = await getSessionItem(
+    SESSION_KEY_VERIFICATION_CIPHERTEXT,
+  );
+  const settings = await getAllSettings();
+  const saltBase64 = settings.salt;
+  if (
+    typeof ivB64 !== "string" ||
+    typeof ciphertextB64 !== "string" ||
+    !saltBase64
+  ) {
+    return false;
+  }
+  try {
+    const saltBuffer = base64ToArrayBuffer(saltBase64);
+    const salt = new Uint8Array(saltBuffer);
+    const key = await deriveKey(password, salt);
+    const decrypted = await decryptData(ciphertextB64, ivB64, key);
+    return decrypted === "verification_token";
+  } catch (_e) {
+    return false;
+  }
 }
 
 export async function parseSshKey(privateKeyText: string): Promise<

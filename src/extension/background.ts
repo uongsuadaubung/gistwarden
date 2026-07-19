@@ -22,10 +22,13 @@ import {
   MSG_VAULT_LOCKED,
   MSG_VAULT_LOGGED_OUT,
   POPUP_WIDTH,
+  SESSION_KEY_DERIVED_KEY,
   SESSION_KEY_ENCRYPTED_VAULT,
+  SESSION_KEY_GITHUB_TOKEN,
   SESSION_KEY_LAST_SELECTED_ITEM_ID,
   SESSION_KEY_LAST_VIEW,
-  SESSION_KEY_MASTER_PASSWORD,
+  SESSION_KEY_VERIFICATION_CIPHERTEXT,
+  SESSION_KEY_VERIFICATION_IV,
 } from "@/shared/constants.ts";
 import { getAllSettings, removeSessionItem } from "@/shared/storage.ts";
 
@@ -267,9 +270,9 @@ async function updateTimeoutAlarm() {
       const minutes = parseInt(timeout, 10);
       if (!isNaN(minutes) && minutes > 0) {
         const session = await chrome.storage.session.get(
-          SESSION_KEY_MASTER_PASSWORD,
+          SESSION_KEY_DERIVED_KEY,
         );
-        if (session && session[SESSION_KEY_MASTER_PASSWORD]) {
+        if (session && session[SESSION_KEY_DERIVED_KEY]) {
           chrome.alarms.create("vaultTimeout", { delayInMinutes: minutes });
           console.debug(
             `[Background] Set vaultTimeout alarm for ${minutes} minutes`,
@@ -294,7 +297,10 @@ if (typeof chrome !== "undefined" && chrome.alarms) {
 
         // Clear session data and navigation state
         await removeSessionItem([
-          SESSION_KEY_MASTER_PASSWORD,
+          SESSION_KEY_DERIVED_KEY,
+          SESSION_KEY_VERIFICATION_IV,
+          SESSION_KEY_VERIFICATION_CIPHERTEXT,
+          SESSION_KEY_GITHUB_TOKEN,
           SESSION_KEY_ENCRYPTED_VAULT,
           SESSION_KEY_LAST_VIEW,
           SESSION_KEY_LAST_SELECTED_ITEM_ID,
