@@ -9,6 +9,7 @@ export default {
   btn_copy: "Sao chép",
   btn_copied: "Đã sao chép!",
   btn_clear: "Xóa sạch",
+  btn_confirm: "Xác nhận",
   confirm_title: "Xác nhận",
   dialog_loading: "Đang xử lý...",
   toast_success: "Thành công!",

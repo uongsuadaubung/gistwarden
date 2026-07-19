@@ -4,6 +4,8 @@ import {
   getAllSettings,
   getSessionItem,
   getSessionItems,
+  hasAlarms,
+  hasSessionStorage,
   isSessionUnlocked,
   removeSessionItem,
   setSessionItem,
@@ -32,6 +34,7 @@ import {
 import { setLanguage, SupportLanguage } from "./i18n.ts";
 import { syncVaultToGist } from "./sync-utils.ts";
 import {
+  ALARM_NAME_VAULT_TIMEOUT,
   APP_NAME,
   LOCAL_STORAGE_KEY_THEME,
   MSG_DOWNLOAD_FROM_GIST,
@@ -42,6 +45,7 @@ import {
   SESSION_KEY_GITHUB_TOKEN,
   SESSION_KEY_LAST_SELECTED_ITEM_ID,
   SESSION_KEY_LAST_VIEW,
+  SESSION_KEY_SESSION_INITIALIZED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
   STORE_KEY_IS_LOADED,
@@ -53,6 +57,28 @@ import { setGlobalLoading } from "./ui-service.ts";
 
 export async function init() {
   console.log(`[Store] Initializing ${APP_NAME} Store...`);
+
+  // Phóng tránh Race Condition: Đảm bảo Đăng xuất (nếu có) được hoàn tất trước khi đọc cài đặt
+  if (hasSessionStorage()) {
+    const res = await chrome.storage.session.get(
+      SESSION_KEY_SESSION_INITIALIZED,
+    );
+    if (!res || !res[SESSION_KEY_SESSION_INITIALIZED]) {
+      const settings = await getAllSettings();
+      const action = settings.vaultTimeoutAction || "lock";
+      if (action === "logout") {
+        console.debug(
+          `[Store] Phát hiện khởi động lại trình duyệt và hành động là logout. Đang đăng xuất...`,
+        );
+        await chrome.storage.local.clear();
+        await chrome.storage.session.clear();
+      }
+      await chrome.storage.session.set({
+        [SESSION_KEY_SESSION_INITIALIZED]: true,
+      });
+    }
+  }
+
   const settings = await getAllSettings();
   const key = await getSessionKey();
   const sessionUnlockedVal = await isSessionUnlocked();
@@ -534,6 +560,10 @@ export async function lock() {
     SESSION_KEY_LAST_SELECTED_ITEM_ID,
   ]);
 
+  if (hasAlarms()) {
+    await chrome.alarms.clear(ALARM_NAME_VAULT_TIMEOUT);
+  }
+
   setStore({
     vaultItems: [],
     githubToken: "",
@@ -559,8 +589,14 @@ export async function logout() {
   if (typeof chrome !== "undefined" && chrome.storage) {
     await chrome.storage.local.clear();
   }
+
+  if (hasAlarms()) {
+    await chrome.alarms.clear(ALARM_NAME_VAULT_TIMEOUT);
+  }
+
   setStore({
     githubToken: "",
+    githubConfigured: false,
     gistId: "",
     salt: "",
     cachedGithubUser: null,
