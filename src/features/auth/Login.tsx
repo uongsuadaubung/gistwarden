@@ -2,8 +2,11 @@ import {
   type Component,
   createEffect,
   createSignal,
+  Match,
   onMount,
   Show,
+  Switch,
+  untrack,
 } from "solid-js";
 import { store } from "@/core/store.ts";
 import { setupGithub } from "@/features/sync/github-auth.ts";
@@ -13,18 +16,23 @@ import { confirm, updateLanguage } from "@/core/ui-service.ts";
 import PinUnlockForm from "@/features/auth/PinUnlockForm.tsx";
 import { GithubSetupForm } from "@/features/auth/components/GithubSetupForm.tsx";
 import { MasterPasswordForm } from "@/features/auth/components/MasterPasswordForm.tsx";
-import { AppIcon } from "@/icons/svg/index.ts";
+import { MasterPasswordCreate } from "@/features/auth/components/MasterPasswordCreate.tsx";
+import { AppIcon, SyncIcon } from "@/icons/svg/index.ts";
 import { isTranslationKey, t } from "@/core/i18n.ts";
 import { getSessionItem, removeSessionItem } from "@/core/storage.ts";
 import { z } from "zod";
 import {
   APP_NAME,
+  MSG_DOWNLOAD_FROM_GIST,
   MSG_START_GITHUB_OAUTH,
   OAUTH_CLIENT_ID,
   OAUTH_WORKER_URL,
   SESSION_KEY_PENDING_GITHUB_TOKEN,
 } from "@/core/constants.ts";
-import { type LoginViewMode } from "@/core/types.ts";
+import {
+  DownloadFromGistResponseSchema,
+  type LoginViewMode,
+} from "@/core/types.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
 
 const OauthResponseSchema = z.object({
@@ -38,6 +46,38 @@ export const Login: Component = () => {
   const [loading, setLoading] = createSignal(false);
   const [viewMode, setViewMode] = createSignal<LoginViewMode>("masterPassword");
   const [failedUnlockAttempts, setFailedUnlockAttempts] = createSignal(0);
+  const [gistStatus, setGistStatus] = createSignal<
+    "checking" | "new" | "exists"
+  >("exists");
+
+  createEffect(() => {
+    const isConfigured = store.githubConfigured;
+    const hasSalt = store.salt;
+    const mode = viewMode();
+
+    if (isConfigured && !hasSalt && mode === "masterPassword") {
+      setGistStatus("checking");
+      (async () => {
+        try {
+          const raw = await sendMessageToBackground({
+            type: MSG_DOWNLOAD_FROM_GIST,
+          });
+          const res = DownloadFromGistResponseSchema.safeParse(raw);
+          if (res.success && res.data.success && res.data.content) {
+            setGistStatus("exists");
+          } else {
+            setGistStatus("new");
+          }
+        } catch (_err) {
+          setGistStatus("exists");
+        }
+      })();
+    } else {
+      if (!untrack(() => loading())) {
+        setGistStatus("exists");
+      }
+    }
+  });
 
   onMount(async () => {
     const rawToken = await getSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
@@ -286,13 +326,31 @@ export const Login: Component = () => {
         <Show
           when={viewMode() === "pin"}
           fallback={
-            <MasterPasswordForm
-              loading={loading()}
-              onUnlock={handleUnlock}
-              onSwitchToPin={() => setViewMode("pin")}
-              onLogout={handleResetToken}
-              onForgotPassword={handleForgotPassword}
-            />
+            <Switch>
+              <Match when={gistStatus() === "checking"}>
+                <div class="text-center p-24 card">
+                  <SyncIcon class="spinning loading-icon mb-12" />
+                  <div class="font-sz-13 text-muted">
+                    {t("login_checking_gist")}
+                  </div>
+                </div>
+              </Match>
+              <Match when={gistStatus() === "new"}>
+                <MasterPasswordCreate
+                  loading={loading()}
+                  onUnlock={handleUnlock}
+                />
+              </Match>
+              <Match when={gistStatus() === "exists"}>
+                <MasterPasswordForm
+                  loading={loading()}
+                  onUnlock={handleUnlock}
+                  onSwitchToPin={() => setViewMode("pin")}
+                  onLogout={handleResetToken}
+                  onForgotPassword={handleForgotPassword}
+                />
+              </Match>
+            </Switch>
           }
         >
           <PinUnlockForm
