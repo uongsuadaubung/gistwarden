@@ -13,18 +13,19 @@ import {
   MSG_FIDO2_HEARTBEAT,
   MSG_GET_PENDING_FIDO2_REQUEST,
 } from "@/core/constants.ts";
+import { notifyBackground, sendMessageToBackground } from "@/core/messaging.ts";
 import {
   GetPendingFido2RequestResponseSchema,
   type LoginVaultItem,
 } from "@/core/types.ts";
 import {
+  assertFido2Passkey,
+  type Fido2Request,
   findMatchingFido2Accounts,
   findMatchingFido2Credentials,
-  registerFido2Passkey,
-  assertFido2Passkey,
-  rejectFido2Request,
-  type Fido2Request,
   type MatchingPasskey,
+  registerFido2Passkey,
+  rejectFido2Request,
 } from "@/features/passkey/fido2-service.ts";
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
@@ -36,7 +37,6 @@ import {
 } from "@/icons/svg/index.ts";
 import { formatDateTime, isTranslationKey, t } from "@/core/i18n.ts";
 import PasskeySelectRow from "@/features/passkey/PasskeySelectRow.tsx";
-
 
 export const Fido2Prompt: Component = () => {
   const [masterPassword, setMasterPassword] = createSignal("");
@@ -78,7 +78,7 @@ export const Fido2Prompt: Component = () => {
 
     // Set up heartbeat timer to keep Background Service Worker alive
     const timer = setInterval(() => {
-      chrome.runtime.sendMessage({ type: MSG_FIDO2_HEARTBEAT }).catch(() => {});
+      notifyBackground({ type: MSG_FIDO2_HEARTBEAT });
     }, 5000);
 
     onCleanup(() => {
@@ -103,12 +103,9 @@ export const Fido2Prompt: Component = () => {
 
   const loadPendingRequest = async () => {
     try {
-      const rawRes = await new Promise((resolve) => {
-        chrome.runtime.sendMessage(
-          { type: MSG_GET_PENDING_FIDO2_REQUEST },
-          resolve,
-        );
-      });
+      const rawRes = await sendMessageToBackground(
+        { type: MSG_GET_PENDING_FIDO2_REQUEST },
+      ).catch(() => null);
       const res = GetPendingFido2RequestResponseSchema.parse(rawRes);
 
       if (res && res.success && res.type && res.options && res.origin) {
@@ -160,11 +157,19 @@ export const Fido2Prompt: Component = () => {
         setMasterPassword("");
         await loadPendingRequest();
       } else {
-        setError(res.error && isTranslationKey(res.error) ? t(res.error) : (res.error || t("login_error_wrong_mp")));
+        setError(
+          res.error && isTranslationKey(res.error)
+            ? t(res.error)
+            : (res.error || t("login_error_wrong_mp")),
+        );
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg && isTranslationKey(errMsg) ? t(errMsg) : (errMsg || t("login_error_unlock_fail")));
+      setError(
+        errMsg && isTranslationKey(errMsg)
+          ? t(errMsg)
+          : (errMsg || t("login_error_unlock_fail")),
+      );
     } finally {
       setLoading(false);
     }
@@ -181,11 +186,13 @@ export const Fido2Prompt: Component = () => {
         req,
         selectedAccountIndex(),
         matchingAccounts(),
-        selectedPasskeyOption()
+        selectedPasskeyOption(),
       );
-      
+
       if (!res.success) {
-        const errMsg = res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("fido2_error_create_failed");
+        const errMsg = res.error
+          ? (isTranslationKey(res.error) ? t(res.error) : res.error)
+          : t("fido2_error_create_failed");
         throw new Error(errMsg);
       }
 
@@ -208,11 +215,13 @@ export const Fido2Prompt: Component = () => {
       const res = await assertFido2Passkey(
         req,
         matchingCredentials(),
-        selectedCredIndex()
+        selectedCredIndex(),
       );
 
       if (!res.success) {
-        const errMsg = res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("fido2_error_assert_failed");
+        const errMsg = res.error
+          ? (isTranslationKey(res.error) ? t(res.error) : res.error)
+          : t("fido2_error_assert_failed");
         throw new Error(errMsg);
       }
 

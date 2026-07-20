@@ -1,7 +1,10 @@
 import { type Component, createSignal, Show } from "solid-js";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
-import { importCsvData, importJsonData } from "@/features/sync/import-service.ts";
+import {
+  importCsvData,
+  importJsonData,
+} from "@/features/sync/import-service.ts";
 import { showToast } from "@/core/ui-service.ts";
 import { ChevronRightIcon, UploadIcon } from "@/icons/svg/index.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";

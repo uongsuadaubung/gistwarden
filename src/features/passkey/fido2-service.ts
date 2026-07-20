@@ -15,6 +15,7 @@ import {
 } from "@/core/constants.ts";
 import { getBaseDomain } from "@/core/domain-utils.ts";
 import { store } from "@/core/store.ts";
+import { sendMessageToBackground } from "@/core/messaging.ts";
 
 export interface Fido2Request {
   success: boolean;
@@ -192,10 +193,10 @@ export async function registerFido2Passkey(
       };
     }
 
-    await chrome.runtime.sendMessage({
+    await sendMessageToBackground({
       type: MSG_RESOLVE_FIDO2_REQUEST,
       result,
-    });
+    }).catch(() => null);
     return { success: true };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -254,10 +255,10 @@ export async function assertFido2Passkey(
       nextCounter,
     );
 
-    await chrome.runtime.sendMessage({
+    await sendMessageToBackground({
       type: MSG_RESOLVE_FIDO2_REQUEST,
       result,
-    });
+    }).catch(() => null);
     return { success: true };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -267,10 +268,10 @@ export async function assertFido2Passkey(
 
 export async function rejectFido2Request() {
   try {
-    await chrome.runtime.sendMessage({
+    await sendMessageToBackground({
       type: MSG_REJECT_FIDO2_REQUEST,
       error: "NotAllowedError: User cancelled the request",
-    });
+    }).catch(() => null);
   } catch (_e) {
     // Ignore
   }

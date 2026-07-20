@@ -7,13 +7,12 @@ import {
   VaultItemSchema,
   VaultItemType,
 } from "@/core/types.ts";
+import { SyncResponseSchema } from "@/features/sync/sync-utils.ts";
+import { sendMessageToBackground } from "@/core/messaging.ts";
 
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 import { setGlobalLoading } from "@/core/ui-service.ts";
-import {
-  MSG_DELETE_GIST,
-  STORE_KEY_VAULT_ITEMS,
-} from "@/core/constants.ts";
+import { MSG_DELETE_GIST, STORE_KEY_VAULT_ITEMS } from "@/core/constants.ts";
 
 export async function saveItem(
   item: Partial<VaultItem>,
@@ -216,7 +215,6 @@ export async function deleteItem(
   }
 }
 
-
 export async function clearVault(): Promise<
   { success: boolean; error?: string }
 > {
@@ -224,14 +222,12 @@ export async function clearVault(): Promise<
   try {
     const gistId = store.gistId;
     if (gistId) {
-      const res = await new Promise<{ success: boolean; error?: string }>(
-        (resolve) => {
-          chrome.runtime.sendMessage({
-            type: MSG_DELETE_GIST,
-            content: gistId,
-          }, resolve);
-        },
-      );
+      const rawRes = await sendMessageToBackground({
+        type: MSG_DELETE_GIST,
+        content: gistId,
+      }).catch(() => null);
+
+      const res = SyncResponseSchema.parse(rawRes);
 
       if (!res.success) {
         throw new Error(res.error || "Lỗi xóa Gist trên GitHub");
@@ -254,4 +250,3 @@ export async function clearVault(): Promise<
     setGlobalLoading(false);
   }
 }
-

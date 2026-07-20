@@ -39,7 +39,7 @@ Deno.test("generator-utils: generatePassword ensures min constraints", () => {
   if (typeof pwd === "string") {
     const numMatches = pwd.match(/[0-9]/g);
     assertEquals(numMatches !== null && numMatches.length >= 5, true);
-    
+
     const specMatches = pwd.match(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/g);
     assertEquals(specMatches !== null && specMatches.length >= 5, true);
   }

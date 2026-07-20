@@ -4,7 +4,7 @@ import { performAutofill } from "@/extension/autofill-core.ts";
 
 function setupDOM(html: string) {
   const dom = new JSDOM(html);
-  
+
   // Define necessary globals for the test to act like a browser
   Object.assign(globalThis, {
     document: dom.window.document,
@@ -13,7 +13,7 @@ function setupDOM(html: string) {
     Event: dom.window.Event,
     Node: dom.window.Node,
   });
-  
+
   return dom;
 }
 
@@ -29,8 +29,11 @@ Deno.test("Autofill - standard login form", () => {
   assertEquals(success, true);
   const userField = document.getElementById("username");
   const passField = document.getElementById("password");
-  
-  if (userField instanceof HTMLInputElement && passField instanceof HTMLInputElement) {
+
+  if (
+    userField instanceof HTMLInputElement &&
+    passField instanceof HTMLInputElement
+  ) {
     assertEquals(userField.value, "testuser");
     assertEquals(passField.value, "testpass");
   } else {
@@ -51,8 +54,11 @@ Deno.test("Autofill - form without form tags (just inputs)", () => {
   assertEquals(success, true);
   const userField = document.getElementById("user");
   const passField = document.getElementById("pass");
-  
-  if (userField instanceof HTMLInputElement && passField instanceof HTMLInputElement) {
+
+  if (
+    userField instanceof HTMLInputElement &&
+    passField instanceof HTMLInputElement
+  ) {
     assertEquals(userField.value, "myuser");
     assertEquals(passField.value, "mypass");
   } else {
