@@ -23,6 +23,7 @@ import {
   mapFormStateToVaultItem,
 } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import CustomFieldsEdit from "@/features/vault/item-edit/CustomFieldsEdit.tsx";
+import { getCurrentTab } from "@/core/tabs.ts";
 
 export const ItemEdit: Component = () => {
   const isEdit = () => !!store.selectedItem?.id;
@@ -43,9 +44,19 @@ export const ItemEdit: Component = () => {
   const [error, setError] = createSignal("");
   const [saving, setSaving] = createSignal(false);
 
-  onMount(() => {
+  onMount(async () => {
     const item = store.selectedItem;
     setFormState(getInitialFormState(item));
+
+    if (!item?.id) {
+      const tab = await getCurrentTab();
+      if (tab && tab.url) {
+        const url = tab.url;
+        if (!url.startsWith("chrome://") && !url.startsWith("chrome-extension://")) {
+          updateForm("uris", [{ uri: url }]);
+        }
+      }
+    }
   });
 
   const handleScanQr = async () => {

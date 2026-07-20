@@ -12,6 +12,7 @@ import { deleteItem, saveItem } from "@/features/vault/vault-service.ts";
 import { confirm, showToast } from "@/core/ui-service.ts";
 import { Header } from "@/components/ui/Header.tsx";
 import { createDefaultVaultItem } from "@/features/vault/item-edit/vault-edit-helper.ts";
+import { getCurrentTab, sendMessageToTab } from "@/core/tabs.ts";
 import {
   APP_NAME,
   MSG_AUTOFILL_CREDENTIALS,
@@ -22,6 +23,7 @@ import {
 import { type VaultItem, VaultItemType, View } from "@/core/types.ts";
 import * as OTPAuth from "otpauth";
 import { parseTotpSecret } from "@/core/totp-utils.ts";
+import { z } from "zod";
 import {
   CardIcon,
   ChevronDownIcon,
@@ -38,6 +40,10 @@ import { Input } from "@/components/ui/Input.tsx";
 import { VaultItemRow } from "@/features/vault/VaultItemRow.tsx";
 import { t } from "@/core/i18n.ts";
 import { getBaseDomain, getHostname } from "@/core/domain-utils.ts";
+
+const AutofillResponseSchema = z.object({
+  success: z.boolean(),
+});
 
 function isVaultItemType(val: number): val is VaultItemType {
   return (
@@ -141,23 +147,22 @@ export const Vault: Component = () => {
     });
 
     // Query active tab domain
-    if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query) {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const tab = tabs[0];
-        if (tab && tab.url) {
-          try {
-            const urlObj = new URL(tab.url);
-            let hostname = urlObj.hostname;
-            if (hostname.startsWith("www.")) {
-              hostname = hostname.slice(4);
-            }
-            setCurrentTabDomain(hostname);
-          } catch (_err) {
-            // Qua qua cac URL noi bo (chrome://, etc.)
+    const fetchTab = async () => {
+      const tab = await getCurrentTab();
+      if (tab && tab.url) {
+        try {
+          const urlObj = new URL(tab.url);
+          let hostname = urlObj.hostname;
+          if (hostname.startsWith("www.")) {
+            hostname = hostname.slice(4);
           }
+          setCurrentTabDomain(hostname);
+        } catch (_err) {
+          // Ignore internal URLs
         }
-      });
-    }
+      }
+    };
+    fetchTab();
   });
 
   const isMatchingDomain = (item: VaultItem, domain: string) => {
@@ -372,38 +377,31 @@ export const Vault: Component = () => {
     }
   };
 
-  const handleFillItem = (item: VaultItem, e: MouseEvent) => {
+  const handleFillItem = async (item: VaultItem, e: MouseEvent) => {
     e.stopPropagation();
     if (item.type !== VaultItemType.Login) return;
 
     const username = item.login.username || "";
     const password = item.login.password || "";
 
-    if (typeof chrome !== "undefined" && chrome.tabs) {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const activeTab = tabs[0];
-        if (activeTab && activeTab.id !== undefined) {
-          chrome.tabs.sendMessage(
-            activeTab.id,
-            {
-              type: MSG_AUTOFILL_CREDENTIALS,
-              username,
-              password,
-            },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                console.warn(
-                  "Autofill failed:",
-                  chrome.runtime.lastError.message,
-                );
-                showToast(t("toast_error"), "error");
-              } else if (response && response.success) {
-                showToast(t("toast_success"), "success");
-              }
-            },
-          );
+    const activeTab = await getCurrentTab();
+    if (activeTab && activeTab.id !== undefined) {
+      try {
+        const rawResponse = await sendMessageToTab(activeTab.id, {
+          type: MSG_AUTOFILL_CREDENTIALS,
+          username,
+          password,
+        });
+
+        const parseResult = AutofillResponseSchema.safeParse(rawResponse);
+        if (parseResult.success && parseResult.data.success) {
+          showToast(t("toast_success"), "success");
         }
-      });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.warn("Autofill failed:", errorMessage);
+        showToast(t("toast_error"), "error");
+      }
     }
   };
 
