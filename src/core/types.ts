@@ -376,3 +376,10 @@ export const GetPendingFido2RequestResponseSchema = z.object({
 export type GetPendingFido2RequestResponse = z.infer<
   typeof GetPendingFido2RequestResponseSchema
 >;
+
+export const GistPayloadSchema = z.object({
+  salt: z.string().optional(),
+  iv: z.string(),
+  ciphertext: z.string(),
+});
+export type GistPayload = z.infer<typeof GistPayloadSchema>;
