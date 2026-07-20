@@ -2,9 +2,9 @@ import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   exportToBitwardenCsv,
   exportToBrowserCsv,
-} from "@/shared/import-export.ts";
-import { parseCSV } from "@/shared/csv-parser.ts";
-import { type VaultItem, VaultItemType } from "@/shared/types.ts";
+} from "@/features/sync/csv-export.ts";
+import { parseCSV } from "@/core/csv-parser.ts";
+import { type VaultItem, VaultItemType } from "@/core/types.ts";
 
 Deno.test("Export CSV - Browser CSV format", () => {
   const items: VaultItem[] = [

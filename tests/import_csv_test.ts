@@ -1,10 +1,10 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { parseCSV } from "@/shared/csv-parser.ts";
+import { parseCSV } from "@/core/csv-parser.ts";
 import {
   parseAndValidateBitwardenCsv,
   parseAndValidateBrowserCsv,
-} from "@/shared/import-export.ts";
-import { type VaultItem, VaultItemType } from "@/shared/types.ts";
+} from "@/features/sync/csv-import.ts";
+import { type VaultItem, VaultItemType } from "@/core/types.ts";
 
 Deno.test("CSV Parser - RFC 4180 parsing", () => {
   // 1. Simple parsing

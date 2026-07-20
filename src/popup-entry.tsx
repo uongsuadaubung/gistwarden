@@ -7,10 +7,10 @@ import {
   Show,
   Switch,
 } from "solid-js";
-import { store } from "@/shared/store.ts";
-import { View } from "@/shared/types.ts";
-import { init, lock, logout } from "@/shared/auth-service.ts";
-import { navigate } from "@/shared/navigation.ts";
+import { store } from "@/core/store.ts";
+import { View } from "@/core/types.ts";
+import { init, lock, logout } from "@/features/auth/auth-service.ts";
+import { navigate } from "@/core/navigation.ts";
 import {
   GeneratorIcon,
   SettingsIcon,
@@ -21,30 +21,30 @@ import {
   MSG_RESET_TIMEOUT,
   MSG_VAULT_LOCKED,
   MSG_VAULT_LOGGED_OUT,
-} from "@/shared/constants.ts";
+} from "@/core/constants.ts";
 
 // Import Views
-import Login from "@/views/Login.tsx";
-import Vault from "@/views/Vault.tsx";
-import ItemDetail from "@/views/ItemDetail.tsx";
-import ItemEdit from "@/views/ItemEdit.tsx";
-import Generator from "@/views/Generator.tsx";
-import Settings from "@/views/Settings.tsx";
-import VaultOptions from "@/views/VaultOptions.tsx";
-import ImportAccounts from "@/views/ImportAccounts.tsx";
-import ExportAccounts from "@/views/ExportAccounts.tsx";
-import Fido2Prompt from "@/views/Fido2Prompt.tsx";
-import Language from "@/views/Language.tsx";
-import Theme from "@/views/Theme.tsx";
-import Appearance from "@/views/Appearance.tsx";
-import About from "@/views/About.tsx";
-import Troubleshooting from "@/views/Troubleshooting.tsx";
-import Welcome from "@/views/Welcome.tsx";
-import AccountSecurity from "@/views/AccountSecurity.tsx";
-import ChangeMasterPassword from "@/views/ChangeMasterPassword.tsx";
-import ConfirmModal from "@/components/ConfirmModal.tsx";
-import RepromptModal from "@/components/RepromptModal.tsx";
-import { t } from "@/shared/i18n.ts";
+import Login from "@/features/auth/Login.tsx";
+import Vault from "@/features/vault/Vault.tsx";
+import ItemDetail from "@/features/vault/ItemDetail.tsx";
+import ItemEdit from "@/features/vault/ItemEdit.tsx";
+import Generator from "@/features/generator/Generator.tsx";
+import Settings from "@/features/settings/Settings.tsx";
+import VaultOptions from "@/features/vault/VaultOptions.tsx";
+import ImportAccounts from "@/features/sync/ImportAccounts.tsx";
+import ExportAccounts from "@/features/sync/ExportAccounts.tsx";
+import Fido2Prompt from "@/features/passkey/Fido2Prompt.tsx";
+import Language from "@/features/settings/Language.tsx";
+import Theme from "@/features/settings/Theme.tsx";
+import Appearance from "@/features/settings/Appearance.tsx";
+import About from "@/features/settings/About.tsx";
+import Troubleshooting from "@/features/settings/Troubleshooting.tsx";
+import Welcome from "@/features/welcome/Welcome.tsx";
+import AccountSecurity from "@/features/auth/AccountSecurity.tsx";
+import ChangeMasterPassword from "@/features/auth/ChangeMasterPassword.tsx";
+import ConfirmModal from "@/components/ui/ConfirmModal.tsx";
+import RepromptModal from "@/components/ui/RepromptModal.tsx";
+import { t } from "@/core/i18n.ts";
 
 const TransitionView: Component<{ when: boolean; children: JSX.Element }> = (
   props,
