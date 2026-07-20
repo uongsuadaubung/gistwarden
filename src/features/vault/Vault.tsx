@@ -213,14 +213,14 @@ export const Vault: Component = () => {
       list = list.filter((item) => item.type === filterType);
     }
     const filtered = list.filter((item) => isMatchingDomain(item, domain));
-    
+
     return [...filtered].sort((a, b) => {
       const aExact = isExactDomainMatch(a, domain);
       const bExact = isExactDomainMatch(b, domain);
-      
+
       if (aExact && !bExact) return -1;
       if (!aExact && bExact) return 1;
-      
+
       return a.name.localeCompare(b.name, undefined, {
         sensitivity: "base",
         numeric: true,

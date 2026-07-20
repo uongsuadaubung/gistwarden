@@ -5,7 +5,10 @@ import Input from "@/components/ui/Input.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
 import FormField from "@/components/ui/FormField.tsx";
 import { CopyIcon, RefreshIcon } from "@/icons/svg/index.ts";
-import { generatePassword, generatePassphrase } from "@/features/generator/generator-utils.ts";
+import {
+  generatePassphrase,
+  generatePassword,
+} from "@/features/generator/generator-utils.ts";
 
 export const Generator: Component = () => {
   const [activeTab, setActiveTab] = createSignal<"password" | "passphrase">(

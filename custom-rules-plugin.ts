@@ -147,13 +147,22 @@ const customRulesPlugin: LintPlugin = {
       create(context: LintContext) {
         return {
           Program(node: LintNode) {
-            if (context.filename && context.filename.includes("custom-rules-plugin.ts")) return;
-            if (context.sourceCode && typeof context.sourceCode.text === "string") {
+            if (
+              context.filename &&
+              context.filename.includes("custom-rules-plugin.ts")
+            ) return;
+            if (
+              context.sourceCode && typeof context.sourceCode.text === "string"
+            ) {
               const text = context.sourceCode.text;
-              if (text.includes("@ts" + "-ignore") || text.includes("@ts" + "-expect-error")) {
+              if (
+                text.includes("@ts" + "-ignore") ||
+                text.includes("@ts" + "-expect-error")
+              ) {
                 context.report({
                   node,
-                  message: "Do not use @ts" + "-ignore or @ts" + "-expect-error. This is strictly forbidden by project rules.",
+                  message: "Do not use @ts" + "-ignore or @ts" +
+                    "-expect-error. This is strictly forbidden by project rules.",
                 });
               }
             }

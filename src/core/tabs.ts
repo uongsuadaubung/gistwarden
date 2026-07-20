@@ -64,7 +64,8 @@ export function captureVisibleTab(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     if (
-      typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.captureVisibleTab
+      typeof chrome === "undefined" || !chrome.tabs ||
+      !chrome.tabs.captureVisibleTab
     ) {
       reject(new Error("chrome.tabs.captureVisibleTab is not available"));
       return;

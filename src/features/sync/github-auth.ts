@@ -1,4 +1,4 @@
-import { getSessionKey, encryptData } from "@/core/crypto.ts";
+import { encryptData, getSessionKey } from "@/core/crypto.ts";
 import { updateSettings } from "@/core/storage.ts";
 import { setSessionItem } from "@/core/storage.ts";
 import { SESSION_KEY_GITHUB_TOKEN } from "@/core/constants.ts";
@@ -6,12 +6,15 @@ import { setStore } from "@/core/store.ts";
 import { ValidateTokenResponseSchema } from "@/core/types.ts";
 import { MSG_VALIDATE_TOKEN } from "@/core/constants.ts";
 
+import { sendMessageToBackground } from "@/core/messaging.ts";
+
 export async function setupGithub(
   token: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const rawRes = await new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: MSG_VALIDATE_TOKEN, token }, resolve);
-  });
+  const rawRes = await sendMessageToBackground({
+    type: MSG_VALIDATE_TOKEN,
+    token,
+  }).catch(() => null);
   const res = ValidateTokenResponseSchema.parse(rawRes);
 
   if (res.success) {
