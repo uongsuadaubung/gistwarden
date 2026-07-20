@@ -55,6 +55,7 @@ export default {
   login_error_oauth_fail: "Lỗi đăng nhập OAuth",
   login_error_empty_mp: "Vui lòng nhập Mật khẩu Master",
   login_error_wrong_mp: "Mật khẩu Master không đúng",
+  login_error_changed_mp_hint: "Nếu bạn vừa đổi Mật khẩu Master trên một thiết bị khác, bạn cần phải Đăng xuất và đăng nhập lại.",
   login_error_unlock_fail: "Lỗi mở khóa",
   login_forgot_password_title: "Quên mật khẩu Master",
   login_forgot_password_msg:

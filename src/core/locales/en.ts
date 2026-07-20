@@ -53,8 +53,9 @@ export default {
     "Please open 'OAuth Configuration' to enter Client ID and Worker URL before logging in.",
   login_error_oauth_no_token: "Did not receive access token from GitHub",
   login_error_oauth_fail: "OAuth Login failed",
-  login_error_empty_mp: "Please enter your Master Password",
-  login_error_wrong_mp: "Incorrect Master Password",
+  login_error_empty_mp: "Please enter Master Password",
+  login_error_wrong_mp: "Master Password incorrect",
+  login_error_changed_mp_hint: "If you recently changed your Master Password on another device, you need to log out and log in again.",
   login_error_unlock_fail: "Unlock failed",
   login_forgot_password_title: "Forgot Master Password",
   login_forgot_password_msg:
