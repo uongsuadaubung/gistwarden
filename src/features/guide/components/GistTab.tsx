@@ -5,14 +5,14 @@ import { getAssetUrl } from "@/core/runtime.ts";
 
 export const GistTab: Component = () => {
   const heroImage = getAssetUrl("images/guide_hero.png");
-  const step1Image = getAssetUrl("images/1.select exprire time.png");
+  const step1Image = getAssetUrl("images/gist/1.select exprire time.png");
   const step2Image = getAssetUrl(
-    "images/2.make sure selected gist.png",
+    "images/gist/2.make sure selected gist.png",
   );
   const step3Image = getAssetUrl(
-    "images/3.create generate button.png",
+    "images/gist/3.create generate button.png",
   );
-  const step4Image = getAssetUrl("images/4.copy and save token.png");
+  const step4Image = getAssetUrl("images/gist/4.copy and save token.png");
 
   return (
     <section class="tab-panel fade-in">
@@ -31,7 +31,7 @@ export const GistTab: Component = () => {
             <a
               href={`https://github.com/settings/tokens/new?description=${
                 encodeURIComponent(APP_NAME)
-              }&scopes=gist`}
+              }&scopes=gist,read:user`}
               target="_blank"
               rel="noopener noreferrer"
               class="action-link-btn"
