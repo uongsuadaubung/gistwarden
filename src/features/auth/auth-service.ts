@@ -24,6 +24,7 @@ import {
 } from "@/core/crypto.ts";
 import {
   DownloadFromGistResponseSchema,
+  GistPayloadSchema,
   VaultListSchema,
   View,
 } from "@/core/types.ts";
@@ -312,7 +313,7 @@ export async function unlock(
           );
           await setSessionItem(SESSION_KEY_GITHUB_TOKEN, decrypted);
         } catch (_e) {
-          console.warn("Failed to decrypt githubToken (possibly wrong password)");
+          console.warn("Failed to decrypt githubToken (possibly wrong password or changed salt on another device)");
           throw new Error("login_error_wrong_mp");
         }
       }
@@ -334,7 +335,7 @@ export async function unlock(
       // Nếu chưa có salt cục bộ nhưng trên Gist đã có salt, trích xuất nó
       if (!saltBase64) {
         try {
-          const payload = JSON.parse(downloadRes.content);
+          const payload = GistPayloadSchema.parse(JSON.parse(downloadRes.content));
           if (payload.salt) {
             saltBase64 = payload.salt;
             await updateSettings({ salt: saltBase64 });
@@ -445,7 +446,7 @@ export async function unlock(
     }
 
     // F. Giải mã dữ liệu két sắt từ Gist
-    const payload = JSON.parse(existingGistContent);
+    const payload = GistPayloadSchema.parse(JSON.parse(existingGistContent));
     const decrypted = await decryptData(payload.ciphertext, payload.iv, key);
     const items = VaultListSchema.parse(JSON.parse(decrypted));
 

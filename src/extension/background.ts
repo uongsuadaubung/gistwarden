@@ -29,6 +29,7 @@ import {
   SESSION_KEY_LAST_SELECTED_ITEM_ID,
   SESSION_KEY_LAST_VIEW,
   SESSION_KEY_PENDING_FIDO2_REQUEST,
+  SESSION_KEY_PENDING_GITHUB_TOKEN,
   SESSION_KEY_SESSION_INITIALIZED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
@@ -125,7 +126,7 @@ chrome.runtime.onMessage.addListener(
         chrome.identity.launchWebAuthFlow({
           url: authUrl,
           interactive: true,
-        }, (redirectUrl) => {
+        }, async (redirectUrl) => {
           if (chrome.runtime.lastError || !redirectUrl) {
             const err = chrome.runtime.lastError?.message ||
               "OAuth flow cancelled or failed";
@@ -136,6 +137,9 @@ chrome.runtime.onMessage.addListener(
             const parsedUrl = new URL(redirectUrl);
             const token = parsedUrl.searchParams.get("token");
             if (token) {
+              await chrome.storage.session.set({
+                [SESSION_KEY_PENDING_GITHUB_TOKEN]: token,
+              });
               sendResponse({ success: true, token });
             } else {
               sendResponse({

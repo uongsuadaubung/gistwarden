@@ -1,4 +1,4 @@
-import { type Component, createEffect, createSignal, Show } from "solid-js";
+import { type Component, createEffect, createSignal, onMount, Show } from "solid-js";
 import {
   store,
 } from "@/core/store.ts";
@@ -14,11 +14,14 @@ import { GithubSetupForm } from "@/features/auth/components/GithubSetupForm.tsx"
 import { MasterPasswordForm } from "@/features/auth/components/MasterPasswordForm.tsx";
 import { AppIcon } from "@/icons/svg/index.ts";
 import { isTranslationKey, t } from "@/core/i18n.ts";
+import { getSessionItem, removeSessionItem } from "@/core/storage.ts";
+import { z } from "zod";
 import {
   APP_NAME,
   MSG_START_GITHUB_OAUTH,
   OAUTH_CLIENT_ID,
   OAUTH_WORKER_URL,
+  SESSION_KEY_PENDING_GITHUB_TOKEN,
 } from "@/core/constants.ts";
 import { type LoginViewMode } from "@/core/types.ts";
 
@@ -27,6 +30,28 @@ export const Login: Component = () => {
   const [loading, setLoading] = createSignal(false);
   const [viewMode, setViewMode] = createSignal<LoginViewMode>("masterPassword");
   const [failedUnlockAttempts, setFailedUnlockAttempts] = createSignal(0);
+
+  onMount(async () => {
+    const rawToken = await getSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
+    const parsed = z.string().safeParse(rawToken);
+    
+    if (parsed.success && parsed.data) {
+      const token = parsed.data;
+      setLoading(true);
+      await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
+      try {
+        const setupRes = await setupGithub(token);
+        if (!setupRes.success) {
+          setError(setupRes.error ? (isTranslationKey(setupRes.error) ? t(setupRes.error) : setupRes.error) : t("login_error_invalid_token"));
+        }
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        setError(errMsg ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg) : t("login_error_oauth_fail"));
+      } finally {
+        setLoading(false);
+      }
+    }
+  });
 
   createEffect(() => {
     if (store.isLoaded) {
@@ -99,6 +124,10 @@ export const Login: Component = () => {
 
       // Setup GitHub with the obtained token
       const res = await setupGithub(oauthRes.token);
+      
+      // Remove the pending token so it doesn't trigger onMount again
+      await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
+
       if (!res.success) {
         setError(res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("login_error_invalid_token"));
       }
