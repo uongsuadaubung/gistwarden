@@ -26,6 +26,7 @@ export const Login: Component = () => {
   const [error, setError] = createSignal("");
   const [loading, setLoading] = createSignal(false);
   const [viewMode, setViewMode] = createSignal<LoginViewMode>("masterPassword");
+  const [failedUnlockAttempts, setFailedUnlockAttempts] = createSignal(0);
 
   createEffect(() => {
     if (store.isLoaded) {
@@ -119,9 +120,11 @@ export const Login: Component = () => {
     try {
       const res = await unlock(password);
       if (!res.success) {
+        setFailedUnlockAttempts((prev) => prev + 1);
         setError(res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("login_error_wrong_mp"));
       }
     } catch (err) {
+      setFailedUnlockAttempts((prev) => prev + 1);
       const errMsg = err instanceof Error ? err.message : String(err);
       setError(errMsg ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg) : t("login_error_unlock_fail"));
     } finally {
@@ -186,6 +189,12 @@ export const Login: Component = () => {
 
       <Show when={error()}>
         <div class="alert alert-danger mb-16">{error()}</div>
+      </Show>
+
+      <Show when={failedUnlockAttempts() >= 3}>
+        <div class="text-center text-sm text-muted mb-16">
+          {t("login_error_changed_mp_hint")}
+        </div>
       </Show>
 
       <Show
