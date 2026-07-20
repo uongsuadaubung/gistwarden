@@ -5,7 +5,7 @@ import {
 import {
   generatePassphrase,
   generatePassword,
-} from "../src/shared/generator-utils.ts";
+} from "../src/features/generator/generator-utils.ts";
 
 Deno.test("generator-utils: generatePassword respects length", () => {
   const pwd = generatePassword({

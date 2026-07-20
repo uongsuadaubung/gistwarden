@@ -63,7 +63,7 @@ function copyAssets() {
 
   // Read APP_NAME from constants.ts
   const constantsContent = readFileSync(
-    join(srcDir, "shared", "constants.ts"),
+    join(srcDir, "core", "constants.ts"),
     "utf8",
   );
   const appNameMatch = constantsContent.match(
@@ -154,6 +154,37 @@ function createZipPackages() {
     console.error("ZIP packaging failed:", zipErr);
     Deno.exit(1);
   }
+}
+
+async function runCommandOrExit(name: string, args: string[]) {
+  console.log(`Running ${name}...`);
+  const cmd = new Deno.Command(Deno.execPath(), {
+    args,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  const { code } = await cmd.output();
+  if (code !== 0) {
+    console.error(`❌ ${name} failed. Stopping build.`);
+    Deno.exit(code);
+  }
+  console.log(`✓ ${name} passed.\n`);
+}
+
+async function runVerifications() {
+  console.log("=====================================");
+  console.log("1. Chạy Lint...");
+  await runCommandOrExit("deno lint", ["lint"]);
+
+  console.log("=====================================");
+  console.log("2. Chạy Check...");
+  await runCommandOrExit("deno check", ["check"]);
+
+  console.log("=====================================");
+  console.log("3. Chạy Test...");
+  await runCommandOrExit("deno test", ["test", "-A"]);
+  console.log("=====================================");
+  console.log("Hoàn thành tất cả các bước kiểm tra!\n");
 }
 
 async function runBuild() {
@@ -262,7 +293,15 @@ async function runBuild() {
   }
 }
 
-runBuild().catch((err) => {
+async function main() {
+  // Chạy các bước kiểm tra nằm tách biệt với quy trình build
+  await runVerifications();
+
+  // Chạy quy trình build như cũ
+  await runBuild();
+}
+
+main().catch((err) => {
   console.error("Build failed:", err);
   Deno.exit(1);
 });
