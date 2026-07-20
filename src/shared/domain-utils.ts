@@ -7,7 +7,7 @@
  * - localhost -> localhost
  * - 127.0.0.1 -> 127.0.0.1
  */
-export function getBaseDomain(input: string): string {
+export function getHostname(input: string): string {
   if (!input) return "";
   let host = input.toLowerCase().trim();
 
@@ -26,6 +26,12 @@ export function getBaseDomain(input: string): string {
   if (host.startsWith("www.")) {
     host = host.slice(4);
   }
+  return host;
+}
+
+export function getBaseDomain(input: string): string {
+  const host = getHostname(input);
+  if (!host) return "";
 
   const parts = host.split(".");
   if (parts.length <= 2) {

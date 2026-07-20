@@ -15,6 +15,7 @@ import {
 } from "./storage.ts";
 import {
   arrayBufferToBase64,
+  base64ToArrayBuffer,
   clearDerivedKey,
   decryptData,
   deriveKey,
@@ -319,6 +320,7 @@ export async function unlock(
           await setSessionItem(SESSION_KEY_GITHUB_TOKEN, decrypted);
         } catch (e) {
           console.error("Failed to decrypt githubToken:", e);
+          throw new Error("login_error_wrong_mp");
         }
       }
     }
@@ -498,7 +500,10 @@ export async function unlock(
     console.error("[Store] Unlock failed:", err);
     clearDerivedKey();
     const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg || "Mật khẩu Master không đúng" };
+    if (errMsg.includes("OperationError") || errMsg === "login_error_wrong_mp") {
+      return { success: false, error: "login_error_wrong_mp" };
+    }
+    return { success: false, error: errMsg || "login_error_wrong_mp" };
   }
 }
 
@@ -756,6 +761,38 @@ export async function unlockWithKey(
     clearDerivedKey();
     const errMsg = err instanceof Error ? err.message : String(err);
     return { success: false, error: errMsg || "Lỗi mở khóa" };
+  }
+}
+
+export async function unlockWithPin(
+  pin: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!store.pinUnlockValue || !store.pinUnlockIv || !store.pinUnlockSalt) {
+      throw new Error("Missing PIN configuration");
+    }
+
+    const saltBuffer = base64ToArrayBuffer(store.pinUnlockSalt);
+    const pinKey = await deriveKey(pin, new Uint8Array(saltBuffer));
+    const decryptedKeyBytesB64 = await decryptData(
+      store.pinUnlockValue,
+      store.pinUnlockIv,
+      pinKey,
+    );
+
+    const buffer = base64ToArrayBuffer(decryptedKeyBytesB64);
+    const key = await crypto.subtle.importKey(
+      "raw",
+      buffer,
+      { name: "AES-GCM", length: 256 },
+      true, // extractable
+      ["encrypt", "decrypt"],
+    );
+
+    return await unlockWithKey(key);
+  } catch (err) {
+    console.error("[Auth Service] PIN unlock failed:", err);
+    return { success: false, error: "login_error_wrong_pin" };
   }
 }
 

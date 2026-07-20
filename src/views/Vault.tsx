@@ -37,7 +37,7 @@ import {
 import { Input } from "@/components/Input.tsx";
 import { VaultItemRow } from "@/components/VaultItemRow.tsx";
 import { t } from "@/shared/i18n.ts";
-import { getBaseDomain } from "@/shared/domain-utils.ts";
+import { getBaseDomain, getHostname } from "@/shared/domain-utils.ts";
 
 function isVaultItemType(val: number): val is VaultItemType {
   return (
@@ -175,6 +175,21 @@ export const Vault: Component = () => {
     return false;
   };
 
+  const isExactDomainMatch = (item: VaultItem, domain: string) => {
+    if (!domain) return false;
+    const targetHost = getHostname(domain);
+    if (!targetHost) return false;
+
+    if (item.name.toLowerCase().includes(targetHost)) return true;
+    if (item.type === VaultItemType.Login && item.login.uris) {
+      return item.login.uris.some((u) => {
+        const itemHost = getHostname(u.uri);
+        return itemHost && itemHost === targetHost;
+      });
+    }
+    return false;
+  };
+
   const sortByName = (items: VaultItem[]) => {
     return [...items].sort((a, b) =>
       a.name.localeCompare(b.name, undefined, {
@@ -193,7 +208,19 @@ export const Vault: Component = () => {
       list = list.filter((item) => item.type === filterType);
     }
     const filtered = list.filter((item) => isMatchingDomain(item, domain));
-    return sortByName(filtered);
+    
+    return [...filtered].sort((a, b) => {
+      const aExact = isExactDomainMatch(a, domain);
+      const bExact = isExactDomainMatch(b, domain);
+      
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+      
+      return a.name.localeCompare(b.name, undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
+    });
   };
 
   const allItems = () => {
