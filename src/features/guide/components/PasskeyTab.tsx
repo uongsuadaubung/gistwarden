@@ -1,23 +1,24 @@
 import { type Component, createSignal, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
+import { getAssetUrl } from "@/core/runtime.ts";
 
 export const PasskeyTab: Component = () => {
   const [activeSubTab, setActiveSubTab] = createSignal<"register" | "login">(
     "register",
   );
 
-  const heroImage = chrome.runtime.getURL("images/guide_hero.png");
-  const imgRegStep1 = chrome.runtime.getURL(
+  const heroImage = getAssetUrl("images/guide_hero.png");
+  const imgRegStep1 = getAssetUrl(
     "images/passkey/1 select create pk.jpg",
   );
-  const imgRegStep2 = chrome.runtime.getURL(
+  const imgRegStep2 = getAssetUrl(
     "images/passkey/2 select account to store pk.jpg",
   );
-  const imgRegStep3 = chrome.runtime.getURL("images/passkey/3 pk saved.jpg");
-  const imgLoginStep1 = chrome.runtime.getURL(
+  const imgRegStep3 = getAssetUrl("images/passkey/3 pk saved.jpg");
+  const imgLoginStep1 = getAssetUrl(
     "images/passkey/4 click login with pk.jpg",
   );
-  const imgLoginStep2 = chrome.runtime.getURL(
+  const imgLoginStep2 = getAssetUrl(
     "images/passkey/5 select your account.jpg",
   );
 

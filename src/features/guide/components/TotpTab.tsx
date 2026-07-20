@@ -1,12 +1,13 @@
 import { type Component } from "solid-js";
 import { t } from "@/core/i18n.ts";
+import { getAssetUrl } from "@/core/runtime.ts";
 
 export const TotpTab: Component = () => {
-  const heroImage = chrome.runtime.getURL("images/guide_hero.png");
-  const imgTotpStep1 = chrome.runtime.getURL(
+  const heroImage = getAssetUrl("images/guide_hero.png");
+  const imgTotpStep1 = getAssetUrl(
     "images/totp/1. click icon scan if page show qr.jpg",
   );
-  const imgTotpStep2 = chrome.runtime.getURL(
+  const imgTotpStep2 = getAssetUrl(
     "images/totp/2 save and copy otp.jpg",
   );
 

@@ -17,6 +17,7 @@ import {
   NoteIcon,
 } from "@/icons/svg/index.ts";
 import { openItem } from "@/core/navigation.ts";
+import { openTab } from "@/core/tabs.ts";
 import { t } from "@/core/i18n.ts";
 import CardBrandIcon from "@/components/ui/CardBrandIcon.tsx";
 
@@ -224,11 +225,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
                 if (!/^https?:\/\//i.test(url)) {
                   url = "https://" + url;
                 }
-                if (typeof chrome !== "undefined" && chrome.tabs) {
-                  chrome.tabs.create({ url });
-                } else {
-                  window.open(url, "_blank");
-                }
+                openTab(url);
               }}
             >
               <ExternalLinkIcon />

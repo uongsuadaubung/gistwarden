@@ -181,3 +181,62 @@ export function subscribeToSettings(callback: (settings: AppSettings) => void) {
     }
   });
 }
+
+export async function clearLocal(): Promise<void> {
+  if (!hasLocalStorage()) {
+    return;
+  }
+  try {
+    await chrome.storage.local.clear();
+  } catch (_e) {
+    // Ignored
+  }
+}
+
+export async function clearSession(): Promise<void> {
+  if (!hasSessionStorage()) {
+    return;
+  }
+  try {
+    await chrome.storage.session.clear();
+  } catch (_e) {
+    // Ignored
+  }
+}
+
+export async function getLocalItem(key: string): Promise<unknown> {
+  if (!hasLocalStorage()) {
+    return null;
+  }
+  try {
+    const res = await chrome.storage.local.get(key);
+    return res && typeof res === "object" && key in res ? res[key] : null;
+  } catch (_e) {
+    return null;
+  }
+}
+
+export async function setLocalItem(
+  key: string,
+  value: unknown,
+): Promise<void> {
+  if (!hasLocalStorage()) {
+    return;
+  }
+  try {
+    await chrome.storage.local.set({ [key]: value });
+  } catch (_e) {
+    // Ignored
+  }
+}
+
+export async function clearAlarm(name: string): Promise<boolean> {
+  if (!hasAlarms()) {
+    return false;
+  }
+  try {
+    return await chrome.alarms.clear(name);
+  } catch (_e) {
+    return false;
+  }
+}
