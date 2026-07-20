@@ -1,4 +1,4 @@
-import { APP_NAME } from "@/shared/constants.ts";
+import { APP_NAME } from "@/core/constants.ts";
 
 // Inject fido2-page-script.js into the main page context
 const fido2Nonce = crypto.randomUUID();

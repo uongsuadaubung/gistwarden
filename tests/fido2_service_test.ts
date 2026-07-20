@@ -2,8 +2,8 @@ import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   findMatchingFido2Accounts,
   findMatchingFido2Credentials,
-} from "../src/shared/fido2-service.ts";
-import { type VaultItem, VaultItemType } from "../src/shared/types.ts";
+} from "../src/features/passkey/fido2-service.ts";
+import { type VaultItem, VaultItemType } from "../src/core/types.ts";
 
 const mockVaultItems: VaultItem[] = [
   {

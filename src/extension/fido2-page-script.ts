@@ -2,7 +2,7 @@ import {
   APP_NAME,
   MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
   MSG_FIDO2_CREDENTIAL_GET_REQUEST,
-} from "@/shared/constants.ts";
+} from "@/core/constants.ts";
 
 (function () {
   // Prevent duplicate injection
@@ -11,6 +11,11 @@ import {
     value: true,
     writable: true,
   });
+
+  // Polyfill platform authenticator support so relying parties know they can request platform authenticators
+  if (window.PublicKeyCredential) {
+    window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = () => Promise.resolve(true);
+  }
 
   // Read nonce from script element's dataset safely
   const currentScript = document.currentScript;
@@ -220,6 +225,12 @@ import {
     options?: CredentialRequestOptions,
   ): Promise<Credential | null> {
     if (!options || !options.publicKey) {
+      return originalCredentials.get(options);
+    }
+
+    if (options.mediation === "conditional") {
+      // Fallback to browser native for conditional autofill
+      // since Gistwarden currently only supports modal prompt UI
       return originalCredentials.get(options);
     }
 

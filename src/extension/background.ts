@@ -4,7 +4,7 @@ import {
   downloadFromGist,
   uploadToGist,
   validateToken,
-} from "@/domains/github/api.ts";
+} from "@/features/sync/github-api.ts";
 import {
   ALARM_NAME_VAULT_TIMEOUT,
   FIDO2_PROMPT_HEIGHT,
@@ -32,7 +32,7 @@ import {
   SESSION_KEY_SESSION_INITIALIZED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
-} from "@/shared/constants.ts";
+} from "@/core/constants.ts";
 import {
   getAllSettings,
   getSessionItem,
@@ -42,7 +42,7 @@ import {
   removeSessionItem,
   setSessionItem,
   STORAGE_KEY,
-} from "@/shared/storage.ts";
+} from "@/core/storage.ts";
 
 const PendingFido2RequestSchema = z.object({
   type: z.enum(["create", "get"]),

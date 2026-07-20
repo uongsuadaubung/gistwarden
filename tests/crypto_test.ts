@@ -8,17 +8,17 @@ import {
   deriveKey,
   encryptData,
   generateSalt,
-} from "@/shared/crypto.ts";
+} from "@/core/crypto.ts";
 import {
   base64UrlToBuffer,
   bufferToBase64Url,
   createPasskeyKeyPair,
   getRawCredentialId,
   p1363ToDer,
-} from "@/shared/passkey-crypto.ts";
-import { parseTotpSecret } from "@/shared/totp-utils.ts";
-import { Fido2CredentialSchema } from "@/shared/types.ts";
-import { ImportItemSchema } from "@/shared/types.ts";
+} from "@/features/passkey/passkey-crypto.ts";
+import { parseTotpSecret } from "@/core/totp-utils.ts";
+import { Fido2CredentialSchema } from "@/core/types.ts";
+import { ImportItemSchema } from "@/core/types.ts";
 
 Deno.test("Crypto - Key derivation, Encryption and Decryption", async () => {
   const password = "SuperSecretPassword123";
