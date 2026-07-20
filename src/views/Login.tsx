@@ -4,19 +4,14 @@ import {
   logout,
   setupGithub,
   unlock,
-  unlockWithKey,
+  unlockWithPin,
 } from "@/shared/auth-service.ts";
 import { confirm, updateLanguage } from "@/shared/ui-service.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
 import PinUnlockForm from "@/components/PinUnlockForm.tsx";
 import { AppIcon, GithubIcon } from "@/icons/svg/index.ts";
-import { t } from "@/shared/i18n.ts";
-import {
-  base64ToArrayBuffer,
-  decryptData,
-  deriveKey,
-} from "@/shared/crypto.ts";
+import { isTranslationKey, t } from "@/shared/i18n.ts";
 import {
   APP_NAME,
   MSG_START_GITHUB_OAUTH,
@@ -50,30 +45,9 @@ export const Login: Component = () => {
     setLoading(true);
     setError("");
     try {
-      if (!store.pinUnlockValue || !store.pinUnlockIv || !store.pinUnlockSalt) {
-        throw new Error(t("login_error_unlock_fail"));
-      }
-
-      const saltBuffer = base64ToArrayBuffer(store.pinUnlockSalt);
-      const pinKey = await deriveKey(pin, new Uint8Array(saltBuffer));
-      const decryptedKeyBytesB64 = await decryptData(
-        store.pinUnlockValue,
-        store.pinUnlockIv,
-        pinKey,
-      );
-
-      const buffer = base64ToArrayBuffer(decryptedKeyBytesB64);
-      const key = await crypto.subtle.importKey(
-        "raw",
-        buffer,
-        { name: "AES-GCM", length: 256 },
-        true, // extractable
-        ["encrypt", "decrypt"],
-      );
-
-      const res = await unlockWithKey(key);
+      const res = await unlockWithPin(pin);
       if (!res.success) {
-        setError(res.error || t("login_error_wrong_pin"));
+        setError(res.error && isTranslationKey(res.error) ? t(res.error) : (res.error || t("login_error_wrong_pin")));
       }
     } catch (err) {
       console.error("[Login] PIN unlock failed:", err);
@@ -97,11 +71,11 @@ export const Login: Component = () => {
     try {
       const res = await setupGithub(token().trim());
       if (!res.success) {
-        setError(res.error || t("login_error_invalid_token"));
+        setError(res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("login_error_invalid_token"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || t("login_error_any"));
+      setError(errMsg ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg) : t("login_error_any"));
     } finally {
       setLoading(false);
     }
@@ -129,11 +103,11 @@ export const Login: Component = () => {
       // Setup GitHub with the obtained token
       const res = await setupGithub(oauthRes.token);
       if (!res.success) {
-        setError(res.error || t("login_error_invalid_token"));
+        setError(res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("login_error_invalid_token"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || t("login_error_oauth_fail"));
+      setError(errMsg ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg) : t("login_error_oauth_fail"));
     } finally {
       setLoading(false);
     }
@@ -153,11 +127,11 @@ export const Login: Component = () => {
         setMasterPassword("");
         // If from FIDO2 Prompt, we will stay in FIDO2 Prompt View, otherwise auth service automatically navigates to Vault
       } else {
-        setError(res.error || t("login_error_wrong_mp"));
+        setError(res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("login_error_wrong_mp"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || t("login_error_unlock_fail"));
+      setError(errMsg ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg) : t("login_error_unlock_fail"));
     } finally {
       setLoading(false);
     }

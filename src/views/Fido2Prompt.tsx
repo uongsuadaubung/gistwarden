@@ -8,25 +8,24 @@ import {
 } from "solid-js";
 import { store } from "@/shared/store.ts";
 import { unlock } from "@/shared/auth-service.ts";
-import { saveItem } from "@/shared/vault-service.ts";
 import {
   APP_NAME,
   MSG_FIDO2_HEARTBEAT,
   MSG_GET_PENDING_FIDO2_REQUEST,
-  MSG_REJECT_FIDO2_REQUEST,
-  MSG_RESOLVE_FIDO2_REQUEST,
 } from "@/shared/constants.ts";
 import {
-  generatePasskeyAssertResponse,
-  generatePasskeyRegisterResponse,
-} from "@/shared/passkey-crypto.ts";
-import {
-  type Fido2Credential,
   GetPendingFido2RequestResponseSchema,
   type LoginVaultItem,
-  type VaultItem,
-  VaultItemType,
 } from "@/shared/types.ts";
+import {
+  findMatchingFido2Accounts,
+  findMatchingFido2Credentials,
+  registerFido2Passkey,
+  assertFido2Passkey,
+  rejectFido2Request,
+  type Fido2Request,
+  type MatchingPasskey,
+} from "@/shared/fido2-service.ts";
 import Button from "@/components/Button.tsx";
 import Input from "@/components/Input.tsx";
 import {
@@ -35,39 +34,9 @@ import {
   QuestionIcon,
   ShieldIcon,
 } from "@/icons/svg/index.ts";
-import { formatDateTime, t } from "@/shared/i18n.ts";
+import { formatDateTime, isTranslationKey, t } from "@/shared/i18n.ts";
 import PasskeySelectRow from "@/components/PasskeySelectRow.tsx";
-import { getBaseDomain } from "@/shared/domain-utils.ts";
 
-interface Fido2Request {
-  success: boolean;
-  type: "create" | "get";
-  origin: string;
-  options: {
-    rpId?: string;
-    rp?: {
-      id?: string;
-      name: string;
-    };
-    user?: {
-      id: string;
-      name: string;
-      displayName?: string;
-    };
-    challenge: string;
-    userVerification?: "required" | "preferred" | "discouraged";
-    allowCredentials?: Array<{
-      id: string;
-      type: string;
-    }>;
-  };
-}
-
-interface MatchingPasskey {
-  credential: Fido2Credential;
-  vaultItemName: string;
-  vaultItemId: string;
-}
 
 export const Fido2Prompt: Component = () => {
   const [masterPassword, setMasterPassword] = createSignal("");
@@ -117,55 +86,11 @@ export const Fido2Prompt: Component = () => {
     });
   });
 
-  const getDomainFromUrl = (urlStr: string): string => {
-    try {
-      const url = new URL(urlStr);
-      return url.hostname.toLowerCase();
-    } catch (_e) {
-      return urlStr.toLowerCase();
-    }
-  };
-
-  const isDomainMatch = (domainA: string, domainB: string): boolean => {
-    const baseA = getBaseDomain(domainA);
-    const baseB = getBaseDomain(domainB);
-    return !!baseA && baseA === baseB;
-  };
-
   const findMatchingAccounts = (
     rpId: string,
     origin: string,
   ) => {
-    const rpIdNormalized = rpId.toLowerCase().trim();
-    const originHost = getDomainFromUrl(origin);
-
-    const matches = store.vaultItems.filter((item): item is LoginVaultItem => {
-      if (item.type !== VaultItemType.Login || !item.login) return false;
-
-      // Match domain / RP ID
-      // Check URIs
-      if (item.login.uris) {
-        const hasMatchingUri = item.login.uris.some((u) => {
-          const uriHost = getDomainFromUrl(u.uri);
-          return isDomainMatch(uriHost, rpIdNormalized) ||
-            isDomainMatch(uriHost, originHost);
-        });
-        if (hasMatchingUri) return true;
-      }
-
-      // Check name (exact match or domain match to avoid collision like 'x.com' matching 'firefox.com')
-      const itemName = item.name.toLowerCase().trim();
-      if (
-        itemName === rpIdNormalized ||
-        itemName === originHost ||
-        isDomainMatch(itemName, rpIdNormalized)
-      ) {
-        return true;
-      }
-
-      return false;
-    });
-
+    const matches = findMatchingFido2Accounts(store.vaultItems, rpId, origin);
     setMatchingAccounts(matches);
     if (matches.length > 0) {
       setSelectedAccountIndex(0);
@@ -217,41 +142,8 @@ export const Fido2Prompt: Component = () => {
   };
 
   const findMatchingPasskeys = (rpId: string) => {
-    const list: MatchingPasskey[] = [];
-    console.log(
-      `[${APP_NAME} FIDO2] Bat dau tim kiem Passkey khop voi rpId:`,
-      rpId,
-    );
-    console.log(
-      `[${APP_NAME} FIDO2] So luong tai khoan trong ket sat:`,
-      store.vaultItems.length,
-    );
-
-    store.vaultItems.forEach((item) => {
-      if (item.type !== VaultItemType.Login) return;
-      console.log(`[${APP_NAME} FIDO2] Kiem tra tai khoan "${item.name}":`, {
-        hasLogin: true,
-        fido2CredentialsCount: item.login.fido2Credentials?.length || 0,
-        fido2Credentials: item.login.fido2Credentials,
-      });
-      if (item.login.fido2Credentials) {
-        item.login.fido2Credentials.forEach((cred: Fido2Credential) => {
-          console.log(
-            `[${APP_NAME} FIDO2] So sanh rpId: "${cred.rpId}" voi "${rpId}"`,
-          );
-          if (cred.rpId?.trim().toLowerCase() === rpId?.trim().toLowerCase()) {
-            console.log(`[${APP_NAME} FIDO2] KHOP THANH CONG!`);
-            list.push({
-              vaultItemId: item.id,
-              vaultItemName: item.name,
-              credential: cred,
-            });
-          }
-        });
-      }
-    });
+    const list = findMatchingFido2Credentials(store.vaultItems, rpId);
     setMatchingCredentials(list);
-    console.log(`[${APP_NAME} FIDO2] Ket qua danh sach Passkey khop:`, list);
   };
 
   const handleUnlock = async (e: Event) => {
@@ -281,88 +173,27 @@ export const Fido2Prompt: Component = () => {
   const handleConfirmRegister = async () => {
     const req = pendingReq();
     if (!req) return;
-    const rp = req.options.rp;
-    const user = req.options.user;
-    const challenge = req.options.challenge;
-    if (!rp || !user || !challenge) {
-      setError(
-        "Missing required registration parameters (rp, user, challenge)",
-      );
-      return;
-    }
-
     setLoading(true);
     setError("");
 
     try {
-      const { newCred, result } = await generatePasskeyRegisterResponse(
-        {
-          ...req.options,
-          rp,
-          user,
-          challenge,
-        },
-        req.origin,
+      const res = await registerFido2Passkey(
+        req,
+        selectedAccountIndex(),
+        matchingAccounts(),
+        selectedPasskeyOption()
       );
-
-      // Save new credential to Vault
-      let saveRes;
-      const idx = selectedAccountIndex();
-      if (idx !== null && matchingAccounts()[idx]) {
-        const existingItem = matchingAccounts()[idx];
-
-        let updatedCredentials: Fido2Credential[] = [];
-        const existingCredentials = existingItem.login.fido2Credentials || [];
-        const option = selectedPasskeyOption();
-
-        if (option === "add") {
-          updatedCredentials = [...existingCredentials, newCred];
-        } else {
-          updatedCredentials = existingCredentials.map((c) =>
-            c.credentialId === option ? newCred : c
-          );
-          if (!existingCredentials.some((c) => c.credentialId === option)) {
-            updatedCredentials.push(newCred);
-          }
-        }
-
-        const updatedItem: Partial<LoginVaultItem> = {
-          id: existingItem.id,
-          type: VaultItemType.Login,
-          login: {
-            ...existingItem.login,
-            fido2Credentials: updatedCredentials,
-          },
-        };
-        saveRes = await saveItem(updatedItem);
-      } else {
-        const newItem: Partial<VaultItem> = {
-          name: rp.name || rp.id || "",
-          type: VaultItemType.Login,
-          login: {
-            username: user.name,
-            password: "",
-            uris: [{ uri: req.origin }],
-            fido2Credentials: [newCred],
-          },
-        };
-        saveRes = await saveItem(newItem);
+      
+      if (!res.success) {
+        const errMsg = res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("fido2_error_create_failed");
+        throw new Error(errMsg);
       }
-
-      if (!saveRes.success) {
-        throw new Error(saveRes.error || t("fido2_error_save_failed"));
-      }
-
-      // Resolve FIDO2 request in background
-      await chrome.runtime.sendMessage({
-        type: MSG_RESOLVE_FIDO2_REQUEST,
-        result,
-      });
 
       window.close();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       setError(errMsg || t("fido2_error_create_failed"));
+    } finally {
       setLoading(false);
     }
   };
@@ -374,76 +205,28 @@ export const Fido2Prompt: Component = () => {
     setError("");
 
     try {
-      const selected = matchingCredentials()[selectedCredIndex()];
-      const cred = selected.credential;
-
-      // Increment credential counter
-      const nextCounter = Math.max(cred.counter + 1, 100000);
-
-      // Update item in Vault
-      const updatedCred: Fido2Credential = {
-        ...cred,
-        counter: nextCounter,
-      };
-
-      const originalItem = store.vaultItems.find((v) =>
-        v.id === selected.vaultItemId
-      );
-      if (
-        !originalItem || originalItem.type !== VaultItemType.Login ||
-        !originalItem.login
-      ) {
-        throw new Error("Vault item not found");
-      }
-
-      const updatedItem: LoginVaultItem = {
-        ...originalItem,
-        type: VaultItemType.Login,
-        login: {
-          ...originalItem.login,
-          fido2Credentials: (originalItem.login.fido2Credentials || []).map((
-            c: Fido2Credential,
-          ) => c.credentialId === cred.credentialId ? updatedCred : c),
-        },
-      };
-
-      const saveRes = await saveItem(updatedItem);
-      if (!saveRes.success) {
-        throw new Error(
-          saveRes.error || t("fido2_error_counter_update_failed"),
-        );
-      }
-
-      const { result } = await generatePasskeyAssertResponse(
-        req.options,
-        req.origin,
-        cred,
-        nextCounter,
+      const res = await assertFido2Passkey(
+        req,
+        matchingCredentials(),
+        selectedCredIndex()
       );
 
-      // Resolve FIDO2 request in background
-      await chrome.runtime.sendMessage({
-        type: MSG_RESOLVE_FIDO2_REQUEST,
-        result,
-      });
+      if (!res.success) {
+        const errMsg = res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("fido2_error_assert_failed");
+        throw new Error(errMsg);
+      }
 
       window.close();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       setError(errMsg || t("fido2_error_assert_failed"));
+    } finally {
       setLoading(false);
     }
   };
 
   const handleReject = async () => {
-    try {
-      await chrome.runtime.sendMessage({
-        type: MSG_REJECT_FIDO2_REQUEST,
-        error: "NotAllowedError: User cancelled the request",
-      });
-    } catch (_e) {
-      // Ignore
-    }
+    await rejectFido2Request();
     window.close();
   };
 

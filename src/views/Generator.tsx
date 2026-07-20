@@ -1,11 +1,11 @@
 import { type Component, createSignal, Index, onMount, Show } from "solid-js";
-import { t } from "@/shared/i18n.ts";
+import { isTranslationKey, t } from "@/shared/i18n.ts";
 import { Header } from "@/components/Header.tsx";
 import Input from "@/components/Input.tsx";
 import Checkbox from "@/components/Checkbox.tsx";
 import FormField from "@/components/FormField.tsx";
 import { CopyIcon, RefreshIcon } from "@/icons/svg/index.ts";
-import { wordlist } from "@/shared/wordlist.ts";
+import { generatePassword, generatePassphrase } from "@/shared/generator-utils.ts";
 
 export const Generator: Component = () => {
   const [activeTab, setActiveTab] = createSignal<"password" | "passphrase">(
@@ -37,118 +37,44 @@ export const Generator: Component = () => {
 
   const generate = () => {
     if (activeTab() === "password") {
-      generatePassword();
+      handleGeneratePassword();
     } else if (activeTab() === "passphrase") {
-      generatePassphrase();
+      handleGeneratePassphrase();
     }
   };
 
-  const generatePassword = () => {
-    const uSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const lSet = "abcdefghijklmnopqrstuvwxyz";
-    const nSet = "0123456789";
-    const sSet = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+  const handleGeneratePassword = () => {
+    const res = generatePassword({
+      length: length(),
+      uppercase: uppercase(),
+      lowercase: lowercase(),
+      numbers: numbers(),
+      specials: specials(),
+      avoidAmbiguous: avoidAmbiguous(),
+      minNumbers: minNumbers(),
+      minSpecials: minSpecials(),
+    });
 
-    let availableU = uSet;
-    let availableL = lSet;
-    let availableN = nSet;
-    let availableS = sSet;
-
-    if (avoidAmbiguous()) {
-      const regex = /[Il1O0o]/g;
-      availableU = availableU.replace(regex, "");
-      availableL = availableL.replace(regex, "");
-      availableN = availableN.replace(regex, "");
-      availableS = availableS.replace(regex, "");
+    if (typeof res !== "string") {
+      setPassword(isTranslationKey(res.error) ? t(res.error) : res.error);
+    } else {
+      setPassword(res);
     }
-
-    let charset = "";
-    if (uppercase()) charset += availableU;
-    if (lowercase()) charset += availableL;
-    if (numbers()) charset += availableN;
-    if (specials()) charset += availableS;
-
-    if (!charset) {
-      setPassword(t("gen_error_charset_empty"));
-      return;
-    }
-
-    const len = length();
-    const minNum = numbers() ? minNumbers() : 0;
-    const minSpec = specials() ? minSpecials() : 0;
-
-    if (minNum + minSpec > len) {
-      setPassword(
-        t("gen_error_min_exceeds_length"),
-      );
-      return;
-    }
-
-    const resultChars: string[] = [];
-
-    const getRandomChar = (str: string) => {
-      const bytes = new Uint32Array(1);
-      crypto.getRandomValues(bytes);
-      return str[bytes[0] % str.length];
-    };
-
-    if (numbers() && minNum > 0 && availableN.length > 0) {
-      for (let i = 0; i < minNum; i++) {
-        resultChars.push(getRandomChar(availableN));
-      }
-    }
-
-    if (specials() && minSpec > 0 && availableS.length > 0) {
-      for (let i = 0; i < minSpec; i++) {
-        resultChars.push(getRandomChar(availableS));
-      }
-    }
-
-    const remaining = len - resultChars.length;
-    for (let i = 0; i < remaining; i++) {
-      resultChars.push(getRandomChar(charset));
-    }
-
-    for (let i = resultChars.length - 1; i > 0; i--) {
-      const bytes = new Uint32Array(1);
-      crypto.getRandomValues(bytes);
-      const j = bytes[0] % (i + 1);
-      const temp = resultChars[i];
-      resultChars[i] = resultChars[j];
-      resultChars[j] = temp;
-    }
-
-    setPassword(resultChars.join(""));
   };
 
-  const generatePassphrase = () => {
-    const words = numWords();
-    if (words < 3 || words > 20) return;
+  const handleGeneratePassphrase = () => {
+    const res = generatePassphrase({
+      numWords: numWords(),
+      wordSeparator: wordSeparator(),
+      capitalize: capitalize(),
+      includeNumber: includeNumber(),
+    });
 
-    const chosenWords: string[] = [];
-    const bytes = new Uint32Array(words);
-    crypto.getRandomValues(bytes);
-
-    for (let i = 0; i < words; i++) {
-      const wordIndex = bytes[i] % wordlist.length;
-      let word = wordlist[wordIndex];
-
-      if (capitalize()) {
-        word = word.charAt(0).toUpperCase() + word.slice(1);
-      }
-
-      chosenWords.push(word);
+    if (typeof res !== "string") {
+      return;
+    } else {
+      setPassword(res);
     }
-
-    if (includeNumber()) {
-      const idxBytes = new Uint32Array(2);
-      crypto.getRandomValues(idxBytes);
-      const targetWordIdx = idxBytes[0] % chosenWords.length;
-      const randomDigit = idxBytes[1] % 10;
-      chosenWords[targetWordIdx] = chosenWords[targetWordIdx] + randomDigit;
-    }
-
-    setPassword(chosenWords.join(wordSeparator()));
   };
 
   const handleCopy = async () => {
