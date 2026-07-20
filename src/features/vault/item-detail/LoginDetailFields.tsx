@@ -202,8 +202,7 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
                     <div class="field-value text-break">
                       <strong>
                         {cred.userName || t("detail_no_value")}
-                      </strong>{" "}
-                      (RP: {cred.rpId})
+                      </strong>
                     </div>
                   </div>
                 </div>

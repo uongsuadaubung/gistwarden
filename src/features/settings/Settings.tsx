@@ -5,7 +5,7 @@ import { navigate } from "@/core/navigation.ts";
 import { store } from "@/core/store.ts";
 
 import { clearVault } from "@/features/vault/vault-service.ts";
-import { confirm, showToast } from "@/core/ui-service.ts";
+import { confirm, requestReprompt, showToast } from "@/core/ui-service.ts";
 import {
   ChevronRightIcon,
   InfoIcon,
@@ -38,6 +38,11 @@ export const Settings: Component = () => {
         "danger",
       ))
     ) {
+      return;
+    }
+
+    const verified = await requestReprompt();
+    if (!verified) {
       return;
     }
 

@@ -5,6 +5,7 @@ import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { ThemeMode, View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { updateTheme } from "@/core/ui-service.ts";
+import { SunIcon, MoonIcon } from "@/icons/svg/index.ts";
 
 export const Theme: Component = () => {
   const handleBack = () => {
@@ -25,7 +26,8 @@ export const Theme: Component = () => {
               navigate(View.Appearance);
             }}
           >
-            <div class="setting-row-left">
+            <div class="setting-row-left d-flex align-center gap-8">
+              <MoonIcon width="20" height="20" />
               <span class="font-sz-14">{t("settings_theme_dark")}</span>
             </div>
             <Show when={store.theme === ThemeMode.Dark}>
@@ -51,7 +53,8 @@ export const Theme: Component = () => {
               navigate(View.Appearance);
             }}
           >
-            <div class="setting-row-left">
+            <div class="setting-row-left d-flex align-center gap-8">
+              <SunIcon width="20" height="20" />
               <span class="font-sz-14">{t("settings_theme_light")}</span>
             </div>
             <Show when={store.theme === ThemeMode.Light}>
