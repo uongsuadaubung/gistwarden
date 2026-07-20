@@ -7,6 +7,7 @@ import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
+import PasswordStrengthMeter from "@/components/ui/PasswordStrengthMeter.tsx";
 
 export const ChangeMasterPassword: Component = () => {
   const [error, setError] = createSignal("");
@@ -100,6 +101,7 @@ export const ChangeMasterPassword: Component = () => {
               disabled={loading()}
               required
             />
+            <PasswordStrengthMeter password={newPassword()} />
           </div>
 
           <div class="form-group mb-20">
@@ -117,20 +119,10 @@ export const ChangeMasterPassword: Component = () => {
             />
           </div>
 
-          <div class="d-flex gap-8">
-            <Button
-              type="button"
-              variant="secondary"
-              block
-              onClick={handleBack}
-              disabled={loading()}
-            >
-              {t("btn_cancel")}
-            </Button>
+          <div>
             <Button
               type="submit"
               variant="primary"
-              block
               loading={loading()}
               loadingText={t("dialog_loading")}
             >

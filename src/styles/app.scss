@@ -15,7 +15,7 @@
 @use "./components/guide";
 @use "./components/checkbox";
 @use "./components/select";
-
+@use "./components/password-strength";
 :root {
   /* Constant colors */
   --white: #ffffff;

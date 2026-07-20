@@ -41,4 +41,8 @@ export { default as IdentityIcon } from "@/icons/svg/IdentityIcon.tsx";
 export { default as ListIcon } from "@/icons/svg/ListIcon.tsx";
 export { default as PopoutIcon } from "@/icons/svg/PopoutIcon.tsx";
 export { default as MinusCircleIcon } from "@/icons/svg/MinusCircleIcon.tsx";
+export { default as SunIcon } from "@/icons/svg/SunIcon.tsx";
+export { default as MoonIcon } from "@/icons/svg/MoonIcon.tsx";
+export { default as EnIcon } from "@/icons/svg/EnIcon.tsx";
+export { default as ViIcon } from "@/icons/svg/ViIcon.tsx";
 export * from "@/icons/svg/types.ts";
