@@ -1,6 +1,7 @@
 import { type Component } from "solid-js";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
+import { getAppVersion, getExtensionId } from "@/core/runtime.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import {
@@ -16,23 +17,15 @@ export const About: Component = () => {
     navigate(View.Settings);
   };
 
-  const getAppVersion = () => {
-    if (
-      typeof chrome !== "undefined" && chrome.runtime &&
-      chrome.runtime.getManifest
-    ) {
-      return chrome.runtime.getManifest().version || "1.0.0";
-    }
-    return "1.0.0";
-  };
+  const appVersion = getAppVersion();
 
   const getRatingUrl = () => {
     const userAgent = navigator.userAgent;
     const isFirefox = userAgent.includes("Firefox");
     const isEdge = userAgent.includes("Edg/") || userAgent.includes("Edge");
 
-    if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id) {
-      const extId = chrome.runtime.id;
+    const extId = getExtensionId();
+    if (extId) {
       if (isFirefox) {
         // Liên kết trang Add-ons của Firefox (đánh giá hiển thị trực tiếp tại trang này)
         return `https://addons.mozilla.org/firefox/addon/${FIREFOX_ADDON_SLUG}/`;
@@ -74,7 +67,7 @@ export const About: Component = () => {
             <span class="font-sz-24 font-w-700 primary-color">{APP_NAME}</span>
           </div>
           <div class="text-muted font-sz-13">
-            {t("settings_version", { ver: getAppVersion() })}
+            {t("settings_version", { ver: appVersion })}
           </div>
         </div>
 

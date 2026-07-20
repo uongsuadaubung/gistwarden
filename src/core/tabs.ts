@@ -89,3 +89,38 @@ export function captureVisibleTab(
     }
   });
 }
+
+/**
+ * Open a new tab with the specified URL, falling back to window.open if chrome.tabs is unavailable.
+ */
+export function openTab(url: string): Promise<chrome.tabs.Tab | null> {
+  return new Promise((resolve) => {
+    if (
+      typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.create
+    ) {
+      try {
+        window.open(url, "_blank");
+      } catch (err) {
+        console.warn("Failed to open URL in window.open:", err);
+      }
+      resolve(null);
+      return;
+    }
+
+    try {
+      chrome.tabs.create({ url }, (tab) => {
+        if (chrome.runtime.lastError) {
+          console.warn(
+            "Failed to open tab via chrome.tabs:",
+            chrome.runtime.lastError.message,
+          );
+          resolve(null);
+          return;
+        }
+        resolve(tab || null);
+      });
+    } catch (_err) {
+      resolve(null);
+    }
+  });
+}
