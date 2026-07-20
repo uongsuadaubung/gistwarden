@@ -323,6 +323,9 @@ html.mode-responsive #root {
 .text-left {
   text-align: left;
 }
+.text-muted {
+  color: var(--text-muted);
+}
 .cursor-pointer {
   cursor: pointer;
 }

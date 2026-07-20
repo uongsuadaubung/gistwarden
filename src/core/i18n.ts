@@ -58,6 +58,7 @@ const LangSchema = z.object({
   login_error_oauth_fail: z.string(),
   login_error_empty_mp: z.string(),
   login_error_wrong_mp: z.string(),
+  login_error_changed_mp_hint: z.string(),
   login_error_unlock_fail: z.string(),
   login_forgot_password_title: z.string(),
   login_forgot_password_msg: z.string(),
