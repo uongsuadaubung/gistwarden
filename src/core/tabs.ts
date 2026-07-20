@@ -55,3 +55,36 @@ export function sendMessageToTab(
     }
   });
 }
+
+/**
+ * Capture the visible area of the currently active tab in the specified window.
+ */
+export function captureVisibleTab(
+  options?: { format?: "jpeg" | "png"; quality?: number },
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (
+      typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.captureVisibleTab
+    ) {
+      reject(new Error("chrome.tabs.captureVisibleTab is not available"));
+      return;
+    }
+
+    try {
+      const opts = options || { format: "png" };
+      chrome.tabs.captureVisibleTab(opts, (dataUrl: string) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        if (!dataUrl) {
+          reject(new Error("Failed to capture visible tab"));
+          return;
+        }
+        resolve(dataUrl);
+      });
+    } catch (err) {
+      reject(err instanceof Error ? err : new Error(String(err)));
+    }
+  });
+}
