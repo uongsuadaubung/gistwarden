@@ -3,6 +3,8 @@ import { Header } from "@/components/ui/Header.tsx";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { store } from "@/core/store.ts";
+import { openTab } from "@/core/tabs.ts";
+import { getAssetUrl } from "@/core/runtime.ts";
 
 import { clearVault } from "@/features/vault/vault-service.ts";
 import { confirm, requestReprompt, showToast } from "@/core/ui-service.ts";
@@ -156,10 +158,7 @@ export const Settings: Component = () => {
           {/* User Guide */}
           <div
             class="setting-row"
-            onClick={() =>
-              chrome.tabs.create({
-                url: chrome.runtime.getURL("guide.html"),
-              })}
+            onClick={() => openTab(getAssetUrl("guide.html"))}
           >
             <div class="setting-row-left">
               <QuestionIcon />

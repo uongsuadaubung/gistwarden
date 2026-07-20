@@ -1,7 +1,7 @@
 import { setStore, store } from "@/core/store.ts";
 import { type ConfirmType, type ToastType } from "@/core/types.ts";
 import { setLanguage, SupportLanguage } from "@/core/i18n.ts";
-import { updateSettings } from "@/core/storage.ts";
+import { setLocalItem, updateSettings } from "@/core/storage.ts";
 import {
   LOCAL_STORAGE_KEY_THEME,
   OAUTH_WORKER_URL,
@@ -101,11 +101,7 @@ export async function updateTheme(newTheme: "dark" | "light") {
   } else {
     document.body.classList.remove("light-theme");
   }
-  if (typeof chrome !== "undefined" && chrome.storage) {
-    await chrome.storage.local.set({
-      [LOCAL_STORAGE_KEY_THEME]: newTheme,
-    });
-  }
+  await setLocalItem(LOCAL_STORAGE_KEY_THEME, newTheme);
 }
 
 export async function syncTimeOffset(): Promise<

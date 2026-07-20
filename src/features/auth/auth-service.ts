@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { setStore, store } from "@/core/store.ts";
 import {
+  clearAlarm,
+  clearLocal,
+  clearSession,
   getAllSettings,
+  getLocalItem,
   getSessionItem,
   getSessionItems,
-  hasAlarms,
   hasSessionStorage,
   isSessionUnlocked,
   removeSessionItem,
@@ -56,22 +59,20 @@ export async function init() {
 
   // Phóng tránh Race Condition: Đảm bảo Đăng xuất (nếu có) được hoàn tất trước khi đọc cài đặt
   if (hasSessionStorage()) {
-    const res = await chrome.storage.session.get(
+    const sessionInitialized = await getSessionItem(
       SESSION_KEY_SESSION_INITIALIZED,
     );
-    if (!res || !res[SESSION_KEY_SESSION_INITIALIZED]) {
+    if (!sessionInitialized) {
       const settings = await getAllSettings();
       const action = settings.vaultTimeoutAction || "lock";
       if (action === "logout") {
         console.debug(
           `[Store] Phát hiện khởi động lại trình duyệt và hành động là logout. Đang đăng xuất...`,
         );
-        await chrome.storage.local.clear();
-        await chrome.storage.session.clear();
+        await clearLocal();
+        await clearSession();
       }
-      await chrome.storage.session.set({
-        [SESSION_KEY_SESSION_INITIALIZED]: true,
-      });
+      await setSessionItem(SESSION_KEY_SESSION_INITIALIZED, true);
     }
   }
 
@@ -80,10 +81,8 @@ export async function init() {
   const sessionUnlockedVal = await isSessionUnlocked();
 
   let currentTheme: "dark" | "light" = "dark";
-  if (typeof chrome !== "undefined" && chrome.storage) {
-    const res = await chrome.storage.local.get(LOCAL_STORAGE_KEY_THEME);
-    currentTheme = res[LOCAL_STORAGE_KEY_THEME] === "light" ? "light" : "dark";
-  }
+  const themeVal = await getLocalItem(LOCAL_STORAGE_KEY_THEME);
+  currentTheme = themeVal === "light" ? "light" : "dark";
 
   if (currentTheme === "light") {
     document.body.classList.add("light-theme");
@@ -522,9 +521,7 @@ export async function lock() {
     SESSION_KEY_LAST_SELECTED_ITEM_ID,
   ]);
 
-  if (hasAlarms()) {
-    await chrome.alarms.clear(ALARM_NAME_VAULT_TIMEOUT);
-  }
+  await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
 
   setStore({
     vaultItems: [],
@@ -548,13 +545,9 @@ export async function logout() {
     SESSION_KEY_LAST_SELECTED_ITEM_ID,
   ]);
 
-  if (typeof chrome !== "undefined" && chrome.storage) {
-    await chrome.storage.local.clear();
-  }
+  await clearLocal();
 
-  if (hasAlarms()) {
-    await chrome.alarms.clear(ALARM_NAME_VAULT_TIMEOUT);
-  }
+  await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
 
   setStore({
     githubToken: "",
