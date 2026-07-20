@@ -5,6 +5,7 @@ import { navigate } from "@/core/navigation.ts";
 import { updateLanguage } from "@/core/ui-service.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
+import { EnIcon, ViIcon } from "@/icons/svg/index.ts";
 
 export const Language: Component = () => {
   const handleBack = () => {
@@ -28,7 +29,8 @@ export const Language: Component = () => {
               navigate(View.Appearance);
             }}
           >
-            <div class="setting-row-left">
+            <div class="setting-row-left d-flex align-center gap-8">
+              <EnIcon width="20" height="20" />
               <span class="font-sz-14">{t("settings_lang_en")}</span>
             </div>
             <Show when={store.language === "en"}>
@@ -54,7 +56,8 @@ export const Language: Component = () => {
               navigate(View.Appearance);
             }}
           >
-            <div class="setting-row-left">
+            <div class="setting-row-left d-flex align-center gap-8">
+              <ViIcon width="20" height="20" />
               <span class="font-sz-14">{t("settings_lang_vi")}</span>
             </div>
             <Show when={store.language === "vi"}>

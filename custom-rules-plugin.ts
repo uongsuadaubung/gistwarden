@@ -18,6 +18,9 @@ export interface LintNode {
 }
 
 export interface LintContext {
+  id?: string;
+  filename?: string;
+  sourceCode?: { text: string };
   report(descriptor: {
     node: LintNode;
     message: string;
@@ -131,6 +134,26 @@ const customRulesPlugin: LintPlugin = {
                   node,
                   message:
                     "Do not use inline 'style' object/string. Move styles to SCSS/CSS files instead.",
+                });
+              }
+            }
+          },
+        };
+      },
+    },
+
+    // Luật 5: Cấm sử dụng ts-ignore và ts-expect-error
+    "no-ts-ignore": {
+      create(context: LintContext) {
+        return {
+          Program(node: LintNode) {
+            if (context.filename && context.filename.includes("custom-rules-plugin.ts")) return;
+            if (context.sourceCode && typeof context.sourceCode.text === "string") {
+              const text = context.sourceCode.text;
+              if (text.includes("@ts" + "-ignore") || text.includes("@ts" + "-expect-error")) {
+                context.report({
+                  node,
+                  message: "Do not use @ts" + "-ignore or @ts" + "-expect-error. This is strictly forbidden by project rules.",
                 });
               }
             }

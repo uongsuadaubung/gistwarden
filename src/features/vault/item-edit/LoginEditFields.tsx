@@ -8,7 +8,6 @@ import {
   MinusCircleIcon,
   PlusIcon,
   QrIcon,
-  TrashIcon,
 } from "@/icons/svg/index.ts";
 import FormField from "@/components/ui/FormField.tsx";
 import type { ItemEditFormState } from "@/features/vault/item-edit/vault-edit-helper.ts";
@@ -128,7 +127,6 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
               <div class="fido2-cred-row">
                 <div>
                   <strong>{cred.userName || t("detail_no_value")}</strong>
-                  <span class="card-sub-text">RP: {cred.rpId}</span>
                 </div>
                 <button
                   type="button"
@@ -136,7 +134,7 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
                   onClick={() => props.onDeleteFido(cred.credentialId)}
                   title={t("edit_confirm_delete_passkey_title")}
                 >
-                  <TrashIcon class="icon-inline" />
+                  <MinusCircleIcon class="icon-inline text-error" />
                 </button>
               </div>
             )}

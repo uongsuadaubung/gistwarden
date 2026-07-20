@@ -1,7 +1,7 @@
 import { type Component } from "solid-js";
-import { type IconProps } from "@/icons/svg/types.ts";
+import { type IconProps } from "./types.ts";
 
-export const ChevronDownIcon: Component<IconProps> = (props) => {
+const MoonIcon: Component<IconProps> = (props) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -13,8 +13,9 @@ export const ChevronDownIcon: Component<IconProps> = (props) => {
       stroke-linejoin="round"
       {...props}
     >
-      <path d="m6 9 6 6 6-6" />
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
     </svg>
   );
 };
-export default ChevronDownIcon;
+
+export default MoonIcon;
