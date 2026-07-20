@@ -52,7 +52,9 @@ export const ItemEdit: Component = () => {
       const tab = await getCurrentTab();
       if (tab && tab.url) {
         const url = tab.url;
-        if (!url.startsWith("chrome://") && !url.startsWith("chrome-extension://")) {
+        if (
+          !url.startsWith("chrome://") && !url.startsWith("chrome-extension://")
+        ) {
           updateForm("uris", [{ uri: url }]);
         }
       }

@@ -22,6 +22,7 @@ import {
   MSG_VAULT_LOCKED,
   MSG_VAULT_LOGGED_OUT,
 } from "@/core/constants.ts";
+import { notifyBackground } from "@/core/messaging.ts";
 
 // Import Views
 import Login from "@/features/auth/Login.tsx";
@@ -89,7 +90,7 @@ const App: Component = () => {
 
     // Reset inactivity timeout on user interaction
     const resetTimeout = () => {
-      chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
+      notifyBackground({ type: MSG_RESET_TIMEOUT });
     };
 
     resetTimeout();

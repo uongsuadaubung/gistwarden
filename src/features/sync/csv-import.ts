@@ -1,4 +1,8 @@
-import { type VaultItem, VaultItemType, VaultListSchema } from "@/core/types.ts";
+import {
+  type VaultItem,
+  VaultItemType,
+  VaultListSchema,
+} from "@/core/types.ts";
 import { APP_NAME } from "@/core/constants.ts";
 import { parseCSV } from "@/core/csv-parser.ts";
 

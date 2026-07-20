@@ -4,7 +4,10 @@ import { getSessionKey } from "@/core/crypto.ts";
 import { APP_NAME } from "@/core/constants.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 import { parseAndValidateImportJson } from "@/features/sync/json-import.ts";
-import { parseAndValidateBrowserCsv, parseAndValidateBitwardenCsv } from "@/features/sync/csv-import.ts";
+import {
+  parseAndValidateBitwardenCsv,
+  parseAndValidateBrowserCsv,
+} from "@/features/sync/csv-import.ts";
 import { t } from "@/core/i18n.ts";
 import { setGlobalLoading } from "@/core/ui-service.ts";
 

@@ -5,10 +5,13 @@ import {
   setDerivedKey,
   verifyMasterPassword,
 } from "@/core/crypto.ts";
-import { setSessionItem, getGithubToken } from "@/core/storage.ts";
+import { getGithubToken, setSessionItem } from "@/core/storage.ts";
 import { updateSettings } from "@/core/storage.ts";
-import { SESSION_KEY_VERIFICATION_CIPHERTEXT, SESSION_KEY_VERIFICATION_IV } from "@/core/constants.ts";
-import { store, setStore } from "@/core/store.ts";
+import {
+  SESSION_KEY_VERIFICATION_CIPHERTEXT,
+  SESSION_KEY_VERIFICATION_IV,
+} from "@/core/constants.ts";
+import { setStore, store } from "@/core/store.ts";
 import { setGlobalLoading } from "@/core/ui-service.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 

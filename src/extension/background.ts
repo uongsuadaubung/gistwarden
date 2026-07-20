@@ -5,6 +5,7 @@ import {
   uploadToGist,
   validateToken,
 } from "@/features/sync/github-api.ts";
+import { broadcastMessage } from "@/core/messaging.ts";
 import {
   ALARM_NAME_VAULT_TIMEOUT,
   FIDO2_PROMPT_HEIGHT,
@@ -314,13 +315,9 @@ if (hasAlarms()) {
 
         if (action === "logout") {
           await chrome.storage.local.clear();
-          chrome.runtime.sendMessage({ type: MSG_VAULT_LOGGED_OUT }).catch(
-            () => {},
-          );
+          broadcastMessage({ type: MSG_VAULT_LOGGED_OUT });
         } else {
-          chrome.runtime.sendMessage({ type: MSG_VAULT_LOCKED }).catch(
-            () => {},
-          );
+          broadcastMessage({ type: MSG_VAULT_LOCKED });
         }
       } catch (err) {
         console.error("[Background] Failed to execute timeout action:", err);

@@ -14,14 +14,15 @@ import {
   updateSettings,
 } from "@/core/storage.ts";
 import {
+  clearDerivedKey,
   decryptData,
   encryptData,
   generateSalt,
   getOrDeriveKey,
   getSessionKey,
   setDerivedKey,
-  clearDerivedKey,
 } from "@/core/crypto.ts";
+import { notifyBackground, sendMessageToBackground } from "@/core/messaging.ts";
 import {
   DownloadFromGistResponseSchema,
   GistPayloadSchema,
@@ -153,9 +154,9 @@ export async function init() {
       if (cachedContent) {
         rawRes = { success: true, content: cachedContent };
       } else {
-        const fetchRes = await new Promise((resolve) => {
-          chrome.runtime.sendMessage({ type: MSG_DOWNLOAD_FROM_GIST }, resolve);
-        });
+        const fetchRes = await sendMessageToBackground({
+          type: MSG_DOWNLOAD_FROM_GIST,
+        }).catch(() => null);
         const parsedFetchRes = DownloadFromGistResponseSchema.parse(fetchRes);
         if (parsedFetchRes.success && parsedFetchRes.content) {
           await setSessionItem(
@@ -225,14 +226,14 @@ export async function init() {
           view: targetView,
           selectedItem,
         });
-        chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
+        notifyBackground({ type: MSG_RESET_TIMEOUT });
       } else {
         // If downloading fails but we have setup, it could be network issue or empty gist
         setStore({
           isLocked: false,
           view: isFido2Prompt ? View.Fido2Prompt : View.Vault,
         });
-        chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
+        notifyBackground({ type: MSG_RESET_TIMEOUT });
       }
     } catch (err) {
       console.error("[Store] Decryption on load failed:", err);
@@ -313,7 +314,9 @@ export async function unlock(
           );
           await setSessionItem(SESSION_KEY_GITHUB_TOKEN, decrypted);
         } catch (_e) {
-          console.warn("Failed to decrypt githubToken (possibly wrong password or changed salt on another device)");
+          console.warn(
+            "Failed to decrypt githubToken (possibly wrong password or changed salt on another device)",
+          );
           throw new Error("login_error_wrong_mp");
         }
       }
@@ -324,9 +327,9 @@ export async function unlock(
 
     // B. Tải Gist từ GitHub về
     // Lúc này chắc chắn token đã có trong session storage (hoặc từ onboarding hoặc từ bước giải mã ở trên)
-    const rawDownloadRes = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: MSG_DOWNLOAD_FROM_GIST }, resolve);
-    });
+    const rawDownloadRes = await sendMessageToBackground({
+      type: MSG_DOWNLOAD_FROM_GIST,
+    }).catch(() => null);
     const downloadRes = DownloadFromGistResponseSchema.parse(rawDownloadRes);
     if (downloadRes.success && downloadRes.content) {
       existingGistContent = downloadRes.content;
@@ -335,7 +338,9 @@ export async function unlock(
       // Nếu chưa có salt cục bộ nhưng trên Gist đã có salt, trích xuất nó
       if (!saltBase64) {
         try {
-          const payload = GistPayloadSchema.parse(JSON.parse(downloadRes.content));
+          const payload = GistPayloadSchema.parse(
+            JSON.parse(downloadRes.content),
+          );
           if (payload.salt) {
             saltBase64 = payload.salt;
             await updateSettings({ salt: saltBase64 });
@@ -393,7 +398,7 @@ export async function unlock(
         view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
         sessionUnlocked: true,
       });
-      chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
+      notifyBackground({ type: MSG_RESET_TIMEOUT });
       return { success: true };
     }
 
@@ -441,7 +446,7 @@ export async function unlock(
         view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
         sessionUnlocked: true,
       });
-      chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
+      notifyBackground({ type: MSG_RESET_TIMEOUT });
       return { success: true };
     }
 
@@ -487,13 +492,15 @@ export async function unlock(
       selectedItem,
       sessionUnlocked: true,
     });
-    chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
+    notifyBackground({ type: MSG_RESET_TIMEOUT });
 
     return { success: true };
   } catch (err) {
     clearDerivedKey();
     const errMsg = err instanceof Error ? err.message : String(err);
-    if (errMsg.includes("OperationError") || errMsg === "login_error_wrong_mp") {
+    if (
+      errMsg.includes("OperationError") || errMsg === "login_error_wrong_mp"
+    ) {
       console.warn("[Store] Unlock failed: Incorrect master password");
       return { success: false, error: "login_error_wrong_mp" };
     }
@@ -501,7 +508,6 @@ export async function unlock(
     return { success: false, error: errMsg || "login_error_wrong_mp" };
   }
 }
-
 
 export async function lock() {
   clearDerivedKey();
@@ -580,8 +586,6 @@ export async function acceptWelcome() {
   });
 }
 
-
-
 export async function unlockWithKey(
   key: CryptoKey,
 ): Promise<{ success: boolean; error?: string }> {
@@ -616,9 +620,9 @@ export async function unlockWithKey(
     let hasExistingGist = false;
 
     // B. Tải Gist từ GitHub về
-    const rawDownloadRes = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: MSG_DOWNLOAD_FROM_GIST }, resolve);
-    });
+    const rawDownloadRes = await sendMessageToBackground({
+      type: MSG_DOWNLOAD_FROM_GIST,
+    }).catch(() => null);
     const downloadRes = DownloadFromGistResponseSchema.parse(rawDownloadRes);
     if (downloadRes.success && downloadRes.content) {
       existingGistContent = downloadRes.content;
@@ -669,7 +673,7 @@ export async function unlockWithKey(
       view: targetView,
       selectedItem,
     });
-    chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
+    notifyBackground({ type: MSG_RESET_TIMEOUT });
 
     return { success: true };
   } catch (err) {

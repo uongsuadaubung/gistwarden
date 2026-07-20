@@ -5,7 +5,7 @@ import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { ThemeMode, View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { updateTheme } from "@/core/ui-service.ts";
-import { SunIcon, MoonIcon } from "@/icons/svg/index.ts";
+import { MoonIcon, SunIcon } from "@/icons/svg/index.ts";
 
 export const Theme: Component = () => {
   const handleBack = () => {

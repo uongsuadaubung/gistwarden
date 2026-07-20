@@ -7,10 +7,12 @@ import {
   SESSION_KEY_ENCRYPTED_VAULT,
 } from "@/core/constants.ts";
 
-const SyncResponseSchema = z.object({
+export const SyncResponseSchema = z.object({
   success: z.boolean(),
   error: z.string().optional(),
 });
+
+import { sendMessageToBackground } from "@/core/messaging.ts";
 
 export async function syncVaultToGist(
   items: VaultItem[],
@@ -26,12 +28,10 @@ export async function syncVaultToGist(
       ciphertext: encrypted.ciphertext,
     });
 
-    const rawRes = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({
-        type: MSG_UPLOAD_TO_GIST,
-        content: payload,
-      }, resolve);
-    });
+    const rawRes = await sendMessageToBackground({
+      type: MSG_UPLOAD_TO_GIST,
+      content: payload,
+    }).catch(() => null);
 
     const res = SyncResponseSchema.parse(rawRes);
 

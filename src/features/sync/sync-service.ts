@@ -9,11 +9,18 @@ import {
   STORE_KEY_VAULT_ITEMS,
 } from "@/core/constants.ts";
 import { decryptData, getSessionKey } from "@/core/crypto.ts";
-import { DownloadFromGistResponseSchema, VaultListSchema } from "@/core/types.ts";
+import {
+  DownloadFromGistResponseSchema,
+  VaultListSchema,
+} from "@/core/types.ts";
 import { t } from "@/core/i18n.ts";
 import { setGlobalLoading } from "@/core/ui-service.ts";
 
-export async function syncVault(): Promise<{ success: boolean; error?: string }> {
+import { sendMessageToBackground } from "@/core/messaging.ts";
+
+export async function syncVault(): Promise<
+  { success: boolean; error?: string }
+> {
   setStore(STORE_KEY_SYNCING, true);
   setStore(STORE_KEY_SYNC_ERROR, "");
   setGlobalLoading(true, t("vault_syncing"));
@@ -21,9 +28,9 @@ export async function syncVault(): Promise<{ success: boolean; error?: string }>
     const key = await getSessionKey();
     if (!key || !store.salt) throw new Error("Vault is locked");
 
-    const rawRes = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: MSG_DOWNLOAD_FROM_GIST }, resolve);
-    });
+    const rawRes = await sendMessageToBackground({
+      type: MSG_DOWNLOAD_FROM_GIST,
+    }).catch(() => null);
     const res = DownloadFromGistResponseSchema.parse(rawRes);
 
     if (!res.success) {

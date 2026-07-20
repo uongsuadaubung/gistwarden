@@ -1,6 +1,7 @@
 import { updateSettings } from "@/core/storage.ts";
 import { type VaultTimeoutAction } from "@/core/types.ts";
 import { MSG_RESET_TIMEOUT } from "@/core/constants.ts";
+import { notifyBackground } from "@/core/messaging.ts";
 
 export async function updateSessionTimeout(
   timeout: string,
@@ -10,5 +11,5 @@ export async function updateSessionTimeout(
     vaultTimeout: timeout,
     vaultTimeoutAction: action,
   });
-  chrome.runtime.sendMessage({ type: MSG_RESET_TIMEOUT }).catch(() => {});
+  notifyBackground({ type: MSG_RESET_TIMEOUT });
 }

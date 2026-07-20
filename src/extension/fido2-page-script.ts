@@ -14,7 +14,8 @@ import {
 
   // Polyfill platform authenticator support so relying parties know they can request platform authenticators
   if (window.PublicKeyCredential) {
-    window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = () => Promise.resolve(true);
+    window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable =
+      () => Promise.resolve(true);
   }
 
   // Read nonce from script element's dataset safely

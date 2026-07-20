@@ -1,12 +1,13 @@
-import { type Component, createEffect, createSignal, onMount, Show } from "solid-js";
 import {
-  store,
-} from "@/core/store.ts";
+  type Component,
+  createEffect,
+  createSignal,
+  onMount,
+  Show,
+} from "solid-js";
+import { store } from "@/core/store.ts";
 import { setupGithub } from "@/features/sync/github-auth.ts";
-import {
-  logout,
-  unlock,
-} from "@/features/auth/auth-service.ts";
+import { logout, unlock } from "@/features/auth/auth-service.ts";
 import { unlockWithPin } from "@/features/auth/pin-service.ts";
 import { confirm, updateLanguage } from "@/core/ui-service.ts";
 import PinUnlockForm from "@/features/auth/PinUnlockForm.tsx";
@@ -24,6 +25,13 @@ import {
   SESSION_KEY_PENDING_GITHUB_TOKEN,
 } from "@/core/constants.ts";
 import { type LoginViewMode } from "@/core/types.ts";
+import { sendMessageToBackground } from "@/core/messaging.ts";
+
+const OauthResponseSchema = z.object({
+  success: z.boolean().catch(false),
+  token: z.string().optional(),
+  error: z.string().optional(),
+});
 
 export const Login: Component = () => {
   const [error, setError] = createSignal("");
@@ -34,7 +42,7 @@ export const Login: Component = () => {
   onMount(async () => {
     const rawToken = await getSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
     const parsed = z.string().safeParse(rawToken);
-    
+
     if (parsed.success && parsed.data) {
       const token = parsed.data;
       setLoading(true);
@@ -42,11 +50,21 @@ export const Login: Component = () => {
       try {
         const setupRes = await setupGithub(token);
         if (!setupRes.success) {
-          setError(setupRes.error ? (isTranslationKey(setupRes.error) ? t(setupRes.error) : setupRes.error) : t("login_error_invalid_token"));
+          setError(
+            setupRes.error
+              ? (isTranslationKey(setupRes.error)
+                ? t(setupRes.error)
+                : setupRes.error)
+              : t("login_error_invalid_token"),
+          );
         }
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
-        setError(errMsg ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg) : t("login_error_oauth_fail"));
+        setError(
+          errMsg
+            ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg)
+            : t("login_error_oauth_fail"),
+        );
       } finally {
         setLoading(false);
       }
@@ -73,7 +91,11 @@ export const Login: Component = () => {
     try {
       const res = await unlockWithPin(pin);
       if (!res.success) {
-        setError(res.error && isTranslationKey(res.error) ? t(res.error) : (res.error || t("login_error_wrong_pin")));
+        setError(
+          res.error && isTranslationKey(res.error)
+            ? t(res.error)
+            : (res.error || t("login_error_wrong_pin")),
+        );
       }
     } catch (err) {
       console.error("[Login] PIN unlock failed:", err);
@@ -93,11 +115,19 @@ export const Login: Component = () => {
     try {
       const res = await setupGithub(token.trim());
       if (!res.success) {
-        setError(res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("login_error_invalid_token"));
+        setError(
+          res.error
+            ? (isTranslationKey(res.error) ? t(res.error) : res.error)
+            : t("login_error_invalid_token"),
+        );
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg) : t("login_error_any"));
+      setError(
+        errMsg
+          ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg)
+          : t("login_error_any"),
+      );
     } finally {
       setLoading(false);
     }
@@ -108,32 +138,41 @@ export const Login: Component = () => {
     setError("");
     try {
       // Call background script to launch web auth flow
-      const oauthRes = await new Promise<
-        { success: boolean; token?: string; error?: string }
-      >((resolve) => {
-        chrome.runtime.sendMessage({
-          type: MSG_START_GITHUB_OAUTH,
-          content: OAUTH_CLIENT_ID,
-          token: OAUTH_WORKER_URL,
-        }, resolve);
-      });
+      const rawRes = await sendMessageToBackground({
+        type: MSG_START_GITHUB_OAUTH,
+        content: OAUTH_CLIENT_ID,
+        token: OAUTH_WORKER_URL,
+      }).catch(() => null);
 
-      if (!oauthRes.success || !oauthRes.token) {
-        throw new Error(oauthRes.error || t("login_error_oauth_no_token"));
+      const parsed = OauthResponseSchema.safeParse(rawRes);
+
+      if (!parsed.success || !parsed.data.success || !parsed.data.token) {
+        const errorMsg = (parsed.success && parsed.data.error)
+          ? parsed.data.error
+          : t("login_error_oauth_no_token");
+        throw new Error(errorMsg);
       }
 
       // Setup GitHub with the obtained token
-      const res = await setupGithub(oauthRes.token);
-      
+      const res = await setupGithub(parsed.data.token);
+
       // Remove the pending token so it doesn't trigger onMount again
       await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
 
       if (!res.success) {
-        setError(res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("login_error_invalid_token"));
+        setError(
+          res.error
+            ? (isTranslationKey(res.error) ? t(res.error) : res.error)
+            : t("login_error_invalid_token"),
+        );
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg) : t("login_error_oauth_fail"));
+      setError(
+        errMsg
+          ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg)
+          : t("login_error_oauth_fail"),
+      );
     } finally {
       setLoading(false);
     }
@@ -150,12 +189,20 @@ export const Login: Component = () => {
       const res = await unlock(password);
       if (!res.success) {
         setFailedUnlockAttempts((prev) => prev + 1);
-        setError(res.error ? (isTranslationKey(res.error) ? t(res.error) : res.error) : t("login_error_wrong_mp"));
+        setError(
+          res.error
+            ? (isTranslationKey(res.error) ? t(res.error) : res.error)
+            : t("login_error_wrong_mp"),
+        );
       }
     } catch (err) {
       setFailedUnlockAttempts((prev) => prev + 1);
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg) : t("login_error_unlock_fail"));
+      setError(
+        errMsg
+          ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg)
+          : t("login_error_unlock_fail"),
+      );
     } finally {
       setLoading(false);
     }

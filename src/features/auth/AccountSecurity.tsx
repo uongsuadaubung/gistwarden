@@ -2,10 +2,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import { store } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
-import {
-  disablePinUnlock,
-  setPinUnlock,
-} from "@/features/auth/pin-service.ts";
+import { disablePinUnlock, setPinUnlock } from "@/features/auth/pin-service.ts";
 import { updateSessionTimeout } from "@/features/auth/session-service.ts";
 import { confirm, showToast } from "@/core/ui-service.ts";
 import { updateSettings } from "@/core/storage.ts";

@@ -13,7 +13,10 @@ const EnIcon: Component<IconProps> = (props) => {
       stroke-linejoin="round"
       {...props}
     >
-      <path d="M 3 6 L 3 18 M 3 6 L 9 6 M 3 12 L 8 12 M 3 18 L 9 18" fill="transparent" />
+      <path
+        d="M 3 6 L 3 18 M 3 6 L 9 6 M 3 12 L 8 12 M 3 18 L 9 18"
+        fill="transparent"
+      />
       <path d="M 13 18 L 13 6 L 21 18 L 21 6" fill="transparent" />
     </svg>
   );
