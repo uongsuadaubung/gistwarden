@@ -63,6 +63,11 @@ export default {
     "{APP_NAME} uses end-to-end encryption (Zero-Knowledge). The Master Password is never sent or stored on any server, hence there is <strong class='text-error'>NO WAY</strong> to recover or reset it.<br/><br/>To start over, the system will <strong>LOG OUT</strong> and <strong>CLEAR LOCAL DATA</strong>.<br/><br/>If you want to continue using this GitHub account, the system will open the GitHub Gist page containing the old vault so you can <strong>BACK UP</strong> the data or <strong class='text-error'>MANUALLY DELETE</strong> this Gist on GitHub before logging in again.<br/><br/>Are you sure you want to log out and open the old Gist page?",
   app_loading: "Loading {APP_NAME}...",
   login_or: "Or",
+  login_error_password_mismatch: "Confirm password does not match",
+  login_enter_master_password: "Enter master password",
+  login_confirm_master_password: "Re-enter to confirm",
+  login_btn_create_master_password: "Create master password",
+  login_checking_gist: "Checking data...",
 
   // Vault Page
   vault_search_placeholder: "Search accounts...",
@@ -314,7 +319,7 @@ export default {
   timeout_never: "Never",
   set_pin_title: "Set PIN",
   set_pin_desc:
-    "You can use this PIN to unlock Gistwarden. Your PIN will be reset if you ever fully log out of the application.",
+    "You can use this PIN to unlock {APP_NAME}. Your PIN will be reset if you ever fully log out of the application.",
   set_pin_label: "PIN",
   set_pin_confirm_label: "Confirm PIN",
   set_pin_error_mismatch: "PIN confirmation does not match.",
@@ -374,7 +379,7 @@ export default {
   import_option_bitwarden_csv: "Bitwarden (CSV)",
   import_option_bitwarden_csv_sub:
     "Import credentials exported from Bitwarden as CSV",
-  import_option_json: "Gistwarden / Bitwarden (JSON)",
+  import_option_json: "{APP_NAME} / Bitwarden (JSON)",
   import_option_json_sub: "Import backup file as JSON",
   import_error_browser_invalid:
     "CSV file is missing mandatory columns: url, username, password.",
@@ -388,7 +393,7 @@ export default {
   export_option_bitwarden_csv: "Bitwarden (CSV)",
   export_option_bitwarden_csv_sub:
     "CSV file compatible for importing into Bitwarden",
-  export_option_json: "Gistwarden / Bitwarden (JSON)",
+  export_option_json: "{APP_NAME} / Bitwarden (JSON)",
   export_option_json_sub: "Export unencrypted backup JSON file",
 
   // Password Generator View
@@ -498,10 +503,11 @@ export default {
     "Log in to GitHub and click the green button below to open the token creation page. Give it a descriptive note (e.g., '{APP_NAME}') and select 'No expiration' so sync doesn't break later.",
   guide_token_step1_btn: "Open GitHub Token Creation Page",
   guide_token_step1_img_info: "Name the Token and choose expiration time",
-  guide_token_step2_title: "Step 2: Check the 'gist' Scope",
+  guide_token_step2_title: "Step 2: Check 'gist' and 'read:user' Scopes",
   guide_token_step2_desc:
-    "Find and select the 'gist' checkbox. This scope only permits {APP_NAME} to read/write Gists, and doesn't grant access to any of your code repositories.",
-  guide_token_step2_img_info: "Ensure 'gist' scope is checked",
+    "Find and select the 'gist' checkbox (to sync your vault) and 'read:user' (under the 'user' section - to display your username and avatar in Settings). These scopes only permit {APP_NAME} to access Gists and public profile info, and don't grant access to any of your private repositories.",
+  guide_token_step2_img_info:
+    "Ensure 'gist' and 'read:user' scopes are checked",
   guide_token_step3_title: "Step 3: Generate Token",
   guide_token_step3_desc:
     "Scroll to the bottom of the page and click the green 'Generate token' button to create your token.",

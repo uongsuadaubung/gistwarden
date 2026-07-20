@@ -63,6 +63,11 @@ export default {
     "{APP_NAME} sử dụng cơ chế mã hóa đầu-cuối (Zero-Knowledge). Mật khẩu Master không bao giờ được gửi đi hay lưu trữ trên máy chủ, do đó <strong class='text-error'>KHÔNG CÓ CÁCH NÀO</strong> để khôi phục hoặc đặt lại.<br/><br/>Để bắt đầu lại, hệ thống sẽ <strong>ĐĂNG XUẤT</strong> và <strong>XÓA DỮ LIỆU CỤC BỘ</strong>.<br/><br/>Nếu bạn muốn tiếp tục sử dụng tài khoản GitHub này, hệ thống sẽ mở trang GitHub Gist chứa két sắt cũ để bạn có thể <strong>SAO LƯU</strong> dữ liệu hoặc tiến hành <strong class='text-error'>XÓA THỦ CÔNG</strong> Gist này trên GitHub trước khi đăng nhập lại.<br/><br/>Bạn có chắc chắn muốn đăng xuất và mở trang Gist cũ không?",
   app_loading: "Đang tải {APP_NAME}...",
   login_or: "Hoặc",
+  login_error_password_mismatch: "Mật khẩu xác nhận không khớp",
+  login_enter_master_password: "Nhập master password",
+  login_confirm_master_password: "Nhập lại để xác nhận",
+  login_btn_create_master_password: "Tạo master password",
+  login_checking_gist: "Đang kiểm tra dữ liệu...",
 
   // Vault Page
   vault_search_placeholder: "Tìm kiếm tài khoản...",
@@ -314,7 +319,7 @@ export default {
   timeout_never: "Không bao giờ",
   set_pin_title: "Thiết lập mã PIN",
   set_pin_desc:
-    "Bạn có thể sử dụng mã PIN này để mở khóa Gistwarden. Mã PIN của bạn sẽ bị thiết lập lại nếu bạn đăng xuất hoàn toàn khỏi ứng dụng.",
+    "Bạn có thể sử dụng mã PIN này để mở khóa {APP_NAME}. Mã PIN của bạn sẽ bị thiết lập lại nếu bạn đăng xuất hoàn toàn khỏi ứng dụng.",
   set_pin_label: "Mã PIN",
   set_pin_confirm_label: "Xác nhận mã PIN",
   set_pin_error_mismatch: "Mã PIN xác nhận không khớp.",
@@ -376,7 +381,7 @@ export default {
     "Hỗ trợ tự động nhận diện Chrome, Edge, Firefox...",
   import_option_bitwarden_csv: "Bitwarden (CSV)",
   import_option_bitwarden_csv_sub: "Nhập mật khẩu xuất từ Bitwarden dạng CSV",
-  import_option_json: "Gistwarden / Bitwarden (JSON)",
+  import_option_json: "{APP_NAME} / Bitwarden (JSON)",
   import_option_json_sub: "Nhập file sao lưu dạng JSON",
   import_error_browser_invalid:
     "File CSV thiếu các cột bắt buộc: url, username, password.",
@@ -390,7 +395,7 @@ export default {
     "Tệp CSV tương thích với Google Chrome, Microsoft Edge...",
   export_option_bitwarden_csv: "Bitwarden (CSV)",
   export_option_bitwarden_csv_sub: "Tệp CSV tương thích để nhập vào Bitwarden",
-  export_option_json: "Gistwarden / Bitwarden (JSON)",
+  export_option_json: "{APP_NAME} / Bitwarden (JSON)",
   export_option_json_sub: "Xuất tệp sao lưu JSON không mã hóa",
 
   // Password Generator View
@@ -501,10 +506,11 @@ export default {
     "Đăng nhập GitHub, bấm nút màu xanh bên dưới để mở nhanh trang tạo Token. Hãy đặt một cái tên dễ nhớ (ví dụ: '{APP_NAME}') và chọn hạn dùng là 'No expiration' (Không hết hạn) để không bị lỗi đồng bộ sau này.",
   guide_token_step1_btn: "Mở trang tạo Token trên GitHub",
   guide_token_step1_img_info: "Đặt tên Token và chọn thời gian hết hạn",
-  guide_token_step2_title: "Bước 2: Tích chọn quyền Gist",
+  guide_token_step2_title: "Bước 2: Tích chọn quyền Gist và read:user",
   guide_token_step2_desc:
-    "Tìm và tích chọn duy nhất vào ô 'gist'. Quyền này chỉ cho phép extension lưu file dữ liệu lên mục Gist cá nhân của bạn, hoàn toàn không xem được các repository code khác.",
-  guide_token_step2_img_info: "Đảm bảo đã tích chọn quyền 'gist'",
+    "Tìm và tích chọn vào ô 'gist' (để đồng bộ két sắt) và quyền 'read:user' (dưới mục 'user' - để hiển thị tên đăng nhập và ảnh đại diện của bạn). Các quyền này chỉ cho phép {APP_NAME} truy cập gist và thông tin profile công khai, hoàn toàn không xem được các repository code riêng tư khác của bạn.",
+  guide_token_step2_img_info:
+    "Đảm bảo đã tích chọn quyền 'gist' và 'read:user'",
   guide_token_step3_title: "Bước 3: Tạo mã Token",
   guide_token_step3_desc:
     "Cuộn xuống cuối trang rồi nhấn nút 'Generate token' màu xanh lá để tạo mã.",

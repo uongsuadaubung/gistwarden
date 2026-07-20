@@ -44,7 +44,7 @@ export const SESSION_KEY_SHOW_FILTER_PANEL = "showFilterPanel";
 export const SESSION_KEY_SELECTED_FILTER_TYPE = "selectedFilterType";
 
 // Browser Local Storage Keys
-export const LOCAL_STORAGE_KEY_THEME = "gistwarden_theme";
+export const LOCAL_STORAGE_KEY_THEME = `${APP_NAME.toLowerCase()}_theme`;
 
 // SolidJS Store Keys
 export const STORE_KEY_TOAST_MESSAGE = "toastMessage";

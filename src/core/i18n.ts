@@ -64,6 +64,11 @@ const LangSchema = z.object({
   login_forgot_password_msg: z.string(),
   app_loading: z.string(),
   login_or: z.string(),
+  login_error_password_mismatch: z.string(),
+  login_enter_master_password: z.string(),
+  login_confirm_master_password: z.string(),
+  login_btn_create_master_password: z.string(),
+  login_checking_gist: z.string(),
 
   // Vault Page
   vault_search_placeholder: z.string(),
