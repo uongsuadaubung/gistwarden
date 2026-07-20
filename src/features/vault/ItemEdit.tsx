@@ -23,7 +23,7 @@ import {
   mapFormStateToVaultItem,
 } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import CustomFieldsEdit from "@/features/vault/item-edit/CustomFieldsEdit.tsx";
-import { getCurrentTab } from "@/core/tabs.ts";
+import { captureVisibleTab, getCurrentTab } from "@/core/tabs.ts";
 
 export const ItemEdit: Component = () => {
   const isEdit = () => !!store.selectedItem?.id;
@@ -64,7 +64,7 @@ export const ItemEdit: Component = () => {
     setError("");
     try {
       // 1. Capture the visible tab as a PNG data URL
-      const screenshot = await chrome.tabs.captureVisibleTab({ format: "png" });
+      const screenshot = await captureVisibleTab({ format: "png" });
       if (!screenshot) {
         setError(t("edit_qr_error_fail"));
         return;
