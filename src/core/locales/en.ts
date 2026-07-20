@@ -204,7 +204,7 @@ export default {
   detail_copy_card_number: "Copy card number",
   detail_copy_card_code: "Copy security code",
   detail_copied: "Copied!",
-  detail_passkey_webauthn: "Passkey (WebAuthn)",
+  detail_passkey_webauthn: "Passkey",
   detail_fields: "Custom Fields",
   detail_creation_date: "Created",
   detail_revision_date: "Modified",
