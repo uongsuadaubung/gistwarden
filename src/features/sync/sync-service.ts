@@ -14,7 +14,6 @@ import {
   VaultListSchema,
 } from "@/core/types.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";
-import { setGlobalLoading } from "@/core/ui-service.ts";
 import { err, ok, Result } from "neverthrow";
 
 import { sendMessageToBackground } from "@/core/messaging.ts";
@@ -22,14 +21,12 @@ import { sendMessageToBackground } from "@/core/messaging.ts";
 export async function syncVault(): Promise<Result<void, TranslationKey>> {
   setStore(STORE_KEY_SYNCING, true);
   setStore(STORE_KEY_SYNC_ERROR, "");
-  setGlobalLoading(true, t("vault_syncing"));
 
   const key = await getSessionKey();
   if (!key || !store.salt) {
     const errorKey = "login_title_locked";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    setGlobalLoading(false);
     return err(errorKey);
   }
 
@@ -40,7 +37,6 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     const errorKey = sendResult.error;
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    setGlobalLoading(false);
     return err(errorKey);
   }
 
@@ -49,7 +45,6 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     const errorKey = "toast_error";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    setGlobalLoading(false);
     return err(errorKey);
   }
   const res = parseRes.data;
@@ -58,7 +53,6 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     const errorKey = "toast_error";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    setGlobalLoading(false);
     return err(errorKey);
   }
 
@@ -70,7 +64,6 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     const errorKey = setSessionRes.error;
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    setGlobalLoading(false);
     return err(errorKey);
   }
 
@@ -81,7 +74,6 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     const errorKey = "toast_error";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    setGlobalLoading(false);
     return err(errorKey);
   }
 
@@ -94,7 +86,6 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     const errorKey = decryptRes.error;
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    setGlobalLoading(false);
     return err(errorKey);
   }
   const decrypted = decryptRes.value;
@@ -106,7 +97,6 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     const errorKey = "toast_error";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    setGlobalLoading(false);
     return err(errorKey);
   }
 
@@ -115,13 +105,11 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     const errorKey = "storage_error";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    setGlobalLoading(false);
     return err(errorKey);
   }
   const items = parseVaultRes.data;
 
   setStore(STORE_KEY_VAULT_ITEMS, reconcile(items));
   setStore(STORE_KEY_SYNCING, false);
-  setGlobalLoading(false);
   return ok();
 }

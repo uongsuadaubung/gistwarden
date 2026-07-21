@@ -11,7 +11,6 @@ import { SyncResponseSchema } from "@/features/sync/sync-utils.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
 
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
-import { setGlobalLoading } from "@/core/ui-service.ts";
 import { MSG_DELETE_GIST, STORE_KEY_VAULT_ITEMS } from "@/core/constants.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
@@ -20,11 +19,8 @@ import { z } from "zod";
 export async function saveItem(
   item: Partial<VaultItem>,
 ): Promise<Result<void, TranslationKey>> {
-  setGlobalLoading(true);
-
   const key = await getSessionKey();
   if (!key || !store.salt) {
-    setGlobalLoading(false);
     return err("login_title_locked");
   }
 
@@ -111,7 +107,6 @@ export async function saveItem(
 
     const parseResult = z.array(VaultItemSchema).safeParse(mappedItems);
     if (!parseResult.success) {
-      setGlobalLoading(false);
       return err("storage_error");
     }
     updatedList = parseResult.data;
@@ -180,7 +175,6 @@ export async function saveItem(
 
     const parseResult = VaultItemSchema.safeParse(baseItem);
     if (!parseResult.success) {
-      setGlobalLoading(false);
       return err("storage_error");
     }
 
@@ -189,7 +183,6 @@ export async function saveItem(
 
   const uploadRes = await syncVaultToGist(updatedList, key, store.salt);
   if (uploadRes.isErr()) {
-    setGlobalLoading(false);
     return err(uploadRes.error);
   }
   const validatedList = uploadRes.value;
@@ -198,18 +191,14 @@ export async function saveItem(
     STORE_KEY_VAULT_ITEMS,
     reconcile(validatedList),
   );
-  setGlobalLoading(false);
   return ok();
 }
 
 export async function deleteItem(
   id: string,
 ): Promise<Result<void, TranslationKey>> {
-  setGlobalLoading(true);
-
   const key = await getSessionKey();
   if (!key || !store.salt) {
-    setGlobalLoading(false);
     return err("login_title_locked");
   }
 
@@ -217,7 +206,6 @@ export async function deleteItem(
   const uploadRes = await syncVaultToGist(filtered, key, store.salt);
 
   if (uploadRes.isErr()) {
-    setGlobalLoading(false);
     return err(uploadRes.error);
   }
   const validatedList = uploadRes.value;
@@ -226,13 +214,10 @@ export async function deleteItem(
     STORE_KEY_VAULT_ITEMS,
     reconcile(validatedList),
   );
-  setGlobalLoading(false);
   return ok();
 }
 
 export async function clearVault(): Promise<Result<void, TranslationKey>> {
-  setGlobalLoading(true);
-
   const gistId = store.gistId;
   if (gistId) {
     const sendResult = await sendMessageToBackground({
@@ -240,19 +225,16 @@ export async function clearVault(): Promise<Result<void, TranslationKey>> {
       content: gistId,
     });
     if (sendResult.isErr()) {
-      setGlobalLoading(false);
       return err(sendResult.error);
     }
 
     const parseRes = SyncResponseSchema.safeParse(sendResult.value);
     if (!parseRes.success) {
-      setGlobalLoading(false);
       return err("toast_error");
     }
     const res = parseRes.data;
 
     if (!res.success) {
-      setGlobalLoading(false);
       return err("toast_error");
     }
   }
@@ -260,7 +242,6 @@ export async function clearVault(): Promise<Result<void, TranslationKey>> {
   // Reset local settings
   const updateSettingsRes = await updateSettings({ gistId: "", lastSync: 0 });
   if (updateSettingsRes.isErr()) {
-    setGlobalLoading(false);
     return err(updateSettingsRes.error);
   }
 
@@ -269,6 +250,5 @@ export async function clearVault(): Promise<Result<void, TranslationKey>> {
     vaultItems: [],
     lastSync: 0,
   });
-  setGlobalLoading(false);
   return ok();
 }

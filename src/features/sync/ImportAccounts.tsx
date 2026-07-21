@@ -5,14 +5,13 @@ import {
   importCsvData,
   importJsonData,
 } from "@/features/sync/import-service.ts";
-import { showToast } from "@/core/ui-service.ts";
+import { setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import { ChevronRightIcon, UploadIcon } from "@/icons/svg/index.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 
 export const ImportAccounts: Component = () => {
   const [error, setError] = createSignal("");
-  const [_loading, setLoading] = createSignal(false);
 
   let browserInputRef: HTMLInputElement | undefined;
   let bitwardenInputRef: HTMLInputElement | undefined;
@@ -42,7 +41,6 @@ export const ImportAccounts: Component = () => {
     const file = target.files?.[0];
     if (!file) return;
 
-    setLoading(true);
     setError("");
 
     const reader = new FileReader();
@@ -51,11 +49,13 @@ export const ImportAccounts: Component = () => {
       if (typeof result !== "string") return;
       const text = result;
       let res;
+      setGlobalLoading(true, t("vault_importing"));
       if (type === "json") {
         res = await importJsonData(text);
       } else {
         res = await importCsvData(text, type);
       }
+      setGlobalLoading(false);
 
       if (res.isOk()) {
         showToast(
@@ -67,7 +67,6 @@ export const ImportAccounts: Component = () => {
         setError(t(res.error));
       }
 
-      setLoading(false);
       // Reset file inputs
       if (browserInputRef) browserInputRef.value = "";
       if (bitwardenInputRef) bitwardenInputRef.value = "";

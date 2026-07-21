@@ -14,7 +14,6 @@ export const ChangeMasterPassword: Component = () => {
   const [currentPassword, setCurrentPassword] = createSignal("");
   const [newPassword, setNewPassword] = createSignal("");
   const [confirmPassword, setConfirmPassword] = createSignal("");
-  const [loading, setLoading] = createSignal(false);
 
   const handleBack = () => {
     navigate(View.AccountSecurity);
@@ -31,7 +30,6 @@ export const ChangeMasterPassword: Component = () => {
       return;
     }
 
-    setLoading(true);
     setGlobalLoading(true);
     setError("");
     const result = await changeMasterPassword(
@@ -39,7 +37,6 @@ export const ChangeMasterPassword: Component = () => {
       newPassword(),
     );
     setGlobalLoading(false);
-    setLoading(false);
 
     if (result.isOk()) {
       showToast(
@@ -82,7 +79,6 @@ export const ChangeMasterPassword: Component = () => {
               value={currentPassword()}
               onInput={(e) => setCurrentPassword(e.currentTarget.value)}
               placeholder={t("settings_change_mp_current") + "..."}
-              disabled={loading()}
               required
             />
           </div>
@@ -95,7 +91,6 @@ export const ChangeMasterPassword: Component = () => {
               value={newPassword()}
               onInput={(e) => setNewPassword(e.currentTarget.value)}
               placeholder={t("settings_change_mp_new") + "..."}
-              disabled={loading()}
               required
             />
             <PasswordStrengthMeter password={newPassword()} />
@@ -111,7 +106,6 @@ export const ChangeMasterPassword: Component = () => {
               value={confirmPassword()}
               onInput={(e) => setConfirmPassword(e.currentTarget.value)}
               placeholder={t("settings_change_mp_confirm") + "..."}
-              disabled={loading()}
               required
             />
           </div>
@@ -120,8 +114,6 @@ export const ChangeMasterPassword: Component = () => {
             <Button
               type="submit"
               variant="primary"
-              loading={loading()}
-              loadingText={t("dialog_loading")}
             >
               {t("btn_save")}
             </Button>

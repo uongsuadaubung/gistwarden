@@ -4,8 +4,7 @@ import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
 import PasswordStrengthMeter from "@/components/ui/PasswordStrengthMeter.tsx";
 
-interface MasterPasswordCreateProps {
-  loading: boolean;
+export interface MasterPasswordCreateProps {
   onUnlock: (password: string) => void;
 }
 
@@ -40,7 +39,6 @@ export const MasterPasswordCreate: Component<MasterPasswordCreateProps> = (
           placeholder={t("login_placeholder_mp")}
           value={masterPassword()}
           onInput={(e) => setMasterPassword(e.currentTarget.value)}
-          disabled={props.loading}
           autofocus
           required
         />
@@ -57,7 +55,6 @@ export const MasterPasswordCreate: Component<MasterPasswordCreateProps> = (
           placeholder={t("login_placeholder_mp")}
           value={confirmPassword()}
           onInput={(e) => setConfirmPassword(e.currentTarget.value)}
-          disabled={props.loading}
           required
         />
       </div>
@@ -66,8 +63,6 @@ export const MasterPasswordCreate: Component<MasterPasswordCreateProps> = (
         type="submit"
         variant="primary"
         block
-        loading={props.loading}
-        loadingText={t("login_loading_unlock")}
       >
         {t("login_btn_create_master_password")}
       </Button>

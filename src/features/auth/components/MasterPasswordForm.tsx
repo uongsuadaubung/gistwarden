@@ -4,8 +4,7 @@ import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
 import { store } from "@/core/store.ts";
 
-interface MasterPasswordFormProps {
-  loading: boolean;
+export interface MasterPasswordFormProps {
   onUnlock: (password: string) => void;
   onSwitchToPin: () => void;
   onLogout: () => void;
@@ -32,7 +31,6 @@ export const MasterPasswordForm: Component<MasterPasswordFormProps> = (
           placeholder={t("login_placeholder_mp")}
           value={masterPassword()}
           onInput={(e) => setMasterPassword(e.currentTarget.value)}
-          disabled={props.loading}
           autofocus
         />
       </div>
@@ -41,8 +39,6 @@ export const MasterPasswordForm: Component<MasterPasswordFormProps> = (
         type="submit"
         variant="primary"
         block
-        loading={props.loading}
-        loadingText={t("login_loading_unlock")}
         class="mb-12"
       >
         {t("login_btn_unlock")}
@@ -57,7 +53,6 @@ export const MasterPasswordForm: Component<MasterPasswordFormProps> = (
           variant="secondary"
           block
           onClick={() => props.onSwitchToPin()}
-          disabled={props.loading}
           class="mb-12"
         >
           {t("login_unlock_with_pin")}
@@ -73,7 +68,6 @@ export const MasterPasswordForm: Component<MasterPasswordFormProps> = (
         variant="secondary"
         block
         onClick={() => props.onLogout()}
-        disabled={props.loading}
       >
         {t("settings_logout_title")}
       </Button>

@@ -12,7 +12,11 @@ import { store } from "@/core/store.ts";
 import { setupGithub } from "@/features/sync/github-auth.ts";
 import { logout, unlock } from "@/features/auth/auth-service.ts";
 import { unlockWithPin } from "@/features/auth/pin-service.ts";
-import { confirm, updateLanguage } from "@/core/ui-service.ts";
+import {
+  confirm,
+  setGlobalLoading,
+  updateLanguage,
+} from "@/core/ui-service.ts";
 import PinUnlockForm from "@/features/auth/PinUnlockForm.tsx";
 import { GithubSetupForm } from "@/features/auth/components/GithubSetupForm.tsx";
 import { MasterPasswordForm } from "@/features/auth/components/MasterPasswordForm.tsx";
@@ -43,7 +47,6 @@ const OauthResponseSchema = z.object({
 
 export const Login: Component = () => {
   const [error, setError] = createSignal("");
-  const [loading, setLoading] = createSignal(false);
   const [viewMode, setViewMode] = createSignal<LoginViewMode>("masterPassword");
   const [failedUnlockAttempts, setFailedUnlockAttempts] = createSignal(0);
   const [gistStatus, setGistStatus] = createSignal<
@@ -79,7 +82,7 @@ export const Login: Component = () => {
         }
       })();
     } else {
-      if (!untrack(() => loading())) {
+      if (!untrack(() => store.globalLoading)) {
         setGistStatus("exists");
       }
     }
@@ -91,10 +94,10 @@ export const Login: Component = () => {
 
     if (parsed.success && parsed.data) {
       const token = parsed.data;
-      setLoading(true);
+      setGlobalLoading(true);
       await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
       const setupRes = await setupGithub(token);
-      setLoading(false);
+      setGlobalLoading(false);
       if (setupRes.isErr()) {
         setError(t(setupRes.error));
       }
@@ -116,13 +119,13 @@ export const Login: Component = () => {
   });
 
   const handlePinUnlock = async (pin: string) => {
-    setLoading(true);
+    setGlobalLoading(true);
     setError("");
     const res = await unlockWithPin(pin);
     if (res.isErr()) {
       setError(t(res.error));
     }
-    setLoading(false);
+    setGlobalLoading(false);
   };
 
   const handleSaveToken = async (token: string) => {
@@ -130,17 +133,17 @@ export const Login: Component = () => {
       setError(t("login_error_empty_pat"));
       return;
     }
-    setLoading(true);
+    setGlobalLoading(true);
     setError("");
     const result = await setupGithub(token.trim());
-    setLoading(false);
+    setGlobalLoading(false);
     if (result.isErr()) {
       setError(t(result.error));
     }
   };
 
   const handleGithubOauth = async () => {
-    setLoading(true);
+    setGlobalLoading(true);
     setError("");
 
     const handleOauthError = (errVal: unknown) => {
@@ -149,7 +152,7 @@ export const Login: Component = () => {
         ? errMsg
         : "login_error_oauth_fail";
       setError(t(errKey));
-      setLoading(false);
+      setGlobalLoading(false);
     };
 
     const sendResult = await sendMessageToBackground({
@@ -185,7 +188,7 @@ export const Login: Component = () => {
       return;
     }
 
-    setLoading(false);
+    setGlobalLoading(false);
   };
 
   const handleUnlock = async (password: string) => {
@@ -193,10 +196,10 @@ export const Login: Component = () => {
       setError(t("login_error_empty_mp"));
       return;
     }
-    setLoading(true);
+    setGlobalLoading(true);
     setError("");
     const result = await unlock(password);
-    setLoading(false);
+    setGlobalLoading(false);
     if (result.isErr()) {
       setFailedUnlockAttempts((prev) => prev + 1);
       setError(t(result.error));
@@ -272,7 +275,6 @@ export const Login: Component = () => {
         when={store.githubConfigured}
         fallback={
           <GithubSetupForm
-            loading={loading()}
             onSaveToken={handleSaveToken}
             onGithubOauth={handleGithubOauth}
           />
@@ -292,13 +294,11 @@ export const Login: Component = () => {
               </Match>
               <Match when={gistStatus() === "new"}>
                 <MasterPasswordCreate
-                  loading={loading()}
                   onUnlock={handleUnlock}
                 />
               </Match>
               <Match when={gistStatus() === "exists"}>
                 <MasterPasswordForm
-                  loading={loading()}
                   onUnlock={handleUnlock}
                   onSwitchToPin={() => setViewMode("pin")}
                   onLogout={handleResetToken}
@@ -309,7 +309,6 @@ export const Login: Component = () => {
           }
         >
           <PinUnlockForm
-            loading={loading()}
             error={error()}
             onUnlock={handlePinUnlock}
             onSwitchToMasterPassword={() => setViewMode("masterPassword")}
