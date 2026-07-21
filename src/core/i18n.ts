@@ -246,6 +246,7 @@ const LangSchema = z.object({
   detail_ssh_public_key: z.string(),
   detail_ssh_fingerprint: z.string(),
   ssh_invalid_key: z.string(),
+  storage_error: z.string(),
   ssh_import_from_clipboard: z.string(),
   detail_copy_ssh_private_key: z.string(),
   detail_copy_ssh_public_key: z.string(),

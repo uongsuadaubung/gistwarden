@@ -9,7 +9,7 @@ import {
   Show,
   Switch,
 } from "solid-js";
-import { Result, ResultAsync } from "neverthrow";
+import { Result } from "neverthrow";
 import { store } from "@/core/store.ts";
 import { unlock } from "@/features/auth/auth-service.ts";
 import { unlockWithPin } from "@/features/auth/pin-service.ts";
@@ -186,21 +186,13 @@ export const Fido2Prompt: Component = () => {
     }
     setLoading(true);
     setError("");
-    const result = await ResultAsync.fromPromise(
-      unlock(masterPassword()),
-      (err) => err instanceof Error ? err.message : String(err),
-    );
+    const result = await unlock(masterPassword());
 
     if (result.isOk()) {
-      const res = result.value;
-      if (res.success) {
-        setMasterPassword("");
-        await loadPendingRequest();
-      } else {
-        setError(tErr(res.error, "login_error_wrong_mp"));
-      }
+      setMasterPassword("");
+      await loadPendingRequest();
     } else {
-      setError(tErr(result.error, "login_error_unlock_fail"));
+      setError(tErr(result.error, "login_error_wrong_mp"));
     }
 
     setLoading(false);

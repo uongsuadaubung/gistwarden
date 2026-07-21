@@ -41,9 +41,12 @@ export async function syncVault(): Promise<
     }
 
     await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, res.content);
-
     const payload = JSON.parse(res.content || "{}");
-    const decrypted = await decryptData(payload.ciphertext, payload.iv, key);
+    const decryptRes = await decryptData(payload.ciphertext, payload.iv, key);
+    if (decryptRes.isErr()) {
+      throw new Error(decryptRes.error);
+    }
+    const decrypted = decryptRes.value;
     const items = VaultListSchema.parse(JSON.parse(decrypted));
 
     setStore(STORE_KEY_VAULT_ITEMS, reconcile(items));

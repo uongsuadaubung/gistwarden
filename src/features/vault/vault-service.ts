@@ -170,13 +170,14 @@ export async function saveItem(
 
     const uploadRes = await syncVaultToGist(updatedList, key, store.salt);
 
-    if (!uploadRes.success) {
-      throw new Error(uploadRes.error || "Lỗi đồng bộ lên GitHub Gist");
+    if (uploadRes.isErr()) {
+      throw new Error(uploadRes.error);
     }
+    const validatedList = uploadRes.value;
 
     setStore(
       STORE_KEY_VAULT_ITEMS,
-      reconcile(uploadRes.validatedList || updatedList),
+      reconcile(validatedList),
     );
     return { success: true };
   } catch (err) {
@@ -198,13 +199,14 @@ export async function deleteItem(
     const filtered = store.vaultItems.filter((v) => v.id !== id);
     const uploadRes = await syncVaultToGist(filtered, key, store.salt);
 
-    if (!uploadRes.success) {
-      throw new Error(uploadRes.error || "Lỗi đồng bộ lên GitHub Gist");
+    if (uploadRes.isErr()) {
+      throw new Error(uploadRes.error);
     }
+    const validatedList = uploadRes.value;
 
     setStore(
       STORE_KEY_VAULT_ITEMS,
-      reconcile(uploadRes.validatedList || filtered),
+      reconcile(validatedList),
     );
     return { success: true };
   } catch (err) {

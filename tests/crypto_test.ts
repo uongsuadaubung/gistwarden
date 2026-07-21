@@ -1,7 +1,7 @@
 import {
+  assert,
   assertEquals,
   assertNotEquals,
-  assertRejects,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   decryptData,
@@ -25,7 +25,9 @@ Deno.test("Crypto - Key derivation, Encryption and Decryption", async () => {
   const salt = generateSalt();
 
   // 1. Derive key
-  const key = await deriveKey(password, salt);
+  const keyRes = await deriveKey(password, salt);
+  assert(keyRes.isOk());
+  const key = keyRes.value;
   assertEquals(key instanceof CryptoKey, true);
   assertEquals(key.algorithm.name, "AES-GCM");
 
@@ -34,23 +36,36 @@ Deno.test("Crypto - Key derivation, Encryption and Decryption", async () => {
     message: "Hello Gistwarden!",
     secrets: [1, 2, 3],
   });
-  const encrypted = await encryptData(secretText, key);
+  const encryptRes = await encryptData(secretText, key);
+  assert(encryptRes.isOk());
+  const encrypted = encryptRes.value;
 
   assertEquals(typeof encrypted.iv, "string");
   assertEquals(typeof encrypted.ciphertext, "string");
   assertNotEquals(encrypted.ciphertext, secretText);
 
   // 3. Decrypt with correct key
-  const decrypted = await decryptData(encrypted.ciphertext, encrypted.iv, key);
+  const decryptedRes = await decryptData(
+    encrypted.ciphertext,
+    encrypted.iv,
+    key,
+  );
+  assert(decryptedRes.isOk());
+  const decrypted = decryptedRes.value;
   assertEquals(decrypted, secretText);
   const parsed = JSON.parse(decrypted);
   assertEquals(parsed.message, "Hello Gistwarden!");
 
   // 4. Decrypt with wrong key should fail
-  const wrongKey = await deriveKey("WrongPassword", salt);
-  await assertRejects(async () => {
-    await decryptData(encrypted.ciphertext, encrypted.iv, wrongKey);
-  });
+  const wrongKeyRes = await deriveKey("WrongPassword", salt);
+  assert(wrongKeyRes.isOk());
+  const wrongKey = wrongKeyRes.value;
+  const wrongDecryptedRes = await decryptData(
+    encrypted.ciphertext,
+    encrypted.iv,
+    wrongKey,
+  );
+  assert(wrongDecryptedRes.isErr());
 });
 
 Deno.test("Passkey Crypto - Keypair and base64url conversion", async () => {

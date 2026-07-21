@@ -31,13 +31,14 @@ export async function importJsonData(
       store.salt,
     );
 
-    if (!uploadRes.success) {
-      throw new Error(uploadRes.error || "Loi dong bo len Gist");
+    if (uploadRes.isErr()) {
+      throw new Error(uploadRes.error);
     }
+    const validatedList = uploadRes.value;
 
     setStore(
       "vaultItems",
-      reconcile(uploadRes.validatedList || importRes.combinedItems),
+      reconcile(validatedList),
     );
     console.log(`[${APP_NAME} Import] Import HOAN TAT thanh cong!`);
     return { success: true, importedCount: importRes.importedCount };
@@ -74,13 +75,14 @@ export async function importCsvData(
       store.salt,
     );
 
-    if (!uploadRes.success) {
-      throw new Error(uploadRes.error || "Lỗi đồng bộ lên Gist");
+    if (uploadRes.isErr()) {
+      throw new Error(uploadRes.error);
     }
+    const validatedList = uploadRes.value;
 
     setStore(
       "vaultItems",
-      reconcile(uploadRes.validatedList || importRes.combinedItems),
+      reconcile(validatedList),
     );
     console.log(`[${APP_NAME} Import] Import CSV HOÀN TẤT thành công!`);
     return { success: true, importedCount: importRes.importedCount };

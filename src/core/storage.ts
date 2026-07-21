@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { VaultTimeoutActionSchema } from "@/core/types.ts";
-import { SupportLanguage, SupportLanguageSchema } from "@/core/i18n.ts";
+import {
+  SupportLanguage,
+  SupportLanguageSchema,
+  type TranslationKey,
+} from "@/core/i18n.ts";
+import { err, Result, ResultAsync } from "neverthrow";
 
 export const GithubUserSchema = z.object({
   login: z.string(),
@@ -41,6 +46,10 @@ import {
 
 export const STORAGE_KEY = `${APP_NAME.toLowerCase()}_settings`;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 export function hasLocalStorage(): boolean {
   return typeof chrome !== "undefined" && !!chrome.storage &&
     !!chrome.storage.local;
@@ -69,40 +78,48 @@ export async function getAllSettings(): Promise<AppSettings> {
   return SettingsSchema.parse(raw || {});
 }
 
-export async function updateSettings(patch: Partial<AppSettings>) {
+export async function updateSettings(
+  patch: Partial<AppSettings>,
+): Promise<Result<void, TranslationKey>> {
   if (!hasLocalStorage()) {
-    return;
+    return err("storage_error");
   }
   const current = await getAllSettings();
   const next = { ...current, ...patch };
   const safeNext = SettingsSchema.parse(next);
-  await chrome.storage.local.set({ [STORAGE_KEY]: safeNext });
+  return await ResultAsync.fromPromise(
+    chrome.storage.local.set({ [STORAGE_KEY]: safeNext }),
+    (_e): TranslationKey => "storage_error",
+  );
 }
 
 export async function getSessionItem(key: string): Promise<unknown> {
   if (!hasSessionStorage()) {
     return null;
   }
-  try {
-    const res = await chrome.storage.session.get(key);
-    return res && typeof res === "object" && key in res ? res[key] : null;
-  } catch (_e) {
-    return null;
+  const result = await ResultAsync.fromPromise(
+    chrome.storage.session.get(key),
+    (e) => e,
+  );
+  if (result.isErr()) return null;
+  const res = result.value;
+  if (isRecord(res) && key in res) {
+    return res[key];
   }
+  return null;
 }
 
 export async function setSessionItem(
   key: string,
   value: unknown,
-): Promise<void> {
+): Promise<Result<void, TranslationKey>> {
   if (!hasSessionStorage()) {
-    return;
+    return err("storage_error");
   }
-  try {
-    await chrome.storage.session.set({ [key]: value });
-  } catch (_e) {
-    // Ignored
-  }
+  return await ResultAsync.fromPromise(
+    chrome.storage.session.set({ [key]: value }),
+    (_e): TranslationKey => "storage_error",
+  );
 }
 
 export async function getSessionItems(
@@ -111,38 +128,37 @@ export async function getSessionItems(
   if (!hasSessionStorage()) {
     return {};
   }
-  try {
-    const res = await chrome.storage.session.get(keys);
-    return res && typeof res === "object" ? res : {};
-  } catch (_e) {
-    return {};
-  }
+  const result = await ResultAsync.fromPromise(
+    chrome.storage.session.get(keys),
+    (e) => e,
+  );
+  if (result.isErr()) return {};
+  const res = result.value;
+  return isRecord(res) ? res : {};
 }
 
 export async function setSessionItems(
   items: Record<string, unknown>,
-): Promise<void> {
+): Promise<Result<void, TranslationKey>> {
   if (!hasSessionStorage()) {
-    return;
+    return err("storage_error");
   }
-  try {
-    await chrome.storage.session.set(items);
-  } catch (_e) {
-    // Ignored
-  }
+  return await ResultAsync.fromPromise(
+    chrome.storage.session.set(items),
+    (_e): TranslationKey => "storage_error",
+  );
 }
 
 export async function removeSessionItem(
   keys: string | string[],
-): Promise<void> {
+): Promise<Result<void, TranslationKey>> {
   if (!hasSessionStorage()) {
-    return;
+    return err("storage_error");
   }
-  try {
-    await chrome.storage.session.remove(keys);
-  } catch (_e) {
-    // Ignored
-  }
+  return await ResultAsync.fromPromise(
+    chrome.storage.session.remove(keys),
+    (_e): TranslationKey => "storage_error",
+  );
 }
 
 export async function getGithubToken(): Promise<string> {
@@ -171,72 +187,80 @@ export function subscribeToSettings(callback: (settings: AppSettings) => void) {
     if (areaName === "local" && changes[STORAGE_KEY]) {
       const newValue = changes[STORAGE_KEY].newValue;
       if (newValue) {
-        try {
-          const parsed = SettingsSchema.parse(newValue);
-          callback(parsed);
-        } catch (e) {
-          console.error("[Storage] Failed to parse updated settings:", e);
+        const parsedResult = Result.fromThrowable(
+          () => SettingsSchema.parse(newValue),
+          (e) => e,
+        )();
+        if (parsedResult.isOk()) {
+          callback(parsedResult.value);
+        } else {
+          console.error(
+            "[Storage] Failed to parse updated settings:",
+            parsedResult.error,
+          );
         }
       }
     }
   });
 }
 
-export async function clearLocal(): Promise<void> {
+export async function clearLocal(): Promise<Result<void, TranslationKey>> {
   if (!hasLocalStorage()) {
-    return;
+    return err("storage_error");
   }
-  try {
-    await chrome.storage.local.clear();
-  } catch (_e) {
-    // Ignored
-  }
+  return await ResultAsync.fromPromise(
+    chrome.storage.local.clear(),
+    (_e): TranslationKey => "storage_error",
+  );
 }
 
-export async function clearSession(): Promise<void> {
+export async function clearSession(): Promise<Result<void, TranslationKey>> {
   if (!hasSessionStorage()) {
-    return;
+    return err("storage_error");
   }
-  try {
-    await chrome.storage.session.clear();
-  } catch (_e) {
-    // Ignored
-  }
+  return await ResultAsync.fromPromise(
+    chrome.storage.session.clear(),
+    (_e): TranslationKey => "storage_error",
+  );
 }
 
 export async function getLocalItem(key: string): Promise<unknown> {
   if (!hasLocalStorage()) {
     return null;
   }
-  try {
-    const res = await chrome.storage.local.get(key);
-    return res && typeof res === "object" && key in res ? res[key] : null;
-  } catch (_e) {
-    return null;
+  const result = await ResultAsync.fromPromise(
+    chrome.storage.local.get(key),
+    (e) => e,
+  );
+  if (result.isErr()) return null;
+  const res = result.value;
+  if (isRecord(res) && key in res) {
+    return res[key];
   }
+  return null;
 }
 
 export async function setLocalItem(
   key: string,
   value: unknown,
-): Promise<void> {
+): Promise<Result<void, TranslationKey>> {
   if (!hasLocalStorage()) {
-    return;
+    return err("storage_error");
   }
-  try {
-    await chrome.storage.local.set({ [key]: value });
-  } catch (_e) {
-    // Ignored
-  }
+  return await ResultAsync.fromPromise(
+    chrome.storage.local.set({ [key]: value }),
+    (_e): TranslationKey => "storage_error",
+  );
 }
 
-export async function clearAlarm(name: string): Promise<boolean> {
+export async function clearAlarm(
+  name: string,
+): Promise<Result<boolean, TranslationKey>> {
   if (!hasAlarms()) {
-    return false;
+    return err("storage_error");
   }
-  try {
-    return await chrome.alarms.clear(name);
-  } catch (_e) {
-    return false;
-  }
+  return await ResultAsync.fromPromise(
+    chrome.alarms.clear(name),
+    (_e): TranslationKey => "storage_error",
+  );
 }

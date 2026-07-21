@@ -13,42 +13,52 @@ export const SyncResponseSchema = z.object({
 });
 
 import { sendMessageToBackground } from "@/core/messaging.ts";
+import { type TranslationKey } from "@/core/i18n.ts";
+import { err, ok, Result } from "neverthrow";
 
 export async function syncVaultToGist(
   items: VaultItem[],
   key: CryptoKey,
   salt: string,
-): Promise<{ success: boolean; error?: string; validatedList?: VaultItem[] }> {
-  try {
-    const validatedList = VaultListSchema.parse(items);
-    const encrypted = await encryptData(JSON.stringify(validatedList), key);
-    const payload = JSON.stringify({
-      salt,
-      iv: encrypted.iv,
-      ciphertext: encrypted.ciphertext,
-    });
-
-    const sendResult = await sendMessageToBackground({
-      type: MSG_UPLOAD_TO_GIST,
-      content: payload,
-    });
-    if (sendResult.isErr()) {
-      return { success: false, error: sendResult.error };
-    }
-    const res = SyncResponseSchema.parse(sendResult.value);
-
-    if (!res.success) {
-      return {
-        success: false,
-        error: res.error || "Lỗi đồng bộ lên GitHub Gist",
-      };
-    }
-
-    await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, payload);
-
-    return { success: true, validatedList };
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg };
+): Promise<Result<VaultItem[], TranslationKey>> {
+  const parsedResult = VaultListSchema.safeParse(items);
+  if (!parsedResult.success) {
+    return err("storage_error");
   }
+  const validatedList = parsedResult.data;
+
+  const encryptRes = await encryptData(JSON.stringify(validatedList), key);
+  if (encryptRes.isErr()) {
+    return err("storage_error");
+  }
+  const encrypted = encryptRes.value;
+  const payload = JSON.stringify({
+    salt,
+    iv: encrypted.iv,
+    ciphertext: encrypted.ciphertext,
+  });
+
+  const sendResult = await sendMessageToBackground({
+    type: MSG_UPLOAD_TO_GIST,
+    content: payload,
+  });
+  if (sendResult.isErr()) {
+    return err("storage_error");
+  }
+  const parseResResult = SyncResponseSchema.safeParse(sendResult.value);
+  if (!parseResResult.success) {
+    return err("storage_error");
+  }
+  const res = parseResResult.data;
+
+  if (!res.success) {
+    return err("storage_error");
+  }
+
+  const setRes = await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, payload);
+  if (setRes.isErr()) {
+    return err(setRes.error);
+  }
+
+  return ok(validatedList);
 }
