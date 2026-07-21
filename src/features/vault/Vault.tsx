@@ -8,8 +8,8 @@ import {
 } from "solid-js";
 import { store } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
-import { deleteItem, saveItem } from "@/features/vault/vault-service.ts";
-import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
+import { saveItem } from "@/features/vault/vault-service.ts";
+import { setGlobalLoading, showToast, copyToClipboardWithMessage } from "@/core/ui-service.ts";
 import { Header } from "@/components/ui/Header.tsx";
 import { createDefaultVaultItem } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import { getCurrentTab, sendMessageToTab } from "@/core/tabs.ts";
@@ -43,6 +43,7 @@ import {
   getHostname,
   safeParseUrl,
 } from "@/core/domain-utils.ts";
+import { getVaultItemTypeLabel, deleteVaultItemWithConfirm } from "@/features/vault/vault-utils.ts";
 
 const AutofillResponseSchema = z.object({
   success: z.boolean(),
@@ -103,23 +104,6 @@ export const Vault: Component = () => {
     setSelectedFilterType(type);
     sessionStorage.setItem(SESSION_KEY_SELECTED_FILTER_TYPE, String(type));
     setShowTypeDropdown(false);
-  };
-
-  const getTypeLabel = (type: VaultItemType | "all") => {
-    switch (type) {
-      case VaultItemType.Login:
-        return t("vault_item_login");
-      case VaultItemType.Card:
-        return t("vault_item_card");
-      case VaultItemType.Identity:
-        return t("vault_item_identity");
-      case VaultItemType.SecureNote:
-        return t("vault_item_note");
-      case VaultItemType.SshKey:
-        return t("vault_item_ssh_key");
-      default:
-        return t("vault_filter_type");
-    }
   };
 
   onMount(() => {
@@ -277,9 +261,7 @@ export const Vault: Component = () => {
 
   const handleCopyText = async (text: string, _type: string, e: MouseEvent) => {
     e.stopPropagation();
-    if (!text) return;
-    await navigator.clipboard.writeText(text);
-    showToast(t("detail_copied"), "success");
+    await copyToClipboardWithMessage(text, "detail_copied");
     setActiveMenuId(""); // Close menu
   };
 
@@ -293,8 +275,7 @@ export const Vault: Component = () => {
     const generateTotpResult = generateTotpSafe(rawSecret, store.timeOffset);
 
     if (generateTotpResult.isOk()) {
-      await navigator.clipboard.writeText(generateTotpResult.value);
-      showToast(t("detail_totp_copied"), "success");
+      await copyToClipboardWithMessage(generateTotpResult.value, "detail_totp_copied");
     } else {
       showToast(t(generateTotpResult.error), "error");
     }
@@ -363,22 +344,7 @@ export const Vault: Component = () => {
   const handleDeleteItem = async (item: VaultItem, e: MouseEvent) => {
     e.stopPropagation();
     setActiveOptionsMenuId(""); // Close options dropdown immediately
-
-    const confirmed = await confirm(
-      t("edit_confirm_delete_title"),
-      t("edit_confirm_delete_msg", { name: item.name }),
-      "danger",
-    );
-    if (confirmed) {
-      setGlobalLoading(true);
-      const res = await deleteItem(item.id);
-      setGlobalLoading(false);
-      if (res.isOk()) {
-        showToast(t("toast_success"), "success");
-      } else {
-        showToast(t(res.error) || t("toast_error"), "error");
-      }
-    }
+    await deleteVaultItemWithConfirm(item, () => {});
   };
 
   const handleFillItem = async (item: VaultItem, e: MouseEvent) => {
@@ -469,7 +435,7 @@ export const Vault: Component = () => {
             >
               <ListIcon class="dropdown-icon" />
               <span class="dropdown-label">
-                {getTypeLabel(selectedFilterType())}
+                {getVaultItemTypeLabel(selectedFilterType())}
               </span>
               <ChevronDownIcon
                 class={`chevron-icon ${showTypeDropdown() ? "open" : ""}`}
