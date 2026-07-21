@@ -28,10 +28,13 @@ export async function syncVault(): Promise<
     const key = await getSessionKey();
     if (!key || !store.salt) throw new Error("Vault is locked");
 
-    const rawRes = await sendMessageToBackground({
+    const sendResult = await sendMessageToBackground({
       type: MSG_DOWNLOAD_FROM_GIST,
-    }).catch(() => null);
-    const res = DownloadFromGistResponseSchema.parse(rawRes);
+    });
+    if (sendResult.isErr()) {
+      throw new Error(sendResult.error);
+    }
+    const res = DownloadFromGistResponseSchema.parse(sendResult.value);
 
     if (!res.success) {
       throw new Error(res.error || "Không thể tải dữ liệu Gist");

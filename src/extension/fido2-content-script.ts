@@ -38,7 +38,11 @@ window.addEventListener("message", async (event) => {
 
   try {
     // Send request to background script
-    const response = await sendMessageToBackground({ type, data });
+    const sendResult = await sendMessageToBackground({ type, data });
+    if (sendResult.isErr()) {
+      throw new Error(sendResult.error);
+    }
+    const response = sendResult.value;
 
     // Forward the response back to page script
     const parsed = Fido2ResponseSchema.safeParse(response);

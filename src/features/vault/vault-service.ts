@@ -222,12 +222,15 @@ export async function clearVault(): Promise<
   try {
     const gistId = store.gistId;
     if (gistId) {
-      const rawRes = await sendMessageToBackground({
+      const sendResult = await sendMessageToBackground({
         type: MSG_DELETE_GIST,
         content: gistId,
-      }).catch(() => null);
+      });
+      if (sendResult.isErr()) {
+        throw new Error(sendResult.error);
+      }
 
-      const res = SyncResponseSchema.parse(rawRes);
+      const res = SyncResponseSchema.parse(sendResult.value);
 
       if (!res.success) {
         throw new Error(res.error || "Lỗi xóa Gist trên GitHub");

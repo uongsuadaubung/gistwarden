@@ -202,13 +202,10 @@ export async function registerFido2Passkey(
     return err("fido2_error_save_failed");
   }
 
-  await ResultAsync.fromPromise(
-    sendMessageToBackground({
-      type: MSG_RESOLVE_FIDO2_REQUEST,
-      result,
-    }),
-    () => new Error(),
-  ).unwrapOr(null);
+  await sendMessageToBackground({
+    type: MSG_RESOLVE_FIDO2_REQUEST,
+    result,
+  });
 
   return ok();
 }
@@ -273,23 +270,17 @@ export async function assertFido2Passkey(
 
   const { result } = assertRes.value;
 
-  await ResultAsync.fromPromise(
-    sendMessageToBackground({
-      type: MSG_RESOLVE_FIDO2_REQUEST,
-      result,
-    }),
-    () => new Error(),
-  ).unwrapOr(null);
+  await sendMessageToBackground({
+    type: MSG_RESOLVE_FIDO2_REQUEST,
+    result,
+  });
 
   return ok(undefined);
 }
 
 export async function rejectFido2Request(): Promise<void> {
-  await ResultAsync.fromPromise(
-    sendMessageToBackground({
-      type: MSG_REJECT_FIDO2_REQUEST,
-      error: "NotAllowedError: User cancelled the request",
-    }),
-    () => new Error(),
-  ).unwrapOr(null);
+  await sendMessageToBackground({
+    type: MSG_REJECT_FIDO2_REQUEST,
+    error: "NotAllowedError: User cancelled the request",
+  });
 }

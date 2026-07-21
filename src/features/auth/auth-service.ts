@@ -153,17 +153,22 @@ export async function init() {
       if (cachedContent) {
         rawRes = { success: true, content: cachedContent };
       } else {
-        const fetchRes = await sendMessageToBackground({
+        const sendResult = await sendMessageToBackground({
           type: MSG_DOWNLOAD_FROM_GIST,
-        }).catch(() => null);
-        const parsedFetchRes = DownloadFromGistResponseSchema.parse(fetchRes);
+        });
+        if (sendResult.isErr()) {
+          throw new Error(sendResult.error);
+        }
+        const parsedFetchRes = DownloadFromGistResponseSchema.parse(
+          sendResult.value,
+        );
         if (parsedFetchRes.success && parsedFetchRes.content) {
           await setSessionItem(
             SESSION_KEY_ENCRYPTED_VAULT,
             parsedFetchRes.content,
           );
         }
-        rawRes = fetchRes;
+        rawRes = parsedFetchRes;
       }
 
       const res = DownloadFromGistResponseSchema.parse(rawRes);
@@ -326,10 +331,13 @@ export async function unlock(
 
     // B. Tải Gist từ GitHub về
     // Lúc này chắc chắn token đã có trong session storage (hoặc từ onboarding hoặc từ bước giải mã ở trên)
-    const rawDownloadRes = await sendMessageToBackground({
+    const sendResult = await sendMessageToBackground({
       type: MSG_DOWNLOAD_FROM_GIST,
-    }).catch(() => null);
-    const downloadRes = DownloadFromGistResponseSchema.parse(rawDownloadRes);
+    });
+    if (sendResult.isErr()) {
+      throw new Error(sendResult.error);
+    }
+    const downloadRes = DownloadFromGistResponseSchema.parse(sendResult.value);
     if (downloadRes.success && downloadRes.content) {
       existingGistContent = downloadRes.content;
       hasExistingGist = true;
@@ -613,10 +621,13 @@ export async function unlockWithKey(
     let hasExistingGist = false;
 
     // B. Tải Gist từ GitHub về
-    const rawDownloadRes = await sendMessageToBackground({
+    const sendResult = await sendMessageToBackground({
       type: MSG_DOWNLOAD_FROM_GIST,
-    }).catch(() => null);
-    const downloadRes = DownloadFromGistResponseSchema.parse(rawDownloadRes);
+    });
+    if (sendResult.isErr()) {
+      throw new Error(sendResult.error);
+    }
+    const downloadRes = DownloadFromGistResponseSchema.parse(sendResult.value);
     if (downloadRes.success && downloadRes.content) {
       existingGistContent = downloadRes.content;
       hasExistingGist = true;

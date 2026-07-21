@@ -28,12 +28,14 @@ export async function syncVaultToGist(
       ciphertext: encrypted.ciphertext,
     });
 
-    const rawRes = await sendMessageToBackground({
+    const sendResult = await sendMessageToBackground({
       type: MSG_UPLOAD_TO_GIST,
       content: payload,
-    }).catch(() => null);
-
-    const res = SyncResponseSchema.parse(rawRes);
+    });
+    if (sendResult.isErr()) {
+      return { success: false, error: sendResult.error };
+    }
+    const res = SyncResponseSchema.parse(sendResult.value);
 
     if (!res.success) {
       return {

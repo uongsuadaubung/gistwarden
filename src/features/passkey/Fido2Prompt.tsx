@@ -128,23 +128,23 @@ export const Fido2Prompt: Component = () => {
   };
 
   const loadPendingRequest = async () => {
-    const rawRes = await ResultAsync.fromPromise(
-      sendMessageToBackground({ type: MSG_GET_PENDING_FIDO2_REQUEST }),
-      () => null,
-    ).unwrapOr(null);
-
-    const safeParseSchema = Result.fromThrowable(
-      GetPendingFido2RequestResponseSchema.parse,
-      (e) => e,
-    );
-    const parsedRes = safeParseSchema(rawRes);
-
-    if (parsedRes.isErr()) {
+    const sendResult = await sendMessageToBackground({
+      type: MSG_GET_PENDING_FIDO2_REQUEST,
+    });
+    if (sendResult.isErr()) {
       setError(t("fido2_error_load_failed"));
       return;
     }
 
-    const res = parsedRes.value;
+    const parsed = GetPendingFido2RequestResponseSchema.safeParse(
+      sendResult.value,
+    );
+    if (!parsed.success) {
+      setError(t("fido2_error_load_failed"));
+      return;
+    }
+
+    const res = parsed.data;
 
     if (res && res.success && res.type && res.options && res.origin) {
       setPendingReq({
