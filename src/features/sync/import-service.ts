@@ -8,89 +8,90 @@ import {
   parseAndValidateBitwardenCsv,
   parseAndValidateBrowserCsv,
 } from "@/features/sync/csv-import.ts";
-import { t } from "@/core/i18n.ts";
+import { t, type TranslationKey } from "@/core/i18n.ts";
 import { setGlobalLoading } from "@/core/ui-service.ts";
+import { err, ok, Result } from "neverthrow";
 
 export async function importJsonData(
   jsonString: string,
-): Promise<{ success: boolean; importedCount?: number; error?: string }> {
+): Promise<Result<number, TranslationKey>> {
   setGlobalLoading(true, t("vault_importing"));
-  try {
-    const importRes = parseAndValidateImportJson(jsonString, store.vaultItems);
-    if (!importRes.success) {
-      throw new Error(importRes.error);
-    }
 
-    const key = await getSessionKey();
-    if (!key || !store.salt) throw new Error("Vault is locked");
-
-    console.log(`[${APP_NAME} Import] Dang tai len Gist...`);
-    const uploadRes = await syncVaultToGist(
-      importRes.combinedItems,
-      key,
-      store.salt,
-    );
-
-    if (uploadRes.isErr()) {
-      throw new Error(uploadRes.error);
-    }
-    const validatedList = uploadRes.value;
-
-    setStore(
-      "vaultItems",
-      reconcile(validatedList),
-    );
-    console.log(`[${APP_NAME} Import] Import HOAN TAT thanh cong!`);
-    return { success: true, importedCount: importRes.importedCount };
-  } catch (err) {
-    console.error(`[${APP_NAME} Import] Loi import:`, err);
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg || "Loi nhap file JSON" };
-  } finally {
+  const importRes = parseAndValidateImportJson(jsonString, store.vaultItems);
+  if (importRes.isErr()) {
     setGlobalLoading(false);
+    return err(importRes.error);
   }
+  const importVal = importRes.value;
+
+  const key = await getSessionKey();
+  if (!key || !store.salt) {
+    setGlobalLoading(false);
+    return err("toast_error");
+  }
+
+  console.log(`[${APP_NAME} Import] Dang tai len Gist...`);
+  const uploadRes = await syncVaultToGist(
+    importVal.combinedItems,
+    key,
+    store.salt,
+  );
+
+  if (uploadRes.isErr()) {
+    setGlobalLoading(false);
+    return err(uploadRes.error);
+  }
+  const validatedList = uploadRes.value;
+
+  setStore(
+    "vaultItems",
+    reconcile(validatedList),
+  );
+  console.log(`[${APP_NAME} Import] Import HOAN TAT thanh cong!`);
+  setGlobalLoading(false);
+  return ok(importVal.importedCount);
 }
 
 export async function importCsvData(
   csvString: string,
   type: "browser" | "bitwarden",
-): Promise<{ success: boolean; importedCount?: number; error?: string }> {
+): Promise<Result<number, TranslationKey>> {
   setGlobalLoading(true, t("vault_importing"));
-  try {
-    const importRes = type === "bitwarden"
-      ? parseAndValidateBitwardenCsv(csvString, store.vaultItems)
-      : parseAndValidateBrowserCsv(csvString, store.vaultItems);
 
-    if (!importRes.success) {
-      throw new Error(importRes.error);
-    }
+  const importRes = type === "bitwarden"
+    ? parseAndValidateBitwardenCsv(csvString, store.vaultItems)
+    : parseAndValidateBrowserCsv(csvString, store.vaultItems);
 
-    const key = await getSessionKey();
-    if (!key || !store.salt) throw new Error("Vault is locked");
-
-    console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
-    const uploadRes = await syncVaultToGist(
-      importRes.combinedItems,
-      key,
-      store.salt,
-    );
-
-    if (uploadRes.isErr()) {
-      throw new Error(uploadRes.error);
-    }
-    const validatedList = uploadRes.value;
-
-    setStore(
-      "vaultItems",
-      reconcile(validatedList),
-    );
-    console.log(`[${APP_NAME} Import] Import CSV HOÀN TẤT thành công!`);
-    return { success: true, importedCount: importRes.importedCount };
-  } catch (err) {
-    console.error(`[${APP_NAME} Import] Lỗi import CSV:`, err);
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg };
-  } finally {
+  if (importRes.isErr()) {
     setGlobalLoading(false);
+    return err(importRes.error);
   }
+  const importVal = importRes.value;
+
+  const key = await getSessionKey();
+  if (!key || !store.salt) {
+    setGlobalLoading(false);
+    return err("toast_error");
+  }
+
+  console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
+  const uploadRes = await syncVaultToGist(
+    importVal.combinedItems,
+    key,
+    store.salt,
+  );
+
+  if (uploadRes.isErr()) {
+    setGlobalLoading(false);
+    return err(uploadRes.error);
+  }
+  const validatedList = uploadRes.value;
+
+  setStore(
+    "vaultItems",
+    reconcile(validatedList),
+  );
+  console.log(`[${APP_NAME} Import] Import CSV HOÀN TẤT thành công!`);
+  setGlobalLoading(false);
+  return ok(importVal.importedCount);
 }

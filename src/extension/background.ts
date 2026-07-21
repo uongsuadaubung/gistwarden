@@ -101,19 +101,54 @@ chrome.runtime.onMessage.addListener(
 
     switch (message.type) {
       case MSG_UPLOAD_TO_GIST:
-        uploadToGist(message.content || "").then(sendResponse);
+        uploadToGist(message.content || "").then((res) => {
+          sendResponse({
+            success: res.isOk(),
+            error: res.isErr() ? res.error : undefined,
+          });
+        });
         return true; // Keep channel open
 
       case MSG_DELETE_GIST:
-        deleteGist(message.content || "").then(sendResponse);
+        deleteGist(message.content || "").then((res) => {
+          sendResponse({
+            success: res.isOk(),
+            error: res.isErr() ? res.error : undefined,
+          });
+        });
         return true;
 
       case MSG_DOWNLOAD_FROM_GIST:
-        downloadFromGist().then(sendResponse);
+        downloadFromGist().then((res) => {
+          if (res.isOk()) {
+            sendResponse({
+              success: true,
+              content: res.value.content,
+            });
+          } else {
+            sendResponse({
+              success: false,
+              error: res.error,
+            });
+          }
+        });
         return true;
 
       case MSG_VALIDATE_TOKEN:
-        validateToken(message.token || "").then(sendResponse);
+        validateToken(message.token || "").then((res) => {
+          if (res.isOk()) {
+            sendResponse({
+              success: true,
+              username: res.value.username,
+              avatarUrl: res.value.avatarUrl,
+            });
+          } else {
+            sendResponse({
+              success: false,
+              error: res.error,
+            });
+          }
+        });
         return true;
 
       case MSG_START_GITHUB_OAUTH: {
