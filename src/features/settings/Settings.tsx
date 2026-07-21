@@ -50,22 +50,16 @@ export const Settings: Component = () => {
 
     setLoading(true);
     setError("");
-    try {
-      const res = await clearVault();
-      if (res.success) {
-        showToast(
-          t("settings_clear_vault_success"),
-          "success",
-        );
-      } else {
-        setError(res.error || t("settings_clear_vault_fail"));
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || t("settings_clear_vault_fail"));
-    } finally {
-      setLoading(false);
+    const res = await clearVault();
+    if (res.isOk()) {
+      showToast(
+        t("settings_clear_vault_success"),
+        "success",
+      );
+    } else {
+      setError(t(res.error));
     }
+    setLoading(false);
   };
 
   return (

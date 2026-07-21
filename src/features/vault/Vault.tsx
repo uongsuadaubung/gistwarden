@@ -15,15 +15,13 @@ import { createDefaultVaultItem } from "@/features/vault/item-edit/vault-edit-he
 import { getCurrentTab, sendMessageToTab } from "@/core/tabs.ts";
 
 import {
-  APP_NAME,
   MSG_AUTOFILL_CREDENTIALS,
   SESSION_KEY_SELECTED_FILTER_TYPE,
   SESSION_KEY_SHOW_FILTER_PANEL,
   SESSION_KEY_VAULT_SEARCH_QUERY,
 } from "@/core/constants.ts";
 import { type VaultItem, VaultItemType, View } from "@/core/types.ts";
-import * as OTPAuth from "otpauth";
-import { parseTotpSecret } from "@/core/totp-utils.ts";
+import { generateTotpSafe } from "@/core/totp-utils.ts";
 import { z } from "zod";
 import {
   CardIcon,
@@ -292,16 +290,13 @@ export const Vault: Component = () => {
       : "";
     if (!rawSecret.trim()) return;
 
-    try {
-      const totp = new OTPAuth.TOTP({
-        secret: OTPAuth.Secret.fromBase32(parseTotpSecret(rawSecret)),
-      });
-      const code = totp.generate({ timestamp: Date.now() + store.timeOffset });
-      await navigator.clipboard.writeText(code);
+    const generateTotpResult = generateTotpSafe(rawSecret, store.timeOffset);
+
+    if (generateTotpResult.isOk()) {
+      await navigator.clipboard.writeText(generateTotpResult.value);
       showToast(t("detail_totp_copied"), "success");
-    } catch (err) {
-      console.error(`[${APP_NAME}] Vault copy TOTP error:`, err);
-      showToast(t("toast_error"), "error");
+    } else {
+      showToast(t(generateTotpResult.error), "error");
     }
     setActiveMenuId(""); // Close menu
   };
@@ -333,10 +328,10 @@ export const Vault: Component = () => {
       favorite: !item.favorite,
     };
     const res = await saveItem(updated);
-    if (res.success) {
+    if (res.isOk()) {
       showToast(t("toast_success"), "success");
     } else {
-      showToast(res.error || t("toast_error"), "error");
+      showToast(t(res.error) || t("toast_error"), "error");
     }
     setActiveOptionsMenuId(""); // Close options dropdown
   };
@@ -353,10 +348,10 @@ export const Vault: Component = () => {
     };
 
     const res = await saveItem(cloned);
-    if (res.success) {
+    if (res.isOk()) {
       showToast(t("toast_success"), "success");
     } else {
-      showToast(res.error || t("toast_error"), "error");
+      showToast(t(res.error) || t("toast_error"), "error");
     }
     setActiveOptionsMenuId(""); // Close options dropdown
   };
@@ -372,10 +367,10 @@ export const Vault: Component = () => {
     );
     if (confirmed) {
       const res = await deleteItem(item.id);
-      if (res.success) {
+      if (res.isOk()) {
         showToast(t("toast_success"), "success");
       } else {
-        showToast(res.error || t("toast_error"), "error");
+        showToast(t(res.error) || t("toast_error"), "error");
       }
     }
   };

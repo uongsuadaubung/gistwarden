@@ -13,245 +13,262 @@ import { sendMessageToBackground } from "@/core/messaging.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 import { setGlobalLoading } from "@/core/ui-service.ts";
 import { MSG_DELETE_GIST, STORE_KEY_VAULT_ITEMS } from "@/core/constants.ts";
+import { err, ok, Result } from "neverthrow";
+import type { TranslationKey } from "@/core/i18n.ts";
+import { z } from "zod";
 
 export async function saveItem(
   item: Partial<VaultItem>,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<Result<void, TranslationKey>> {
   setGlobalLoading(true);
-  try {
-    const key = await getSessionKey();
-    if (!key || !store.salt) throw new Error("Vault is locked");
 
-    let updatedList: VaultItem[];
-    const now = new Date().toISOString();
+  const key = await getSessionKey();
+  if (!key || !store.salt) {
+    setGlobalLoading(false);
+    return err("login_title_locked");
+  }
 
-    if (item.id) {
-      // Edit
-      updatedList = store.vaultItems.map((v) => {
-        if (v.id !== item.id) return v;
+  let updatedList: VaultItem[];
+  const now = new Date().toISOString();
 
-        const targetType = item.type !== undefined
-          ? Number(item.type)
-          : Number(v.type);
+  if (item.id) {
+    // Edit
+    const mappedItems = store.vaultItems.map((v) => {
+      if (v.id !== item.id) return v;
 
-        const baseItem: Record<string, unknown> = {
-          id: v.id,
-          type: targetType,
-          name: item.name !== undefined ? item.name : v.name,
-          notes: item.notes !== undefined ? item.notes : v.notes,
-          favorite: item.favorite !== undefined ? item.favorite : v.favorite,
-          reprompt: item.reprompt !== undefined
-            ? item.reprompt
-            : (v.reprompt !== undefined ? v.reprompt : 0),
-          fields: item.fields !== undefined ? item.fields : v.fields,
-          creationDate: v.creationDate,
-          revisionDate: now,
-        };
-
-        if (targetType === VaultItemType.Login) {
-          baseItem.login = "login" in item
-            ? item.login
-            : ("login" in v ? v.login : {
-              username: "",
-              password: "",
-              totp: "",
-              uris: [],
-              fido2Credentials: [],
-            });
-        } else if (targetType === VaultItemType.Card) {
-          baseItem.card = "card" in item ? item.card : ("card" in v ? v.card : {
-            cardholderName: "",
-            brand: "",
-            number: "",
-            expMonth: "",
-            expYear: "",
-            code: "",
-          });
-        } else if (targetType === VaultItemType.Identity) {
-          baseItem.identity = "identity" in item
-            ? item.identity
-            : ("identity" in v ? v.identity : {
-              title: "",
-              firstName: "",
-              middleName: "",
-              lastName: "",
-              username: "",
-              company: "",
-              ssn: "",
-              passportNumber: "",
-              licenseNumber: "",
-              email: "",
-              phone: "",
-              address1: "",
-              address2: "",
-              address3: "",
-              city: "",
-              state: "",
-              postalCode: "",
-              country: "",
-            });
-        } else if (targetType === VaultItemType.SshKey) {
-          baseItem.sshKey = "sshKey" in item
-            ? item.sshKey
-            : ("sshKey" in v ? v.sshKey : {
-              privateKey: "",
-              publicKey: "",
-              keyFingerprint: "",
-            });
-        }
-
-        return VaultItemSchema.parse(baseItem);
-      });
-    } else {
-      // New
       const targetType = item.type !== undefined
         ? Number(item.type)
-        : VaultItemType.Login;
+        : Number(v.type);
+
       const baseItem: Record<string, unknown> = {
-        id: crypto.randomUUID(),
+        id: v.id,
         type: targetType,
-        name: item.name || "Chưa đặt tên",
-        notes: item.notes || "",
-        favorite: item.favorite || false,
-        reprompt: item.reprompt || 0,
-        fields: item.fields || [],
-        creationDate: now,
+        name: item.name !== undefined ? item.name : v.name,
+        notes: item.notes !== undefined ? item.notes : v.notes,
+        favorite: item.favorite !== undefined ? item.favorite : v.favorite,
+        reprompt: item.reprompt !== undefined
+          ? item.reprompt
+          : (v.reprompt !== undefined ? v.reprompt : 0),
+        fields: item.fields !== undefined ? item.fields : v.fields,
+        creationDate: v.creationDate,
         revisionDate: now,
       };
 
       if (targetType === VaultItemType.Login) {
-        baseItem.login = "login" in item ? item.login : {
-          username: "",
-          password: "",
-          totp: "",
-          uris: [],
-          fido2Credentials: [],
-        };
+        baseItem.login = "login" in item
+          ? item.login
+          : ("login" in v ? v.login : {
+            username: "",
+            password: "",
+            totp: "",
+            uris: [],
+            fido2Credentials: [],
+          });
       } else if (targetType === VaultItemType.Card) {
-        baseItem.card = "card" in item ? item.card : {
+        baseItem.card = "card" in item ? item.card : ("card" in v ? v.card : {
           cardholderName: "",
           brand: "",
           number: "",
           expMonth: "",
           expYear: "",
           code: "",
-        };
+        });
       } else if (targetType === VaultItemType.Identity) {
-        baseItem.identity = "identity" in item ? item.identity : {
-          title: "",
-          firstName: "",
-          middleName: "",
-          lastName: "",
-          username: "",
-          company: "",
-          ssn: "",
-          passportNumber: "",
-          licenseNumber: "",
-          email: "",
-          phone: "",
-          address1: "",
-          address2: "",
-          address3: "",
-          city: "",
-          state: "",
-          postalCode: "",
-          country: "",
-        };
+        baseItem.identity = "identity" in item
+          ? item.identity
+          : ("identity" in v ? v.identity : {
+            title: "",
+            firstName: "",
+            middleName: "",
+            lastName: "",
+            username: "",
+            company: "",
+            ssn: "",
+            passportNumber: "",
+            licenseNumber: "",
+            email: "",
+            phone: "",
+            address1: "",
+            address2: "",
+            address3: "",
+            city: "",
+            state: "",
+            postalCode: "",
+            country: "",
+          });
       } else if (targetType === VaultItemType.SshKey) {
-        baseItem.sshKey = "sshKey" in item ? item.sshKey : {
-          privateKey: "",
-          publicKey: "",
-          keyFingerprint: "",
-        };
+        baseItem.sshKey = "sshKey" in item
+          ? item.sshKey
+          : ("sshKey" in v ? v.sshKey : {
+            privateKey: "",
+            publicKey: "",
+            keyFingerprint: "",
+          });
       }
 
-      updatedList = [...store.vaultItems, VaultItemSchema.parse(baseItem)];
+      return baseItem;
+    });
+
+    const parseResult = z.array(VaultItemSchema).safeParse(mappedItems);
+    if (!parseResult.success) {
+      setGlobalLoading(false);
+      return err("storage_error");
+    }
+    updatedList = parseResult.data;
+  } else {
+    // New
+    const targetType = item.type !== undefined
+      ? Number(item.type)
+      : VaultItemType.Login;
+    const baseItem: Record<string, unknown> = {
+      id: crypto.randomUUID(),
+      type: targetType,
+      name: item.name || "Chưa đặt tên",
+      notes: item.notes || "",
+      favorite: item.favorite || false,
+      reprompt: item.reprompt || 0,
+      fields: item.fields || [],
+      creationDate: now,
+      revisionDate: now,
+    };
+
+    if (targetType === VaultItemType.Login) {
+      baseItem.login = "login" in item ? item.login : {
+        username: "",
+        password: "",
+        totp: "",
+        uris: [],
+        fido2Credentials: [],
+      };
+    } else if (targetType === VaultItemType.Card) {
+      baseItem.card = "card" in item ? item.card : {
+        cardholderName: "",
+        brand: "",
+        number: "",
+        expMonth: "",
+        expYear: "",
+        code: "",
+      };
+    } else if (targetType === VaultItemType.Identity) {
+      baseItem.identity = "identity" in item ? item.identity : {
+        title: "",
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        username: "",
+        company: "",
+        ssn: "",
+        passportNumber: "",
+        licenseNumber: "",
+        email: "",
+        phone: "",
+        address1: "",
+        address2: "",
+        address3: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "",
+      };
+    } else if (targetType === VaultItemType.SshKey) {
+      baseItem.sshKey = "sshKey" in item ? item.sshKey : {
+        privateKey: "",
+        publicKey: "",
+        keyFingerprint: "",
+      };
     }
 
-    const uploadRes = await syncVaultToGist(updatedList, key, store.salt);
-
-    if (uploadRes.isErr()) {
-      throw new Error(uploadRes.error);
+    const parseResult = VaultItemSchema.safeParse(baseItem);
+    if (!parseResult.success) {
+      setGlobalLoading(false);
+      return err("storage_error");
     }
-    const validatedList = uploadRes.value;
 
-    setStore(
-      STORE_KEY_VAULT_ITEMS,
-      reconcile(validatedList),
-    );
-    return { success: true };
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg || "Lỗi lưu tài khoản" };
-  } finally {
-    setGlobalLoading(false);
+    updatedList = [...store.vaultItems, parseResult.data];
   }
+
+  const uploadRes = await syncVaultToGist(updatedList, key, store.salt);
+  if (uploadRes.isErr()) {
+    setGlobalLoading(false);
+    return err(uploadRes.error);
+  }
+  const validatedList = uploadRes.value;
+
+  setStore(
+    STORE_KEY_VAULT_ITEMS,
+    reconcile(validatedList),
+  );
+  setGlobalLoading(false);
+  return ok();
 }
 
 export async function deleteItem(
   id: string,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<Result<void, TranslationKey>> {
   setGlobalLoading(true);
-  try {
-    const key = await getSessionKey();
-    if (!key || !store.salt) throw new Error("Vault is locked");
 
-    const filtered = store.vaultItems.filter((v) => v.id !== id);
-    const uploadRes = await syncVaultToGist(filtered, key, store.salt);
-
-    if (uploadRes.isErr()) {
-      throw new Error(uploadRes.error);
-    }
-    const validatedList = uploadRes.value;
-
-    setStore(
-      STORE_KEY_VAULT_ITEMS,
-      reconcile(validatedList),
-    );
-    return { success: true };
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg || "Lỗi xóa tài khoản" };
-  } finally {
+  const key = await getSessionKey();
+  if (!key || !store.salt) {
     setGlobalLoading(false);
+    return err("login_title_locked");
   }
+
+  const filtered = store.vaultItems.filter((v) => v.id !== id);
+  const uploadRes = await syncVaultToGist(filtered, key, store.salt);
+
+  if (uploadRes.isErr()) {
+    setGlobalLoading(false);
+    return err(uploadRes.error);
+  }
+  const validatedList = uploadRes.value;
+
+  setStore(
+    STORE_KEY_VAULT_ITEMS,
+    reconcile(validatedList),
+  );
+  setGlobalLoading(false);
+  return ok();
 }
 
-export async function clearVault(): Promise<
-  { success: boolean; error?: string }
-> {
+export async function clearVault(): Promise<Result<void, TranslationKey>> {
   setGlobalLoading(true);
-  try {
-    const gistId = store.gistId;
-    if (gistId) {
-      const sendResult = await sendMessageToBackground({
-        type: MSG_DELETE_GIST,
-        content: gistId,
-      });
-      if (sendResult.isErr()) {
-        throw new Error(sendResult.error);
-      }
 
-      const res = SyncResponseSchema.parse(sendResult.value);
-
-      if (!res.success) {
-        throw new Error(res.error || "Lỗi xóa Gist trên GitHub");
-      }
+  const gistId = store.gistId;
+  if (gistId) {
+    const sendResult = await sendMessageToBackground({
+      type: MSG_DELETE_GIST,
+      content: gistId,
+    });
+    if (sendResult.isErr()) {
+      setGlobalLoading(false);
+      return err(sendResult.error);
     }
 
-    // Reset local settings
-    await updateSettings({ gistId: "", lastSync: 0 });
-    setStore({
-      gistId: "",
-      vaultItems: [],
-      lastSync: 0,
-    });
-    return { success: true };
-  } catch (err) {
-    console.error("[Store] Clear vault failed:", err);
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg || "Lỗi xóa toàn bộ tài khoản" };
-  } finally {
-    setGlobalLoading(false);
+    const parseRes = SyncResponseSchema.safeParse(sendResult.value);
+    if (!parseRes.success) {
+      setGlobalLoading(false);
+      return err("toast_error");
+    }
+    const res = parseRes.data;
+
+    if (!res.success) {
+      setGlobalLoading(false);
+      return err("toast_error");
+    }
   }
+
+  // Reset local settings
+  const updateSettingsRes = await updateSettings({ gistId: "", lastSync: 0 });
+  if (updateSettingsRes.isErr()) {
+    setGlobalLoading(false);
+    return err(updateSettingsRes.error);
+  }
+
+  setStore({
+    gistId: "",
+    vaultItems: [],
+    lastSync: 0,
+  });
+  setGlobalLoading(false);
+  return ok();
 }

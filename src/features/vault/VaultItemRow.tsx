@@ -20,6 +20,7 @@ import { openItem } from "@/core/navigation.ts";
 import { openTab } from "@/core/tabs.ts";
 import { t } from "@/core/i18n.ts";
 import CardBrandIcon from "@/components/ui/CardBrandIcon.tsx";
+import { safeParseUrl } from "@/core/domain-utils.ts";
 
 interface VaultItemRowProps {
   item: VaultItem;
@@ -44,16 +45,11 @@ const getDomain = (item: VaultItem): string | null => {
     return null;
   }
   const uri = item.login.uris[0].uri;
-  try {
-    let hostname = uri;
-    if (!/^https?:\/\//i.test(hostname)) {
-      hostname = "http://" + hostname;
-    }
-    const url = new URL(hostname);
-    return url.hostname;
-  } catch (_e) {
-    return null;
+  let hostname = uri;
+  if (!/^https?:\/\//i.test(hostname)) {
+    hostname = "http://" + hostname;
   }
+  return safeParseUrl(hostname).map((url) => url.hostname).unwrapOr(null);
 };
 
 const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (

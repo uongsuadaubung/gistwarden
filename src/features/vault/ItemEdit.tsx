@@ -16,7 +16,6 @@ import CardEditFields from "@/features/vault/item-edit/CardEditFields.tsx";
 import NoteEditFields from "@/features/vault/item-edit/NoteEditFields.tsx";
 import IdentityEditFields from "@/features/vault/item-edit/IdentityEditFields.tsx";
 import SshKeyEditFields from "@/features/vault/item-edit/SshKeyEditFields.tsx";
-import qrcodeParser from "qrcode-parser";
 import {
   getInitialFormState,
   type ItemEditFormState,
@@ -24,6 +23,8 @@ import {
 } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import CustomFieldsEdit from "@/features/vault/item-edit/CustomFieldsEdit.tsx";
 import { captureVisibleTab, getCurrentTab } from "@/core/tabs.ts";
+import { safeParseUrl } from "@/core/domain-utils.ts";
+import { safeDecodeQr } from "@/core/totp-utils.ts";
 
 export const ItemEdit: Component = () => {
   const isEdit = () => !!store.selectedItem?.id;
@@ -64,37 +65,41 @@ export const ItemEdit: Component = () => {
   const handleScanQr = async () => {
     setScanning(true);
     setError("");
-    try {
-      // 1. Capture the visible tab as a PNG data URL
-      const screenshotRes = await captureVisibleTab({ format: "png" });
-      if (screenshotRes.isErr()) {
-        setError(t("edit_qr_error_fail"));
-        return;
-      }
-      const screenshot = screenshotRes.value;
 
-      // 2. Decode using qrcode-parser
-      const decodedStr = await qrcodeParser(screenshot);
-      console.debug("[Popup] Decoded QR Code URL:", decodedStr);
+    // 1. Capture the visible tab as a PNG data URL
+    const screenshotRes = await captureVisibleTab({ format: "png" });
+    if (screenshotRes.isErr()) {
+      setError(t("edit_qr_error_fail"));
+      setScanning(false);
+      return;
+    }
+    const screenshot = screenshotRes.value;
 
-      // 3. Parse OTPAuth URL
-      try {
-        const url = new URL(decodedStr);
-        if (url.protocol === "otpauth:" && url.searchParams.has("secret")) {
-          updateForm("totpSecret", decodedStr); // Lưu toàn bộ URL để đồng bộ với định dạng cũ và Bitwarden
-          showToast(t("edit_qr_success"), "success");
-        } else {
-          setError(t("edit_qr_error_no_match"));
-        }
-      } catch (_e) {
+    // 2. Decode using qrcode-parser
+    const scanRes = await safeDecodeQr(screenshot);
+
+    if (scanRes.isErr()) {
+      setError(t(scanRes.error));
+      setScanning(false);
+      return;
+    }
+    const decodedStr = scanRes.value;
+    console.debug("[Popup] Decoded QR Code URL:", decodedStr);
+
+    // 3. Parse OTPAuth URL
+    const urlRes = safeParseUrl(decodedStr);
+    if (urlRes.isOk()) {
+      const url = urlRes.value;
+      if (url.protocol === "otpauth:" && url.searchParams.has("secret")) {
+        updateForm("totpSecret", decodedStr); // Lưu toàn bộ URL để đồng bộ với định dạng cũ và Bitwarden
+        showToast(t("edit_qr_success"), "success");
+      } else {
         setError(t("edit_qr_error_no_match"));
       }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || t("edit_qr_error_fail"));
-    } finally {
-      setScanning(false);
+    } else {
+      setError(t("edit_qr_error_no_match"));
     }
+    setScanning(false);
   };
 
   const handleDelete = async () => {
@@ -111,16 +116,13 @@ export const ItemEdit: Component = () => {
 
     setSaving(true);
     setError("");
-    try {
-      const res = await deleteItem(store.selectedItem.id);
-      if (res.success) {
-        navigate(View.Vault);
-      } else {
-        setError(res.error || t("edit_error_delete_failed"));
-      }
-    } finally {
-      setSaving(false);
+    const res = await deleteItem(store.selectedItem.id);
+    if (res.isOk()) {
+      navigate(View.Vault);
+    } else {
+      setError(t(res.error));
     }
+    setSaving(false);
   };
 
   const handleDeleteFidoCredential = async (credId: string) => {
@@ -150,51 +152,48 @@ export const ItemEdit: Component = () => {
     setError("");
     setSaving(true);
 
-    try {
-      const itemData = mapFormStateToVaultItem(formState, store.selectedItem);
-      const res = await saveItem(itemData);
-      if (res.success) {
-        const msg = isEdit()
-          ? (formState.itemType === VaultItemType.SecureNote
-            ? t("edit_toast_updated_note")
-            : formState.itemType === VaultItemType.Card
-            ? t("edit_toast_updated_card")
-            : formState.itemType === VaultItemType.Identity
-            ? t("edit_toast_updated_identity")
-            : formState.itemType === VaultItemType.SshKey
-            ? t("edit_toast_updated_ssh_key")
-            : t("edit_toast_updated_login"))
-          : (formState.itemType === VaultItemType.SecureNote
-            ? t("edit_toast_created_note")
-            : formState.itemType === VaultItemType.Card
-            ? t("edit_toast_created_card")
-            : formState.itemType === VaultItemType.Identity
-            ? t("edit_toast_created_identity")
-            : formState.itemType === VaultItemType.SshKey
-            ? t("edit_toast_created_ssh_key")
-            : t("edit_toast_created_login"));
-        showToast(msg, "success");
+    const itemData = mapFormStateToVaultItem(formState, store.selectedItem);
+    const res = await saveItem(itemData);
+    if (res.isOk()) {
+      const msg = isEdit()
+        ? (formState.itemType === VaultItemType.SecureNote
+          ? t("edit_toast_updated_note")
+          : formState.itemType === VaultItemType.Card
+          ? t("edit_toast_updated_card")
+          : formState.itemType === VaultItemType.Identity
+          ? t("edit_toast_updated_identity")
+          : formState.itemType === VaultItemType.SshKey
+          ? t("edit_toast_updated_ssh_key")
+          : t("edit_toast_updated_login"))
+        : (formState.itemType === VaultItemType.SecureNote
+          ? t("edit_toast_created_note")
+          : formState.itemType === VaultItemType.Card
+          ? t("edit_toast_created_card")
+          : formState.itemType === VaultItemType.Identity
+          ? t("edit_toast_created_identity")
+          : formState.itemType === VaultItemType.SshKey
+          ? t("edit_toast_created_ssh_key")
+          : t("edit_toast_created_login"));
+      showToast(msg, "success");
 
-        // If was editing, return to detail view, else go back to vault
-        if (isEdit()) {
-          // Update selectedItem locally so the detail view shows updated content immediately
-          const savedItem = store.vaultItems.find((v) =>
-            v.id === store.selectedItem?.id
-          );
-          if (savedItem) {
-            selectItem(savedItem);
-          } else {
-            navigate(View.Vault);
-          }
+      // If was editing, return to detail view, else go back to vault
+      if (isEdit()) {
+        // Update selectedItem locally so the detail view shows updated content immediately
+        const savedItem = store.vaultItems.find((v) =>
+          v.id === store.selectedItem?.id
+        );
+        if (savedItem) {
+          selectItem(savedItem);
         } else {
           navigate(View.Vault);
         }
       } else {
-        setError(res.error || t("edit_error_save_failed"));
+        navigate(View.Vault);
       }
-    } finally {
-      setSaving(false);
+    } else {
+      setError(t(res.error));
     }
+    setSaving(false);
   };
 
   const handleCancel = () => {
