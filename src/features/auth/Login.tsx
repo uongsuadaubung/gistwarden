@@ -18,7 +18,7 @@ import { GithubSetupForm } from "@/features/auth/components/GithubSetupForm.tsx"
 import { MasterPasswordForm } from "@/features/auth/components/MasterPasswordForm.tsx";
 import { MasterPasswordCreate } from "@/features/auth/components/MasterPasswordCreate.tsx";
 import { AppIcon, SyncIcon } from "@/icons/svg/index.ts";
-import { isTranslationKey, t } from "@/core/i18n.ts";
+import { t, tErr } from "@/core/i18n.ts";
 import { getSessionItem, removeSessionItem } from "@/core/storage.ts";
 import { z } from "zod";
 import {
@@ -90,21 +90,11 @@ export const Login: Component = () => {
       try {
         const setupRes = await setupGithub(token);
         if (!setupRes.success) {
-          setError(
-            setupRes.error
-              ? (isTranslationKey(setupRes.error)
-                ? t(setupRes.error)
-                : setupRes.error)
-              : t("login_error_invalid_token"),
-          );
+          setError(tErr(setupRes.error, "login_error_invalid_token"));
         }
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
-        setError(
-          errMsg
-            ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg)
-            : t("login_error_oauth_fail"),
-        );
+        setError(tErr(errMsg, "login_error_oauth_fail"));
       } finally {
         setLoading(false);
       }
@@ -131,11 +121,7 @@ export const Login: Component = () => {
     try {
       const res = await unlockWithPin(pin);
       if (!res.success) {
-        setError(
-          res.error && isTranslationKey(res.error)
-            ? t(res.error)
-            : (res.error || t("login_error_wrong_pin")),
-        );
+        setError(tErr(res.error, "login_error_wrong_pin"));
       }
     } catch (err) {
       console.error("[Login] PIN unlock failed:", err);
@@ -155,19 +141,11 @@ export const Login: Component = () => {
     try {
       const res = await setupGithub(token.trim());
       if (!res.success) {
-        setError(
-          res.error
-            ? (isTranslationKey(res.error) ? t(res.error) : res.error)
-            : t("login_error_invalid_token"),
-        );
+        setError(tErr(res.error, "login_error_invalid_token"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(
-        errMsg
-          ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg)
-          : t("login_error_any"),
-      );
+      setError(tErr(errMsg, "login_error_any"));
     } finally {
       setLoading(false);
     }
@@ -200,19 +178,11 @@ export const Login: Component = () => {
       await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
 
       if (!res.success) {
-        setError(
-          res.error
-            ? (isTranslationKey(res.error) ? t(res.error) : res.error)
-            : t("login_error_invalid_token"),
-        );
+        setError(tErr(res.error, "login_error_invalid_token"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(
-        errMsg
-          ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg)
-          : t("login_error_oauth_fail"),
-      );
+      setError(tErr(errMsg, "login_error_oauth_fail"));
     } finally {
       setLoading(false);
     }
@@ -229,20 +199,12 @@ export const Login: Component = () => {
       const res = await unlock(password);
       if (!res.success) {
         setFailedUnlockAttempts((prev) => prev + 1);
-        setError(
-          res.error
-            ? (isTranslationKey(res.error) ? t(res.error) : res.error)
-            : t("login_error_wrong_mp"),
-        );
+        setError(tErr(res.error, "login_error_wrong_mp"));
       }
     } catch (err) {
       setFailedUnlockAttempts((prev) => prev + 1);
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(
-        errMsg
-          ? (isTranslationKey(errMsg) ? t(errMsg) : errMsg)
-          : t("login_error_unlock_fail"),
-      );
+      setError(tErr(errMsg, "login_error_unlock_fail"));
     } finally {
       setLoading(false);
     }

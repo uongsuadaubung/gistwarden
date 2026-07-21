@@ -1,13 +1,17 @@
 import {
   type Component,
+  createEffect,
   createSignal,
   For,
+  Match,
   onCleanup,
   onMount,
   Show,
+  Switch,
 } from "solid-js";
 import { store } from "@/core/store.ts";
 import { unlock } from "@/features/auth/auth-service.ts";
+import { unlockWithPin } from "@/features/auth/pin-service.ts";
 import {
   APP_NAME,
   MSG_FIDO2_HEARTBEAT,
@@ -30,12 +34,14 @@ import {
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
 import {
+  EyeIcon,
+  EyeOffIcon,
   InfoIcon,
   LockIcon,
   QuestionIcon,
   ShieldIcon,
 } from "@/icons/svg/index.ts";
-import { formatDateTime, isTranslationKey, t } from "@/core/i18n.ts";
+import { formatDateTime, t, tErr } from "@/core/i18n.ts";
 import PasskeySelectRow from "@/features/passkey/PasskeySelectRow.tsx";
 
 export const Fido2Prompt: Component = () => {
@@ -43,6 +49,25 @@ export const Fido2Prompt: Component = () => {
   const [error, setError] = createSignal("");
   const [loading, setLoading] = createSignal(false);
   const [pendingReq, setPendingReq] = createSignal<Fido2Request | null>(null);
+  const [viewMode, setViewMode] = createSignal<"pin" | "masterPassword">(
+    "masterPassword",
+  );
+  const [pin, setPin] = createSignal("");
+  const [showPin, setShowPin] = createSignal(false);
+
+  createEffect(() => {
+    if (store.isLoaded) {
+      if (store.pinUnlockEnabled) {
+        if (store.requireMasterPasswordOnRestart) {
+          setViewMode(store.sessionUnlocked ? "pin" : "masterPassword");
+        } else {
+          setViewMode("pin");
+        }
+      } else {
+        setViewMode("masterPassword");
+      }
+    }
+  });
 
   // List of matching passkeys found in vault for assertion (get)
   const [matchingCredentials, setMatchingCredentials] = createSignal<
@@ -157,19 +182,34 @@ export const Fido2Prompt: Component = () => {
         setMasterPassword("");
         await loadPendingRequest();
       } else {
-        setError(
-          res.error && isTranslationKey(res.error)
-            ? t(res.error)
-            : (res.error || t("login_error_wrong_mp")),
-        );
+        setError(tErr(res.error, "login_error_wrong_mp"));
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(
-        errMsg && isTranslationKey(errMsg)
-          ? t(errMsg)
-          : (errMsg || t("login_error_unlock_fail")),
-      );
+      setError(tErr(errMsg, "login_error_unlock_fail"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePinUnlock = async (e: Event) => {
+    e.preventDefault();
+    if (!pin().trim()) {
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await unlockWithPin(pin().trim());
+      if (res.success) {
+        setPin("");
+        await loadPendingRequest();
+      } else {
+        setError(tErr(res.error, "login_error_wrong_pin"));
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setError(tErr(errMsg, "login_error_wrong_pin"));
     } finally {
       setLoading(false);
     }
@@ -190,16 +230,13 @@ export const Fido2Prompt: Component = () => {
       );
 
       if (!res.success) {
-        const errMsg = res.error
-          ? (isTranslationKey(res.error) ? t(res.error) : res.error)
-          : t("fido2_error_create_failed");
-        throw new Error(errMsg);
+        throw new Error(tErr(res.error, "fido2_error_create_failed"));
       }
 
       window.close();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || t("fido2_error_create_failed"));
+      setError(tErr(errMsg, "fido2_error_create_failed"));
     } finally {
       setLoading(false);
     }
@@ -219,16 +256,13 @@ export const Fido2Prompt: Component = () => {
       );
 
       if (!res.success) {
-        const errMsg = res.error
-          ? (isTranslationKey(res.error) ? t(res.error) : res.error)
-          : t("fido2_error_assert_failed");
-        throw new Error(errMsg);
+        throw new Error(tErr(res.error, "fido2_error_assert_failed"));
       }
 
       window.close();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || t("fido2_error_assert_failed"));
+      setError(tErr(errMsg, "fido2_error_assert_failed"));
     } finally {
       setLoading(false);
     }
@@ -508,7 +542,7 @@ export const Fido2Prompt: Component = () => {
             </div>
           }
         >
-          {/* Master password unlock inside FIDO2 window */}
+          {/* Vault locked screen inside FIDO2 window */}
           <div class="prompt-content">
             <div class="prompt-icon-wrapper">
               <div class="fido2-large-icon bg-warning">
@@ -527,36 +561,124 @@ export const Fido2Prompt: Component = () => {
               </div>
             </Show>
 
-            <form onSubmit={handleUnlock}>
-              <div class="form-group text-left">
-                <Input
-                  type="password"
-                  placeholder={t("login_placeholder_mp") + "..."}
-                  value={masterPassword()}
-                  onInput={(e) => setMasterPassword(e.currentTarget.value)}
-                  disabled={loading()}
-                  autofocus
-                />
-              </div>
-              <div class="prompt-footer">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleReject}
-                  disabled={loading()}
+            <Switch>
+              <Match when={viewMode() === "pin"}>
+                <form
+                  onSubmit={handlePinUnlock}
+                  class="flex-1 d-flex flex-column"
                 >
-                  {t("btn_cancel")}
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  loading={loading()}
-                  loadingText={t("dialog_loading")}
-                >
-                  {t("login_btn_unlock")}
-                </Button>
-              </div>
-            </form>
+                  <div class="form-group text-left pos-relative">
+                    <div class="pos-relative d-flex align-items-center">
+                      <Input
+                        type={showPin() ? "text" : "password"}
+                        placeholder={t("login_pin_placeholder")}
+                        value={pin()}
+                        onInput={(e) => setPin(e.currentTarget.value)}
+                        disabled={loading()}
+                        autofocus
+                        required
+                        rightActions={
+                          <button
+                            type="button"
+                            class="action-btn input-action-btn"
+                            onClick={() => setShowPin(!showPin())}
+                          >
+                            <Show
+                              fallback={<EyeIcon class="icon-inline" />}
+                              when={showPin()}
+                            >
+                              <EyeOffIcon class="icon-inline" />
+                            </Show>
+                          </button>
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div class="text-center mt-8 mb-12">
+                    <a
+                      href="#"
+                      class="forgot-pass-link font-sz-12"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setViewMode("masterPassword");
+                      }}
+                    >
+                      {t("login_unlock_with_mp")}
+                    </a>
+                  </div>
+
+                  <div class="prompt-footer">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleReject}
+                      disabled={loading()}
+                    >
+                      {t("btn_cancel")}
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      loading={loading()}
+                      loadingText={t("dialog_loading")}
+                    >
+                      {t("login_btn_unlock")}
+                    </Button>
+                  </div>
+                </form>
+              </Match>
+
+              <Match when={viewMode() === "masterPassword"}>
+                <form onSubmit={handleUnlock} class="flex-1 d-flex flex-column">
+                  <div class="form-group text-left">
+                    <Input
+                      type="password"
+                      placeholder={t("login_placeholder_mp") + "..."}
+                      value={masterPassword()}
+                      onInput={(e) => setMasterPassword(e.currentTarget.value)}
+                      disabled={loading()}
+                      autofocus
+                      required
+                    />
+                  </div>
+
+                  <Show when={store.pinUnlockEnabled}>
+                    <div class="text-center mt-8 mb-12">
+                      <a
+                        href="#"
+                        class="forgot-pass-link font-sz-12"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setViewMode("pin");
+                        }}
+                      >
+                        {t("login_unlock_with_pin")}
+                      </a>
+                    </div>
+                  </Show>
+
+                  <div class="prompt-footer">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleReject}
+                      disabled={loading()}
+                    >
+                      {t("btn_cancel")}
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      loading={loading()}
+                      loadingText={t("dialog_loading")}
+                    >
+                      {t("login_btn_unlock")}
+                    </Button>
+                  </div>
+                </form>
+              </Match>
+            </Switch>
           </div>
         </Show>
       </div>
