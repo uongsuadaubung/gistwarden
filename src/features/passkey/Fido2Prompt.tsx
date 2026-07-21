@@ -199,20 +199,14 @@ export const Fido2Prompt: Component = () => {
     }
     setLoading(true);
     setError("");
-    try {
-      const res = await unlockWithPin(pin().trim());
-      if (res.success) {
-        setPin("");
-        await loadPendingRequest();
-      } else {
-        setError(tErr(res.error, "login_error_wrong_pin"));
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(tErr(errMsg, "login_error_wrong_pin"));
-    } finally {
-      setLoading(false);
+    const res = await unlockWithPin(pin().trim());
+    if (res.isOk()) {
+      setPin("");
+      await loadPendingRequest();
+    } else {
+      setError(t(res.error));
     }
+    setLoading(false);
   };
 
   const handleConfirmRegister = async () => {

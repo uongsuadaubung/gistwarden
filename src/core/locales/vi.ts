@@ -14,6 +14,11 @@ export default {
   dialog_loading: "Đang xử lý...",
   toast_success: "Thành công!",
   toast_error: "Đã xảy ra lỗi!",
+  toast_pin_disabled: "Đã tắt mở khóa bằng mã PIN",
+  toast_pin_set_success: "Mã PIN đã được thiết lập thành công!",
+  toast_timeout_updated: "Cài đặt thời gian chờ đã cập nhật",
+  confirm_disable_pin:
+    "Bạn có chắc chắn muốn tắt tính năng mở khóa bằng mã PIN?",
 
   // Login Page
   login_title_locked: "Két sắt đang bị Khóa",
