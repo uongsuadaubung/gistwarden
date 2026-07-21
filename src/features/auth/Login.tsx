@@ -59,10 +59,16 @@ export const Login: Component = () => {
       setGistStatus("checking");
       (async () => {
         try {
-          const raw = await sendMessageToBackground({
+          const sendResult = await sendMessageToBackground({
             type: MSG_DOWNLOAD_FROM_GIST,
           });
-          const res = DownloadFromGistResponseSchema.safeParse(raw);
+          if (sendResult.isErr()) {
+            setGistStatus("exists");
+            return;
+          }
+          const res = DownloadFromGistResponseSchema.safeParse(
+            sendResult.value,
+          );
           if (res.success && res.data.success && res.data.content) {
             setGistStatus("exists");
           } else {
@@ -150,13 +156,15 @@ export const Login: Component = () => {
     setError("");
     try {
       // Call background script to launch web auth flow
-      const rawRes = await sendMessageToBackground({
+      const sendResult = await sendMessageToBackground({
         type: MSG_START_GITHUB_OAUTH,
         content: OAUTH_CLIENT_ID,
         token: OAUTH_WORKER_URL,
-      }).catch(() => null);
-
-      const parsed = OauthResponseSchema.safeParse(rawRes);
+      });
+      if (sendResult.isErr()) {
+        throw new Error(sendResult.error);
+      }
+      const parsed = OauthResponseSchema.safeParse(sendResult.value);
 
       if (!parsed.success || !parsed.data.success || !parsed.data.token) {
         const errorMsg = (parsed.success && parsed.data.error)

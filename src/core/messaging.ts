@@ -1,31 +1,39 @@
-/**
- * Core utilities for messaging between extension components.
- */
+import { err, ok, Result } from "neverthrow";
+import type { TranslationKey } from "@/core/i18n.ts";
 
 /**
  * Send a message to the background script and wait for a response.
  * Handles API availability checks and wraps chrome.runtime.lastError.
  */
-export function sendMessageToBackground(message: unknown): Promise<unknown> {
-  return new Promise((resolve, reject) => {
+export function sendMessageToBackground(
+  message: unknown,
+): Promise<Result<unknown, TranslationKey>> {
+  return new Promise((resolve) => {
     if (
       typeof chrome === "undefined" || !chrome.runtime ||
       !chrome.runtime.sendMessage
     ) {
-      reject(new Error("chrome.runtime.sendMessage is not available"));
+      resolve(err("toast_error"));
       return;
     }
 
-    try {
-      chrome.runtime.sendMessage(message, (response: unknown) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-        resolve(response);
-      });
-    } catch (err) {
-      reject(err instanceof Error ? err : new Error(String(err)));
+    const safeSend = Result.fromThrowable(
+      (msg: unknown, cb: (res: unknown) => void) => {
+        chrome.runtime.sendMessage(msg, cb);
+      },
+      (): TranslationKey => "toast_error",
+    );
+
+    const callResult = safeSend(message, (response: unknown) => {
+      if (chrome.runtime.lastError) {
+        resolve(err("toast_error"));
+        return;
+      }
+      resolve(ok(response));
+    });
+
+    if (callResult.isErr()) {
+      resolve(err(callResult.error));
     }
   });
 }
@@ -34,19 +42,24 @@ export function sendMessageToBackground(message: unknown): Promise<unknown> {
  * Send a message to the background script in a fire-and-forget manner.
  * Use this for signals that do not require a response (e.g., MSG_RESET_TIMEOUT).
  */
-export function notifyBackground(message: unknown): void {
+export function notifyBackground(
+  message: unknown,
+): Result<void, TranslationKey> {
   if (
     typeof chrome === "undefined" || !chrome.runtime ||
     !chrome.runtime.sendMessage
   ) {
-    return;
+    return err("toast_error");
   }
 
-  try {
-    chrome.runtime.sendMessage(message).catch(() => {});
-  } catch (_e) {
-    // Ignore errors
-  }
+  const safeSend = Result.fromThrowable(
+    (msg: unknown) => {
+      chrome.runtime.sendMessage(msg).catch(() => {});
+    },
+    (): TranslationKey => "toast_error",
+  );
+
+  return safeSend(message);
 }
 
 /**
@@ -54,17 +67,22 @@ export function notifyBackground(message: unknown): void {
  * This is effectively the same API as notifyBackground, but named differently
  * to express the intent of the caller (background broadcasting state changes).
  */
-export function broadcastMessage(message: unknown): void {
+export function broadcastMessage(
+  message: unknown,
+): Result<void, TranslationKey> {
   if (
     typeof chrome === "undefined" || !chrome.runtime ||
     !chrome.runtime.sendMessage
   ) {
-    return;
+    return err("toast_error");
   }
 
-  try {
-    chrome.runtime.sendMessage(message).catch(() => {});
-  } catch (_e) {
-    // Ignore errors
-  }
+  const safeSend = Result.fromThrowable(
+    (msg: unknown) => {
+      chrome.runtime.sendMessage(msg).catch(() => {});
+    },
+    (): TranslationKey => "toast_error",
+  );
+
+  return safeSend(message);
 }
