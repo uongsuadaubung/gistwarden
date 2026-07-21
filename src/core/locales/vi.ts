@@ -465,6 +465,9 @@ export default {
   fido2_vault_locked_title: "Két sắt đang Khóa",
   fido2_vault_locked_subtitle:
     "Mở khóa {APP_NAME} bằng mật khẩu Master để tiếp tục xác thực Passkey.",
+  fido2_not_logged_in_title: "Chưa Đăng Nhập",
+  fido2_not_logged_in_subtitle:
+    "Vui lòng mở extension và đăng nhập vào Gistwarden trước khi sử dụng Passkey.",
   fido2_register_choose_passkey_action:
     "Tài khoản này đã có Passkey. Bạn muốn làm gì?",
   fido2_register_choose_passkey_overwrite:

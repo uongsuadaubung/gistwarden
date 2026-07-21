@@ -460,6 +460,9 @@ export default {
   fido2_vault_locked_title: "Vault is Locked",
   fido2_vault_locked_subtitle:
     "Unlock {APP_NAME} with Master Password to continue Passkey authentication.",
+  fido2_not_logged_in_title: "Not Logged In",
+  fido2_not_logged_in_subtitle:
+    "Please open the extension and log in to Gistwarden before using Passkeys.",
   fido2_register_choose_passkey_action:
     "This account already has a Passkey. What would you like to do?",
   fido2_register_choose_passkey_overwrite:
