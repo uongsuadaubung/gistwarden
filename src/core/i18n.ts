@@ -435,6 +435,8 @@ const LangSchema = z.object({
   fido2_assert_no_match: z.string(),
   fido2_vault_locked_title: z.string(),
   fido2_vault_locked_subtitle: z.string(),
+  fido2_not_logged_in_title: z.string(),
+  fido2_not_logged_in_subtitle: z.string(),
   fido2_register_choose_passkey_action: z.string(),
   fido2_register_choose_passkey_overwrite: z.string(),
   fido2_register_passkey_info: z.string(),
