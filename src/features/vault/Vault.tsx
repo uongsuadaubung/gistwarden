@@ -9,7 +9,7 @@ import {
 import { store } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { deleteItem, saveItem } from "@/features/vault/vault-service.ts";
-import { confirm, showToast } from "@/core/ui-service.ts";
+import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import { Header } from "@/components/ui/Header.tsx";
 import { createDefaultVaultItem } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import { getCurrentTab, sendMessageToTab } from "@/core/tabs.ts";
@@ -327,7 +327,9 @@ export const Vault: Component = () => {
       ...item,
       favorite: !item.favorite,
     };
+    setGlobalLoading(true);
     const res = await saveItem(updated);
+    setGlobalLoading(false);
     if (res.isOk()) {
       showToast(t("toast_success"), "success");
     } else {
@@ -347,7 +349,9 @@ export const Vault: Component = () => {
       name: `${name} - ${t("vault_item_clone_suffix")}`,
     };
 
+    setGlobalLoading(true);
     const res = await saveItem(cloned);
+    setGlobalLoading(false);
     if (res.isOk()) {
       showToast(t("toast_success"), "success");
     } else {
@@ -366,7 +370,9 @@ export const Vault: Component = () => {
       "danger",
     );
     if (confirmed) {
+      setGlobalLoading(true);
       const res = await deleteItem(item.id);
+      setGlobalLoading(false);
       if (res.isOk()) {
         showToast(t("toast_success"), "success");
       } else {

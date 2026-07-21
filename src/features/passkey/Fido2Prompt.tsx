@@ -13,6 +13,7 @@ import { Result } from "neverthrow";
 import { store } from "@/core/store.ts";
 import { unlock } from "@/features/auth/auth-service.ts";
 import { unlockWithPin } from "@/features/auth/pin-service.ts";
+import { setGlobalLoading } from "@/core/ui-service.ts";
 import {
   APP_NAME,
   MSG_FIDO2_HEARTBEAT,
@@ -48,7 +49,6 @@ import PasskeySelectRow from "@/features/passkey/PasskeySelectRow.tsx";
 export const Fido2Prompt: Component = () => {
   const [masterPassword, setMasterPassword] = createSignal("");
   const [error, setError] = createSignal("");
-  const [loading, setLoading] = createSignal(false);
   const [pendingReq, setPendingReq] = createSignal<Fido2Request | null>(null);
   const [viewMode, setViewMode] = createSignal<"pin" | "masterPassword">(
     "masterPassword",
@@ -184,7 +184,7 @@ export const Fido2Prompt: Component = () => {
       setError(t("login_error_empty_mp"));
       return;
     }
-    setLoading(true);
+    setGlobalLoading(true);
     setError("");
     const result = await unlock(masterPassword());
 
@@ -195,7 +195,7 @@ export const Fido2Prompt: Component = () => {
       setError(tErr(result.error, "login_error_wrong_mp"));
     }
 
-    setLoading(false);
+    setGlobalLoading(false);
   };
 
   const handlePinUnlock = async (e: Event) => {
@@ -203,7 +203,7 @@ export const Fido2Prompt: Component = () => {
     if (!pin().trim()) {
       return;
     }
-    setLoading(true);
+    setGlobalLoading(true);
     setError("");
     const res = await unlockWithPin(pin().trim());
     if (res.isOk()) {
@@ -212,13 +212,13 @@ export const Fido2Prompt: Component = () => {
     } else {
       setError(t(res.error));
     }
-    setLoading(false);
+    setGlobalLoading(false);
   };
 
   const handleConfirmRegister = async () => {
     const req = pendingReq();
     if (!req) return;
-    setLoading(true);
+    setGlobalLoading(true);
     setError("");
 
     const res = await registerFido2Passkey(
@@ -233,13 +233,13 @@ export const Fido2Prompt: Component = () => {
     } else {
       window.close();
     }
-    setLoading(false);
+    setGlobalLoading(false);
   };
 
   const handleConfirmAssert = async () => {
     const req = pendingReq();
     if (!req || matchingCredentials().length === 0) return;
-    setLoading(true);
+    setGlobalLoading(true);
     setError("");
 
     const res = await assertFido2Passkey(
@@ -253,7 +253,7 @@ export const Fido2Prompt: Component = () => {
     } else {
       window.close();
     }
-    setLoading(false);
+    setGlobalLoading(false);
   };
 
   const handleReject = async () => {
@@ -442,15 +442,12 @@ export const Fido2Prompt: Component = () => {
                     <Button
                       variant="secondary"
                       onClick={handleReject}
-                      disabled={loading()}
                     >
                       {t("btn_cancel")}
                     </Button>
                     <Button
                       variant="primary"
                       onClick={handleConfirmRegister}
-                      loading={loading()}
-                      loadingText={t("dialog_loading")}
                     >
                       {t("fido2_btn_save")}
                     </Button>
@@ -497,15 +494,12 @@ export const Fido2Prompt: Component = () => {
                           <Button
                             variant="secondary"
                             onClick={handleReject}
-                            disabled={loading()}
                           >
                             {t("btn_cancel")}
                           </Button>
                           <Button
                             variant="primary"
                             onClick={handleConfirmAssert}
-                            loading={loading()}
-                            loadingText={t("dialog_loading")}
                           >
                             {t("fido2_assert_btn_confirm")}
                           </Button>
@@ -562,7 +556,6 @@ export const Fido2Prompt: Component = () => {
                         placeholder={t("login_pin_placeholder")}
                         value={pin()}
                         onInput={(e) => setPin(e.currentTarget.value)}
-                        disabled={loading()}
                         autofocus
                         required
                         rightActions={
@@ -601,15 +594,12 @@ export const Fido2Prompt: Component = () => {
                       type="button"
                       variant="secondary"
                       onClick={handleReject}
-                      disabled={loading()}
                     >
                       {t("btn_cancel")}
                     </Button>
                     <Button
                       type="submit"
                       variant="primary"
-                      loading={loading()}
-                      loadingText={t("dialog_loading")}
                     >
                       {t("login_btn_unlock")}
                     </Button>
@@ -625,7 +615,6 @@ export const Fido2Prompt: Component = () => {
                       placeholder={t("login_placeholder_mp") + "..."}
                       value={masterPassword()}
                       onInput={(e) => setMasterPassword(e.currentTarget.value)}
-                      disabled={loading()}
                       autofocus
                       required
                     />
@@ -651,15 +640,12 @@ export const Fido2Prompt: Component = () => {
                       type="button"
                       variant="secondary"
                       onClick={handleReject}
-                      disabled={loading()}
                     >
                       {t("btn_cancel")}
                     </Button>
                     <Button
                       type="submit"
                       variant="primary"
-                      loading={loading()}
-                      loadingText={t("dialog_loading")}
                     >
                       {t("login_btn_unlock")}
                     </Button>

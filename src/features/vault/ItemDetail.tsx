@@ -10,7 +10,7 @@ import { store } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { deleteItem } from "@/features/vault/vault-service.ts";
-import { confirm, showToast } from "@/core/ui-service.ts";
+import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import {
   type CardVaultItem,
   CustomFieldType,
@@ -158,8 +158,10 @@ export const ItemDetail: Component = () => {
       return;
     }
 
+    setGlobalLoading(true);
     setError("");
     const res = await deleteItem(store.selectedItem.id);
+    setGlobalLoading(false);
     if (res.isOk()) {
       navigate(View.Vault);
     } else {

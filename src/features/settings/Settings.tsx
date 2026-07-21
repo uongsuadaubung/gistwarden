@@ -7,7 +7,12 @@ import { openTab } from "@/core/tabs.ts";
 import { getAssetUrl } from "@/core/runtime.ts";
 
 import { clearVault } from "@/features/vault/vault-service.ts";
-import { confirm, requestReprompt, showToast } from "@/core/ui-service.ts";
+import {
+  confirm,
+  requestReprompt,
+  setGlobalLoading,
+  showToast,
+} from "@/core/ui-service.ts";
 import {
   ChevronRightIcon,
   InfoIcon,
@@ -21,7 +26,6 @@ import { t } from "@/core/i18n.ts";
 
 export const Settings: Component = () => {
   const [error, setError] = createSignal("");
-  const [_loading, setLoading] = createSignal(false);
 
   const handleClearVault = async () => {
     if (
@@ -48,9 +52,10 @@ export const Settings: Component = () => {
       return;
     }
 
-    setLoading(true);
+    setGlobalLoading(true);
     setError("");
     const res = await clearVault();
+    setGlobalLoading(false);
     if (res.isOk()) {
       showToast(
         t("settings_clear_vault_success"),
@@ -59,7 +64,6 @@ export const Settings: Component = () => {
     } else {
       setError(t(res.error));
     }
-    setLoading(false);
   };
 
   return (

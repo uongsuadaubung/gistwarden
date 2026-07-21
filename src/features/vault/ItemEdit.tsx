@@ -4,7 +4,7 @@ import { store } from "@/core/store.ts";
 import { VaultItemType, View } from "@/core/types.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { deleteItem, saveItem } from "@/features/vault/vault-service.ts";
-import { confirm, showToast } from "@/core/ui-service.ts";
+import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
@@ -43,7 +43,6 @@ export const ItemEdit: Component = () => {
   // UI state
   const [scanning, setScanning] = createSignal(false);
   const [error, setError] = createSignal("");
-  const [saving, setSaving] = createSignal(false);
 
   onMount(async () => {
     const item = store.selectedItem;
@@ -114,15 +113,15 @@ export const ItemEdit: Component = () => {
       return;
     }
 
-    setSaving(true);
     setError("");
+    setGlobalLoading(true);
     const res = await deleteItem(store.selectedItem.id);
+    setGlobalLoading(false);
     if (res.isOk()) {
       navigate(View.Vault);
     } else {
       setError(t(res.error));
     }
-    setSaving(false);
   };
 
   const handleDeleteFidoCredential = async (credId: string) => {
@@ -143,17 +142,17 @@ export const ItemEdit: Component = () => {
 
   const handleSave = async (e: Event) => {
     e.preventDefault();
-    if (saving()) return;
     if (!formState.name.trim()) {
       setError(t("edit_error_empty_name"));
       return;
     }
 
     setError("");
-    setSaving(true);
 
+    setGlobalLoading(true);
     const itemData = mapFormStateToVaultItem(formState, store.selectedItem);
     const res = await saveItem(itemData);
+    setGlobalLoading(false);
     if (res.isOk()) {
       const msg = isEdit()
         ? (formState.itemType === VaultItemType.SecureNote
@@ -193,7 +192,6 @@ export const ItemEdit: Component = () => {
     } else {
       setError(t(res.error));
     }
-    setSaving(false);
   };
 
   const handleCancel = () => {
@@ -336,23 +334,13 @@ export const ItemEdit: Component = () => {
             <Button
               type="submit"
               variant="primary"
-              loading={saving()}
-              loadingText={t("dialog_loading")}
             >
-              <Show
-                when={saving()}
-                fallback={store.selectedItem?.id
-                  ? t("btn_save")
-                  : t("btn_create")}
-              >
-                {t("dialog_loading")}
-              </Show>
+              {store.selectedItem?.id ? t("btn_save") : t("btn_create")}
             </Button>
             <Button
               type="button"
               variant="secondary"
               onClick={handleCancel}
-              disabled={saving()}
             >
               {t("btn_cancel")}
             </Button>
@@ -364,7 +352,6 @@ export const ItemEdit: Component = () => {
               class="detail-delete-btn"
               onClick={handleDelete}
               title={t("btn_delete")}
-              disabled={saving()}
             >
               <TrashIcon class="icon-inline-large" />
             </button>

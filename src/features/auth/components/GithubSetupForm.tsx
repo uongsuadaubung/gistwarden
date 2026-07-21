@@ -5,8 +5,7 @@ import Input from "@/components/ui/Input.tsx";
 import { GithubIcon } from "@/icons/svg/index.ts";
 import { type LoginMethod } from "@/core/types.ts";
 
-interface GithubSetupFormProps {
-  loading: boolean;
+export interface GithubSetupFormProps {
   onSaveToken: (token: string) => void;
   onGithubOauth: () => void;
 }
@@ -52,7 +51,6 @@ export const GithubSetupForm: Component<GithubSetupFormProps> = (props) => {
                 placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                 value={token()}
                 onInput={(e) => setToken(e.currentTarget.value)}
-                disabled={props.loading}
               />
               <span class="login-pat-help" innerHTML={t("login_pat_help")} />
             </div>
@@ -61,8 +59,6 @@ export const GithubSetupForm: Component<GithubSetupFormProps> = (props) => {
               type="submit"
               variant="primary"
               block
-              loading={props.loading}
-              loadingText={t("login_loading_auth")}
             >
               {t("login_btn_save_token")}
             </Button>
@@ -77,8 +73,6 @@ export const GithubSetupForm: Component<GithubSetupFormProps> = (props) => {
               variant="primary"
               block
               onClick={() => props.onGithubOauth()}
-              loading={props.loading}
-              loadingText={t("login_loading_connect")}
             >
               <GithubIcon class="github-btn-icon" />
               {t("login_btn_oauth")}

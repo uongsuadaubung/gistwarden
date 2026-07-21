@@ -4,8 +4,7 @@ import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
 import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
 
-interface PinUnlockFormProps {
-  loading: boolean;
+export interface PinUnlockFormProps {
   error: string;
   onUnlock: (pin: string) => void;
   onSwitchToMasterPassword: () => void;
@@ -32,7 +31,6 @@ export const PinUnlockForm: Component<PinUnlockFormProps> = (props) => {
             placeholder={t("login_pin_placeholder")}
             value={pin()}
             onInput={(e) => setPin(e.currentTarget.value)}
-            disabled={props.loading}
             class="w-100 font-mono"
             autofocus
             required
@@ -58,8 +56,6 @@ export const PinUnlockForm: Component<PinUnlockFormProps> = (props) => {
         type="submit"
         variant="primary"
         block
-        loading={props.loading}
-        loadingText={t("login_loading_unlock")}
         class="mb-12"
       >
         {t("login_btn_unlock")}
@@ -70,7 +66,6 @@ export const PinUnlockForm: Component<PinUnlockFormProps> = (props) => {
         variant="secondary"
         block
         onClick={props.onSwitchToMasterPassword}
-        disabled={props.loading}
       >
         {t("login_unlock_with_mp")}
       </Button>

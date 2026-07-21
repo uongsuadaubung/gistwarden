@@ -10,7 +10,7 @@ import { store } from "@/core/store.ts";
 import { VaultItemType } from "@/core/types.ts";
 import { lock, logout } from "@/features/auth/auth-service.ts";
 import { syncVault } from "@/features/sync/sync-service.ts";
-import { confirm } from "@/core/ui-service.ts";
+import { confirm, setGlobalLoading } from "@/core/ui-service.ts";
 import { handlePopout, isPopout } from "@/core/popout-utils.ts";
 import { t } from "@/core/i18n.ts";
 import {
@@ -95,7 +95,9 @@ export const Header: Component<HeaderProps> = (props) => {
   const handleSyncClick = async (e: MouseEvent) => {
     e.stopPropagation();
     if (store.syncing) return;
+    setGlobalLoading(true, t("vault_syncing"));
     await syncVault();
+    setGlobalLoading(false);
   };
 
   const handleLockClick = (e: MouseEvent) => {

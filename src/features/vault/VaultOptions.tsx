@@ -3,7 +3,7 @@ import { store } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { syncVault } from "@/features/sync/sync-service.ts";
-import { showToast } from "@/core/ui-service.ts";
+import { setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import {
   ChevronRightIcon,
   DownloadIcon,
@@ -18,17 +18,15 @@ import { SESSION_KEY_LAST_VIEW } from "@/core/constants.ts";
 
 export const VaultOptions: Component = () => {
   const [error, setError] = createSignal("");
-  const [loading, setLoading] = createSignal(false);
 
   const handleBack = () => {
     navigate(View.Settings);
   };
 
   const handleSync = async () => {
-    setLoading(true);
-    setError("");
+    setGlobalLoading(true, t("vault_syncing"));
     const res = await syncVault();
-    setLoading(false);
+    setGlobalLoading(false);
     if (res.isOk()) {
       showToast(t("vault_sync_success"), "success");
     } else {
@@ -53,7 +51,7 @@ export const VaultOptions: Component = () => {
           {/* Sync */}
           <div class="setting-row" onClick={handleSync}>
             <div class="setting-row-left">
-              <SyncIcon class={loading() ? "spinning" : ""} />
+              <SyncIcon />
               <div>
                 <div class="setting-label">
                   {t("vault_options_sync_manual")}
