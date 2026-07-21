@@ -85,7 +85,7 @@ export default {
   vault_btn_sync: "Đồng bộ",
   vault_btn_settings: "Cài đặt",
   vault_btn_generator: "Sinh mã",
-  vault_btn_add: "Mới",
+  vault_btn_add: "Thêm mới",
   vault_popout_title: "Mở cửa sổ riêng",
   vault_lock_title: "Khóa két sắt",
   vault_suggested_items: "Đề xuất cho trang web này",
