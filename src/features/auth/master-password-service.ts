@@ -94,5 +94,5 @@ export async function changeMasterPassword(
     salt: newSaltBase64,
   });
 
-  return ok(undefined);
+  return ok();
 }

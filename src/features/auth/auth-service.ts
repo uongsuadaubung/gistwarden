@@ -385,7 +385,12 @@ export async function unlock(
 
   // A. Nếu có salt cục bộ, derive key và giải mã Token ngay lập tức trước khi làm bất cứ việc gì khác!
   if (saltBase64) {
-    key = await getOrDeriveKey(password, saltBase64);
+    const keyRes = await getOrDeriveKey(password, saltBase64);
+    if (keyRes.isErr()) {
+      clearDerivedKey();
+      return err(keyRes.error);
+    }
+    key = keyRes.value;
     if (settings.githubTokenEncrypted && settings.githubTokenIv) {
       const decryptRes = await decryptData(
         settings.githubTokenEncrypted,
@@ -463,7 +468,12 @@ export async function unlock(
     await updateSettings({ salt: saltBase64 });
     setStore(STORE_KEY_SALT, saltBase64);
 
-    key = await getOrDeriveKey(password, saltBase64);
+    const keyRes = await getOrDeriveKey(password, saltBase64);
+    if (keyRes.isErr()) {
+      clearDerivedKey();
+      return err(keyRes.error);
+    }
+    key = keyRes.value;
 
     // Lưu token mã hóa vào đĩa (onboarding)
     const tokenToEncrypt = typeof sessionToken === "string" ? sessionToken : "";
@@ -524,7 +534,12 @@ export async function unlock(
 
   // D. Đảm bảo key đã được tạo (nếu chưa được tạo ở bước A do lúc đó chưa có salt)
   if (!key) {
-    key = await getOrDeriveKey(password, saltBase64);
+    const keyRes = await getOrDeriveKey(password, saltBase64);
+    if (keyRes.isErr()) {
+      clearDerivedKey();
+      return err(keyRes.error);
+    }
+    key = keyRes.value;
   }
 
   // E. Nếu đây là onboarding (sessionToken chứa token thô) và nay đã có salt, thực hiện mã hóa lưu vào đĩa

@@ -8,10 +8,11 @@ import {
   encryptData,
   generateSalt,
   getSessionKey,
+  importAesGcmKey,
 } from "@/core/crypto.ts";
 
 import { unlockWithKey } from "@/features/auth/session-service.ts";
-import { err, ok, type Result, ResultAsync } from "neverthrow";
+import { err, ok, type Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 
 export async function setPinUnlock(
@@ -73,19 +74,8 @@ export async function unlockWithPin(
   }
 
   const buffer = base64ToArrayBuffer(decryptRes.value);
-  const importRes = await ResultAsync.fromPromise(
-    crypto.subtle.importKey(
-      "raw",
-      buffer,
-      { name: "AES-GCM", length: 256 },
-      true,
-      ["encrypt", "decrypt"],
-    ),
-    (error): TranslationKey => {
-      console.error("[Auth Service] PIN unlock failed to import key:", error);
-      return "login_error_wrong_pin";
-    },
-  );
+  const importRes = await importAesGcmKey(buffer, "login_error_wrong_pin");
+
   if (importRes.isErr()) {
     return err(importRes.error);
   }
