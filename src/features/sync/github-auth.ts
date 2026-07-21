@@ -11,11 +11,18 @@ import { sendMessageToBackground } from "@/core/messaging.ts";
 export async function setupGithub(
   token: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const rawRes = await sendMessageToBackground({
+  const sendResult = await sendMessageToBackground({
     type: MSG_VALIDATE_TOKEN,
     token,
-  }).catch(() => null);
-  const res = ValidateTokenResponseSchema.parse(rawRes);
+  });
+  if (sendResult.isErr()) {
+    return { success: false, error: sendResult.error };
+  }
+  const parsed = ValidateTokenResponseSchema.safeParse(sendResult.value);
+  if (!parsed.success) {
+    return { success: false, error: "toast_error" };
+  }
+  const res = parsed.data;
 
   if (res.success) {
     const key = await getSessionKey();
