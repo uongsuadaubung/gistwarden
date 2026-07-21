@@ -1,5 +1,5 @@
 import { type Component, createSignal, Index, onMount, Show } from "solid-js";
-import { isTranslationKey, t } from "@/core/i18n.ts";
+import { t, tErr } from "@/core/i18n.ts";
 import { Header } from "@/components/ui/Header.tsx";
 import Input from "@/components/ui/Input.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
@@ -59,7 +59,7 @@ export const Generator: Component = () => {
     });
 
     if (typeof res !== "string") {
-      setPassword(isTranslationKey(res.error) ? t(res.error) : res.error);
+      setPassword(tErr(res.error));
     } else {
       setPassword(res);
     }

@@ -649,6 +649,16 @@ export function t(
   return msg;
 }
 
+export function tErr(
+  error: string | undefined | null,
+  fallbackKey?: TranslationKey,
+): string {
+  if (!error) {
+    return fallbackKey ? t(fallbackKey) : "";
+  }
+  return isTranslationKey(error) ? t(error) : error;
+}
+
 /**
  * Định dạng ngày giờ tự động dựa trên ngôn ngữ/khu vực hoạt động hiện tại.
  */
