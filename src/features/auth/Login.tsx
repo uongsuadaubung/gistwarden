@@ -118,17 +118,11 @@ export const Login: Component = () => {
   const handlePinUnlock = async (pin: string) => {
     setLoading(true);
     setError("");
-    try {
-      const res = await unlockWithPin(pin);
-      if (!res.success) {
-        setError(tErr(res.error, "login_error_wrong_pin"));
-      }
-    } catch (err) {
-      console.error("[Login] PIN unlock failed:", err);
-      setError(t("login_error_wrong_pin"));
-    } finally {
-      setLoading(false);
+    const res = await unlockWithPin(pin);
+    if (res.isErr()) {
+      setError(tErr(res.error, "login_error_wrong_pin"));
     }
+    setLoading(false);
   };
 
   const handleSaveToken = async (token: string) => {
