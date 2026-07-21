@@ -14,6 +14,10 @@ export default {
   dialog_loading: "Processing...",
   toast_success: "Success!",
   toast_error: "An error occurred!",
+  toast_pin_disabled: "PIN unlock disabled",
+  toast_pin_set_success: "PIN set successfully!",
+  toast_timeout_updated: "Timeout settings updated",
+  confirm_disable_pin: "Are you sure you want to disable PIN unlock?",
 
   // Login Page
   login_title_locked: "Vault is Locked",

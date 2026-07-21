@@ -4,7 +4,7 @@ import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { disablePinUnlock, setPinUnlock } from "@/features/auth/pin-service.ts";
 import { updateSessionTimeout } from "@/features/auth/session-service.ts";
-import { confirm, showToast } from "@/core/ui-service.ts";
+import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import { updateSettings } from "@/core/storage.ts";
 import { ChevronRightIcon, KeyIcon } from "@/icons/svg/index.ts";
 import { t } from "@/core/i18n.ts";
@@ -28,17 +28,13 @@ export const AccountSecurity: Component = () => {
       if (
         await confirm(
           t("confirm_title"),
-          store.language === "vi"
-            ? "Bạn có chắc chắn muốn tắt tính năng mở khóa bằng mã PIN?"
-            : "Are you sure you want to disable PIN unlock?",
+          t("confirm_disable_pin"),
           "warning",
         )
       ) {
         await disablePinUnlock();
         showToast(
-          store.language === "vi"
-            ? "Đã tắt mở khóa bằng mã PIN"
-            : "PIN unlock disabled",
+          t("toast_pin_disabled"),
           "info",
         );
       }
@@ -48,16 +44,16 @@ export const AccountSecurity: Component = () => {
   const handleSavePin = async (pin: string, requireRestart: boolean) => {
     setIsPinModalOpen(false);
     setError("");
+    setGlobalLoading(true);
     const res = await setPinUnlock(pin, requireRestart);
-    if (res.success) {
+    setGlobalLoading(false);
+    if (res.isOk()) {
       showToast(
-        store.language === "vi"
-          ? "Mã PIN đã được thiết lập thành công!"
-          : "PIN set successfully!",
+        t("toast_pin_set_success"),
         "success",
       );
     } else {
-      setError(res.error || "Failed to set PIN");
+      setError(t(res.error));
     }
   };
 
@@ -72,9 +68,7 @@ export const AccountSecurity: Component = () => {
   ) => {
     await updateSessionTimeout(timeout, action);
     showToast(
-      store.language === "vi"
-        ? "Cài đặt thời gian chờ đã cập nhật"
-        : "Timeout settings updated",
+      t("toast_timeout_updated"),
       "success",
     );
   };

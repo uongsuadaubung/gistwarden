@@ -10,6 +10,7 @@
     "npm:jimp@*": "1.6.1",
     "npm:jsdom@24": "24.1.3",
     "npm:jsdom@^29.1.1": "29.1.1",
+    "npm:neverthrow@^8.2.0": "8.2.0",
     "npm:otpauth@^9.5.1": "9.5.1",
     "npm:qrcode-parser@^2.1.3": "2.1.3",
     "npm:sass@^1.99.0": "1.101.0",
@@ -848,6 +849,11 @@
       ],
       "scripts": true
     },
+    "@rollup/rollup-linux-x64-gnu@4.62.2": {
+      "integrity": "sha512-5BqxR/pshjey51iliyzTD5Xi3EN0aLmQ2lZ3lvefVV9c82BvrLo2/6OT55iifpWBufs6kdwWbuOKS841DrmK9A==",
+      "os": ["linux"],
+      "cpu": ["x64"]
+    },
     "@tokenizer/inflate@0.4.1": {
       "integrity": "sha512-2mAv+8pkG6GIZiF1kNg1jAjh27IDxEPKwdGul3snfztFerfPGI1LjDezZp3i7BElXompqEtPmoPx6c2wgtWsOA==",
       "dependencies": [
@@ -1371,6 +1377,12 @@
     "ms@2.1.3": {
       "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="
     },
+    "neverthrow@8.2.0": {
+      "integrity": "sha512-kOCT/1MCPAxY5iUV3wytNFUMUolzuwd/VF/1KCx7kf6CutrOsTie+84zTGTpgQycjvfLdBBdvBvFLqFD2c0wkQ==",
+      "optionalDependencies": [
+        "@rollup/rollup-linux-x64-gnu"
+      ]
+    },
     "node-addon-api@7.1.1": {
       "integrity": "sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ=="
     },
@@ -1724,6 +1736,7 @@
       "npm:esbuild@0.28",
       "npm:hash-wasm@^4.12.0",
       "npm:jsdom@^29.1.1",
+      "npm:neverthrow@^8.2.0",
       "npm:otpauth@^9.5.1",
       "npm:qrcode-parser@^2.1.3",
       "npm:sass@^1.99.0",

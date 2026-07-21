@@ -20,6 +20,10 @@ const LangSchema = z.object({
   dialog_loading: z.string(),
   toast_success: z.string(),
   toast_error: z.string(),
+  toast_pin_disabled: z.string(),
+  toast_pin_set_success: z.string(),
+  toast_timeout_updated: z.string(),
+  confirm_disable_pin: z.string(),
 
   // Login Page
   login_title_locked: z.string(),
