@@ -11,7 +11,7 @@ interface DetailHeaderProps {
 
 export const DetailHeader: Component<DetailHeaderProps> = (props) => {
   return (
-    <div class="detail-header mt-0 mb-16">
+    <div class="detail-header">
       <div class="back-btn" onClick={props.onBack}>
         <ArrowLeftIcon />
       </div>
