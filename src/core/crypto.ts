@@ -161,7 +161,10 @@ export async function getSessionKey(): Promise<CryptoKey | null> {
       (e) => e,
     );
     if (importRes.isErr()) {
-      console.error("[Crypto] Failed to import key from session storage:", importRes.error);
+      console.error(
+        "[Crypto] Failed to import key from session storage:",
+        importRes.error,
+      );
       return null;
     }
     derivedCryptoKey = importRes.value;

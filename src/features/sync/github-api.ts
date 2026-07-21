@@ -6,14 +6,14 @@ import {
   updateSettings,
 } from "@/core/storage.ts";
 import { APP_NAME } from "@/core/constants.ts";
+import { err, ok, Result } from "neverthrow";
+import type { TranslationKey } from "@/core/i18n.ts";
+import { fetchText } from "@/core/fetch-utils.ts";
+import { safeJsonParse } from "@/core/json-utils.ts";
 
 const GITHUB_API_BASE = "https://api.github.com";
 const GIST_DESCRIPTION = `${APP_NAME.toLowerCase()}_vault`;
 const GIST_FILE_NAME = `${APP_NAME.toLowerCase()}.json`;
-
-const GithubErrorSchema = z.object({
-  message: z.string().optional(),
-});
 
 const GistFileSchema = z.object({
   content: z.string().optional(),
@@ -34,11 +34,11 @@ export type GistType = z.infer<typeof GistSchema>;
 async function githubRequest(
   path: string,
   options: RequestInit = {},
-): Promise<unknown> {
+): Promise<Result<unknown, TranslationKey>> {
   const token = await getGithubToken();
-  if (!token) throw new Error("GitHub Token is not configured");
+  if (!token) return err("toast_error");
 
-  const response = await fetch(`${GITHUB_API_BASE}${path}`, {
+  const res = await fetchText(`${GITHUB_API_BASE}${path}`, {
     ...options,
     cache: "no-store",
     headers: {
@@ -48,77 +48,68 @@ async function githubRequest(
     },
   });
 
-  if (!response.ok) {
-    let errMsg = "GitHub API Error";
-    try {
-      const rawError = await response.json();
-      const parsed = GithubErrorSchema.safeParse(rawError);
-      if (parsed.success && parsed.data.message) {
-        errMsg = parsed.data.message;
-      }
-    } catch (_e) {
-      // Ignored
-    }
-    throw new Error(errMsg);
+  if (res.isErr()) {
+    return err(res.error);
   }
 
-  if (response.status === 204) {
-    return null;
+  const text = res.value;
+  if (!text.trim()) {
+    return ok(null);
   }
 
-  return response.json();
+  return safeJsonParse(text);
 }
 
 export async function validateToken(
   token: string,
-): Promise<
-  { success: boolean; username?: string; avatarUrl?: string; error?: string }
-> {
-  try {
-    const response = await fetch(`${GITHUB_API_BASE}/user`, {
-      cache: "no-store",
-      headers: {
-        "Authorization": `token ${token}`,
-        "Accept": "application/vnd.github.v3+json",
-      },
-    });
+): Promise<Result<{ username: string; avatarUrl: string }, TranslationKey>> {
+  const fetchRes = await fetchText(`${GITHUB_API_BASE}/user`, {
+    cache: "no-store",
+    headers: {
+      "Authorization": `token ${token}`,
+      "Accept": "application/vnd.github.v3+json",
+    },
+  });
 
-    if (!response.ok) {
-      return { success: false, error: "Invalid GitHub Token" };
-    }
-
-    const data = await response.json();
-    const parsed = GithubUserSchema.safeParse(data);
-    if (!parsed.success) {
-      return {
-        success: false,
-        error: "Invalid GitHub user profile data format",
-      };
-    }
-    return {
-      success: true,
-      username: parsed.data.login,
-      avatarUrl: parsed.data.avatar_url,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+  if (fetchRes.isErr()) {
+    return err("login_error_invalid_token");
   }
+
+  const parseRes = safeJsonParse(fetchRes.value);
+  if (parseRes.isErr()) {
+    return err("toast_error");
+  }
+
+  const parsed = GithubUserSchema.safeParse(parseRes.value);
+  if (!parsed.success) {
+    return err("toast_error");
+  }
+
+  return ok({
+    username: parsed.data.login,
+    avatarUrl: parsed.data.avatar_url,
+  });
 }
 
-export async function findGistId(): Promise<string> {
-  const raw = await githubRequest("/gists");
-  const gists = GistArraySchema.parse(raw);
-  const target = gists.find(
+export async function findGistId(): Promise<Result<string, TranslationKey>> {
+  const reqRes = await githubRequest("/gists");
+  if (reqRes.isErr()) {
+    return err(reqRes.error);
+  }
+  const parsed = GistArraySchema.safeParse(reqRes.value);
+  if (!parsed.success) {
+    return err("toast_error");
+  }
+  const target = parsed.data.find(
     (g) => g.description === GIST_DESCRIPTION && GIST_FILE_NAME in g.files,
   );
-  return target ? target.id : "";
+  return ok(target ? target.id : "");
 }
 
-export async function createGist(content: string): Promise<GistType> {
-  const raw = await githubRequest("/gists", {
+export async function createGist(
+  content: string,
+): Promise<Result<GistType, TranslationKey>> {
+  const reqRes = await githubRequest("/gists", {
     method: "POST",
     body: JSON.stringify({
       description: GIST_DESCRIPTION,
@@ -130,13 +121,20 @@ export async function createGist(content: string): Promise<GistType> {
       },
     }),
   });
-  return GistSchema.parse(raw);
+  if (reqRes.isErr()) {
+    return err(reqRes.error);
+  }
+  const parsed = GistSchema.safeParse(reqRes.value);
+  if (!parsed.success) {
+    return err("toast_error");
+  }
+  return ok(parsed.data);
 }
 
 export async function updateGist(
   gistId: string,
   content: string,
-): Promise<unknown> {
+): Promise<Result<unknown, TranslationKey>> {
   return await githubRequest(`/gists/${gistId}`, {
     method: "PATCH",
     body: JSON.stringify({
@@ -152,86 +150,105 @@ export async function updateGist(
 
 export async function uploadToGist(
   content: string,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const settings = await getAllSettings();
-    let gistId = settings.gistId;
+): Promise<Result<void, TranslationKey>> {
+  const settings = await getAllSettings();
+  let gistId = settings.gistId;
 
-    if (!gistId) {
-      gistId = await findGistId();
+  if (!gistId) {
+    const findRes = await findGistId();
+    if (findRes.isErr()) {
+      return err(findRes.error);
     }
-
-    if (gistId) {
-      await updateGist(gistId, content);
-    } else {
-      const gist = await createGist(content);
-      gistId = gist.id;
-    }
-
-    await updateSettings({ gistId, lastSync: Date.now() });
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+    gistId = findRes.value;
   }
+
+  if (gistId) {
+    const updateRes = await updateGist(gistId, content);
+    if (updateRes.isErr()) {
+      return err(updateRes.error);
+    }
+  } else {
+    const createRes = await createGist(content);
+    if (createRes.isErr()) {
+      return err(createRes.error);
+    }
+    gistId = createRes.value.id;
+  }
+
+  const updateSettingsRes = await updateSettings({
+    gistId,
+    lastSync: Date.now(),
+  });
+  if (updateSettingsRes.isErr()) {
+    return err(updateSettingsRes.error);
+  }
+  return ok();
 }
 
 export async function downloadFromGist(): Promise<
-  { success: boolean; content?: string; updatedAt?: number; error?: string }
+  Result<{ content: string; updatedAt: number }, TranslationKey>
 > {
-  try {
-    const settings = await getAllSettings();
-    let gistId = settings.gistId;
+  const settings = await getAllSettings();
+  let gistId = settings.gistId;
 
-    if (!gistId) {
-      gistId = await findGistId();
-      if (!gistId) {
-        return {
-          success: false,
-          error: `${APP_NAME} vault not found on GitHub`,
-        };
-      }
-      await updateSettings({ gistId });
+  if (!gistId) {
+    const findRes = await findGistId();
+    if (findRes.isErr()) {
+      return err(findRes.error);
     }
-
-    const data = await githubRequest(`/gists/${gistId}`);
-    const gist = GistSchema.parse(data);
-    const file = gist.files[GIST_FILE_NAME];
-    if (!file) throw new Error(`${APP_NAME} file not found in Gist`);
-
-    const content = file.content ||
-      await fetch(file.raw_url, { cache: "no-store" }).then((r) => r.text());
-
-    const updatedAt = new Date(gist.updated_at).getTime();
-    await updateSettings({ lastSync: Date.now() });
-
-    return {
-      success: true,
-      content,
-      updatedAt,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+    gistId = findRes.value;
+    if (!gistId) {
+      return err("toast_error");
+    }
+    const updateSettingsRes = await updateSettings({ gistId });
+    if (updateSettingsRes.isErr()) {
+      return err(updateSettingsRes.error);
+    }
   }
+
+  const dataRes = await githubRequest(`/gists/${gistId}`);
+  if (dataRes.isErr()) {
+    return err(dataRes.error);
+  }
+  const parsed = GistSchema.safeParse(dataRes.value);
+  if (!parsed.success) {
+    return err("toast_error");
+  }
+  const gist = parsed.data;
+  const file = gist.files[GIST_FILE_NAME];
+  if (!file) return err("toast_error");
+
+  let content = "";
+  if (file.content) {
+    content = file.content;
+  } else {
+    const fetchRes = await fetchText(file.raw_url, { cache: "no-store" });
+    if (fetchRes.isErr()) {
+      return err(fetchRes.error);
+    }
+    content = fetchRes.value;
+  }
+
+  const updatedAt = new Date(gist.updated_at).getTime();
+  const updateSettingsRes = await updateSettings({ lastSync: Date.now() });
+  if (updateSettingsRes.isErr()) {
+    return err(updateSettingsRes.error);
+  }
+
+  return ok({
+    content,
+    updatedAt,
+  });
 }
 
 export async function deleteGist(
   gistId: string,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    await githubRequest(`/gists/${gistId}`, {
-      method: "DELETE",
-    });
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+): Promise<Result<void, TranslationKey>> {
+  const reqRes = await githubRequest(`/gists/${gistId}`, {
+    method: "DELETE",
+  });
+  if (reqRes.isErr()) {
+    return err(reqRes.error);
   }
+  return ok(undefined);
 }

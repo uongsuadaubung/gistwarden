@@ -2,7 +2,11 @@ import { setStore, store } from "@/core/store.ts";
 import { err, ok, Result } from "neverthrow";
 import { z } from "zod";
 import { type ConfirmType, type ToastType } from "@/core/types.ts";
-import { setLanguage, SupportLanguage, type TranslationKey } from "@/core/i18n.ts";
+import {
+  setLanguage,
+  SupportLanguage,
+  type TranslationKey,
+} from "@/core/i18n.ts";
 import { setLocalItem, updateSettings } from "@/core/storage.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { fetchText } from "@/core/fetch-utils.ts";
@@ -111,8 +115,6 @@ export async function updateTheme(newTheme: "dark" | "light") {
 const TimeServerResponseSchema = z.object({
   unixtime: z.number(),
 });
-
-
 
 export async function syncTimeOffset(): Promise<Result<void, TranslationKey>> {
   const textRes = await fetchText(`${OAUTH_WORKER_URL}/time`);

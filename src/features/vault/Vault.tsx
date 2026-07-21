@@ -40,7 +40,11 @@ import {
 import { Input } from "@/components/ui/Input.tsx";
 import { VaultItemRow } from "@/features/vault/VaultItemRow.tsx";
 import { t } from "@/core/i18n.ts";
-import { getBaseDomain, getHostname, safeParseUrl } from "@/core/domain-utils.ts";
+import {
+  getBaseDomain,
+  getHostname,
+  safeParseUrl,
+} from "@/core/domain-utils.ts";
 
 const AutofillResponseSchema = z.object({
   success: z.boolean(),
@@ -394,7 +398,9 @@ export const Vault: Component = () => {
         });
 
         if (rawResponseRes.isOk()) {
-          const parseResult = AutofillResponseSchema.safeParse(rawResponseRes.value);
+          const parseResult = AutofillResponseSchema.safeParse(
+            rawResponseRes.value,
+          );
           if (parseResult.success && parseResult.data.success) {
             showToast(t("toast_success"), "success");
           }
