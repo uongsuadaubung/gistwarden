@@ -36,6 +36,8 @@ import {
   SESSION_KEY_VERIFICATION_IV,
 } from "@/core/constants.ts";
 import {
+  clearLocal,
+  clearSession,
   getAllSettings,
   getSessionItem,
   hasAlarms,
@@ -45,7 +47,7 @@ import {
   setSessionItem,
   STORAGE_KEY,
 } from "@/core/storage.ts";
-
+import { safeParseUrl } from "@/core/domain-utils.ts";
 const PendingFido2RequestSchema = z.object({
   type: z.enum(["create", "get"]),
   options: z.unknown(),
@@ -169,13 +171,11 @@ chrome.runtime.onMessage.addListener(
             sendResponse({ success: false, error: err });
             return;
           }
-          try {
-            const parsedUrl = new URL(redirectUrl);
-            const token = parsedUrl.searchParams.get("token");
+          const urlRes = safeParseUrl(redirectUrl);
+          if (urlRes.isOk()) {
+            const token = urlRes.value.searchParams.get("token");
             if (token) {
-              await chrome.storage.session.set({
-                [SESSION_KEY_PENDING_GITHUB_TOKEN]: token,
-              });
+              await setSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN, token);
               sendResponse({ success: true, token });
             } else {
               sendResponse({
@@ -183,11 +183,10 @@ chrome.runtime.onMessage.addListener(
                 error: "Token not found in redirect URL",
               });
             }
-          } catch (e) {
-            const errMsg = e instanceof Error ? e.message : String(e);
+          } else {
             sendResponse({
               success: false,
-              error: "Failed to parse redirect URL: " + errMsg,
+              error: "Failed to parse redirect URL: " + urlRes.error,
             });
           }
         });
@@ -229,8 +228,9 @@ chrome.runtime.onMessage.addListener(
         return true;
       }
 
-      case MSG_GET_PENDING_FIDO2_REQUEST:
-        getSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST).then((saved) => {
+      case MSG_GET_PENDING_FIDO2_REQUEST: {
+        const handleGetPendingFido2 = async () => {
+          const saved = await getSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST);
           const parsed = PendingFido2RequestSchema.safeParse(saved);
           if (parsed.success) {
             sendResponse({
@@ -242,10 +242,10 @@ chrome.runtime.onMessage.addListener(
           } else {
             sendResponse({ success: false, error: "No pending request" });
           }
-        }).catch((err) => {
-          sendResponse({ success: false, error: String(err) });
-        });
+        };
+        handleGetPendingFido2();
         return true;
+      }
 
       case MSG_RESOLVE_FIDO2_REQUEST:
         removeSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST);
@@ -304,26 +304,22 @@ async function updateTimeoutAlarm() {
   if (!hasAlarms()) return;
   await chrome.alarms.clear(ALARM_NAME_VAULT_TIMEOUT);
 
-  try {
-    const settings = await getAllSettings();
-    const timeout = settings.vaultTimeout || "onRestart";
+  const settings = await getAllSettings();
+  const timeout = settings.vaultTimeout || "onRestart";
 
-    if (timeout !== "onRestart") {
-      const minutes = parseInt(timeout, 10);
-      if (!isNaN(minutes) && minutes > 0) {
-        const derivedKey = await getSessionItem(SESSION_KEY_DERIVED_KEY);
-        if (derivedKey) {
-          chrome.alarms.create(ALARM_NAME_VAULT_TIMEOUT, {
-            delayInMinutes: minutes,
-          });
-          console.debug(
-            `[Background] Set ${ALARM_NAME_VAULT_TIMEOUT} alarm for ${minutes} minutes`,
-          );
-        }
+  if (timeout !== "onRestart") {
+    const minutes = parseInt(timeout, 10);
+    if (!isNaN(minutes) && minutes > 0) {
+      const derivedKey = await getSessionItem(SESSION_KEY_DERIVED_KEY);
+      if (derivedKey) {
+        chrome.alarms.create(ALARM_NAME_VAULT_TIMEOUT, {
+          delayInMinutes: minutes,
+        });
+        console.debug(
+          `[Background] Set ${ALARM_NAME_VAULT_TIMEOUT} alarm for ${minutes} minutes`,
+        );
       }
     }
-  } catch (err) {
-    console.error("[Background] Failed to update timeout alarm:", err);
   }
 }
 
@@ -333,29 +329,31 @@ if (hasAlarms()) {
       console.debug(
         `[Background] ${ALARM_NAME_VAULT_TIMEOUT} alarm fired. Locking/Logging out...`,
       );
-      try {
-        const settings = await getAllSettings();
-        const action = settings.vaultTimeoutAction || "lock";
+      const settings = await getAllSettings();
+      const action = settings.vaultTimeoutAction || "lock";
 
-        // Clear session data and navigation state
-        await removeSessionItem([
-          SESSION_KEY_DERIVED_KEY,
-          SESSION_KEY_VERIFICATION_IV,
-          SESSION_KEY_VERIFICATION_CIPHERTEXT,
-          SESSION_KEY_GITHUB_TOKEN,
-          SESSION_KEY_ENCRYPTED_VAULT,
-          SESSION_KEY_LAST_VIEW,
-          SESSION_KEY_LAST_SELECTED_ITEM_ID,
-        ]);
+      // Clear session data and navigation state
+      const removeRes = await removeSessionItem([
+        SESSION_KEY_DERIVED_KEY,
+        SESSION_KEY_VERIFICATION_IV,
+        SESSION_KEY_VERIFICATION_CIPHERTEXT,
+        SESSION_KEY_GITHUB_TOKEN,
+        SESSION_KEY_ENCRYPTED_VAULT,
+        SESSION_KEY_LAST_VIEW,
+        SESSION_KEY_LAST_SELECTED_ITEM_ID,
+      ]);
+      if (removeRes.isErr()) {
+        console.error(
+          "[Background] Failed to clear session items:",
+          removeRes.error,
+        );
+      }
 
-        if (action === "logout") {
-          await chrome.storage.local.clear();
-          broadcastMessage({ type: MSG_VAULT_LOGGED_OUT });
-        } else {
-          broadcastMessage({ type: MSG_VAULT_LOCKED });
-        }
-      } catch (err) {
-        console.error("[Background] Failed to execute timeout action:", err);
+      if (action === "logout") {
+        await clearLocal();
+        broadcastMessage({ type: MSG_VAULT_LOGGED_OUT });
+      } else {
+        broadcastMessage({ type: MSG_VAULT_LOCKED });
       }
     }
   });
@@ -374,27 +372,22 @@ async function initSession() {
   if (!hasSessionStorage()) {
     return;
   }
-  try {
-    const res = await chrome.storage.session.get(
-      SESSION_KEY_SESSION_INITIALIZED,
-    );
-    if (!res || !res[SESSION_KEY_SESSION_INITIALIZED]) {
-      // Lần đầu tiên chạy service worker trong phiên trình duyệt này (trình duyệt khởi động lại)
-      const settings = await getAllSettings();
-      const action = settings.vaultTimeoutAction || "lock";
-      if (action === "logout") {
-        console.debug(
-          "[Background] Trình duyệt khởi động lại và vaultTimeoutAction là logout. Đang đăng xuất...",
-        );
-        await chrome.storage.local.clear();
-        await chrome.storage.session.clear();
-      }
-      await chrome.storage.session.set({
-        [SESSION_KEY_SESSION_INITIALIZED]: true,
-      });
+  const sessionInitialized = await getSessionItem(
+    SESSION_KEY_SESSION_INITIALIZED,
+  );
+
+  if (!sessionInitialized) {
+    // Lần đầu tiên chạy service worker trong phiên trình duyệt này (trình duyệt khởi động lại)
+    const settings = await getAllSettings();
+    const action = settings.vaultTimeoutAction || "lock";
+    if (action === "logout") {
+      console.debug(
+        "[Background] Trình duyệt khởi động lại và vaultTimeoutAction là logout. Đang đăng xuất...",
+      );
+      await clearLocal();
+      await clearSession();
     }
-  } catch (err) {
-    console.error("[Background] Lỗi khi khởi tạo phiên làm việc:", err);
+    await setSessionItem(SESSION_KEY_SESSION_INITIALIZED, true);
   }
 }
 

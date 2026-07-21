@@ -1,6 +1,7 @@
 import { APP_NAME } from "@/core/constants.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
 import { z } from "zod";
+import { Result } from "neverthrow";
 
 const Fido2ResponseSchema = z.object({
   success: z.boolean().catch(false),
@@ -11,17 +12,24 @@ const Fido2ResponseSchema = z.object({
 // Inject fido2-page-script.js into the main page context
 const fido2Nonce = crypto.randomUUID();
 
-try {
+const injectScript = () => {
   const script = document.createElement("script");
   script.src = chrome.runtime.getURL("fido2-page-script.js");
   script.dataset.nonce = fido2Nonce;
   script.onload = () => {
     script.remove();
   };
-  (document.head || document.documentElement).appendChild(script);
-} catch (err) {
-  console.error(`[${APP_NAME}] Failed to inject FIDO2 page script:`, err);
-}
+  const target = document.head || document.documentElement;
+  if (target) {
+    target.appendChild(script);
+  }
+};
+
+Result.fromThrowable(
+  injectScript,
+  (err) =>
+    console.error(`[${APP_NAME}] Failed to inject FIDO2 page script:`, err),
+)();
 
 // Forward messages between main-world (page-script) and extension-world (background)
 window.addEventListener("message", async (event) => {
@@ -36,12 +44,9 @@ window.addEventListener("message", async (event) => {
 
   const { requestId, type, data } = event.data;
 
-  try {
-    // Send request to background script
-    const sendResult = await sendMessageToBackground({ type, data });
-    if (sendResult.isErr()) {
-      throw new Error(sendResult.error);
-    }
+  // Send request to background script
+  const sendResult = await sendMessageToBackground({ type, data });
+  if (sendResult.isOk()) {
     const response = sendResult.value;
 
     // Forward the response back to page script
@@ -61,14 +66,14 @@ window.addEventListener("message", async (event) => {
       },
       "*",
     );
-  } catch (err) {
+  } else {
     window.postMessage(
       {
         source: `${APP_NAME.toLowerCase()}-content-script`,
         nonce: fido2Nonce,
         requestId,
         success: false,
-        error: err instanceof Error ? err.message : String(err),
+        error: sendResult.error,
       },
       "*",
     );
