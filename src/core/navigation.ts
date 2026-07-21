@@ -57,9 +57,9 @@ export function navigate(newView: View) {
   // Save navigation state
   const skipViews = [View.Login, View.Welcome, View.Fido2Prompt];
   if (!skipViews.includes(newView)) {
-    setSessionItem(SESSION_KEY_LAST_VIEW, newView).catch(() => {});
+    setSessionItem(SESSION_KEY_LAST_VIEW, newView);
     if (newView !== View.ItemDetail && newView !== View.ItemEdit) {
-      removeSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID).catch(() => {});
+      removeSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID);
     }
   }
 }
@@ -75,10 +75,10 @@ export function selectItem(item: VaultItem | null) {
     });
 
     // Save navigation state
-    setSessionItem(SESSION_KEY_LAST_VIEW, View.ItemDetail).catch(() => {});
-    setSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID, item.id).catch(() => {});
+    setSessionItem(SESSION_KEY_LAST_VIEW, View.ItemDetail);
+    setSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID, item.id);
   } else {
-    removeSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID).catch(() => {});
+    removeSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID);
   }
 }
 
@@ -101,7 +101,7 @@ export async function openItem(
   // Save navigation state
   const skipViews = [View.Login, View.Welcome, View.Fido2Prompt];
   if (!skipViews.includes(targetView)) {
-    setSessionItem(SESSION_KEY_LAST_VIEW, targetView).catch(() => {});
-    setSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID, item.id).catch(() => {});
+    setSessionItem(SESSION_KEY_LAST_VIEW, targetView);
+    setSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID, item.id);
   }
 }

@@ -1,7 +1,11 @@
 import { setStore, store } from "@/core/store.ts";
+import { err, ok, Result } from "neverthrow";
+import { z } from "zod";
 import { type ConfirmType, type ToastType } from "@/core/types.ts";
-import { setLanguage, SupportLanguage } from "@/core/i18n.ts";
+import { setLanguage, SupportLanguage, type TranslationKey } from "@/core/i18n.ts";
 import { setLocalItem, updateSettings } from "@/core/storage.ts";
+import { safeJsonParse } from "@/core/json-utils.ts";
+import { fetchText } from "@/core/fetch-utils.ts";
 import {
   LOCAL_STORAGE_KEY_THEME,
   OAUTH_WORKER_URL,
@@ -104,30 +108,37 @@ export async function updateTheme(newTheme: "dark" | "light") {
   await setLocalItem(LOCAL_STORAGE_KEY_THEME, newTheme);
 }
 
-export async function syncTimeOffset(): Promise<
-  { success: boolean; error?: string }
-> {
-  try {
-    const res = await fetch(`${OAUTH_WORKER_URL}/time`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data && typeof data.unixtime === "number") {
-        const serverTime = data.unixtime * 1000;
-        const localTime = Date.now();
-        const offset = serverTime - localTime;
-        console.log(`[Store] Time sync successful. Offset: ${offset}ms`);
-        setStore(STORE_KEY_TIME_OFFSET, offset);
-        await updateSettings({ timeOffset: offset });
-        return { success: true };
-      }
-    }
-    return {
-      success: false,
-      error: "Không thể đọc dữ liệu thời gian từ phản hồi",
-    };
-  } catch (err) {
-    console.warn("[Store] Failed to sync time offset:", err);
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg };
+const TimeServerResponseSchema = z.object({
+  unixtime: z.number(),
+});
+
+
+
+export async function syncTimeOffset(): Promise<Result<void, TranslationKey>> {
+  const textRes = await fetchText(`${OAUTH_WORKER_URL}/time`);
+  if (textRes.isErr()) {
+    return err(textRes.error);
   }
+
+  const jsonRes = safeJsonParse(textRes.value);
+  if (jsonRes.isErr()) {
+    return err("toast_error");
+  }
+  const data = jsonRes.value;
+
+  const parseResult = TimeServerResponseSchema.safeParse(data);
+  if (parseResult.success) {
+    const serverTime = parseResult.data.unixtime * 1000;
+    const localTime = Date.now();
+    const offset = serverTime - localTime;
+    console.log(`[Store] Time sync successful. Offset: ${offset}ms`);
+    setStore(STORE_KEY_TIME_OFFSET, offset);
+    const updateRes = await updateSettings({ timeOffset: offset });
+    if (updateRes.isErr()) {
+      return err("storage_error");
+    }
+    return ok();
+  }
+
+  return err("toast_error");
 }

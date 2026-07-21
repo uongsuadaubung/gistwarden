@@ -15,11 +15,7 @@ export function getAssetUrl(path: string): string {
   if (!hasRuntime() || !chrome.runtime.getURL) {
     return path;
   }
-  try {
-    return chrome.runtime.getURL(path);
-  } catch (_err) {
-    return path;
-  }
+  return chrome.runtime.getURL(path);
 }
 
 /**
@@ -30,11 +26,7 @@ export function getAppVersion(): string {
   if (!hasRuntime() || !chrome.runtime.getManifest) {
     return "1.0.0";
   }
-  try {
-    return chrome.runtime.getManifest().version || "1.0.0";
-  } catch (_err) {
-    return "1.0.0";
-  }
+  return chrome.runtime.getManifest().version || "1.0.0";
 }
 
 /**
@@ -45,9 +37,5 @@ export function getExtensionId(): string {
   if (!hasRuntime()) {
     return "";
   }
-  try {
-    return chrome.runtime.id || "";
-  } catch (_err) {
-    return "";
-  }
+  return chrome.runtime.id || "";
 }

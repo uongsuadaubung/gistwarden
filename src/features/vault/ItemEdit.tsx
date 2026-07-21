@@ -49,9 +49,9 @@ export const ItemEdit: Component = () => {
     setFormState(getInitialFormState(item));
 
     if (!item?.id) {
-      const tab = await getCurrentTab();
-      if (tab && tab.url) {
-        const url = tab.url;
+      const tabRes = await getCurrentTab();
+      if (tabRes.isOk() && tabRes.value && tabRes.value.url) {
+        const url = tabRes.value.url;
         if (
           !url.startsWith("chrome://") && !url.startsWith("chrome-extension://")
         ) {
@@ -66,11 +66,12 @@ export const ItemEdit: Component = () => {
     setError("");
     try {
       // 1. Capture the visible tab as a PNG data URL
-      const screenshot = await captureVisibleTab({ format: "png" });
-      if (!screenshot) {
+      const screenshotRes = await captureVisibleTab({ format: "png" });
+      if (screenshotRes.isErr()) {
         setError(t("edit_qr_error_fail"));
         return;
       }
+      const screenshot = screenshotRes.value;
 
       // 2. Decode using qrcode-parser
       const decodedStr = await qrcodeParser(screenshot);
