@@ -1,5 +1,5 @@
 import { Result } from "neverthrow";
-import { type VaultItem, isLoginItem } from "@/core/types.ts";
+import { isLoginItem, type VaultItem } from "@/core/types.ts";
 
 /**
  * Phân tích URL an toàn sử dụng neverthrow Result.

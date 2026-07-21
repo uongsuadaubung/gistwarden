@@ -655,7 +655,6 @@ export function t(
   return msg;
 }
 
-
 /**
  * Định dạng ngày giờ tự động dựa trên ngôn ngữ/khu vực hoạt động hiện tại.
  */

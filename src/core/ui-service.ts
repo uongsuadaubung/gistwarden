@@ -55,7 +55,7 @@ export async function copyToClipboardWithMessage(
     showToast(t("toast_error"), "error");
     return;
   }
-  
+
   showToast(t(successMessageKey), "success");
 }
 

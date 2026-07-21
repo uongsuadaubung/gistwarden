@@ -1,7 +1,6 @@
 import { APP_NAME } from "@/core/constants.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
 import { z } from "zod";
-import { Result } from "neverthrow";
 
 const Fido2ResponseSchema = z.object({
   success: z.boolean().catch(false),
@@ -9,35 +8,23 @@ const Fido2ResponseSchema = z.object({
   error: z.string().optional(),
 });
 
-// Inject fido2-page-script.js into the main page context
-const fido2Nonce = crypto.randomUUID();
+// Generate a single-use token to verify communication from page-script
+const fido2Token = crypto.randomUUID();
 
-const injectScript = () => {
-  const script = document.createElement("script");
-  script.src = chrome.runtime.getURL("fido2-page-script.js");
-  script.dataset.nonce = fido2Nonce;
-  script.onload = () => {
-    script.remove();
-  };
-  const target = document.head || document.documentElement;
-  if (target) {
-    target.appendChild(script);
-  }
-};
-
-Result.fromThrowable(
-  injectScript,
-  (err) =>
-    console.error(`[${APP_NAME}] Failed to inject FIDO2 page script:`, err),
-)();
+if (document.documentElement) {
+  document.documentElement.setAttribute(
+    "data-gistwarden-fido2-token",
+    fido2Token,
+  );
+}
 
 // Forward messages between main-world (page-script) and extension-world (background)
 window.addEventListener("message", async (event) => {
-  // Only handle messages coming from our own page script with correct nonce
+  // Only handle messages coming from our own page script with correct token
   if (
     event.source !== window || !event.data ||
     event.data.source !== `${APP_NAME.toLowerCase()}-page-script` ||
-    event.data.nonce !== fido2Nonce
+    event.data.token !== fido2Token
   ) {
     return;
   }
@@ -58,7 +45,7 @@ window.addEventListener("message", async (event) => {
     window.postMessage(
       {
         source: `${APP_NAME.toLowerCase()}-content-script`,
-        nonce: fido2Nonce,
+        token: fido2Token,
         requestId,
         success: resData.success,
         result: resData.result,
@@ -70,7 +57,7 @@ window.addEventListener("message", async (event) => {
     window.postMessage(
       {
         source: `${APP_NAME.toLowerCase()}-content-script`,
-        nonce: fido2Nonce,
+        token: fido2Token,
         requestId,
         success: false,
         error: sendResult.error,
