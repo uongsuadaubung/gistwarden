@@ -1,4 +1,5 @@
 import { Result } from "neverthrow";
+import { type VaultItem, isLoginItem } from "@/core/types.ts";
 
 /**
  * Phân tích URL an toàn sử dụng neverthrow Result.
@@ -84,4 +85,19 @@ export function getBaseDomain(input: string): string {
   }
 
   return parts.slice(-2).join(".");
+}
+
+/**
+ * Lấy hostname hoặc domain từ một VaultItem (áp dụng cho LoginItem)
+ */
+export function getDomainFromItem(item: VaultItem): string | null {
+  if (!isLoginItem(item) || !item.login.uris || item.login.uris.length === 0) {
+    return null;
+  }
+  const uri = item.login.uris[0].uri;
+  let hostname = uri;
+  if (!/^https?:\/\//i.test(hostname)) {
+    hostname = "http://" + hostname;
+  }
+  return safeParseUrl(hostname).map((url) => url.hostname).unwrapOr(null);
 }

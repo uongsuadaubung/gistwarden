@@ -391,6 +391,7 @@ const LangSchema = z.object({
   gen_opt_symbols: z.string(),
   gen_opt_avoid_ambiguous: z.string(),
   gen_error_charset_empty: z.string(),
+  gen_error_invalid_words_count: z.string(),
   gen_btn_generate: z.string(),
   gen_btn_copy: z.string(),
   gen_tab_password: z.string(),
@@ -654,15 +655,6 @@ export function t(
   return msg;
 }
 
-export function tErr(
-  error: string | undefined | null,
-  fallbackKey?: TranslationKey,
-): string {
-  if (!error) {
-    return fallbackKey ? t(fallbackKey) : "";
-  }
-  return isTranslationKey(error) ? t(error) : error;
-}
 
 /**
  * Định dạng ngày giờ tự động dựa trên ngôn ngữ/khu vực hoạt động hiện tại.

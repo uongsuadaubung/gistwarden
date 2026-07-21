@@ -1,10 +1,11 @@
 import { setStore, store } from "@/core/store.ts";
-import { err, ok, Result } from "neverthrow";
+import { err, ok, Result, ResultAsync } from "neverthrow";
 import { z } from "zod";
 import { type ConfirmType, type ToastType } from "@/core/types.ts";
 import {
   setLanguage,
   SupportLanguage,
+  t,
   type TranslationKey,
 } from "@/core/i18n.ts";
 import { setLocalItem, updateSettings } from "@/core/storage.ts";
@@ -37,6 +38,25 @@ export function showToast(message: string, type: ToastType = "success") {
   toastTimeoutId = setTimeout(() => {
     setStore(STORE_KEY_TOAST_MESSAGE, "");
   }, 2000);
+}
+
+export async function copyToClipboardWithMessage(
+  text: string,
+  successMessageKey: TranslationKey = "detail_copied",
+) {
+  if (!text) return;
+  const copyRes = await ResultAsync.fromPromise(
+    navigator.clipboard.writeText(text),
+    (e) => e,
+  );
+
+  if (copyRes.isErr()) {
+    console.error("Failed to copy to clipboard", copyRes.error);
+    showToast(t("toast_error"), "error");
+    return;
+  }
+  
+  showToast(t(successMessageKey), "success");
 }
 
 export function setGlobalLoading(val: boolean, text = "") {

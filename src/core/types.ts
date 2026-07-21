@@ -188,6 +188,27 @@ export const VaultItemSchema = z.discriminatedUnion("type", [
 ]);
 export type VaultItem = z.infer<typeof VaultItemSchema>;
 
+// Type Guards for VaultItem
+export const isLoginItem = (item: VaultItem): item is LoginVaultItem => {
+  return Number(item.type) === VaultItemType.Login;
+};
+
+export const isSecureNoteItem = (item: VaultItem): item is SecureNoteVaultItem => {
+  return Number(item.type) === VaultItemType.SecureNote;
+};
+
+export const isCardItem = (item: VaultItem): item is CardVaultItem => {
+  return Number(item.type) === VaultItemType.Card;
+};
+
+export const isIdentityItem = (item: VaultItem): item is IdentityVaultItem => {
+  return Number(item.type) === VaultItemType.Identity;
+};
+
+export const isSshKeyItem = (item: VaultItem): item is SshKeyVaultItem => {
+  return Number(item.type) === VaultItemType.SshKey;
+};
+
 export const VaultListSchema = z.array(VaultItemSchema);
 export type VaultList = z.infer<typeof VaultListSchema>;
 

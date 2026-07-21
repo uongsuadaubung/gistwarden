@@ -410,6 +410,7 @@ export default {
   gen_opt_symbols: "Special Characters (!@#...)",
   gen_opt_avoid_ambiguous: "Avoid ambiguous characters (O, 0, l, 1)",
   gen_error_charset_empty: "Choose at least one character type!",
+  gen_error_invalid_words_count: "Number of words must be between 3 and 20!",
   gen_btn_generate: "Generate Password",
   gen_btn_copy: "Copy",
   gen_tab_password: "Password",

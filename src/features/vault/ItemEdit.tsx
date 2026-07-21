@@ -3,8 +3,9 @@ import { createStore } from "solid-js/store";
 import { store } from "@/core/store.ts";
 import { VaultItemType, View } from "@/core/types.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
-import { deleteItem, saveItem } from "@/features/vault/vault-service.ts";
+import { saveItem } from "@/features/vault/vault-service.ts";
 import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
+import { getVaultItemTitle, getVaultItemToastMsg, deleteVaultItemWithConfirm } from "@/features/vault/vault-utils.ts";
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
@@ -103,24 +104,10 @@ export const ItemEdit: Component = () => {
 
   const handleDelete = async () => {
     if (!store.selectedItem?.id) return;
-    if (
-      !(await confirm(
-        t("edit_confirm_delete_title"),
-        t("edit_confirm_delete_msg", { name: formState.name }),
-        "danger",
-      ))
-    ) {
-      return;
-    }
-
     setError("");
-    setGlobalLoading(true);
-    const res = await deleteItem(store.selectedItem.id);
-    setGlobalLoading(false);
-    if (res.isOk()) {
-      navigate(View.Vault);
-    } else {
-      setError(t(res.error));
+    const success = await deleteVaultItemWithConfirm(store.selectedItem);
+    if (!success && store.toastType === "error") {
+      setError(store.toastMessage);
     }
   };
 
@@ -154,25 +141,7 @@ export const ItemEdit: Component = () => {
     const res = await saveItem(itemData);
     setGlobalLoading(false);
     if (res.isOk()) {
-      const msg = isEdit()
-        ? (formState.itemType === VaultItemType.SecureNote
-          ? t("edit_toast_updated_note")
-          : formState.itemType === VaultItemType.Card
-          ? t("edit_toast_updated_card")
-          : formState.itemType === VaultItemType.Identity
-          ? t("edit_toast_updated_identity")
-          : formState.itemType === VaultItemType.SshKey
-          ? t("edit_toast_updated_ssh_key")
-          : t("edit_toast_updated_login"))
-        : (formState.itemType === VaultItemType.SecureNote
-          ? t("edit_toast_created_note")
-          : formState.itemType === VaultItemType.Card
-          ? t("edit_toast_created_card")
-          : formState.itemType === VaultItemType.Identity
-          ? t("edit_toast_created_identity")
-          : formState.itemType === VaultItemType.SshKey
-          ? t("edit_toast_created_ssh_key")
-          : t("edit_toast_created_login"));
+      const msg = getVaultItemToastMsg(formState.itemType, isEdit());
       showToast(msg, "success");
 
       // If was editing, return to detail view, else go back to vault
@@ -209,25 +178,7 @@ export const ItemEdit: Component = () => {
         <div class="app-body pb-24">
           {/* Header */}
           <DetailHeader
-            title={isEdit()
-              ? (formState.itemType === VaultItemType.SecureNote
-                ? t("edit_title_edit_note")
-                : formState.itemType === VaultItemType.Card
-                ? t("edit_title_edit_card")
-                : formState.itemType === VaultItemType.Identity
-                ? t("edit_title_edit_identity")
-                : formState.itemType === VaultItemType.SshKey
-                ? t("edit_title_edit_ssh_key")
-                : t("edit_title_edit_login"))
-              : (formState.itemType === VaultItemType.SecureNote
-                ? t("edit_title_add_note")
-                : formState.itemType === VaultItemType.Card
-                ? t("edit_title_add_card")
-                : formState.itemType === VaultItemType.Identity
-                ? t("edit_title_add_identity")
-                : formState.itemType === VaultItemType.SshKey
-                ? t("edit_title_add_ssh_key")
-                : t("edit_title_add_login"))}
+            title={getVaultItemTitle(formState.itemType, isEdit())}
             onBack={handleCancel}
           />
           <Show when={error()}>

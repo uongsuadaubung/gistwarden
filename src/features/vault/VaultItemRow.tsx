@@ -1,8 +1,7 @@
-import { type Component, createSignal, type JSX, Show } from "solid-js";
+import { type Component, Show } from "solid-js";
 import {
   type CardVaultItem,
   type IdentityVaultItem,
-  type LoginVaultItem,
   type SshKeyVaultItem,
   type VaultItem,
   VaultItemType,
@@ -20,7 +19,9 @@ import { openItem } from "@/core/navigation.ts";
 import { openTab } from "@/core/tabs.ts";
 import { t } from "@/core/i18n.ts";
 import CardBrandIcon from "@/components/ui/CardBrandIcon.tsx";
-import { safeParseUrl } from "@/core/domain-utils.ts";
+import { getDomainFromItem } from "@/core/domain-utils.ts";
+import Favicon from "@/components/ui/Favicon.tsx";
+import { isCardItem, isIdentityItem, isSshKeyItem, isLoginItem } from "@/core/types.ts";
 
 interface VaultItemRowProps {
   item: VaultItem;
@@ -36,52 +37,6 @@ interface VaultItemRowProps {
   isSuggested?: boolean;
   onFillItem?: (item: VaultItem, e: MouseEvent) => void;
 }
-
-const getDomain = (item: VaultItem): string | null => {
-  if (
-    item.type !== VaultItemType.Login || !item.login.uris ||
-    item.login.uris.length === 0
-  ) {
-    return null;
-  }
-  const uri = item.login.uris[0].uri;
-  let hostname = uri;
-  if (!/^https?:\/\//i.test(hostname)) {
-    hostname = "http://" + hostname;
-  }
-  return safeParseUrl(hostname).map((url) => url.hostname).unwrapOr(null);
-};
-
-const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (
-  props,
-) => {
-  const [hasError, setHasError] = createSignal(false);
-  return (
-    <Show when={!hasError()} fallback={props.fallback}>
-      <img
-        src={`https://www.google.com/s2/favicons?domain=${props.domain}&sz=32`}
-        alt=""
-        onError={() => setHasError(true)}
-      />
-    </Show>
-  );
-};
-
-const isCard = (item: VaultItem): item is CardVaultItem => {
-  return Number(item.type) === VaultItemType.Card;
-};
-
-const isIdentity = (item: VaultItem): item is IdentityVaultItem => {
-  return Number(item.type) === VaultItemType.Identity;
-};
-
-const isSshKey = (item: VaultItem): item is SshKeyVaultItem => {
-  return Number(item.type) === VaultItemType.SshKey;
-};
-
-const isLogin = (item: VaultItem): item is LoginVaultItem => {
-  return Number(item.type) === VaultItemType.Login;
-};
 
 const getCardSub = (item: CardVaultItem): string => {
   const brand = item.card.brand || "Card";
@@ -101,7 +56,7 @@ const getSshKeySub = (item: SshKeyVaultItem): string => {
 };
 
 export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
-  const domain = () => getDomain(props.item);
+  const domain = () => getDomainFromItem(props.item);
 
   const getUri = (): string | null => {
     if (
@@ -125,7 +80,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
         <Show when={Number(props.item.type) === VaultItemType.SecureNote}>
           <NoteIcon />
         </Show>
-        <Show when={isCard(props.item) ? props.item : null}>
+        <Show when={isCardItem(props.item) ? props.item : null}>
           {(cardItem) => <CardBrandIcon brand={cardItem().card.brand || ""} />}
         </Show>
         <Show when={Number(props.item.type) === VaultItemType.Identity}>
@@ -157,16 +112,16 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
                 </Show>
               </div>
               <div class="item-sub">
-                <Show when={isCard(props.item) ? props.item : null}>
+                <Show when={isCardItem(props.item) ? props.item : null}>
                   {(cardItem) => getCardSub(cardItem())}
                 </Show>
-                <Show when={isIdentity(props.item) ? props.item : null}>
+                <Show when={isIdentityItem(props.item) ? props.item : null}>
                   {(identityItem) => getIdentitySub(identityItem())}
                 </Show>
-                <Show when={isSshKey(props.item) ? props.item : null}>
+                <Show when={isSshKeyItem(props.item) ? props.item : null}>
                   {(sshItem) => getSshKeySub(sshItem())}
                 </Show>
-                <Show when={isLogin(props.item) ? props.item : null}>
+                <Show when={isLoginItem(props.item) ? props.item : null}>
                   {(loginItem) => (
                     <>
                       <Show
@@ -308,7 +263,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
 
             {/* Card Item Copy Actions */}
             <Show
-              when={isCard(props.item) ? props.item : null}
+              when={isCardItem(props.item) ? props.item : null}
             >
               {(cardItem) => (
                 <>
@@ -344,7 +299,7 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
 
             {/* SSH Key Item Copy Actions */}
             <Show
-              when={isSshKey(props.item) ? props.item : null}
+              when={isSshKeyItem(props.item) ? props.item : null}
             >
               {(sshItem) => (
                 <>

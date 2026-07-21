@@ -43,7 +43,7 @@ import {
   QuestionIcon,
   ShieldIcon,
 } from "@/icons/svg/index.ts";
-import { formatDateTime, t, tErr } from "@/core/i18n.ts";
+import { formatDateTime, t } from "@/core/i18n.ts";
 import PasskeySelectRow from "@/features/passkey/PasskeySelectRow.tsx";
 
 export const Fido2Prompt: Component = () => {
@@ -192,7 +192,7 @@ export const Fido2Prompt: Component = () => {
       setMasterPassword("");
       await loadPendingRequest();
     } else {
-      setError(tErr(result.error, "login_error_wrong_mp"));
+      setError(t(result.error));
     }
 
     setGlobalLoading(false);
@@ -229,7 +229,7 @@ export const Fido2Prompt: Component = () => {
     );
 
     if (res.isErr()) {
-      setError(tErr(res.error, "fido2_error_create_failed"));
+      setError(t(res.error));
     } else {
       window.close();
     }
@@ -249,7 +249,7 @@ export const Fido2Prompt: Component = () => {
     );
 
     if (res.isErr()) {
-      setError(tErr(res.error, "fido2_error_assert_failed"));
+      setError(t(res.error));
     } else {
       window.close();
     }
