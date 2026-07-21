@@ -2,7 +2,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { changeMasterPassword } from "@/features/auth/master-password-service.ts";
-import { showToast } from "@/core/ui-service.ts";
+import { setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
@@ -32,29 +32,26 @@ export const ChangeMasterPassword: Component = () => {
     }
 
     setLoading(true);
+    setGlobalLoading(true);
     setError("");
-    try {
-      const res = await changeMasterPassword(
-        currentPassword(),
-        newPassword(),
+    const result = await changeMasterPassword(
+      currentPassword(),
+      newPassword(),
+    );
+    setGlobalLoading(false);
+    setLoading(false);
+
+    if (result.isOk()) {
+      showToast(
+        t("settings_mp_success"),
+        "success",
       );
-      if (res.success) {
-        showToast(
-          t("settings_mp_success"),
-          "success",
-        );
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        navigate(View.AccountSecurity);
-      } else {
-        setError(res.error || t("settings_error_mp_fail"));
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || t("settings_error_mp_fail"));
-    } finally {
-      setLoading(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      navigate(View.AccountSecurity);
+    } else {
+      setError(t(result.error));
     }
   };
 

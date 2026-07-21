@@ -252,6 +252,7 @@ export default {
   detail_ssh_fingerprint: "Fingerprint",
   ssh_invalid_key:
     "Invalid SSH Private Key or format unsupported (requires unencrypted OpenSSH format)",
+  storage_error: "Storage operation failed.",
   ssh_import_from_clipboard:
     "Paste unencrypted OpenSSH Private Key from clipboard",
   detail_copy_ssh_private_key: "Copy private key",

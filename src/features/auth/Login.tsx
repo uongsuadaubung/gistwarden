@@ -18,7 +18,7 @@ import { GithubSetupForm } from "@/features/auth/components/GithubSetupForm.tsx"
 import { MasterPasswordForm } from "@/features/auth/components/MasterPasswordForm.tsx";
 import { MasterPasswordCreate } from "@/features/auth/components/MasterPasswordCreate.tsx";
 import { AppIcon, SyncIcon } from "@/icons/svg/index.ts";
-import { t, tErr } from "@/core/i18n.ts";
+import { isTranslationKey, t } from "@/core/i18n.ts";
 import { getSessionItem, removeSessionItem } from "@/core/storage.ts";
 import { z } from "zod";
 import {
@@ -93,16 +93,10 @@ export const Login: Component = () => {
       const token = parsed.data;
       setLoading(true);
       await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
-      try {
-        const setupRes = await setupGithub(token);
-        if (!setupRes.success) {
-          setError(tErr(setupRes.error, "login_error_invalid_token"));
-        }
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        setError(tErr(errMsg, "login_error_oauth_fail"));
-      } finally {
-        setLoading(false);
+      const setupRes = await setupGithub(token);
+      setLoading(false);
+      if (setupRes.isErr()) {
+        setError(t(setupRes.error));
       }
     }
   });
@@ -126,7 +120,7 @@ export const Login: Component = () => {
     setError("");
     const res = await unlockWithPin(pin);
     if (res.isErr()) {
-      setError(tErr(res.error, "login_error_wrong_pin"));
+      setError(t(res.error));
     }
     setLoading(false);
   };
@@ -138,56 +132,60 @@ export const Login: Component = () => {
     }
     setLoading(true);
     setError("");
-    try {
-      const res = await setupGithub(token.trim());
-      if (!res.success) {
-        setError(tErr(res.error, "login_error_invalid_token"));
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(tErr(errMsg, "login_error_any"));
-    } finally {
-      setLoading(false);
+    const result = await setupGithub(token.trim());
+    setLoading(false);
+    if (result.isErr()) {
+      setError(t(result.error));
     }
   };
 
   const handleGithubOauth = async () => {
     setLoading(true);
     setError("");
-    try {
-      // Call background script to launch web auth flow
-      const sendResult = await sendMessageToBackground({
-        type: MSG_START_GITHUB_OAUTH,
-        content: OAUTH_CLIENT_ID,
-        token: OAUTH_WORKER_URL,
-      });
-      if (sendResult.isErr()) {
-        throw new Error(sendResult.error);
-      }
-      const parsed = OauthResponseSchema.safeParse(sendResult.value);
 
-      if (!parsed.success || !parsed.data.success || !parsed.data.token) {
-        const errorMsg = (parsed.success && parsed.data.error)
-          ? parsed.data.error
-          : t("login_error_oauth_no_token");
-        throw new Error(errorMsg);
-      }
-
-      // Setup GitHub with the obtained token
-      const res = await setupGithub(parsed.data.token);
-
-      // Remove the pending token so it doesn't trigger onMount again
-      await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
-
-      if (!res.success) {
-        setError(tErr(res.error, "login_error_invalid_token"));
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(tErr(errMsg, "login_error_oauth_fail"));
-    } finally {
+    const handleOauthError = (errVal: unknown) => {
+      const errMsg = errVal instanceof Error ? errVal.message : String(errVal);
+      const errKey = isTranslationKey(errMsg)
+        ? errMsg
+        : "login_error_oauth_fail";
+      setError(t(errKey));
       setLoading(false);
+    };
+
+    const sendResult = await sendMessageToBackground({
+      type: MSG_START_GITHUB_OAUTH,
+      content: OAUTH_CLIENT_ID,
+      token: OAUTH_WORKER_URL,
+    });
+    if (sendResult.isErr()) {
+      handleOauthError(sendResult.error);
+      return;
     }
+    const parsed = OauthResponseSchema.safeParse(sendResult.value);
+
+    if (!parsed.success || !parsed.data.success || !parsed.data.token) {
+      const errorMsg = (parsed.success && parsed.data.error)
+        ? parsed.data.error
+        : "login_error_oauth_no_token";
+      handleOauthError(errorMsg);
+      return;
+    }
+
+    // Setup GitHub with the obtained token
+    const setupRes = await setupGithub(parsed.data.token);
+    if (setupRes.isErr()) {
+      handleOauthError(setupRes.error);
+      return;
+    }
+
+    // Remove the pending token so it doesn't trigger onMount again
+    const removeRes = await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
+    if (removeRes.isErr()) {
+      handleOauthError(removeRes.error);
+      return;
+    }
+
+    setLoading(false);
   };
 
   const handleUnlock = async (password: string) => {
@@ -197,18 +195,11 @@ export const Login: Component = () => {
     }
     setLoading(true);
     setError("");
-    try {
-      const res = await unlock(password);
-      if (!res.success) {
-        setFailedUnlockAttempts((prev) => prev + 1);
-        setError(tErr(res.error, "login_error_wrong_mp"));
-      }
-    } catch (err) {
+    const result = await unlock(password);
+    setLoading(false);
+    if (result.isErr()) {
       setFailedUnlockAttempts((prev) => prev + 1);
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(tErr(errMsg, "login_error_unlock_fail"));
-    } finally {
-      setLoading(false);
+      setError(t(result.error));
     }
   };
 

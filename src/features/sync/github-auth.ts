@@ -5,29 +5,34 @@ import { SESSION_KEY_GITHUB_TOKEN } from "@/core/constants.ts";
 import { setStore } from "@/core/store.ts";
 import { ValidateTokenResponseSchema } from "@/core/types.ts";
 import { MSG_VALIDATE_TOKEN } from "@/core/constants.ts";
-
 import { sendMessageToBackground } from "@/core/messaging.ts";
+import { err, ok, Result } from "neverthrow";
+import type { TranslationKey } from "@/core/i18n.ts";
 
 export async function setupGithub(
   token: string,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<Result<void, TranslationKey>> {
   const sendResult = await sendMessageToBackground({
     type: MSG_VALIDATE_TOKEN,
     token,
   });
   if (sendResult.isErr()) {
-    return { success: false, error: sendResult.error };
+    return err(sendResult.error);
   }
   const parsed = ValidateTokenResponseSchema.safeParse(sendResult.value);
   if (!parsed.success) {
-    return { success: false, error: "toast_error" };
+    return err("toast_error");
   }
   const res = parsed.data;
 
   if (res.success) {
     const key = await getSessionKey();
     if (key) {
-      const { iv, ciphertext } = await encryptData(token, key);
+      const encryptRes = await encryptData(token, key);
+      if (encryptRes.isErr()) {
+        return err(encryptRes.error);
+      }
+      const { iv, ciphertext } = encryptRes.value;
       await updateSettings({
         githubTokenEncrypted: ciphertext,
         githubTokenIv: iv,
@@ -55,8 +60,8 @@ export async function setupGithub(
         avatar_url: res.avatarUrl || "",
       },
     });
-    return { success: true };
+    return ok();
   } else {
-    return { success: false, error: res.error || "Token không hợp lệ" };
+    return err("login_error_invalid_token");
   }
 }

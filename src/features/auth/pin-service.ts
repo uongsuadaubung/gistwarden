@@ -10,7 +10,7 @@ import {
   getSessionKey,
 } from "@/core/crypto.ts";
 
-import { unlockWithKey } from "@/features/auth/auth-service.ts";
+import { unlockWithKey } from "@/features/auth/session-service.ts";
 import { err, ok, type Result, ResultAsync } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 
@@ -23,31 +23,31 @@ export async function setPinUnlock(
     return err("login_title_locked");
   }
 
-  const result = await ResultAsync.fromPromise(
-    (async () => {
-      const raw = await crypto.subtle.exportKey("raw", key);
-      const keyBytesB64 = arrayBufferToBase64(raw);
+  const raw = await crypto.subtle.exportKey("raw", key);
+  const keyBytesB64 = arrayBufferToBase64(raw);
 
-      const rawSalt = generateSalt();
-      const pinSaltBase64 = btoa(String.fromCharCode(...rawSalt));
-      const pinKey = await deriveKey(pin, rawSalt);
-      const { iv, ciphertext } = await encryptData(keyBytesB64, pinKey);
+  const rawSalt = generateSalt();
+  const pinSaltBase64 = btoa(String.fromCharCode(...rawSalt));
+  const pinKeyRes = await deriveKey(pin, rawSalt);
+  if (pinKeyRes.isErr()) {
+    return err(pinKeyRes.error);
+  }
+  const pinKey = pinKeyRes.value;
+  const encryptRes = await encryptData(keyBytesB64, pinKey);
+  if (encryptRes.isErr()) {
+    return err(encryptRes.error);
+  }
+  const { iv, ciphertext } = encryptRes.value;
 
-      await updateSettings({
-        pinUnlockEnabled: true,
-        pinUnlockValue: ciphertext,
-        pinUnlockIv: iv,
-        pinUnlockSalt: pinSaltBase64,
-        requireMasterPasswordOnRestart: requireRestart,
-      });
-    })(),
-    (error): TranslationKey => {
-      console.error("[Store] Set PIN failed:", error);
-      return "toast_error";
-    },
-  );
+  await updateSettings({
+    pinUnlockEnabled: true,
+    pinUnlockValue: ciphertext,
+    pinUnlockIv: iv,
+    pinUnlockSalt: pinSaltBase64,
+    requireMasterPasswordOnRestart: requireRestart,
+  });
 
-  return result;
+  return ok();
 }
 
 export async function unlockWithPin(
@@ -57,40 +57,42 @@ export async function unlockWithPin(
     return err("login_error_wrong_pin");
   }
 
-  const result = await ResultAsync.fromPromise(
-    (async () => {
-      const saltBuffer = base64ToArrayBuffer(store.pinUnlockSalt);
-      const pinKey = await deriveKey(pin, new Uint8Array(saltBuffer));
-      const decryptedKeyBytesB64 = await decryptData(
-        store.pinUnlockValue,
-        store.pinUnlockIv,
-        pinKey,
-      );
+  const saltBuffer = base64ToArrayBuffer(store.pinUnlockSalt);
+  const pinKeyRes = await deriveKey(pin, new Uint8Array(saltBuffer));
+  if (pinKeyRes.isErr()) {
+    return err("login_error_wrong_pin");
+  }
+  const pinKey = pinKeyRes.value;
+  const decryptRes = await decryptData(
+    store.pinUnlockValue,
+    store.pinUnlockIv,
+    pinKey,
+  );
+  if (decryptRes.isErr()) {
+    return err("login_error_wrong_pin");
+  }
 
-      const buffer = base64ToArrayBuffer(decryptedKeyBytesB64);
-      const key = await crypto.subtle.importKey(
-        "raw",
-        buffer,
-        { name: "AES-GCM", length: 256 },
-        true,
-        ["encrypt", "decrypt"],
-      );
-
-      return key;
-    })(),
+  const buffer = base64ToArrayBuffer(decryptRes.value);
+  const importRes = await ResultAsync.fromPromise(
+    crypto.subtle.importKey(
+      "raw",
+      buffer,
+      { name: "AES-GCM", length: 256 },
+      true,
+      ["encrypt", "decrypt"],
+    ),
     (error): TranslationKey => {
-      console.error("[Auth Service] PIN unlock failed:", error);
+      console.error("[Auth Service] PIN unlock failed to import key:", error);
       return "login_error_wrong_pin";
     },
   );
-
-  if (result.isErr()) {
-    return err(result.error);
+  if (importRes.isErr()) {
+    return err(importRes.error);
   }
 
-  const res = await unlockWithKey(result.value);
-  if (!res.success) {
-    return err("login_error_unlock_fail");
+  const res = await unlockWithKey(importRes.value);
+  if (res.isErr()) {
+    return err(res.error);
   }
 
   return ok();

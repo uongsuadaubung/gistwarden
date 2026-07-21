@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { setStore, store } from "@/core/store.ts";
 import {
+  type AppSettings,
   clearAlarm,
   clearLocal,
   clearSession,
@@ -32,7 +33,14 @@ import {
   VaultListSchema,
   View,
 } from "@/core/types.ts";
-import { setLanguage, SupportLanguage } from "@/core/i18n.ts";
+import {
+  isTranslationKey,
+  setLanguage,
+  SupportLanguage,
+  type TranslationKey,
+} from "@/core/i18n.ts";
+import { err, ok, Result } from "neverthrow";
+import { safeJsonParse } from "@/core/json-utils.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 import {
   ALARM_NAME_VAULT_TIMEOUT,
@@ -54,60 +62,237 @@ import {
   STORE_KEY_VIEW,
 } from "@/core/constants.ts";
 
-export async function init() {
-  console.log(`[Store] Initializing ${APP_NAME} Store...`);
-
-  // Phóng tránh Race Condition: Đảm bảo Đăng xuất (nếu có) được hoàn tất trước khi đọc cài đặt
-  if (hasSessionStorage()) {
-    const sessionInitialized = await getSessionItem(
-      SESSION_KEY_SESSION_INITIALIZED,
-    );
-    if (!sessionInitialized) {
-      const settings = await getAllSettings();
-      const action = settings.vaultTimeoutAction || "lock";
-      if (action === "logout") {
-        console.debug(
-          `[Store] Phát hiện khởi động lại trình duyệt và hành động là logout. Đang đăng xuất...`,
-        );
-        await clearLocal();
-        await clearSession();
-      }
-      await setSessionItem(SESSION_KEY_SESSION_INITIALIZED, true);
-    }
+async function handleBrowserRestartCleanup(
+  settings: AppSettings,
+): Promise<void> {
+  if (!hasSessionStorage()) {
+    return;
   }
+  const sessionInitialized = await getSessionItem(
+    SESSION_KEY_SESSION_INITIALIZED,
+  );
+  if (!sessionInitialized) {
+    const action = settings.vaultTimeoutAction || "lock";
+    if (action === "logout") {
+      console.debug(
+        `[Store] Phát hiện khởi động lại trình duyệt và hành động là logout. Đang đăng xuất...`,
+      );
+      await clearLocal();
+      await clearSession();
+    }
+    await setSessionItem(SESSION_KEY_SESSION_INITIALIZED, true);
+  }
+}
 
-  const settings = await getAllSettings();
-  const key = await getSessionKey();
-  const sessionUnlockedVal = await isSessionUnlocked();
-
-  let currentTheme: "dark" | "light" = "dark";
+async function loadAndApplyTheme(): Promise<"dark" | "light"> {
   const themeVal = await getLocalItem(LOCAL_STORAGE_KEY_THEME);
-  currentTheme = themeVal === "light" ? "light" : "dark";
-
-  if (currentTheme === "light") {
+  const finalTheme = themeVal === "light" ? "light" : "dark";
+  if (finalTheme === "light") {
     document.body.classList.add("light-theme");
   } else {
     document.body.classList.remove("light-theme");
   }
+  return finalTheme;
+}
 
+async function resolveGithubToken(
+  settings: AppSettings,
+  key: CryptoKey | null,
+): Promise<string> {
   const sessionToken = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-  const githubConfigured = !!settings.githubTokenEncrypted || !!sessionToken;
-
   let decryptedToken = "";
   if (settings.githubTokenEncrypted && settings.githubTokenIv && key) {
-    try {
-      decryptedToken = await decryptData(
-        settings.githubTokenEncrypted,
-        settings.githubTokenIv,
-        key,
-      );
+    const decryptRes = await decryptData(
+      settings.githubTokenEncrypted,
+      settings.githubTokenIv,
+      key,
+    );
+    if (decryptRes.isOk()) {
+      decryptedToken = decryptRes.value;
       await setSessionItem(SESSION_KEY_GITHUB_TOKEN, decryptedToken);
-    } catch (e) {
-      console.error("Failed to decrypt GitHub Token:", e);
+    } else {
+      console.error("Failed to decrypt GitHub Token:", decryptRes.error);
     }
   } else if (sessionToken && typeof sessionToken === "string") {
     decryptedToken = sessionToken;
   }
+  return decryptedToken;
+}
+
+async function loadAndDecryptVault(
+  key: CryptoKey,
+  isFido2Prompt: boolean,
+  params: URLSearchParams,
+): Promise<void> {
+  const handleInitError = (errVal: TranslationKey) => {
+    console.error("[Store] Decryption on load failed:", errVal);
+    setStore(STORE_KEY_IS_LOCKED, true);
+    if (!isFido2Prompt) setStore(STORE_KEY_VIEW, View.Login);
+  };
+
+  let rawRes: unknown;
+  const cachedVal = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
+  const cachedContent = typeof cachedVal === "string" ? cachedVal : undefined;
+
+  if (cachedContent) {
+    rawRes = { success: true, content: cachedContent };
+  } else {
+    const sendResult = await sendMessageToBackground({
+      type: MSG_DOWNLOAD_FROM_GIST,
+    });
+    if (sendResult.isErr()) {
+      handleInitError(sendResult.error);
+      return;
+    }
+    const parsedFetchResResult = DownloadFromGistResponseSchema.safeParse(
+      sendResult.value,
+    );
+    if (!parsedFetchResResult.success) {
+      handleInitError("storage_error");
+      return;
+    }
+    const parsedFetchRes = parsedFetchResResult.data;
+
+    if (parsedFetchRes.success && parsedFetchRes.content) {
+      await setSessionItem(
+        SESSION_KEY_ENCRYPTED_VAULT,
+        parsedFetchRes.content,
+      );
+    }
+    rawRes = parsedFetchRes;
+  }
+
+  const resResult = DownloadFromGistResponseSchema.safeParse(rawRes);
+  if (!resResult.success) {
+    handleInitError("storage_error");
+    return;
+  }
+  const res = resResult.data;
+
+  if (res && res.success && res.content) {
+    const content = res.content;
+    const payloadResultRaw = safeJsonParse(content);
+    if (payloadResultRaw.isErr()) {
+      handleInitError(payloadResultRaw.error);
+      return;
+    }
+    const payloadResult = GistPayloadSchema.safeParse(payloadResultRaw.value);
+    if (!payloadResult.success) {
+      handleInitError("storage_error");
+      return;
+    }
+    const payload = payloadResult.data;
+
+    const decryptRes = await decryptData(
+      payload.ciphertext,
+      payload.iv,
+      key,
+    );
+    if (decryptRes.isErr()) {
+      handleInitError(decryptRes.error);
+      return;
+    }
+
+    const itemsJsonResult = safeJsonParse(decryptRes.value);
+    if (itemsJsonResult.isErr()) {
+      handleInitError(itemsJsonResult.error);
+      return;
+    }
+
+    const itemsResult = VaultListSchema.safeParse(itemsJsonResult.value);
+    if (!itemsResult.success) {
+      handleInitError("storage_error");
+      return;
+    }
+    const items = itemsResult.data;
+
+    let targetView = isFido2Prompt ? View.Fido2Prompt : View.Vault;
+    let selectedItem = undefined;
+
+    const itemId = params.get("itemId");
+    if (itemId && !isFido2Prompt) {
+      const foundItem = items.find((i) => i.id === itemId);
+      if (foundItem) {
+        selectedItem = foundItem;
+        targetView = View.ItemDetail;
+      }
+    } else if (!isFido2Prompt) {
+      const sessionData = await getSessionItems([
+        SESSION_KEY_LAST_VIEW,
+        SESSION_KEY_LAST_SELECTED_ITEM_ID,
+      ]);
+      const savedView = sessionData[SESSION_KEY_LAST_VIEW];
+      const savedItemId = sessionData[SESSION_KEY_LAST_SELECTED_ITEM_ID];
+
+      const ViewSchema = z.nativeEnum(View);
+      const viewParsed = ViewSchema.safeParse(savedView);
+      if (viewParsed.success) {
+        const viewVal = viewParsed.data;
+        if (viewVal !== View.Login && viewVal !== View.Welcome) {
+          targetView = viewVal;
+        }
+      }
+
+      if (typeof savedItemId === "string") {
+        const foundItem = items.find((i) => i.id === savedItemId);
+        if (foundItem) {
+          selectedItem = foundItem;
+        } else {
+          if (
+            targetView === View.ItemDetail ||
+            targetView === View.ItemEdit
+          ) {
+            targetView = View.Vault;
+          }
+        }
+      }
+    }
+
+    setStore({
+      vaultItems: items,
+      isLocked: false,
+      view: targetView,
+      selectedItem,
+    });
+    notifyBackground({ type: MSG_RESET_TIMEOUT });
+  } else {
+    // If downloading fails but we have setup, it could be network issue or empty gist
+    setStore({
+      isLocked: false,
+      view: isFido2Prompt ? View.Fido2Prompt : View.Vault,
+    });
+    notifyBackground({ type: MSG_RESET_TIMEOUT });
+  }
+}
+
+function applyInitialView(
+  githubConfigured: boolean,
+  welcomeAccepted: boolean,
+  isFido2Prompt: boolean,
+): void {
+  setStore(STORE_KEY_IS_LOCKED, true);
+  if (!isFido2Prompt) {
+    if (!githubConfigured && !welcomeAccepted) {
+      setStore(STORE_KEY_VIEW, View.Welcome);
+    } else {
+      setStore(STORE_KEY_VIEW, View.Login);
+    }
+  }
+}
+
+export async function init() {
+  console.log(`[Store] Initializing ${APP_NAME} Store...`);
+
+  const settings = await getAllSettings();
+  await handleBrowserRestartCleanup(settings);
+
+  const key = await getSessionKey();
+  const sessionUnlockedVal = await isSessionUnlocked();
+  const currentTheme = await loadAndApplyTheme();
+
+  const decryptedToken = await resolveGithubToken(settings, key);
+  const githubConfigured = !!settings.githubTokenEncrypted ||
+    !!(await getSessionItem(SESSION_KEY_GITHUB_TOKEN));
 
   setStore({
     githubToken: decryptedToken,
@@ -134,7 +319,6 @@ export async function init() {
     settings.language === "vi" ? SupportLanguage.Vi : SupportLanguage.En,
   );
 
-  // Check mode FIDO2 prompt
   const params = new URLSearchParams(window.location.search);
   const isFido2Prompt = params.get("mode") === "fido2-prompt";
 
@@ -143,116 +327,9 @@ export async function init() {
   }
 
   if (decryptedToken && key && settings.salt) {
-    try {
-      let rawRes: unknown;
-      const cachedVal = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
-      const cachedContent = typeof cachedVal === "string"
-        ? cachedVal
-        : undefined;
-
-      if (cachedContent) {
-        rawRes = { success: true, content: cachedContent };
-      } else {
-        const sendResult = await sendMessageToBackground({
-          type: MSG_DOWNLOAD_FROM_GIST,
-        });
-        if (sendResult.isErr()) {
-          throw new Error(sendResult.error);
-        }
-        const parsedFetchRes = DownloadFromGistResponseSchema.parse(
-          sendResult.value,
-        );
-        if (parsedFetchRes.success && parsedFetchRes.content) {
-          await setSessionItem(
-            SESSION_KEY_ENCRYPTED_VAULT,
-            parsedFetchRes.content,
-          );
-        }
-        rawRes = parsedFetchRes;
-      }
-
-      const res = DownloadFromGistResponseSchema.parse(rawRes);
-
-      if (res && res.success && res.content) {
-        const payload = JSON.parse(res.content);
-        const decrypted = await decryptData(
-          payload.ciphertext,
-          payload.iv,
-          key,
-        );
-        const items = VaultListSchema.parse(JSON.parse(decrypted));
-
-        let targetView = isFido2Prompt ? View.Fido2Prompt : View.Vault;
-        let selectedItem = undefined;
-
-        const itemId = params.get("itemId");
-        if (itemId && !isFido2Prompt) {
-          const foundItem = items.find((i) => i.id === itemId);
-          if (foundItem) {
-            selectedItem = foundItem;
-            targetView = View.ItemDetail;
-          }
-        } else if (!isFido2Prompt) {
-          const sessionData = await getSessionItems([
-            SESSION_KEY_LAST_VIEW,
-            SESSION_KEY_LAST_SELECTED_ITEM_ID,
-          ]);
-          const savedView = sessionData[SESSION_KEY_LAST_VIEW];
-          const savedItemId = sessionData[SESSION_KEY_LAST_SELECTED_ITEM_ID];
-
-          const ViewSchema = z.nativeEnum(View);
-          const viewParsed = ViewSchema.safeParse(savedView);
-          if (viewParsed.success) {
-            const viewVal = viewParsed.data;
-            if (viewVal !== View.Login && viewVal !== View.Welcome) {
-              targetView = viewVal;
-            }
-          }
-
-          if (typeof savedItemId === "string") {
-            const foundItem = items.find((i) => i.id === savedItemId);
-            if (foundItem) {
-              selectedItem = foundItem;
-            } else {
-              if (
-                targetView === View.ItemDetail ||
-                targetView === View.ItemEdit
-              ) {
-                targetView = View.Vault;
-              }
-            }
-          }
-        }
-
-        setStore({
-          vaultItems: items,
-          isLocked: false,
-          view: targetView,
-          selectedItem,
-        });
-        notifyBackground({ type: MSG_RESET_TIMEOUT });
-      } else {
-        // If downloading fails but we have setup, it could be network issue or empty gist
-        setStore({
-          isLocked: false,
-          view: isFido2Prompt ? View.Fido2Prompt : View.Vault,
-        });
-        notifyBackground({ type: MSG_RESET_TIMEOUT });
-      }
-    } catch (err) {
-      console.error("[Store] Decryption on load failed:", err);
-      setStore(STORE_KEY_IS_LOCKED, true);
-      if (!isFido2Prompt) setStore(STORE_KEY_VIEW, View.Login);
-    }
+    await loadAndDecryptVault(key, isFido2Prompt, params);
   } else {
-    setStore(STORE_KEY_IS_LOCKED, true);
-    if (!isFido2Prompt) {
-      if (!githubConfigured && !settings.welcomeAccepted) {
-        setStore(STORE_KEY_VIEW, View.Welcome);
-      } else {
-        setStore(STORE_KEY_VIEW, View.Login);
-      }
-    }
+    applyInitialView(githubConfigured, settings.welcomeAccepted, isFido2Prompt);
   }
 
   // Subscribe to settings changes
@@ -292,228 +369,315 @@ export async function init() {
 
 export async function unlock(
   password: string,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const settings = await getAllSettings();
-    const sessionToken = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-    const githubConfigured = !!settings.githubTokenEncrypted || !!sessionToken;
-    if (!githubConfigured) {
-      return { success: false, error: "Chưa cấu hình Token GitHub" };
-    }
+): Promise<Result<void, TranslationKey>> {
+  const settings = await getAllSettings();
+  const sessionToken = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const githubConfigured = !!settings.githubTokenEncrypted || !!sessionToken;
+  if (!githubConfigured) {
+    clearDerivedKey();
+    return err("login_error_invalid_token");
+  }
 
-    let saltBase64 = settings.salt;
-    let key: CryptoKey | null = null;
+  let saltBase64 = settings.salt;
+  let key: CryptoKey | null = null;
 
-    clearDerivedKey(); // Reset
+  clearDerivedKey(); // Reset
 
-    // A. Nếu có salt cục bộ, derive key và giải mã Token ngay lập tức trước khi làm bất cứ việc gì khác!
-    if (saltBase64) {
-      key = await getOrDeriveKey(password, saltBase64);
-      if (settings.githubTokenEncrypted && settings.githubTokenIv) {
-        try {
-          const decrypted = await decryptData(
-            settings.githubTokenEncrypted,
-            settings.githubTokenIv,
-            key,
-          );
-          await setSessionItem(SESSION_KEY_GITHUB_TOKEN, decrypted);
-        } catch (_e) {
-          console.warn(
-            "Failed to decrypt githubToken (possibly wrong password or changed salt on another device)",
-          );
-          throw new Error("login_error_wrong_mp");
-        }
-      }
-    }
-
-    let existingGistContent = "";
-    let hasExistingGist = false;
-
-    // B. Tải Gist từ GitHub về
-    // Lúc này chắc chắn token đã có trong session storage (hoặc từ onboarding hoặc từ bước giải mã ở trên)
-    const sendResult = await sendMessageToBackground({
-      type: MSG_DOWNLOAD_FROM_GIST,
-    });
-    if (sendResult.isErr()) {
-      throw new Error(sendResult.error);
-    }
-    const downloadRes = DownloadFromGistResponseSchema.parse(sendResult.value);
-    if (downloadRes.success && downloadRes.content) {
-      existingGistContent = downloadRes.content;
-      hasExistingGist = true;
-
-      // Nếu chưa có salt cục bộ nhưng trên Gist đã có salt, trích xuất nó
-      if (!saltBase64) {
-        try {
-          const payload = GistPayloadSchema.parse(
-            JSON.parse(downloadRes.content),
-          );
-          if (payload.salt) {
-            saltBase64 = payload.salt;
-            await updateSettings({ salt: saltBase64 });
-            setStore(STORE_KEY_SALT, saltBase64);
-          }
-        } catch (_err) {
-          // Lỗi định dạng JSON, coi như chưa có Gist hợp lệ
-        }
-      }
-    }
-
-    // C. Nếu vẫn chưa có salt (cả cục bộ và trên Gist đều không có), tạo két sắt mới hoàn toàn
-    if (!saltBase64) {
-      const rawSalt = generateSalt();
-      saltBase64 = btoa(String.fromCharCode(...rawSalt));
-      await updateSettings({ salt: saltBase64 });
-      setStore(STORE_KEY_SALT, saltBase64);
-
-      key = await getOrDeriveKey(password, saltBase64);
-
-      // Lưu token mã hóa vào đĩa (onboarding)
-      const tokenToEncrypt = typeof sessionToken === "string"
-        ? sessionToken
-        : "";
-      if (tokenToEncrypt) {
-        const { iv, ciphertext } = await encryptData(tokenToEncrypt, key);
-        await updateSettings({
-          githubTokenEncrypted: ciphertext,
-          githubTokenIv: iv,
-        });
-      }
-
-      const uploadRes = await syncVaultToGist([], key, saltBase64);
-      if (!uploadRes.success) {
-        throw new Error(uploadRes.error || "Không thể tạo Gist trên GitHub");
-      }
-
-      await setDerivedKey(key);
-      const verificationStr = "verification_token";
-      const { iv: vIv, ciphertext: vCiphertext } = await encryptData(
-        verificationStr,
+  // A. Nếu có salt cục bộ, derive key và giải mã Token ngay lập tức trước khi làm bất cứ việc gì khác!
+  if (saltBase64) {
+    key = await getOrDeriveKey(password, saltBase64);
+    if (settings.githubTokenEncrypted && settings.githubTokenIv) {
+      const decryptRes = await decryptData(
+        settings.githubTokenEncrypted,
+        settings.githubTokenIv,
         key,
       );
-      await setSessionItem(SESSION_KEY_VERIFICATION_IV, vIv);
-      await setSessionItem(SESSION_KEY_VERIFICATION_CIPHERTEXT, vCiphertext);
-      await setSessionUnlocked(true);
-
-      const sessionVal = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-      const finalToken = typeof sessionVal === "string" ? sessionVal : "";
-      setStore({
-        vaultItems: [],
-        githubToken: finalToken,
-        githubConfigured: true,
-        isLocked: false,
-        view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
-        sessionUnlocked: true,
-      });
-      notifyBackground({ type: MSG_RESET_TIMEOUT });
-      return { success: true };
+      if (decryptRes.isErr()) {
+        console.warn(
+          "Failed to decrypt githubToken (possibly wrong password or changed salt on another device)",
+        );
+        clearDerivedKey();
+        return err(decryptRes.error);
+      }
+      const setTokenRes = await setSessionItem(
+        SESSION_KEY_GITHUB_TOKEN,
+        decryptRes.value,
+      );
+      if (setTokenRes.isErr()) {
+        clearDerivedKey();
+        return err(setTokenRes.error);
+      }
     }
+  }
 
-    // D. Đảm bảo key đã được tạo (nếu chưa được tạo ở bước A do lúc đó chưa có salt)
-    if (!key) {
-      key = await getOrDeriveKey(password, saltBase64);
+  let existingGistContent = "";
+  let hasExistingGist = false;
+
+  // B. Tải Gist từ GitHub về
+  const sendResult = await sendMessageToBackground({
+    type: MSG_DOWNLOAD_FROM_GIST,
+  });
+  if (sendResult.isErr()) {
+    clearDerivedKey();
+    return err(sendResult.error);
+  }
+
+  const downloadResResult = DownloadFromGistResponseSchema.safeParse(
+    sendResult.value,
+  );
+  if (!downloadResResult.success) {
+    clearDerivedKey();
+    return err("storage_error");
+  }
+  const downloadRes = downloadResResult.data;
+
+  if (downloadRes.success && downloadRes.content) {
+    existingGistContent = downloadRes.content;
+    hasExistingGist = true;
+
+    // Nếu chưa có salt cục bộ nhưng trên Gist đã có salt, trích xuất nó
+    if (!saltBase64) {
+      const payloadJsonRes = safeJsonParse(downloadRes.content);
+      if (payloadJsonRes.isErr()) {
+        clearDerivedKey();
+        return err(payloadJsonRes.error);
+      }
+      const payloadResult = GistPayloadSchema.safeParse(payloadJsonRes.value);
+      if (!payloadResult.success) {
+        clearDerivedKey();
+        return err("storage_error");
+      }
+      const payload = payloadResult.data;
+      if (payload.salt) {
+        saltBase64 = payload.salt;
+        await updateSettings({ salt: saltBase64 });
+        setStore(STORE_KEY_SALT, saltBase64);
+      }
     }
+  }
 
-    // E. Nếu đây là onboarding (sessionToken chứa token thô) và nay đã có salt, thực hiện mã hóa lưu vào đĩa
-    if (sessionToken && typeof sessionToken === "string") {
-      const { iv, ciphertext } = await encryptData(sessionToken, key);
+  // C. Nếu vẫn chưa có salt (cả cục bộ và trên Gist đều không có), tạo két sắt mới hoàn toàn
+  if (!saltBase64) {
+    const rawSalt = generateSalt();
+    saltBase64 = btoa(String.fromCharCode(...rawSalt));
+    await updateSettings({ salt: saltBase64 });
+    setStore(STORE_KEY_SALT, saltBase64);
+
+    key = await getOrDeriveKey(password, saltBase64);
+
+    // Lưu token mã hóa vào đĩa (onboarding)
+    const tokenToEncrypt = typeof sessionToken === "string" ? sessionToken : "";
+    if (tokenToEncrypt) {
+      const encryptRes = await encryptData(tokenToEncrypt, key);
+      if (encryptRes.isErr()) {
+        clearDerivedKey();
+        return err(encryptRes.error);
+      }
+      const { iv, ciphertext } = encryptRes.value;
       await updateSettings({
         githubTokenEncrypted: ciphertext,
         githubTokenIv: iv,
       });
     }
 
-    if (!hasExistingGist || !existingGistContent) {
-      // Có salt nhưng không có Gist (ví dụ Gist bị xóa thủ công trên GitHub), tạo lại Gist trống
-      const uploadRes = await syncVaultToGist([], key, saltBase64);
-      if (!uploadRes.success) {
-        return {
-          success: false,
-          error: uploadRes.error || "Lỗi tải két sắt từ Gist",
-        };
-      }
-
-      await setDerivedKey(key);
-      const verificationStr = "verification_token";
-      const { iv: vIv, ciphertext: vCiphertext } = await encryptData(
-        verificationStr,
-        key,
-      );
-      await setSessionItem(SESSION_KEY_VERIFICATION_IV, vIv);
-      await setSessionItem(SESSION_KEY_VERIFICATION_CIPHERTEXT, vCiphertext);
-      await setSessionUnlocked(true);
-
-      const sessionVal = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-      const finalToken = typeof sessionVal === "string" ? sessionVal : "";
-      setStore({
-        vaultItems: [],
-        githubToken: finalToken,
-        githubConfigured: true,
-        isLocked: false,
-        view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
-        sessionUnlocked: true,
-      });
-      notifyBackground({ type: MSG_RESET_TIMEOUT });
-      return { success: true };
-    }
-
-    // F. Giải mã dữ liệu két sắt từ Gist
-    const payload = GistPayloadSchema.parse(JSON.parse(existingGistContent));
-    const decrypted = await decryptData(payload.ciphertext, payload.iv, key);
-    const items = VaultListSchema.parse(JSON.parse(decrypted));
-
-    const params = new URLSearchParams(window.location.search);
-    const itemId = params.get("itemId");
-    let targetView = store.view === View.Fido2Prompt
-      ? View.Fido2Prompt
-      : View.Vault;
-    let selectedItem = undefined;
-
-    if (itemId && store.view !== View.Fido2Prompt) {
-      const foundItem = items.find((i) => i.id === itemId);
-      if (foundItem) {
-        selectedItem = foundItem;
-        targetView = View.ItemDetail;
-      }
+    const uploadRes = await syncVaultToGist([], key, saltBase64);
+    if (uploadRes.isErr()) {
+      clearDerivedKey();
+      return err(uploadRes.error);
     }
 
     await setDerivedKey(key);
     const verificationStr = "verification_token";
-    const { iv: vIv, ciphertext: vCiphertext } = await encryptData(
+    const encryptVerifyRes = await encryptData(
       verificationStr,
       key,
     );
-    await setSessionItem(SESSION_KEY_VERIFICATION_IV, vIv);
-    await setSessionItem(SESSION_KEY_VERIFICATION_CIPHERTEXT, vCiphertext);
+    if (encryptVerifyRes.isErr()) {
+      clearDerivedKey();
+      return err(encryptVerifyRes.error);
+    }
+    const { iv: vIv, ciphertext: vCiphertext } = encryptVerifyRes.value;
+    const setIvRes = await setSessionItem(SESSION_KEY_VERIFICATION_IV, vIv);
+    if (setIvRes.isErr()) return err(setIvRes.error);
+
+    const setCipherRes = await setSessionItem(
+      SESSION_KEY_VERIFICATION_CIPHERTEXT,
+      vCiphertext,
+    );
+    if (setCipherRes.isErr()) return err(setCipherRes.error);
+
     await setSessionUnlocked(true);
-    await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, existingGistContent);
 
     const sessionVal = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
     const finalToken = typeof sessionVal === "string" ? sessionVal : "";
     setStore({
-      vaultItems: items,
+      vaultItems: [],
       githubToken: finalToken,
       githubConfigured: true,
       isLocked: false,
-      view: targetView,
-      selectedItem,
+      view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
       sessionUnlocked: true,
     });
     notifyBackground({ type: MSG_RESET_TIMEOUT });
+    return ok();
+  }
 
-    return { success: true };
-  } catch (err) {
+  // D. Đảm bảo key đã được tạo (nếu chưa được tạo ở bước A do lúc đó chưa có salt)
+  if (!key) {
+    key = await getOrDeriveKey(password, saltBase64);
+  }
+
+  // E. Nếu đây là onboarding (sessionToken chứa token thô) và nay đã có salt, thực hiện mã hóa lưu vào đĩa
+  if (sessionToken && typeof sessionToken === "string") {
+    const encryptRes = await encryptData(sessionToken, key);
+    if (encryptRes.isErr()) {
+      clearDerivedKey();
+      return err(encryptRes.error);
+    }
+    const { iv, ciphertext } = encryptRes.value;
+    await updateSettings({
+      githubTokenEncrypted: ciphertext,
+      githubTokenIv: iv,
+    });
+  }
+
+  if (!hasExistingGist || !existingGistContent) {
+    // Có salt nhưng không có Gist (ví dụ Gist bị xóa thủ công trên GitHub), tạo lại Gist trống
+    const uploadRes = await syncVaultToGist([], key, saltBase64);
+    if (uploadRes.isErr()) {
+      clearDerivedKey();
+      return err(uploadRes.error);
+    }
+
+    await setDerivedKey(key);
+    const verificationStr = "verification_token";
+    const encryptVerifyRes = await encryptData(
+      verificationStr,
+      key,
+    );
+    if (encryptVerifyRes.isErr()) {
+      clearDerivedKey();
+      return err(encryptVerifyRes.error);
+    }
+    const { iv: vIv, ciphertext: vCiphertext } = encryptVerifyRes.value;
+    const setIvRes = await setSessionItem(SESSION_KEY_VERIFICATION_IV, vIv);
+    if (setIvRes.isErr()) return err(setIvRes.error);
+
+    const setCipherRes = await setSessionItem(
+      SESSION_KEY_VERIFICATION_CIPHERTEXT,
+      vCiphertext,
+    );
+    if (setCipherRes.isErr()) return err(setCipherRes.error);
+
+    await setSessionUnlocked(true);
+
+    const sessionVal = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+    const finalToken = typeof sessionVal === "string" ? sessionVal : "";
+    setStore({
+      vaultItems: [],
+      githubToken: finalToken,
+      githubConfigured: true,
+      isLocked: false,
+      view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault,
+      sessionUnlocked: true,
+    });
+    notifyBackground({ type: MSG_RESET_TIMEOUT });
+    return ok();
+  }
+
+  // F. Giải mã dữ liệu két sắt từ Gist
+  const payloadJsonRes = safeJsonParse(existingGistContent);
+  if (payloadJsonRes.isErr()) {
     clearDerivedKey();
-    const errMsg = err instanceof Error ? err.message : String(err);
+    return err(payloadJsonRes.error);
+  }
+  const payloadResult = GistPayloadSchema.safeParse(payloadJsonRes.value);
+  if (!payloadResult.success) {
+    clearDerivedKey();
+    return err("storage_error");
+  }
+  const payload = payloadResult.data;
+
+  const decryptRes = await decryptData(payload.ciphertext, payload.iv, key);
+  if (decryptRes.isErr()) {
+    clearDerivedKey();
+    const errMsg = decryptRes.error;
     if (
       errMsg.includes("OperationError") || errMsg === "login_error_wrong_mp"
     ) {
-      console.warn("[Store] Unlock failed: Incorrect master password");
-      return { success: false, error: "login_error_wrong_mp" };
+      return err("login_error_wrong_mp");
     }
-    console.error("[Store] Unlock failed:", err);
-    return { success: false, error: errMsg || "login_error_wrong_mp" };
+    return err(isTranslationKey(errMsg) ? errMsg : "login_error_wrong_mp");
   }
+
+  const itemsJsonRes = safeJsonParse(decryptRes.value);
+  if (itemsJsonRes.isErr()) {
+    clearDerivedKey();
+    return err(itemsJsonRes.error);
+  }
+  const itemsResult = VaultListSchema.safeParse(itemsJsonRes.value);
+  if (!itemsResult.success) {
+    clearDerivedKey();
+    return err("storage_error");
+  }
+  const items = itemsResult.data;
+
+  const params = new URLSearchParams(window.location.search);
+  const itemId = params.get("itemId");
+  let targetView = store.view === View.Fido2Prompt
+    ? View.Fido2Prompt
+    : View.Vault;
+  let selectedItem = undefined;
+
+  if (itemId && store.view !== View.Fido2Prompt) {
+    const foundItem = items.find((i) => i.id === itemId);
+    if (foundItem) {
+      selectedItem = foundItem;
+      targetView = View.ItemDetail;
+    }
+  }
+
+  await setDerivedKey(key);
+  const verificationStr = "verification_token";
+  const encryptVerifyRes = await encryptData(
+    verificationStr,
+    key,
+  );
+  if (encryptVerifyRes.isErr()) {
+    clearDerivedKey();
+    return err(encryptVerifyRes.error);
+  }
+  const { iv: vIv, ciphertext: vCiphertext } = encryptVerifyRes.value;
+  const setIvRes = await setSessionItem(SESSION_KEY_VERIFICATION_IV, vIv);
+  if (setIvRes.isErr()) return err(setIvRes.error);
+
+  const setCipherRes = await setSessionItem(
+    SESSION_KEY_VERIFICATION_CIPHERTEXT,
+    vCiphertext,
+  );
+  if (setCipherRes.isErr()) return err(setCipherRes.error);
+
+  await setSessionUnlocked(true);
+  const setVaultRes = await setSessionItem(
+    SESSION_KEY_ENCRYPTED_VAULT,
+    existingGistContent,
+  );
+  if (setVaultRes.isErr()) return err(setVaultRes.error);
+
+  const sessionVal = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const finalToken = typeof sessionVal === "string" ? sessionVal : "";
+  setStore({
+    vaultItems: items,
+    githubToken: finalToken,
+    githubConfigured: true,
+    isLocked: false,
+    view: targetView,
+    selectedItem,
+    sessionUnlocked: true,
+  });
+  notifyBackground({ type: MSG_RESET_TIMEOUT });
+
+  return ok();
 }
 
 export async function lock() {
@@ -585,105 +749,4 @@ export async function acceptWelcome() {
     welcomeAccepted: true,
     view: View.Login,
   });
-}
-
-export async function unlockWithKey(
-  key: CryptoKey,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const settings = await getAllSettings();
-    const sessionToken = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-    const githubConfigured = !!settings.githubTokenEncrypted || !!sessionToken;
-    if (!githubConfigured) {
-      return { success: false, error: "Chưa cấu hình Token GitHub" };
-    }
-
-    clearDerivedKey(); // Reset
-
-    // Save key bytes to session storage
-    await setDerivedKey(key);
-
-    // Decrypt GitHub Token
-    if (settings.githubTokenEncrypted && settings.githubTokenIv) {
-      try {
-        const decrypted = await decryptData(
-          settings.githubTokenEncrypted,
-          settings.githubTokenIv,
-          key,
-        );
-        await setSessionItem(SESSION_KEY_GITHUB_TOKEN, decrypted);
-      } catch (_e) {
-        console.warn("Failed to decrypt githubToken with provided key");
-      }
-    }
-
-    let existingGistContent = "";
-    let hasExistingGist = false;
-
-    // B. Tải Gist từ GitHub về
-    const sendResult = await sendMessageToBackground({
-      type: MSG_DOWNLOAD_FROM_GIST,
-    });
-    if (sendResult.isErr()) {
-      throw new Error(sendResult.error);
-    }
-    const downloadRes = DownloadFromGistResponseSchema.parse(sendResult.value);
-    if (downloadRes.success && downloadRes.content) {
-      existingGistContent = downloadRes.content;
-      hasExistingGist = true;
-    }
-
-    if (!hasExistingGist || !existingGistContent) {
-      return { success: false, error: "Không tìm thấy két sắt trên GitHub" };
-    }
-
-    // F. Giải mã dữ liệu két sắt từ Gist
-    const payload = JSON.parse(existingGistContent);
-    const decrypted = await decryptData(payload.ciphertext, payload.iv, key);
-    const items = VaultListSchema.parse(JSON.parse(decrypted));
-
-    const params = new URLSearchParams(window.location.search);
-    const itemId = params.get("itemId");
-    let targetView = store.view === View.Fido2Prompt
-      ? View.Fido2Prompt
-      : View.Vault;
-    let selectedItem = undefined;
-
-    if (itemId && store.view !== View.Fido2Prompt) {
-      const foundItem = items.find((i) => i.id === itemId);
-      if (foundItem) {
-        selectedItem = foundItem;
-        targetView = View.ItemDetail;
-      }
-    }
-
-    const verificationStr = "verification_token";
-    const { iv: vIv, ciphertext: vCiphertext } = await encryptData(
-      verificationStr,
-      key,
-    );
-    await setSessionItem(SESSION_KEY_VERIFICATION_IV, vIv);
-    await setSessionItem(SESSION_KEY_VERIFICATION_CIPHERTEXT, vCiphertext);
-    await setSessionUnlocked(true);
-    await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, existingGistContent);
-
-    const sessionVal = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-    const finalToken = typeof sessionVal === "string" ? sessionVal : "";
-    setStore({
-      vaultItems: items,
-      githubToken: finalToken,
-      githubConfigured: true,
-      isLocked: false,
-      view: targetView,
-      selectedItem,
-    });
-    notifyBackground({ type: MSG_RESET_TIMEOUT });
-
-    return { success: true };
-  } catch (err) {
-    console.error("[Store] Unlock with key failed:", err);
-    clearDerivedKey();
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg || "Lỗi mở khóa" };
-  }
 }
