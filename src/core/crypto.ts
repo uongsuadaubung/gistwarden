@@ -150,16 +150,21 @@ export async function getSessionKey(): Promise<CryptoKey | null> {
   const base64 = await getSessionItem(SESSION_KEY_DERIVED_KEY);
   if (typeof base64 === "string" && base64) {
     const buffer = base64ToArrayBuffer(base64);
-    derivedCryptoKey = await crypto.subtle.importKey(
-      "raw",
-      buffer,
-      { name: "AES-GCM", length: 256 },
-      true, // extractable
-      ["encrypt", "decrypt"],
-    ).catch((e) => {
-      console.error("[Crypto] Failed to import key from session storage:", e);
+    const importRes = await ResultAsync.fromPromise(
+      crypto.subtle.importKey(
+        "raw",
+        buffer,
+        { name: "AES-GCM", length: 256 },
+        true, // extractable
+        ["encrypt", "decrypt"],
+      ),
+      (e) => e,
+    );
+    if (importRes.isErr()) {
+      console.error("[Crypto] Failed to import key from session storage:", importRes.error);
       return null;
-    });
+    }
+    derivedCryptoKey = importRes.value;
     return derivedCryptoKey;
   }
   return null;
@@ -245,14 +250,15 @@ export async function parseSshKey(privateKeyText: string): Promise<
   const publicKey = `${typeStr} ${pubKeyBase64}`;
 
   // Compute fingerprint (SHA-256)
-  const hashBuffer = await crypto.subtle.digest("SHA-256", pubKeyBlobBuffer)
-    .catch((e) => {
-      console.error("Failed to compute SHA-256 fingerprint:", e);
-      return null;
-    });
-  if (!hashBuffer) {
+  const hashRes = await ResultAsync.fromPromise(
+    crypto.subtle.digest("SHA-256", pubKeyBlobBuffer),
+    (e) => e,
+  );
+  if (hashRes.isErr()) {
+    console.error("Failed to compute SHA-256 fingerprint:", hashRes.error);
     return err("ssh_invalid_key");
   }
+  const hashBuffer = hashRes.value;
 
   const hashBytes = new Uint8Array(hashBuffer);
   const hashBase64 = arrayBufferToBase64(hashBytes.buffer);

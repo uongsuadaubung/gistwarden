@@ -1,3 +1,15 @@
+import { Result } from "neverthrow";
+
+/**
+ * Phân tích URL an toàn sử dụng neverthrow Result.
+ */
+export function safeParseUrl(url: string): Result<URL, string> {
+  return Result.fromThrowable(
+    () => new URL(url),
+    (e) => e instanceof Error ? e.message : String(e),
+  )();
+}
+
 /**
  * Trích xuất base domain (registered domain / domain chính) từ một URL hoặc Hostname
  * Ví dụ:
