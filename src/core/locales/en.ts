@@ -84,7 +84,7 @@ export default {
   vault_btn_sync: "Sync",
   vault_btn_settings: "Settings",
   vault_btn_generator: "Generator",
-  vault_btn_add: "New",
+  vault_btn_add: "Add Item",
   vault_popout_title: "Open in separate window",
   vault_lock_title: "Lock vault",
   vault_suggested_items: "Suggested for this website",
