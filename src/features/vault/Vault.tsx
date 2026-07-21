@@ -9,7 +9,11 @@ import {
 import { store } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { saveItem } from "@/features/vault/vault-service.ts";
-import { setGlobalLoading, showToast, copyToClipboardWithMessage } from "@/core/ui-service.ts";
+import {
+  copyToClipboardWithMessage,
+  setGlobalLoading,
+  showToast,
+} from "@/core/ui-service.ts";
 import { Header } from "@/components/ui/Header.tsx";
 import { createDefaultVaultItem } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import { getCurrentTab, sendMessageToTab } from "@/core/tabs.ts";
@@ -43,7 +47,10 @@ import {
   getHostname,
   safeParseUrl,
 } from "@/core/domain-utils.ts";
-import { getVaultItemTypeLabel, deleteVaultItemWithConfirm } from "@/features/vault/vault-utils.ts";
+import {
+  deleteVaultItemWithConfirm,
+  getVaultItemTypeLabel,
+} from "@/features/vault/vault-utils.ts";
 
 const AutofillResponseSchema = z.object({
   success: z.boolean(),
@@ -275,7 +282,10 @@ export const Vault: Component = () => {
     const generateTotpResult = generateTotpSafe(rawSecret, store.timeOffset);
 
     if (generateTotpResult.isOk()) {
-      await copyToClipboardWithMessage(generateTotpResult.value, "detail_totp_copied");
+      await copyToClipboardWithMessage(
+        generateTotpResult.value,
+        "detail_totp_copied",
+      );
     } else {
       showToast(t(generateTotpResult.error), "error");
     }

@@ -193,7 +193,9 @@ export const isLoginItem = (item: VaultItem): item is LoginVaultItem => {
   return Number(item.type) === VaultItemType.Login;
 };
 
-export const isSecureNoteItem = (item: VaultItem): item is SecureNoteVaultItem => {
+export const isSecureNoteItem = (
+  item: VaultItem,
+): item is SecureNoteVaultItem => {
   return Number(item.type) === VaultItemType.SecureNote;
 };
 

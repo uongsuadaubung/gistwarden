@@ -21,7 +21,12 @@ import { t } from "@/core/i18n.ts";
 import CardBrandIcon from "@/components/ui/CardBrandIcon.tsx";
 import { getDomainFromItem } from "@/core/domain-utils.ts";
 import Favicon from "@/components/ui/Favicon.tsx";
-import { isCardItem, isIdentityItem, isSshKeyItem, isLoginItem } from "@/core/types.ts";
+import {
+  isCardItem,
+  isIdentityItem,
+  isLoginItem,
+  isSshKeyItem,
+} from "@/core/types.ts";
 
 interface VaultItemRowProps {
   item: VaultItem;

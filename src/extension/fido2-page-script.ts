@@ -18,11 +18,13 @@ import {
       () => Promise.resolve(true);
   }
 
-  // Read nonce from script element's dataset safely
-  const currentScript = document.currentScript;
-  let nonce = "";
-  if (currentScript instanceof HTMLScriptElement) {
-    nonce = currentScript.dataset.nonce || "";
+  // Read token from documentElement attributes safely and remove it immediately
+  let token = "";
+  if (document.documentElement) {
+    token =
+      document.documentElement.getAttribute("data-gistwarden-fido2-token") ||
+      "";
+    document.documentElement.removeAttribute("data-gistwarden-fido2-token");
   }
 
   interface Fido2Response {
@@ -96,7 +98,7 @@ import {
     if (
       event.source !== window || !event.data ||
       event.data.source !== `${APP_NAME.toLowerCase()}-content-script` ||
-      event.data.nonce !== nonce
+      event.data.token !== token
     ) {
       return;
     }
@@ -116,7 +118,7 @@ import {
     }
   });
 
-  // Send request to content script with nonce
+  // Send request to content script with token
   function sendToContentScript(
     type: string,
     data: unknown,
@@ -128,7 +130,7 @@ import {
       window.postMessage(
         {
           source: `${APP_NAME.toLowerCase()}-page-script`,
-          nonce,
+          token,
           requestId,
           type,
           data,

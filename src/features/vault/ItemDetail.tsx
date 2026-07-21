@@ -1,10 +1,4 @@
-import {
-  type Component,
-  createSignal,
-  For,
-  onMount,
-  Show,
-} from "solid-js";
+import { type Component, createSignal, For, onMount, Show } from "solid-js";
 import { store } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
@@ -13,19 +7,22 @@ import {
   type CardVaultItem,
   CustomFieldType,
   type IdentityVaultItem,
+  isCardItem,
+  isIdentityItem,
+  isLoginItem,
+  isSecureNoteItem,
+  isSshKeyItem,
   type LoginVaultItem,
   type SecureNoteVaultItem,
   type SshKeyVaultItem,
   type VaultField,
   VaultItemType,
-  isLoginItem,
-  isCardItem,
-  isSecureNoteItem,
-  isIdentityItem,
-  isSshKeyItem
 } from "@/core/types.ts";
 import { getDomainFromItem } from "@/core/domain-utils.ts";
-import { getVaultItemDetailTitle, deleteVaultItemWithConfirm } from "@/features/vault/vault-utils.ts";
+import {
+  deleteVaultItemWithConfirm,
+  getVaultItemDetailTitle,
+} from "@/features/vault/vault-utils.ts";
 import Favicon from "@/components/ui/Favicon.tsx";
 import Button from "@/components/ui/Button.tsx";
 import {
