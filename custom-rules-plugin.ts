@@ -170,6 +170,27 @@ const customRulesPlugin: LintPlugin = {
         };
       },
     },
+
+    // Luật 6: Cấm sử dụng từ khóa 'throw' trong thư mục src/
+    "no-throw": {
+      create(context: LintContext) {
+        return {
+          ThrowStatement(node: LintNode) {
+            if (
+              context.filename &&
+              (context.filename.includes("/src/") ||
+                context.filename.includes("\\src\\"))
+            ) {
+              context.report({
+                node,
+                message:
+                  "Do not use 'throw' inside 'src/' directory. Use Result from 'neverthrow' for flat error handling.",
+              });
+            }
+          },
+        };
+      },
+    },
   },
 };
 

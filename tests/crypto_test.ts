@@ -70,7 +70,9 @@ Deno.test("Crypto - Key derivation, Encryption and Decryption", async () => {
 
 Deno.test("Passkey Crypto - Keypair and base64url conversion", async () => {
   // 1. Create keypair
-  const keyPair = await createPasskeyKeyPair();
+  const keyPairRes = await createPasskeyKeyPair();
+  if (keyPairRes.isErr()) throw new Error(keyPairRes.error);
+  const keyPair = keyPairRes.value;
   assertEquals(keyPair.privateKey instanceof CryptoKey, true);
   assertEquals(keyPair.publicKey instanceof CryptoKey, true);
   assertEquals(keyPair.privateKey.algorithm.name, "ECDSA");
@@ -82,13 +84,16 @@ Deno.test("Passkey Crypto - Keypair and base64url conversion", async () => {
   assertEquals(b64Url.includes("/"), false);
   assertEquals(b64Url.includes("="), false);
 
-  const decoded = base64UrlToBuffer(b64Url);
-  assertEquals(decoded, testBytes);
+  const decodedRes = base64UrlToBuffer(b64Url);
+  assertEquals(decodedRes.isOk(), true);
+  assertEquals(decodedRes._unsafeUnwrap(), testBytes);
 });
 
 Deno.test("Passkey Crypto - signature conversion and validation", async () => {
   // 1. Generate signature components (R and S)
-  const keyPair = await createPasskeyKeyPair();
+  const keyPairRes = await createPasskeyKeyPair();
+  if (keyPairRes.isErr()) throw new Error(keyPairRes.error);
+  const keyPair = keyPairRes.value;
   const testMessage = new TextEncoder().encode(
     "webauthn authentication challenge data",
   );
@@ -108,7 +113,9 @@ Deno.test("Passkey Crypto - signature conversion and validation", async () => {
   assertEquals(rawSignature.length, 64);
 
   // Convert to ASN.1 DER format
-  const derSignature = p1363ToDer(rawSignature);
+  const derSignatureRes = p1363ToDer(rawSignature);
+  assertEquals(derSignatureRes.isOk(), true);
+  const derSignature = derSignatureRes._unsafeUnwrap();
   assertEquals(derSignature[0], 0x30); // DER Sequence header
   assertEquals(derSignature.length > 64, true); // DER is typically 70-72 bytes due to headers/padding
 
@@ -193,18 +200,21 @@ Deno.test("Passkey Crypto - getRawCredentialId format parsing", () => {
     0x43,
     0x43,
   ]);
-  const parsedUuidBytes = getRawCredentialId(uuid);
-  assertEquals(parsedUuidBytes, expectedBytes);
+  const parsedUuidBytesRes = getRawCredentialId(uuid);
+  assertEquals(parsedUuidBytesRes.isOk(), true);
+  assertEquals(parsedUuidBytesRes._unsafeUnwrap(), expectedBytes);
 
   // Test base64url format
   const b64url = "vHzcNhZXRKSqBOTOz3dDQw";
-  const parsedB64urlBytes = getRawCredentialId(b64url);
-  assertEquals(parsedB64urlBytes, expectedBytes);
+  const parsedB64urlBytesRes = getRawCredentialId(b64url);
+  assertEquals(parsedB64urlBytesRes.isOk(), true);
+  assertEquals(parsedB64urlBytesRes._unsafeUnwrap(), expectedBytes);
 
   // Test "b64." prefixed format (used in some systems)
   const b64prefixed = "b64.vHzcNhZXRKSqBOTOz3dDQw";
-  const parsedPrefixedBytes = getRawCredentialId(b64prefixed);
-  assertEquals(parsedPrefixedBytes, expectedBytes);
+  const parsedPrefixedBytesRes = getRawCredentialId(b64prefixed);
+  assertEquals(parsedPrefixedBytesRes.isOk(), true);
+  assertEquals(parsedPrefixedBytesRes._unsafeUnwrap(), expectedBytes);
 });
 
 Deno.test("FIDO2 Schema - parse empty fields (name and counter) like struct.json", () => {

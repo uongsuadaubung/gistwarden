@@ -1,4 +1,4 @@
-import { err, ok, Result, ResultAsync } from "neverthrow";
+import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import {
   type Fido2Credential,
@@ -15,7 +15,7 @@ import {
   MSG_REJECT_FIDO2_REQUEST,
   MSG_RESOLVE_FIDO2_REQUEST,
 } from "@/core/constants.ts";
-import { getBaseDomain } from "@/core/domain-utils.ts";
+import { getBaseDomain, safeParseUrl } from "@/core/domain-utils.ts";
 import { store } from "@/core/store.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
 
@@ -50,10 +50,6 @@ export interface MatchingPasskey {
 }
 
 const getDomainFromUrl = (urlStr: string): string => {
-  const safeParseUrl = Result.fromThrowable(
-    (u: string) => new URL(u),
-    () => new Error(),
-  );
   const parseResult = safeParseUrl(urlStr);
   return parseResult.map((u) => u.hostname.toLowerCase()).unwrapOr(
     urlStr.toLowerCase(),
@@ -134,20 +130,14 @@ export async function registerFido2Passkey(
     return err("fido2_error_create_failed");
   }
 
-  const generateRes = await ResultAsync.fromPromise(
-    generatePasskeyRegisterResponse(
-      {
-        ...req.options,
-        rp,
-        user,
-        challenge,
-      },
-      req.origin,
-    ),
-    (e): TranslationKey => {
-      console.error(e);
-      return "fido2_error_create_failed";
+  const generateRes = await generatePasskeyRegisterResponse(
+    {
+      ...req.options,
+      rp,
+      user,
+      challenge,
     },
+    req.origin,
   );
 
   if (generateRes.isErr()) {
@@ -251,17 +241,11 @@ export async function assertFido2Passkey(
     return err("fido2_error_counter_update_failed");
   }
 
-  const assertRes = await ResultAsync.fromPromise(
-    generatePasskeyAssertResponse(
-      req.options,
-      req.origin,
-      cred,
-      nextCounter,
-    ),
-    (e): TranslationKey => {
-      console.error(e);
-      return "fido2_error_assert_failed";
-    },
+  const assertRes = await generatePasskeyAssertResponse(
+    req.options,
+    req.origin,
+    cred,
+    nextCounter,
   );
 
   if (assertRes.isErr()) {
@@ -275,7 +259,7 @@ export async function assertFido2Passkey(
     result,
   });
 
-  return ok(undefined);
+  return ok();
 }
 
 export async function rejectFido2Request(): Promise<void> {
