@@ -187,12 +187,9 @@ export function subscribeToSettings(callback: (settings: AppSettings) => void) {
     if (areaName === "local" && changes[STORAGE_KEY]) {
       const newValue = changes[STORAGE_KEY].newValue;
       if (newValue) {
-        const parsedResult = Result.fromThrowable(
-          () => SettingsSchema.parse(newValue),
-          (e) => e,
-        )();
-        if (parsedResult.isOk()) {
-          callback(parsedResult.value);
+        const parsedResult = SettingsSchema.safeParse(newValue);
+        if (parsedResult.success) {
+          callback(parsedResult.data);
         } else {
           console.error(
             "[Storage] Failed to parse updated settings:",

@@ -35,7 +35,7 @@ export const Troubleshooting: Component = () => {
               );
               const res = await syncTimeOffset();
               setGlobalLoading(false);
-              if (res.success) {
+              if (res.isOk()) {
                 showToast(
                   t("settings_sync_time_success"),
                   "success",

@@ -13,6 +13,7 @@ import { confirm, showToast } from "@/core/ui-service.ts";
 import { Header } from "@/components/ui/Header.tsx";
 import { createDefaultVaultItem } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import { getCurrentTab, sendMessageToTab } from "@/core/tabs.ts";
+
 import {
   APP_NAME,
   MSG_AUTOFILL_CREDENTIALS,
@@ -39,7 +40,7 @@ import {
 import { Input } from "@/components/ui/Input.tsx";
 import { VaultItemRow } from "@/features/vault/VaultItemRow.tsx";
 import { t } from "@/core/i18n.ts";
-import { getBaseDomain, getHostname } from "@/core/domain-utils.ts";
+import { getBaseDomain, getHostname, safeParseUrl } from "@/core/domain-utils.ts";
 
 const AutofillResponseSchema = z.object({
   success: z.boolean(),
@@ -148,17 +149,15 @@ export const Vault: Component = () => {
 
     // Query active tab domain
     const fetchTab = async () => {
-      const tab = await getCurrentTab();
-      if (tab && tab.url) {
-        try {
-          const urlObj = new URL(tab.url);
-          let hostname = urlObj.hostname;
+      const tabRes = await getCurrentTab();
+      if (tabRes.isOk() && tabRes.value && tabRes.value.url) {
+        const urlResult = safeParseUrl(tabRes.value!.url!);
+        if (urlResult.isOk()) {
+          let hostname = urlResult.value.hostname;
           if (hostname.startsWith("www.")) {
             hostname = hostname.slice(4);
           }
           setCurrentTabDomain(hostname);
-        } catch (_err) {
-          // Ignore internal URLs
         }
       }
     };
@@ -384,23 +383,25 @@ export const Vault: Component = () => {
     const username = item.login.username || "";
     const password = item.login.password || "";
 
-    const activeTab = await getCurrentTab();
-    if (activeTab && activeTab.id !== undefined) {
-      try {
-        const rawResponse = await sendMessageToTab(activeTab.id, {
+    const activeTabRes = await getCurrentTab();
+    if (activeTabRes.isOk() && activeTabRes.value) {
+      const activeTab = activeTabRes.value;
+      if (activeTab.id !== undefined) {
+        const rawResponseRes = await sendMessageToTab(activeTab.id, {
           type: MSG_AUTOFILL_CREDENTIALS,
           username,
           password,
         });
 
-        const parseResult = AutofillResponseSchema.safeParse(rawResponse);
-        if (parseResult.success && parseResult.data.success) {
-          showToast(t("toast_success"), "success");
+        if (rawResponseRes.isOk()) {
+          const parseResult = AutofillResponseSchema.safeParse(rawResponseRes.value);
+          if (parseResult.success && parseResult.data.success) {
+            showToast(t("toast_success"), "success");
+          }
+        } else {
+          console.warn("Autofill failed:", rawResponseRes.error);
+          showToast(t("toast_error"), "error");
         }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        console.warn("Autofill failed:", errorMessage);
-        showToast(t("toast_error"), "error");
       }
     }
   };
