@@ -253,6 +253,7 @@ export default {
   detail_ssh_fingerprint: "Mã vân tay khóa (Fingerprint)",
   ssh_invalid_key:
     "Khóa riêng tư SSH không hợp lệ hoặc định dạng không hỗ trợ (yêu cầu định dạng OpenSSH không mã hóa)",
+  storage_error: "Thao tác lưu trữ thất bại.",
   ssh_import_from_clipboard:
     "Dán Khóa riêng tư OpenSSH không mã hóa từ bộ nhớ tạm",
   detail_copy_ssh_private_key: "Sao chép khóa riêng tư",

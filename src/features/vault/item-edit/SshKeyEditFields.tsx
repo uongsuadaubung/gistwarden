@@ -22,8 +22,9 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
     setErrorMsg("");
     try {
       const text = await navigator.clipboard.readText();
-      const parsed = await parseSshKey(text);
-      if (parsed) {
+      const parsedRes = await parseSshKey(text);
+      if (parsedRes.isOk()) {
+        const parsed = parsedRes.value;
         props.updateForm("sshPrivateKey", text);
         props.updateForm("sshPublicKey", parsed.publicKey);
         props.updateForm("sshFingerprint", parsed.keyFingerprint);
