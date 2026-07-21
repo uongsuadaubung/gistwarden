@@ -9,6 +9,7 @@ import {
   Show,
   Switch,
 } from "solid-js";
+import { Result, ResultAsync } from "neverthrow";
 import { store } from "@/core/store.ts";
 import { unlock } from "@/features/auth/auth-service.ts";
 import { unlockWithPin } from "@/features/auth/pin-service.ts";
@@ -127,39 +128,48 @@ export const Fido2Prompt: Component = () => {
   };
 
   const loadPendingRequest = async () => {
-    try {
-      const rawRes = await sendMessageToBackground(
-        { type: MSG_GET_PENDING_FIDO2_REQUEST },
-      ).catch(() => null);
-      const res = GetPendingFido2RequestResponseSchema.parse(rawRes);
+    const rawRes = await ResultAsync.fromPromise(
+      sendMessageToBackground({ type: MSG_GET_PENDING_FIDO2_REQUEST }),
+      () => null,
+    ).unwrapOr(null);
 
-      if (res && res.success && res.type && res.options && res.origin) {
-        setPendingReq({
-          success: res.success,
-          type: res.type,
-          options: res.options,
-          origin: res.origin,
-        });
-        if (res.type === "get") {
-          let rpId = res.options.rpId;
-          if (!rpId) {
-            try {
-              rpId = new URL(res.origin).hostname;
-            } catch (_) {
-              rpId = res.origin;
-            }
-          }
-          findMatchingPasskeys(rpId);
-        } else if (res.type === "create") {
-          const rpId = res.options.rp?.id || res.options.rp?.name || "";
-          findMatchingAccounts(rpId, res.origin);
+    const safeParseSchema = Result.fromThrowable(
+      GetPendingFido2RequestResponseSchema.parse,
+      (e) => e,
+    );
+    const parsedRes = safeParseSchema(rawRes);
+
+    if (parsedRes.isErr()) {
+      setError(t("fido2_error_load_failed"));
+      return;
+    }
+
+    const res = parsedRes.value;
+
+    if (res && res.success && res.type && res.options && res.origin) {
+      setPendingReq({
+        success: res.success,
+        type: res.type,
+        options: res.options,
+        origin: res.origin,
+      });
+      if (res.type === "get") {
+        let rpId = res.options.rpId;
+        if (!rpId) {
+          const safeParseUrl = Result.fromThrowable(
+            (u: string) => new URL(u),
+            () => new Error(),
+          );
+          const parseResult = safeParseUrl(res.origin);
+          rpId = parseResult.map((u) => u.hostname).unwrapOr(res.origin);
         }
-      } else {
-        setError(res.error || t("fido2_error_no_request"));
+        findMatchingPasskeys(rpId);
+      } else if (res.type === "create") {
+        const rpId = res.options.rp?.id || res.options.rp?.name || "";
+        findMatchingAccounts(rpId, res.origin);
       }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(errMsg || t("fido2_error_load_failed"));
+    } else {
+      setError(res?.error || t("fido2_error_no_request"));
     }
   };
 
@@ -176,20 +186,24 @@ export const Fido2Prompt: Component = () => {
     }
     setLoading(true);
     setError("");
-    try {
-      const res = await unlock(masterPassword());
+    const result = await ResultAsync.fromPromise(
+      unlock(masterPassword()),
+      (err) => err instanceof Error ? err.message : String(err),
+    );
+
+    if (result.isOk()) {
+      const res = result.value;
       if (res.success) {
         setMasterPassword("");
         await loadPendingRequest();
       } else {
         setError(tErr(res.error, "login_error_wrong_mp"));
       }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(tErr(errMsg, "login_error_unlock_fail"));
-    } finally {
-      setLoading(false);
+    } else {
+      setError(tErr(result.error, "login_error_unlock_fail"));
     }
+
+    setLoading(false);
   };
 
   const handlePinUnlock = async (e: Event) => {
@@ -215,25 +229,19 @@ export const Fido2Prompt: Component = () => {
     setLoading(true);
     setError("");
 
-    try {
-      const res = await registerFido2Passkey(
-        req,
-        selectedAccountIndex(),
-        matchingAccounts(),
-        selectedPasskeyOption(),
-      );
+    const res = await registerFido2Passkey(
+      req,
+      selectedAccountIndex(),
+      matchingAccounts(),
+      selectedPasskeyOption(),
+    );
 
-      if (!res.success) {
-        throw new Error(tErr(res.error, "fido2_error_create_failed"));
-      }
-
+    if (res.isErr()) {
+      setError(tErr(res.error, "fido2_error_create_failed"));
+    } else {
       window.close();
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(tErr(errMsg, "fido2_error_create_failed"));
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const handleConfirmAssert = async () => {
@@ -242,24 +250,18 @@ export const Fido2Prompt: Component = () => {
     setLoading(true);
     setError("");
 
-    try {
-      const res = await assertFido2Passkey(
-        req,
-        matchingCredentials(),
-        selectedCredIndex(),
-      );
+    const res = await assertFido2Passkey(
+      req,
+      matchingCredentials(),
+      selectedCredIndex(),
+    );
 
-      if (!res.success) {
-        throw new Error(tErr(res.error, "fido2_error_assert_failed"));
-      }
-
+    if (res.isErr()) {
+      setError(tErr(res.error, "fido2_error_assert_failed"));
+    } else {
       window.close();
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setError(tErr(errMsg, "fido2_error_assert_failed"));
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const handleReject = async () => {

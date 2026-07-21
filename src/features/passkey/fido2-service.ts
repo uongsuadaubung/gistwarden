@@ -1,3 +1,5 @@
+import { err, ok, Result, ResultAsync } from "neverthrow";
+import type { TranslationKey } from "@/core/i18n.ts";
 import {
   type Fido2Credential,
   type LoginVaultItem,
@@ -48,12 +50,14 @@ export interface MatchingPasskey {
 }
 
 const getDomainFromUrl = (urlStr: string): string => {
-  try {
-    const url = new URL(urlStr);
-    return url.hostname.toLowerCase();
-  } catch (_e) {
-    return urlStr.toLowerCase();
-  }
+  const safeParseUrl = Result.fromThrowable(
+    (u: string) => new URL(u),
+    () => new Error(),
+  );
+  const parseResult = safeParseUrl(urlStr);
+  return parseResult.map((u) => u.hostname.toLowerCase()).unwrapOr(
+    urlStr.toLowerCase(),
+  );
 };
 
 const isDomainMatch = (domainA: string, domainB: string): boolean => {
@@ -122,19 +126,16 @@ export async function registerFido2Passkey(
   selectedAccountIndex: number | null,
   matchingAccounts: LoginVaultItem[],
   selectedPasskeyOption: string,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<Result<void, TranslationKey>> {
   const rp = req.options.rp;
   const user = req.options.user;
   const challenge = req.options.challenge;
   if (!rp || !user || !challenge) {
-    return {
-      success: false,
-      error: "Missing required registration parameters (rp, user, challenge)",
-    };
+    return err("fido2_error_create_failed");
   }
 
-  try {
-    const { newCred, result } = await generatePasskeyRegisterResponse(
+  const generateRes = await ResultAsync.fromPromise(
+    generatePasskeyRegisterResponse(
       {
         ...req.options,
         rp,
@@ -142,137 +143,153 @@ export async function registerFido2Passkey(
         challenge,
       },
       req.origin,
-    );
+    ),
+    (e): TranslationKey => {
+      console.error(e);
+      return "fido2_error_create_failed";
+    },
+  );
 
-    let saveRes;
-    const idx = selectedAccountIndex;
-    if (idx !== null && matchingAccounts[idx]) {
-      const existingItem = matchingAccounts[idx];
-      let updatedCredentials: Fido2Credential[] = [];
-      const existingCredentials = existingItem.login.fido2Credentials || [];
-      const option = selectedPasskeyOption;
+  if (generateRes.isErr()) {
+    return err(generateRes.error);
+  }
 
-      if (option === "add") {
-        updatedCredentials = [...existingCredentials, newCred];
-      } else {
-        updatedCredentials = existingCredentials.map((c) =>
-          c.credentialId === option ? newCred : c
-        );
-        if (!existingCredentials.some((c) => c.credentialId === option)) {
-          updatedCredentials.push(newCred);
-        }
-      }
+  const { newCred, result } = generateRes.value;
 
-      const updatedItem: Partial<LoginVaultItem> = {
-        id: existingItem.id,
-        type: VaultItemType.Login,
-        login: {
-          ...existingItem.login,
-          fido2Credentials: updatedCredentials,
-        },
-      };
-      saveRes = await saveItem(updatedItem);
+  let saveRes;
+  const idx = selectedAccountIndex;
+  if (idx !== null && matchingAccounts[idx]) {
+    const existingItem = matchingAccounts[idx];
+    let updatedCredentials: Fido2Credential[] = [];
+    const existingCredentials = existingItem.login.fido2Credentials || [];
+    const option = selectedPasskeyOption;
+
+    if (option === "add") {
+      updatedCredentials = [...existingCredentials, newCred];
     } else {
-      const newItem: Partial<VaultItem> = {
-        name: rp.name || rp.id || "",
-        type: VaultItemType.Login,
-        login: {
-          username: user.name,
-          password: "",
-          uris: [{ uri: req.origin }],
-          fido2Credentials: [newCred],
-        },
-      };
-      saveRes = await saveItem(newItem);
+      updatedCredentials = existingCredentials.map((c) =>
+        c.credentialId === option ? newCred : c
+      );
+      if (!existingCredentials.some((c) => c.credentialId === option)) {
+        updatedCredentials.push(newCred);
+      }
     }
 
-    if (!saveRes.success) {
-      return {
-        success: false,
-        error: saveRes.error || "fido2_error_save_failed",
-      };
-    }
+    const updatedItem: Partial<LoginVaultItem> = {
+      id: existingItem.id,
+      type: VaultItemType.Login,
+      login: {
+        ...existingItem.login,
+        fido2Credentials: updatedCredentials,
+      },
+    };
+    saveRes = await saveItem(updatedItem);
+  } else {
+    const newItem: Partial<VaultItem> = {
+      name: rp.name || rp.id || "",
+      type: VaultItemType.Login,
+      login: {
+        username: user.name,
+        password: "",
+        uris: [{ uri: req.origin }],
+        fido2Credentials: [newCred],
+      },
+    };
+    saveRes = await saveItem(newItem);
+  }
 
-    await sendMessageToBackground({
+  if (!saveRes.success) {
+    return err("fido2_error_save_failed");
+  }
+
+  await ResultAsync.fromPromise(
+    sendMessageToBackground({
       type: MSG_RESOLVE_FIDO2_REQUEST,
       result,
-    }).catch(() => null);
-    return { success: true };
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg || "fido2_error_create_failed" };
-  }
+    }),
+    () => new Error(),
+  ).unwrapOr(null);
+
+  return ok();
 }
 
 export async function assertFido2Passkey(
   req: Fido2Request,
   matchingCredentials: MatchingPasskey[],
   selectedCredIndex: number,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const selected = matchingCredentials[selectedCredIndex];
-    const cred = selected.credential;
+): Promise<Result<void, TranslationKey>> {
+  const selected = matchingCredentials[selectedCredIndex];
+  const cred = selected.credential;
 
-    const nextCounter = Math.max(cred.counter + 1, 100000);
+  const nextCounter = Math.max(cred.counter + 1, 100000);
 
-    const updatedCred: Fido2Credential = {
-      ...cred,
-      counter: nextCounter,
-    };
+  const updatedCred: Fido2Credential = {
+    ...cred,
+    counter: nextCounter,
+  };
 
-    const originalItem = store.vaultItems.find((v) =>
-      v.id === selected.vaultItemId
-    );
-    if (
-      !originalItem || originalItem.type !== VaultItemType.Login ||
-      !originalItem.login
-    ) {
-      throw new Error("Vault item not found");
-    }
+  const originalItem = store.vaultItems.find((v) =>
+    v.id === selected.vaultItemId
+  );
+  if (
+    !originalItem || originalItem.type !== VaultItemType.Login ||
+    !originalItem.login
+  ) {
+    return err("fido2_error_assert_failed");
+  }
 
-    const updatedItem: LoginVaultItem = {
-      ...originalItem,
-      type: VaultItemType.Login,
-      login: {
-        ...originalItem.login,
-        fido2Credentials: (originalItem.login.fido2Credentials || []).map((
-          c: Fido2Credential,
-        ) => c.credentialId === cred.credentialId ? updatedCred : c),
-      },
-    };
+  const updatedItem: LoginVaultItem = {
+    ...originalItem,
+    type: VaultItemType.Login,
+    login: {
+      ...originalItem.login,
+      fido2Credentials: (originalItem.login.fido2Credentials || []).map((
+        c: Fido2Credential,
+      ) => c.credentialId === cred.credentialId ? updatedCred : c),
+    },
+  };
 
-    const saveRes = await saveItem(updatedItem);
-    if (!saveRes.success) {
-      throw new Error(
-        saveRes.error || "fido2_error_counter_update_failed",
-      );
-    }
+  const saveRes = await saveItem(updatedItem);
+  if (!saveRes.success) {
+    return err("fido2_error_counter_update_failed");
+  }
 
-    const { result } = await generatePasskeyAssertResponse(
+  const assertRes = await ResultAsync.fromPromise(
+    generatePasskeyAssertResponse(
       req.options,
       req.origin,
       cred,
       nextCounter,
-    );
+    ),
+    (e): TranslationKey => {
+      console.error(e);
+      return "fido2_error_assert_failed";
+    },
+  );
 
-    await sendMessageToBackground({
+  if (assertRes.isErr()) {
+    return err(assertRes.error);
+  }
+
+  const { result } = assertRes.value;
+
+  await ResultAsync.fromPromise(
+    sendMessageToBackground({
       type: MSG_RESOLVE_FIDO2_REQUEST,
       result,
-    }).catch(() => null);
-    return { success: true };
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: errMsg || "fido2_error_assert_failed" };
-  }
+    }),
+    () => new Error(),
+  ).unwrapOr(null);
+
+  return ok(undefined);
 }
 
-export async function rejectFido2Request() {
-  try {
-    await sendMessageToBackground({
+export async function rejectFido2Request(): Promise<void> {
+  await ResultAsync.fromPromise(
+    sendMessageToBackground({
       type: MSG_REJECT_FIDO2_REQUEST,
       error: "NotAllowedError: User cancelled the request",
-    }).catch(() => null);
-  } catch (_e) {
-    // Ignore
-  }
+    }),
+    () => new Error(),
+  ).unwrapOr(null);
 }
