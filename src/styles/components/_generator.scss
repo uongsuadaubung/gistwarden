@@ -53,6 +53,7 @@
   justify-content: space-between;
   gap: 16px;
   min-height: 60px;
+  flex-shrink: 0;
 
   .output-value {
     font-size: 18px;
