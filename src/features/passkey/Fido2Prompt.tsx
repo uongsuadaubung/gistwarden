@@ -270,389 +270,416 @@ export const Fido2Prompt: Component = () => {
       </div>
 
       <div class="fido2-body">
-        <Show
-          when={store.isLocked}
-          fallback={
+        <Switch>
+          {/* 1. Chưa đăng nhập / Chưa cấu hình GitHub */}
+          <Match when={!store.githubConfigured}>
             <div class="prompt-content">
-              <Show when={error()}>
-                <div class="alert alert-danger mb-16">{error()}</div>
+              <div class="prompt-icon-wrapper">
+                <div class="fido2-large-icon bg-danger">
+                  <LockIcon fill="var(--white)" />
+                </div>
+              </div>
+
+              <h2 class="prompt-title">{t("fido2_not_logged_in_title")}</h2>
+              <p class="prompt-subtitle">
+                {t("fido2_not_logged_in_subtitle")}
+              </p>
+
+              <div class="prompt-footer single-btn">
                 <Button variant="secondary" block onClick={handleReject}>
                   {t("btn_close")}
                 </Button>
-              </Show>
-
-              <Show when={pendingReq()}>
-                {/* 1. FIDO2 CREATE (Registration) */}
-                <Show when={pendingReq()?.type === "create"}>
-                  <div class="prompt-icon-wrapper">
-                    <div class="fido2-large-icon bg-success">
-                      <InfoIcon fill="var(--white)" />
-                    </div>
-                  </div>
-
-                  <h2 class="prompt-title">{t("fido2_register_title")}</h2>
-
-                  <Show
-                    when={matchingAccounts().length > 0}
-                    fallback={
-                      <div
-                        class="prompt-subtitle"
-                        innerHTML={t("fido2_register_subtitle_new", {
-                          rp: pendingReq()?.options.rp?.name ||
-                            pendingReq()?.options.rp?.id || "",
-                          user: pendingReq()?.options.user?.name || "",
-                        })}
-                      />
-                    }
-                  >
-                    <div
-                      class="prompt-subtitle"
-                      innerHTML={t("fido2_register_subtitle_choose", {
-                        user: pendingReq()?.options.user?.name || "",
-                      })}
-                    />
-                  </Show>
-
-                  <div class="passkey-list">
-                    <For each={matchingAccounts()}>
-                      {(item, idx) => (
-                        <PasskeySelectRow
-                          icon={<LockIcon />}
-                          title={item.login.username || t("detail_no_value")}
-                          subtitle={item.name}
-                          active={selectedAccountIndex() === idx()}
-                          onClick={() => {
-                            setSelectedAccountIndex(idx());
-                            initPasskeyOptions(item);
-                          }}
-                        />
-                      )}
-                    </For>
-
-                    {/* Option to create a new account */}
-                    <PasskeySelectRow
-                      icon={<QuestionIcon />}
-                      title={t("fido2_register_new_account")}
-                      subtitle={t("fido2_register_new_account_sub")}
-                      active={selectedAccountIndex() === null}
-                      onClick={() => {
-                        setSelectedAccountIndex(null);
-                        setSelectedPasskeyOption("add");
-                      }}
-                    />
-                  </div>
-
-                  <Show when={selectedAccountIndex() !== null}>
-                    {(() => {
-                      const account =
-                        matchingAccounts()[selectedAccountIndex()!];
-                      if (!account) return null;
-                      const creds = account.login.fido2Credentials || [];
-                      if (creds.length === 0) return null;
-
-                      return (
-                        <div class="passkey-options-section">
-                          <div class="passkey-options-title">
-                            {creds.length === 1
-                              ? t("fido2_register_choose_passkey_action")
-                              : t("fido2_register_choose_passkey_overwrite")}
-                          </div>
-
-                          <div class="passkey-list">
-                            <Show
-                              when={creds.length === 1}
-                              fallback={
-                                <>
-                                  <For each={creds}>
-                                    {(cred, cIdx) => (
-                                      <PasskeySelectRow
-                                        icon={<ShieldIcon />}
-                                        title={t(
-                                          "fido2_register_passkey_info",
-                                          {
-                                            index: cIdx() + 1,
-                                            date: cred.creationDate
-                                              ? formatDateTime(
-                                                cred.creationDate,
-                                              )
-                                              : "N/A",
-                                          },
-                                        )}
-                                        subtitle={`ID: ${
-                                          cred.credentialId.substring(0, 16)
-                                        }...`}
-                                        active={selectedPasskeyOption() ===
-                                          cred.credentialId}
-                                        subItem={true}
-                                        onClick={() =>
-                                          setSelectedPasskeyOption(
-                                            cred.credentialId,
-                                          )}
-                                      />
-                                    )}
-                                  </For>
-                                  <PasskeySelectRow
-                                    icon={<QuestionIcon />}
-                                    title={t("fido2_register_option_add")}
-                                    subtitle={t(
-                                      "fido2_register_option_add_sub",
-                                    )}
-                                    active={selectedPasskeyOption() === "add"}
-                                    subItem={true}
-                                    onClick={() =>
-                                      setSelectedPasskeyOption("add")}
-                                  />
-                                </>
-                              }
-                            >
-                              <PasskeySelectRow
-                                icon={<ShieldIcon />}
-                                title={t("fido2_register_option_overwrite")}
-                                subtitle={t("fido2_register_passkey_info", {
-                                  index: 1,
-                                  date: creds[0].creationDate
-                                    ? formatDateTime(creds[0].creationDate)
-                                    : "N/A",
-                                })}
-                                active={selectedPasskeyOption() ===
-                                  creds[0].credentialId}
-                                subItem={true}
-                                onClick={() =>
-                                  setSelectedPasskeyOption(
-                                    creds[0].credentialId,
-                                  )}
-                              />
-
-                              <PasskeySelectRow
-                                icon={<QuestionIcon />}
-                                title={t("fido2_register_option_add")}
-                                subtitle={t("fido2_register_option_add_sub")}
-                                active={selectedPasskeyOption() === "add"}
-                                subItem={true}
-                                onClick={() => setSelectedPasskeyOption("add")}
-                              />
-                            </Show>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </Show>
-
-                  <div class="prompt-footer">
-                    <Button
-                      variant="secondary"
-                      onClick={handleReject}
-                    >
-                      {t("btn_cancel")}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={handleConfirmRegister}
-                    >
-                      {t("fido2_btn_save")}
-                    </Button>
-                  </div>
-                </Show>
-
-                {/* 2. FIDO2 GET (Assertion/Authentication) */}
-                <Show when={pendingReq()?.type === "get"}>
-                  <div class="prompt-icon-wrapper">
-                    <div class="fido2-large-icon bg-primary">
-                      <ShieldIcon fill="var(--white)" />
-                    </div>
-                  </div>
-
-                  <h2 class="prompt-title">{t("fido2_assert_title")}</h2>
-
-                  <Show
-                    when={matchingCredentials().length === 0}
-                    fallback={
-                      <>
-                        <div
-                          class="prompt-subtitle"
-                          innerHTML={t("fido2_assert_subtitle", {
-                            rp: pendingReq()?.options.rpId || "",
-                          })}
-                        />
-
-                        {/* Styled list of passkeys instead of select dropdown */}
-                        <div class="passkey-list">
-                          <For each={matchingCredentials()}>
-                            {(item, idx) => (
-                              <PasskeySelectRow
-                                icon={<QuestionIcon />}
-                                title={item.credential.userName || ""}
-                                subtitle={item.vaultItemName}
-                                active={selectedCredIndex() === idx()}
-                                onClick={() => setSelectedCredIndex(idx())}
-                              />
-                            )}
-                          </For>
-                        </div>
-
-                        <div class="prompt-footer">
-                          <Button
-                            variant="secondary"
-                            onClick={handleReject}
-                          >
-                            {t("btn_cancel")}
-                          </Button>
-                          <Button
-                            variant="primary"
-                            onClick={handleConfirmAssert}
-                          >
-                            {t("fido2_assert_btn_confirm")}
-                          </Button>
-                        </div>
-                      </>
-                    }
-                  >
-                    <div
-                      class="prompt-subtitle error-msg"
-                      innerHTML={t("fido2_assert_no_match", {
-                        rp: pendingReq()?.options.rpId || "",
-                      })}
-                    />
-                    <div class="prompt-footer single-btn">
-                      <Button variant="secondary" block onClick={handleReject}>
-                        {t("btn_close")}
-                      </Button>
-                    </div>
-                  </Show>
-                </Show>
-              </Show>
-            </div>
-          }
-        >
-          {/* Vault locked screen inside FIDO2 window */}
-          <div class="prompt-content">
-            <div class="prompt-icon-wrapper">
-              <div class="fido2-large-icon bg-warning">
-                <LockIcon fill="var(--white)" />
               </div>
             </div>
+          </Match>
 
-            <h2 class="prompt-title">{t("fido2_vault_locked_title")}</h2>
-            <p class="prompt-subtitle">
-              {t("fido2_vault_locked_subtitle")}
-            </p>
-
-            <Show when={error()}>
-              <div class="alert alert-danger alert-prompt-compact">
-                {error()}
+          {/* 2. Đã cấu hình nhưng két sắt bị khóa */}
+          <Match when={store.isLocked}>
+            <div class="prompt-content">
+              <div class="prompt-icon-wrapper">
+                <div class="fido2-large-icon bg-warning">
+                  <LockIcon fill="var(--white)" />
+                </div>
               </div>
-            </Show>
 
-            <Switch>
-              <Match when={viewMode() === "pin"}>
-                <form
-                  onSubmit={handlePinUnlock}
-                  class="flex-1 d-flex flex-column"
-                >
-                  <div class="form-group text-left pos-relative">
-                    <div class="pos-relative d-flex align-items-center">
-                      <Input
-                        type={showPin() ? "text" : "password"}
-                        placeholder={t("login_pin_placeholder")}
-                        value={pin()}
-                        onInput={(e) => setPin(e.currentTarget.value)}
-                        autofocus
-                        required
-                        rightActions={
-                          <button
-                            type="button"
-                            class="action-btn input-action-btn"
-                            onClick={() => setShowPin(!showPin())}
-                          >
-                            <Show
-                              fallback={<EyeIcon class="icon-inline" />}
-                              when={showPin()}
+              <h2 class="prompt-title">{t("fido2_vault_locked_title")}</h2>
+              <p class="prompt-subtitle">
+                {t("fido2_vault_locked_subtitle")}
+              </p>
+
+              <Show when={error()}>
+                <div class="alert alert-danger alert-prompt-compact">
+                  {error()}
+                </div>
+              </Show>
+
+              <Switch>
+                <Match when={viewMode() === "pin"}>
+                  <form
+                    onSubmit={handlePinUnlock}
+                    class="flex-1 d-flex flex-column"
+                  >
+                    <div class="form-group text-left pos-relative">
+                      <div class="pos-relative d-flex align-items-center">
+                        <Input
+                          type={showPin() ? "text" : "password"}
+                          placeholder={t("login_pin_placeholder")}
+                          value={pin()}
+                          onInput={(e) => setPin(e.currentTarget.value)}
+                          autofocus
+                          required
+                          rightActions={
+                            <button
+                              type="button"
+                              class="action-btn input-action-btn"
+                              onClick={() => setShowPin(!showPin())}
                             >
-                              <EyeOffIcon class="icon-inline" />
-                            </Show>
-                          </button>
-                        }
-                      />
+                              <Show
+                                fallback={<EyeIcon class="icon-inline" />}
+                                when={showPin()}
+                              >
+                                <EyeOffIcon class="icon-inline" />
+                              </Show>
+                            </button>
+                          }
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div class="text-center mt-8 mb-12">
-                    <a
-                      href="#"
-                      class="forgot-pass-link font-sz-12"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setViewMode("masterPassword");
-                      }}
-                    >
-                      {t("login_unlock_with_mp")}
-                    </a>
-                  </div>
-
-                  <div class="prompt-footer">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={handleReject}
-                    >
-                      {t("btn_cancel")}
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                    >
-                      {t("login_btn_unlock")}
-                    </Button>
-                  </div>
-                </form>
-              </Match>
-
-              <Match when={viewMode() === "masterPassword"}>
-                <form onSubmit={handleUnlock} class="flex-1 d-flex flex-column">
-                  <div class="form-group text-left">
-                    <Input
-                      type="password"
-                      placeholder={t("login_placeholder_mp") + "..."}
-                      value={masterPassword()}
-                      onInput={(e) => setMasterPassword(e.currentTarget.value)}
-                      autofocus
-                      required
-                    />
-                  </div>
-
-                  <Show when={store.pinUnlockEnabled}>
                     <div class="text-center mt-8 mb-12">
                       <a
                         href="#"
                         class="forgot-pass-link font-sz-12"
                         onClick={(e) => {
                           e.preventDefault();
-                          setViewMode("pin");
+                          setViewMode("masterPassword");
                         }}
                       >
-                        {t("login_unlock_with_pin")}
+                        {t("login_unlock_with_mp")}
                       </a>
                     </div>
-                  </Show>
 
-                  <div class="prompt-footer">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={handleReject}
-                    >
-                      {t("btn_cancel")}
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                    >
-                      {t("login_btn_unlock")}
+                    <div class="prompt-footer">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleReject}
+                      >
+                        {t("btn_cancel")}
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="primary"
+                      >
+                        {t("login_btn_unlock")}
+                      </Button>
+                    </div>
+                  </form>
+                </Match>
+
+                <Match when={viewMode() === "masterPassword"}>
+                  <form
+                    onSubmit={handleUnlock}
+                    class="flex-1 d-flex flex-column"
+                  >
+                    <div class="form-group text-left">
+                      <Input
+                        type="password"
+                        placeholder={t("login_placeholder_mp") + "..."}
+                        value={masterPassword()}
+                        onInput={(e) =>
+                          setMasterPassword(e.currentTarget.value)}
+                        autofocus
+                        required
+                      />
+                    </div>
+
+                    <Show when={store.pinUnlockEnabled}>
+                      <div class="text-center mt-8 mb-12">
+                        <a
+                          href="#"
+                          class="forgot-pass-link font-sz-12"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setViewMode("pin");
+                          }}
+                        >
+                          {t("login_unlock_with_pin")}
+                        </a>
+                      </div>
+                    </Show>
+
+                    <div class="prompt-footer">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleReject}
+                      >
+                        {t("btn_cancel")}
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="primary"
+                      >
+                        {t("login_btn_unlock")}
+                      </Button>
+                    </div>
+                  </form>
+                </Match>
+              </Switch>
+            </div>
+          </Match>
+        </Switch>
+
+        {/* 3. Đã mở khóa két sắt */}
+        <Show when={store.githubConfigured && !store.isLocked}>
+          <div class="prompt-content">
+            <Show when={error()}>
+              <div class="alert alert-danger mb-16">{error()}</div>
+              <Button variant="secondary" block onClick={handleReject}>
+                {t("btn_close")}
+              </Button>
+            </Show>
+
+            <Show when={pendingReq()}>
+              {/* 1. FIDO2 CREATE (Registration) */}
+              <Show when={pendingReq()?.type === "create"}>
+                <div class="prompt-icon-wrapper">
+                  <div class="fido2-large-icon bg-success">
+                    <InfoIcon fill="var(--white)" />
+                  </div>
+                </div>
+
+                <h2 class="prompt-title">{t("fido2_register_title")}</h2>
+
+                <Show
+                  when={matchingAccounts().length > 0}
+                  fallback={
+                    <div
+                      class="prompt-subtitle"
+                      innerHTML={t("fido2_register_subtitle_new", {
+                        rp: pendingReq()?.options.rp?.name ||
+                          pendingReq()?.options.rp?.id || "",
+                        user: pendingReq()?.options.user?.name || "",
+                      })}
+                    />
+                  }
+                >
+                  <div
+                    class="prompt-subtitle"
+                    innerHTML={t("fido2_register_subtitle_choose", {
+                      user: pendingReq()?.options.user?.name || "",
+                    })}
+                  />
+                </Show>
+
+                <div class="passkey-list">
+                  <For each={matchingAccounts()}>
+                    {(item, idx) => (
+                      <PasskeySelectRow
+                        icon={<LockIcon />}
+                        title={item.login.username || t("detail_no_value")}
+                        subtitle={item.name}
+                        active={selectedAccountIndex() === idx()}
+                        onClick={() => {
+                          setSelectedAccountIndex(idx());
+                          initPasskeyOptions(item);
+                        }}
+                      />
+                    )}
+                  </For>
+
+                  {/* Option to create a new account */}
+                  <PasskeySelectRow
+                    icon={<QuestionIcon />}
+                    title={t("fido2_register_new_account")}
+                    subtitle={t("fido2_register_new_account_sub")}
+                    active={selectedAccountIndex() === null}
+                    onClick={() => {
+                      setSelectedAccountIndex(null);
+                      setSelectedPasskeyOption("add");
+                    }}
+                  />
+                </div>
+
+                <Show when={selectedAccountIndex() !== null}>
+                  {(() => {
+                    const account = matchingAccounts()[selectedAccountIndex()!];
+                    if (!account) return null;
+                    const creds = account.login.fido2Credentials || [];
+                    if (creds.length === 0) return null;
+
+                    return (
+                      <div class="passkey-options-section">
+                        <div class="passkey-options-title">
+                          {creds.length === 1
+                            ? t("fido2_register_choose_passkey_action")
+                            : t("fido2_register_choose_passkey_overwrite")}
+                        </div>
+
+                        <div class="passkey-list">
+                          <Show
+                            when={creds.length === 1}
+                            fallback={
+                              <>
+                                <For each={creds}>
+                                  {(cred, cIdx) => (
+                                    <PasskeySelectRow
+                                      icon={<ShieldIcon />}
+                                      title={t(
+                                        "fido2_register_passkey_info",
+                                        {
+                                          index: cIdx() + 1,
+                                          date: cred.creationDate
+                                            ? formatDateTime(
+                                              cred.creationDate,
+                                            )
+                                            : "N/A",
+                                        },
+                                      )}
+                                      subtitle={`ID: ${
+                                        cred.credentialId.substring(0, 16)
+                                      }...`}
+                                      active={selectedPasskeyOption() ===
+                                        cred.credentialId}
+                                      subItem={true}
+                                      onClick={() =>
+                                        setSelectedPasskeyOption(
+                                          cred.credentialId,
+                                        )}
+                                    />
+                                  )}
+                                </For>
+                                <PasskeySelectRow
+                                  icon={<QuestionIcon />}
+                                  title={t("fido2_register_option_add")}
+                                  subtitle={t(
+                                    "fido2_register_option_add_sub",
+                                  )}
+                                  active={selectedPasskeyOption() === "add"}
+                                  subItem={true}
+                                  onClick={() =>
+                                    setSelectedPasskeyOption("add")}
+                                />
+                              </>
+                            }
+                          >
+                            <PasskeySelectRow
+                              icon={<ShieldIcon />}
+                              title={t("fido2_register_option_overwrite")}
+                              subtitle={t("fido2_register_passkey_info", {
+                                index: 1,
+                                date: creds[0].creationDate
+                                  ? formatDateTime(creds[0].creationDate)
+                                  : "N/A",
+                              })}
+                              active={selectedPasskeyOption() ===
+                                creds[0].credentialId}
+                              subItem={true}
+                              onClick={() =>
+                                setSelectedPasskeyOption(
+                                  creds[0].credentialId,
+                                )}
+                            />
+
+                            <PasskeySelectRow
+                              icon={<QuestionIcon />}
+                              title={t("fido2_register_option_add")}
+                              subtitle={t("fido2_register_option_add_sub")}
+                              active={selectedPasskeyOption() === "add"}
+                              subItem={true}
+                              onClick={() => setSelectedPasskeyOption("add")}
+                            />
+                          </Show>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </Show>
+
+                <div class="prompt-footer">
+                  <Button
+                    variant="secondary"
+                    onClick={handleReject}
+                  >
+                    {t("btn_cancel")}
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleConfirmRegister}
+                  >
+                    {t("fido2_btn_save")}
+                  </Button>
+                </div>
+              </Show>
+
+              {/* 2. FIDO2 GET (Assertion/Authentication) */}
+              <Show when={pendingReq()?.type === "get"}>
+                <div class="prompt-icon-wrapper">
+                  <div class="fido2-large-icon bg-primary">
+                    <ShieldIcon fill="var(--white)" />
+                  </div>
+                </div>
+
+                <h2 class="prompt-title">{t("fido2_assert_title")}</h2>
+
+                <Show
+                  when={matchingCredentials().length === 0}
+                  fallback={
+                    <>
+                      <div
+                        class="prompt-subtitle"
+                        innerHTML={t("fido2_assert_subtitle", {
+                          rp: pendingReq()?.options.rpId || "",
+                        })}
+                      />
+
+                      {/* Styled list of passkeys instead of select dropdown */}
+                      <div class="passkey-list">
+                        <For each={matchingCredentials()}>
+                          {(item, idx) => (
+                            <PasskeySelectRow
+                              icon={<QuestionIcon />}
+                              title={item.credential.userName || ""}
+                              subtitle={item.vaultItemName}
+                              active={selectedCredIndex() === idx()}
+                              onClick={() => setSelectedCredIndex(idx())}
+                            />
+                          )}
+                        </For>
+                      </div>
+
+                      <div class="prompt-footer">
+                        <Button
+                          variant="secondary"
+                          onClick={handleReject}
+                        >
+                          {t("btn_cancel")}
+                        </Button>
+                        <Button
+                          variant="primary"
+                          onClick={handleConfirmAssert}
+                        >
+                          {t("fido2_assert_btn_confirm")}
+                        </Button>
+                      </div>
+                    </>
+                  }
+                >
+                  <div
+                    class="prompt-subtitle error-msg"
+                    innerHTML={t("fido2_assert_no_match", {
+                      rp: pendingReq()?.options.rpId || "",
+                    })}
+                  />
+                  <div class="prompt-footer single-btn">
+                    <Button variant="secondary" block onClick={handleReject}>
+                      {t("btn_close")}
                     </Button>
                   </div>
-                </form>
-              </Match>
-            </Switch>
+                </Show>
+              </Show>
+            </Show>
           </div>
         </Show>
       </div>
