@@ -5,6 +5,7 @@ import { EyeIcon, EyeOffIcon, UploadIcon } from "@/icons/svg/index.ts";
 import { parseSshKey } from "@/core/crypto.ts";
 import FormField from "@/components/ui/FormField.tsx";
 import type { ItemEditFormState } from "@/features/vault/item-edit/vault-edit-helper.ts";
+import { ResultAsync } from "neverthrow";
 
 interface SshKeyEditFieldsProps {
   formState: ItemEditFormState;
@@ -20,22 +21,28 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
 
   const handlePasteSshKey = async () => {
     setErrorMsg("");
-    try {
-      const text = await navigator.clipboard.readText();
-      const parsedRes = await parseSshKey(text);
-      if (parsedRes.isOk()) {
-        const parsed = parsedRes.value;
-        props.updateForm("sshPrivateKey", text);
-        props.updateForm("sshPublicKey", parsed.publicKey);
-        props.updateForm("sshFingerprint", parsed.keyFingerprint);
-      } else {
-        setErrorMsg(
-          t("ssh_invalid_key"),
-        );
-      }
-    } catch (err) {
-      console.error("Clipboard read error:", err);
-      setErrorMsg("Failed to read from clipboard or clipboard access denied");
+    const readClipboardRes = await ResultAsync.fromPromise(
+      navigator.clipboard.readText(),
+      (err) => {
+        console.error("Clipboard read error:", err);
+        return "Failed to read from clipboard or clipboard access denied";
+      },
+    );
+
+    if (readClipboardRes.isErr()) {
+      setErrorMsg(readClipboardRes.error);
+      return;
+    }
+
+    const text = readClipboardRes.value;
+    const parsedRes = await parseSshKey(text);
+    if (parsedRes.isOk()) {
+      const parsed = parsedRes.value;
+      props.updateForm("sshPrivateKey", text);
+      props.updateForm("sshPublicKey", parsed.publicKey);
+      props.updateForm("sshFingerprint", parsed.keyFingerprint);
+    } else {
+      setErrorMsg(t("ssh_invalid_key"));
     }
   };
 

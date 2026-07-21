@@ -33,6 +33,7 @@ import {
 } from "@/icons/svg/index.ts";
 import { formatDateTime, t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
+import { safeParseUrl } from "@/core/domain-utils.ts";
 import LoginDetailFields from "@/features/vault/item-detail/LoginDetailFields.tsx";
 import CardDetailFields from "@/features/vault/item-detail/CardDetailFields.tsx";
 import NoteDetailFields from "@/features/vault/item-detail/NoteDetailFields.tsx";
@@ -68,16 +69,11 @@ const getDomain = (item: LoginVaultItem): string | null => {
     return null;
   }
   const uri = item.login.uris[0].uri;
-  try {
-    let hostname = uri;
-    if (!/^https?:\/\//i.test(hostname)) {
-      hostname = "http://" + hostname;
-    }
-    const url = new URL(hostname);
-    return url.hostname;
-  } catch (_e) {
-    return null;
+  let hostname = uri;
+  if (!/^https?:\/\//i.test(hostname)) {
+    hostname = "http://" + hostname;
   }
+  return safeParseUrl(hostname).map((url) => url.hostname).unwrapOr(null);
 };
 
 const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (
@@ -164,10 +160,10 @@ export const ItemDetail: Component = () => {
 
     setError("");
     const res = await deleteItem(store.selectedItem.id);
-    if (res.success) {
+    if (res.isOk()) {
       navigate(View.Vault);
     } else {
-      setError(res.error || t("edit_error_delete_failed"));
+      setError(t(res.error));
     }
   };
 

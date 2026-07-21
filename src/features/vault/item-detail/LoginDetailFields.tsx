@@ -8,9 +8,7 @@ import {
 } from "solid-js";
 import { type LoginVaultItem } from "@/core/types.ts";
 import { t } from "@/core/i18n.ts";
-import { APP_NAME } from "@/core/constants.ts";
-import * as OTPAuth from "otpauth";
-import { parseTotpSecret } from "@/core/totp-utils.ts";
+import { generateTotpSafe } from "@/core/totp-utils.ts";
 import { store } from "@/core/store.ts";
 import {
   CopyIcon,
@@ -49,19 +47,13 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
       return;
     }
 
-    const secret = parseTotpSecret(rawSecret);
+    const generateRes = generateTotpSafe(rawSecret, store.timeOffset);
 
-    try {
-      const totp = new OTPAuth.TOTP({
-        secret: OTPAuth.Secret.fromBase32(secret),
-      });
-      const rawCode = totp.generate({
-        timestamp: Date.now() + store.timeOffset,
-      });
+    if (generateRes.isOk()) {
+      const rawCode = generateRes.value;
       const formatted = rawCode.slice(0, 3) + " " + rawCode.slice(3);
       setTotpCode(formatted);
-    } catch (err) {
-      console.error(`[${APP_NAME}] TOTP Generation error:`, err);
+    } else {
       setTotpCode(t("detail_totp_error"));
     }
   };
