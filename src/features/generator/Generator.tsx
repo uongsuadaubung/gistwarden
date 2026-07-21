@@ -17,7 +17,7 @@ export const Generator: Component = () => {
   const [password, setPassword] = createSignal("");
 
   // Password State
-  const [length, setLength] = createSignal(15);
+  const [length, setLength] = createSignal<number | string>(15);
   const [uppercase, setUppercase] = createSignal(true);
   const [lowercase, setLowercase] = createSignal(true);
   const [numbers, setNumbers] = createSignal(true);
@@ -27,7 +27,7 @@ export const Generator: Component = () => {
   const [minSpecials, setMinSpecials] = createSignal(1);
 
   // Passphrase State
-  const [numWords, setNumWords] = createSignal(6);
+  const [numWords, setNumWords] = createSignal<number | string>(6);
   const [wordSeparator, setWordSeparator] = createSignal("-");
   const [capitalize, setCapitalize] = createSignal(false);
   const [includeNumber, setIncludeNumber] = createSignal(false);
@@ -47,8 +47,11 @@ export const Generator: Component = () => {
   };
 
   const handleGeneratePassword = () => {
+    const finalLen = Number(length());
+    if (isNaN(finalLen) || finalLen < 9 || finalLen > 128) return;
+
     const res = generatePassword({
-      length: length(),
+      length: finalLen,
       uppercase: uppercase(),
       lowercase: lowercase(),
       numbers: numbers(),
@@ -66,8 +69,11 @@ export const Generator: Component = () => {
   };
 
   const handleGeneratePassphrase = () => {
+    const finalWords = Number(numWords());
+    if (isNaN(finalWords) || finalWords < 3 || finalWords > 20) return;
+
     const res = generatePassphrase({
-      numWords: numWords(),
+      numWords: finalWords,
       wordSeparator: wordSeparator(),
       capitalize: capitalize(),
       includeNumber: includeNumber(),
@@ -94,9 +100,16 @@ export const Generator: Component = () => {
   };
 
   // Password Options Handlers
-  const handleLengthChange = (val: number) => {
-    setLength(val);
-    generate();
+  const handleLengthChange = (val: number | string) => {
+    if (val === "") {
+      setLength("");
+      return;
+    }
+    const num = typeof val === "string" ? parseInt(val, 10) : val;
+    if (!isNaN(num)) {
+      setLength(num);
+      if (num >= 9 && num <= 128) generate();
+    }
   };
 
   const handleMinNumbersChange = (val: number) => {
@@ -120,9 +133,16 @@ export const Generator: Component = () => {
   };
 
   // Passphrase Options Handlers
-  const handleNumWordsChange = (val: number) => {
-    setNumWords(val);
-    generate();
+  const handleNumWordsChange = (val: number | string) => {
+    if (val === "") {
+      setNumWords("");
+      return;
+    }
+    const num = typeof val === "string" ? parseInt(val, 10) : val;
+    if (!isNaN(num)) {
+      setNumWords(num);
+      if (num >= 3 && num <= 20) generate();
+    }
   };
 
   const handleWordSeparatorChange = (val: string) => {
@@ -235,8 +255,14 @@ export const Generator: Component = () => {
                 min="9"
                 max="128"
                 value={length()}
-                onInput={(e) =>
-                  handleLengthChange(parseInt(e.currentTarget.value) || 0)}
+                onInput={(e) => handleLengthChange(e.currentTarget.value)}
+                onBlur={() => {
+                  let num = Number(length());
+                  if (isNaN(num) || num < 9) num = 9;
+                  if (num > 128) num = 128;
+                  setLength(num);
+                  generate();
+                }}
               />
               <div class="options-hint">Value must be between 9 and 128.</div>
             </FormField>
@@ -386,8 +412,14 @@ export const Generator: Component = () => {
                 min="3"
                 max="20"
                 value={numWords()}
-                onInput={(e) =>
-                  handleNumWordsChange(parseInt(e.currentTarget.value) || 0)}
+                onInput={(e) => handleNumWordsChange(e.currentTarget.value)}
+                onBlur={() => {
+                  let num = Number(numWords());
+                  if (isNaN(num) || num < 3) num = 3;
+                  if (num > 20) num = 20;
+                  setNumWords(num);
+                  generate();
+                }}
               />
               <div class="options-hint">
                 {t("gen_passphrase_hint")}
