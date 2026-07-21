@@ -50,20 +50,22 @@
         "https://*/*"
       ],
       "js": [
+        "fido2-page-script.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
         "autofill-content-script.js"
       ],
       "run_at": "document_end",
       "all_frames": true
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "fido2-page-script.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
     }
   ],
   "icons": {

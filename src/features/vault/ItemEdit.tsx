@@ -5,7 +5,11 @@ import { VaultItemType, View } from "@/core/types.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { saveItem } from "@/features/vault/vault-service.ts";
 import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
-import { getVaultItemTitle, getVaultItemToastMsg, deleteVaultItemWithConfirm } from "@/features/vault/vault-utils.ts";
+import {
+  deleteVaultItemWithConfirm,
+  getVaultItemTitle,
+  getVaultItemToastMsg,
+} from "@/features/vault/vault-utils.ts";
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
