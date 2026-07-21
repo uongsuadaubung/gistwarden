@@ -1,3 +1,4 @@
+import { Result } from "neverthrow";
 import type { Fido2Credential } from "@/core/types.ts";
 
 // Utility functions to convert P1363 ECDSA signature to ASN.1 DER format
@@ -335,11 +336,9 @@ export function getRawCredentialId(credId: string): Uint8Array {
     return base64UrlToBuffer(clean.slice(4));
   }
 
-  try {
-    return base64UrlToBuffer(clean);
-  } catch (_e) {
-    return new TextEncoder().encode(clean);
-  }
+  const safeDecode = Result.fromThrowable(base64UrlToBuffer, () => new Error());
+  const decodeResult = safeDecode(clean);
+  return decodeResult.unwrapOr(new TextEncoder().encode(clean));
 }
 
 export interface PasskeyRegisterOptions {
@@ -485,11 +484,12 @@ export async function generatePasskeyAssertResponse(
 
   let rpId = options.rpId;
   if (!rpId) {
-    try {
-      rpId = new URL(origin).hostname;
-    } catch (_) {
-      rpId = origin;
-    }
+    const safeParseUrl = Result.fromThrowable(
+      (u: string) => new URL(u),
+      () => new Error(),
+    );
+    const parseResult = safeParseUrl(origin);
+    rpId = parseResult.map((u) => u.hostname).unwrapOr(origin);
   }
 
   const authData = await generateAuthData({
