@@ -18,9 +18,9 @@ Deno.test("generator-utils: generatePassword respects length", () => {
     minNumbers: 2,
     minSpecials: 2,
   });
-  assertEquals(typeof pwd === "string", true);
-  if (typeof pwd === "string") {
-    assertEquals(pwd.length, 20);
+  assertEquals(pwd.isOk(), true);
+  if (pwd.isOk()) {
+    assertEquals(pwd.value.length, 20);
   }
 });
 
@@ -35,12 +35,12 @@ Deno.test("generator-utils: generatePassword ensures min constraints", () => {
     minNumbers: 5,
     minSpecials: 5,
   });
-  assertEquals(typeof pwd === "string", true);
-  if (typeof pwd === "string") {
-    const numMatches = pwd.match(/[0-9]/g);
+  assertEquals(pwd.isOk(), true);
+  if (pwd.isOk()) {
+    const numMatches = pwd.value.match(/[0-9]/g);
     assertEquals(numMatches !== null && numMatches.length >= 5, true);
 
-    const specMatches = pwd.match(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/g);
+    const specMatches = pwd.value.match(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/g);
     assertEquals(specMatches !== null && specMatches.length >= 5, true);
   }
 });
@@ -52,9 +52,9 @@ Deno.test("generator-utils: generatePassphrase respects word count", () => {
     capitalize: false,
     includeNumber: false,
   });
-  assertEquals(typeof phrase === "string", true);
-  if (typeof phrase === "string") {
-    const words = phrase.split("-");
+  assertEquals(phrase.isOk(), true);
+  if (phrase.isOk()) {
+    const words = phrase.value.split("-");
     assertEquals(words.length, 5);
   }
 });
@@ -66,8 +66,8 @@ Deno.test("generator-utils: generatePassphrase includes numbers if requested", (
     capitalize: false,
     includeNumber: true,
   });
-  assertEquals(typeof phrase === "string", true);
-  if (typeof phrase === "string") {
-    assertMatch(phrase, /[0-9]/);
+  assertEquals(phrase.isOk(), true);
+  if (phrase.isOk()) {
+    assertMatch(phrase.value, /[0-9]/);
   }
 });

@@ -1,5 +1,5 @@
 import { type Component, createSignal, Index, onMount, Show } from "solid-js";
-import { t, tErr } from "@/core/i18n.ts";
+import { t } from "@/core/i18n.ts";
 import { Header } from "@/components/ui/Header.tsx";
 import Input from "@/components/ui/Input.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
@@ -58,10 +58,10 @@ export const Generator: Component = () => {
       minSpecials: minSpecials(),
     });
 
-    if (typeof res !== "string") {
-      setPassword(tErr(res.error));
+    if (res.isErr()) {
+      setPassword(t(res.error));
     } else {
-      setPassword(res);
+      setPassword(res.value);
     }
   };
 
@@ -73,10 +73,10 @@ export const Generator: Component = () => {
       includeNumber: includeNumber(),
     });
 
-    if (typeof res !== "string") {
+    if (res.isErr()) {
       return;
     } else {
-      setPassword(res);
+      setPassword(res.value);
     }
   };
 

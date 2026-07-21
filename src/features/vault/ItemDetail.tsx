@@ -2,15 +2,13 @@ import {
   type Component,
   createSignal,
   For,
-  type JSX,
   onMount,
   Show,
 } from "solid-js";
 import { store } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
-import { deleteItem } from "@/features/vault/vault-service.ts";
-import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
+import { copyToClipboardWithMessage } from "@/core/ui-service.ts";
 import {
   type CardVaultItem,
   CustomFieldType,
@@ -19,9 +17,16 @@ import {
   type SecureNoteVaultItem,
   type SshKeyVaultItem,
   type VaultField,
-  type VaultItem,
   VaultItemType,
+  isLoginItem,
+  isCardItem,
+  isSecureNoteItem,
+  isIdentityItem,
+  isSshKeyItem
 } from "@/core/types.ts";
+import { getDomainFromItem } from "@/core/domain-utils.ts";
+import { getVaultItemDetailTitle, deleteVaultItemWithConfirm } from "@/features/vault/vault-utils.ts";
+import Favicon from "@/components/ui/Favicon.tsx";
 import Button from "@/components/ui/Button.tsx";
 import {
   CopyIcon,
@@ -33,7 +38,6 @@ import {
 } from "@/icons/svg/index.ts";
 import { formatDateTime, t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
-import { safeParseUrl } from "@/core/domain-utils.ts";
 import LoginDetailFields from "@/features/vault/item-detail/LoginDetailFields.tsx";
 import CardDetailFields from "@/features/vault/item-detail/CardDetailFields.tsx";
 import NoteDetailFields from "@/features/vault/item-detail/NoteDetailFields.tsx";
@@ -41,59 +45,8 @@ import IdentityDetailFields from "@/features/vault/item-detail/IdentityDetailFie
 import SshKeyDetailFields from "@/features/vault/item-detail/SshKeyDetailFields.tsx";
 import CardBrandIcon from "@/components/ui/CardBrandIcon.tsx";
 
-const isLoginItem = (item: VaultItem): item is LoginVaultItem => {
-  return Number(item.type) === VaultItemType.Login;
-};
-
-const isCardItem = (item: VaultItem): item is CardVaultItem => {
-  return Number(item.type) === VaultItemType.Card;
-};
-
-const isNoteItem = (item: VaultItem): item is SecureNoteVaultItem => {
-  return Number(item.type) === VaultItemType.SecureNote;
-};
-
-const isIdentityItem = (item: VaultItem): item is IdentityVaultItem => {
-  return Number(item.type) === VaultItemType.Identity;
-};
-
-const isSshKeyItem = (item: VaultItem): item is SshKeyVaultItem => {
-  return Number(item.type) === VaultItemType.SshKey;
-};
-
-const getDomain = (item: LoginVaultItem): string | null => {
-  if (
-    Number(item.type) !== VaultItemType.Login || !item.login.uris ||
-    item.login.uris.length === 0
-  ) {
-    return null;
-  }
-  const uri = item.login.uris[0].uri;
-  let hostname = uri;
-  if (!/^https?:\/\//i.test(hostname)) {
-    hostname = "http://" + hostname;
-  }
-  return safeParseUrl(hostname).map((url) => url.hostname).unwrapOr(null);
-};
-
-const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (
-  props,
-) => {
-  const [hasError, setHasError] = createSignal(false);
-  return (
-    <Show when={!hasError()} fallback={props.fallback}>
-      <img
-        src={`https://www.google.com/s2/favicons?domain=${props.domain}&sz=32`}
-        alt=""
-        onError={() => setHasError(true)}
-      />
-    </Show>
-  );
-};
-
 export const ItemDetail: Component = () => {
   // Local view states
-  const [name, setName] = createSignal("");
   const [notes, setNotes] = createSignal("");
   const [fields, setFields] = createSignal<VaultField[]>([]);
   const [visibleFields, setVisibleFields] = createSignal<
@@ -105,7 +58,6 @@ export const ItemDetail: Component = () => {
   onMount(() => {
     const item = store.selectedItem;
     if (item) {
-      setName(item.name || "");
       setNotes(item.notes || "");
       setFields(item.fields || []);
     }
@@ -123,7 +75,7 @@ export const ItemDetail: Component = () => {
 
   const getNoteItem = (): SecureNoteVaultItem | null => {
     const item = store.selectedItem;
-    return item && isNoteItem(item) ? item : null;
+    return item && isSecureNoteItem(item) ? item : null;
   };
 
   const getIdentityItem = (): IdentityVaultItem | null => {
@@ -141,31 +93,15 @@ export const ItemDetail: Component = () => {
   };
 
   const handleCopy = async (text: string, _type: string) => {
-    if (!text) return;
-    await navigator.clipboard.writeText(text);
-    showToast(t("detail_copied"), "success");
+    await copyToClipboardWithMessage(text, "detail_copied");
   };
 
   const handleDelete = async () => {
     if (!store.selectedItem?.id) return;
-    if (
-      !(await confirm(
-        t("edit_confirm_delete_title"),
-        t("edit_confirm_delete_msg", { name: name() }),
-        "danger",
-      ))
-    ) {
-      return;
-    }
-
-    setGlobalLoading(true);
     setError("");
-    const res = await deleteItem(store.selectedItem.id);
-    setGlobalLoading(false);
-    if (res.isOk()) {
-      navigate(View.Vault);
-    } else {
-      setError(t(res.error));
+    const success = await deleteVaultItemWithConfirm(store.selectedItem);
+    if (!success && store.toastType === "error") {
+      setError(store.toastMessage);
     }
   };
 
@@ -184,15 +120,7 @@ export const ItemDetail: Component = () => {
         <div class="app-body pb-24">
           {/* Header */}
           <DetailHeader
-            title={Number(store.selectedItem?.type) === VaultItemType.SecureNote
-              ? t("detail_title_note")
-              : Number(store.selectedItem?.type) === VaultItemType.Card
-              ? t("detail_title_card")
-              : Number(store.selectedItem?.type) === VaultItemType.Identity
-              ? t("detail_title_identity")
-              : Number(store.selectedItem?.type) === VaultItemType.SshKey
-              ? t("detail_title_ssh_key")
-              : t("detail_title_login")}
+            title={getVaultItemDetailTitle(store.selectedItem?.type)}
             onBack={handleBackToVault}
             showPopout
           />
@@ -219,7 +147,7 @@ export const ItemDetail: Component = () => {
                 }
                 // Login
                 if (isLoginItem(currentItem)) {
-                  const domainStr = getDomain(currentItem);
+                  const domainStr = getDomainFromItem(currentItem);
                   return (
                     <Show
                       when={domainStr}

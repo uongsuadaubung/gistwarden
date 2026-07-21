@@ -1,4 +1,6 @@
 import { wordlist } from "@/core/wordlist.ts";
+import { err, ok, type Result } from "neverthrow";
+import type { TranslationKey } from "@/core/i18n.ts";
 
 export interface GeneratePasswordOptions {
   length: number;
@@ -13,7 +15,7 @@ export interface GeneratePasswordOptions {
 
 export function generatePassword(
   options: GeneratePasswordOptions,
-): string | { error: string } {
+): Result<string, TranslationKey> {
   const uSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lSet = "abcdefghijklmnopqrstuvwxyz";
   const nSet = "0123456789";
@@ -39,7 +41,7 @@ export function generatePassword(
   if (options.specials) charset += availableS;
 
   if (!charset) {
-    return { error: "gen_error_charset_empty" };
+    return err("gen_error_charset_empty");
   }
 
   const len = options.length;
@@ -47,7 +49,7 @@ export function generatePassword(
   const minSpec = options.specials ? options.minSpecials : 0;
 
   if (minNum + minSpec > len) {
-    return { error: "gen_error_min_exceeds_length" };
+    return err("gen_error_min_exceeds_length");
   }
 
   const resultChars: string[] = [];
@@ -85,7 +87,7 @@ export function generatePassword(
     resultChars[j] = temp;
   }
 
-  return resultChars.join("");
+  return ok(resultChars.join(""));
 }
 
 export interface GeneratePassphraseOptions {
@@ -97,9 +99,9 @@ export interface GeneratePassphraseOptions {
 
 export function generatePassphrase(
   options: GeneratePassphraseOptions,
-): string | { error: string } {
+): Result<string, TranslationKey> {
   const words = options.numWords;
-  if (words < 3 || words > 20) return { error: "invalid_words_count" };
+  if (words < 3 || words > 20) return err("gen_error_invalid_words_count");
 
   const chosenWords: string[] = [];
   const bytes = new Uint32Array(words);
@@ -124,5 +126,5 @@ export function generatePassphrase(
     chosenWords[targetWordIdx] = chosenWords[targetWordIdx] + randomDigit;
   }
 
-  return chosenWords.join(options.wordSeparator);
+  return ok(chosenWords.join(options.wordSeparator));
 }
