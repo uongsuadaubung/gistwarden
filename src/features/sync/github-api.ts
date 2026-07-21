@@ -250,5 +250,5 @@ export async function deleteGist(
   if (reqRes.isErr()) {
     return err(reqRes.error);
   }
-  return ok(undefined);
+  return ok();
 }

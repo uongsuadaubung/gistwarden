@@ -1,5 +1,7 @@
-import { Result } from "neverthrow";
+import { err, ok, Result, ResultAsync } from "neverthrow";
 import type { Fido2Credential } from "@/core/types.ts";
+import type { TranslationKey } from "@/core/i18n.ts";
+import { safeParseUrl } from "@/core/domain-utils.ts";
 
 // Utility functions to convert P1363 ECDSA signature to ASN.1 DER format
 function getParamSize(keySize: number) {
@@ -21,12 +23,12 @@ function countPadding(
   return { padding, needs0x00 };
 }
 
-export function p1363ToDer(signature: Uint8Array): Uint8Array {
+export function p1363ToDer(
+  signature: Uint8Array,
+): Result<Uint8Array, TranslationKey> {
   const signatureBytes = signature.length;
   if (signatureBytes !== paramBytes * 2) {
-    throw new TypeError(
-      `ES256 signatures must be ${paramBytes * 2} bytes, saw ${signatureBytes}`,
-    );
+    return err("toast_error");
   }
 
   const { padding: rPadding, needs0x00: rNeeds0x00 } = countPadding(
@@ -83,7 +85,7 @@ export function p1363ToDer(signature: Uint8Array): Uint8Array {
     offset,
   );
 
-  return dst;
+  return ok(dst);
 }
 
 // Helpers for Base64URL conversions
@@ -99,7 +101,9 @@ export function bufferToBase64Url(buffer: ArrayBuffer | Uint8Array): string {
     .replace(/=/g, "");
 }
 
-export function base64UrlToBuffer(str: string): Uint8Array {
+export function base64UrlToBuffer(
+  str: string,
+): Result<Uint8Array, TranslationKey> {
   let output = str.replace(/-/g, "+").replace(/_/g, "/");
   switch (output.length % 4) {
     case 0:
@@ -111,25 +115,139 @@ export function base64UrlToBuffer(str: string): Uint8Array {
       output += "=";
       break;
     default:
-      throw new Error("Illegal base64url string!");
+      return err("toast_error");
   }
-  const binaryString = atob(output);
+
+  const safeAtob = Result.fromThrowable(
+    atob,
+    (): TranslationKey => "toast_error",
+  );
+  const atobRes = safeAtob(output);
+  if (atobRes.isErr()) return err(atobRes.error);
+
+  const binaryString = atobRes.value;
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
-  return bytes;
+  return ok(bytes);
 }
 
-// Generate P-256 ECDSA Key Pair
-export async function createPasskeyKeyPair(): Promise<CryptoKeyPair> {
-  return await crypto.subtle.generateKey(
-    {
-      name: "ECDSA",
-      namedCurve: "P-256",
+// --- Crypto Suble Wrappers ---
+
+export function exportKeyJwkAsync(
+  key: CryptoKey,
+  errKey: TranslationKey,
+): ResultAsync<JsonWebKey, TranslationKey> {
+  return ResultAsync.fromPromise(
+    crypto.subtle.exportKey("jwk", key),
+    (e): TranslationKey => {
+      console.error("[Passkey Crypto] exportKey JWK error:", e);
+      return errKey;
     },
-    true,
-    ["sign"],
+  );
+}
+
+export function exportKeyBufferAsync(
+  format: "pkcs8" | "spki" | "raw",
+  key: CryptoKey,
+  errKey: TranslationKey,
+): ResultAsync<ArrayBuffer, TranslationKey> {
+  return ResultAsync.fromPromise(
+    crypto.subtle.exportKey(format, key),
+    (e): TranslationKey => {
+      console.error(`[Passkey Crypto] exportKey ${format} error:`, e);
+      return errKey;
+    },
+  ).andThen((val) => {
+    if (val instanceof ArrayBuffer) return ok(val);
+    return err(errKey);
+  });
+}
+
+export interface ImportKeyAsyncOptions {
+  format: "pkcs8" | "spki" | "raw";
+  keyData: BufferSource;
+  algorithm:
+    | AlgorithmIdentifier
+    | RsaHashedImportParams
+    | EcKeyImportParams
+    | HmacImportParams
+    | AesKeyAlgorithm;
+  extractable: boolean;
+  keyUsages: KeyUsage[];
+  errKey: TranslationKey;
+}
+
+export function importKeyAsync(
+  options: ImportKeyAsyncOptions,
+): ResultAsync<CryptoKey, TranslationKey> {
+  return ResultAsync.fromPromise(
+    crypto.subtle.importKey(
+      options.format,
+      options.keyData,
+      options.algorithm,
+      options.extractable,
+      options.keyUsages,
+    ),
+    (e): TranslationKey => {
+      console.error("[Passkey Crypto] importKey error:", e);
+      return options.errKey;
+    },
+  );
+}
+
+export function digestAsync(
+  algorithm: AlgorithmIdentifier,
+  data: BufferSource,
+  errKey: TranslationKey,
+): ResultAsync<ArrayBuffer, TranslationKey> {
+  return ResultAsync.fromPromise(
+    crypto.subtle.digest(algorithm, data),
+    (e): TranslationKey => {
+      console.error("[Passkey Crypto] digest error:", e);
+      return errKey;
+    },
+  );
+}
+
+export function signAsync(
+  algorithm:
+    | AlgorithmIdentifier
+    | RsaPssParams
+    | EcdsaParams
+    | HmacImportParams,
+  key: CryptoKey,
+  data: BufferSource,
+  errKey: TranslationKey,
+): ResultAsync<ArrayBuffer, TranslationKey> {
+  return ResultAsync.fromPromise(
+    crypto.subtle.sign(algorithm, key, data),
+    (e): TranslationKey => {
+      console.error("[Passkey Crypto] sign error:", e);
+      return errKey;
+    },
+  );
+}
+
+// ---------------------------
+
+export async function createPasskeyKeyPair(): Promise<
+  Result<CryptoKeyPair, TranslationKey>
+> {
+  return await ResultAsync.fromPromise(
+    crypto.subtle.generateKey(
+      {
+        name: "ECDSA",
+        namedCurve: "P-256",
+      },
+      true,
+      ["sign"],
+    ),
+    (e): TranslationKey => {
+      console.error("[Passkey Crypto] Key generation error:", e);
+      return "fido2_error_create_failed";
+    },
   );
 }
 
@@ -210,14 +328,18 @@ interface GenerateAuthDataParams {
 
 export async function generateAuthData(
   params: GenerateAuthDataParams,
-): Promise<Uint8Array> {
+): Promise<Result<Uint8Array, TranslationKey>> {
   const authData: number[] = [];
 
   // 1. rpIdHash (32 bytes)
   const rpIdBytes = new TextEncoder().encode(params.rpId);
-  const rpIdHash = new Uint8Array(
-    await crypto.subtle.digest("SHA-256", rpIdBytes),
+  const rpIdHashRes = await digestAsync(
+    "SHA-256",
+    rpIdBytes,
+    "fido2_error_create_failed",
   );
+  if (rpIdHashRes.isErr()) return err(rpIdHashRes.error);
+  const rpIdHash = new Uint8Array(rpIdHashRes.value);
   authData.push(...rpIdHash);
 
   // 2. flags (1 byte)
@@ -229,32 +351,43 @@ export async function generateAuthData(
   flags |= 0b00010000; // Backup state (always backed up via gist)
   authData.push(flags);
 
-  // 3. counter (4 bytes)
-  const counter = params.counter;
-  authData.push(
-    ((counter & 0xff000000) >> 24) & 0xff,
-    ((counter & 0x00ff0000) >> 16) & 0xff,
-    ((counter & 0x0000ff00) >> 8) & 0xff,
-    counter & 0x000000ff,
-  );
+  // 3. signCount (4 bytes)
+  const counterBytes = new Uint8Array(4);
+  new DataView(counterBytes.buffer).setUint32(0, params.counter, false);
+  authData.push(...counterBytes);
 
-  // 4. attestedCredentialData (if public key is provided)
+  // 4. attestedCredentialData (if applicable)
   if (params.publicKey && params.credentialId) {
-    authData.push(...AAGUID);
+    // aaguid (16 bytes)
+    const aaguid = new Uint8Array(16);
+    authData.push(...aaguid);
 
     // credentialIdLength (2 bytes)
     const credIdLen = params.credentialId.length;
-    authData.push((credIdLen >> 8) & 0xff, credIdLen & 0xff);
+    const credIdLenBytes = new Uint8Array(2);
+    new DataView(credIdLenBytes.buffer).setUint16(0, credIdLen, false);
+    authData.push(...credIdLenBytes);
+
+    // credentialId
     authData.push(...params.credentialId);
 
     // Export public key as JWK to get X and Y coordinates
-    const jwk = await crypto.subtle.exportKey("jwk", params.publicKey);
-    if (!jwk.x || !jwk.y) throw new Error("Invalid public key coordinates");
+    const jwkRes = await exportKeyJwkAsync(
+      params.publicKey,
+      "fido2_error_create_failed",
+    );
+    if (jwkRes.isErr()) return err(jwkRes.error);
+    const jwk = jwkRes.value;
+    if (!jwk.x || !jwk.y) return err("fido2_error_create_failed");
 
-    const keyX = base64UrlToBuffer(jwk.x);
-    const keyY = base64UrlToBuffer(jwk.y);
+    const keyXRes = base64UrlToBuffer(jwk.x);
+    if (keyXRes.isErr()) return err(keyXRes.error);
+    const keyX = keyXRes.value;
 
-    // Manually format public key in canonical CBOR COSE format for P-256:
+    const keyYRes = base64UrlToBuffer(jwk.y);
+    if (keyYRes.isErr()) return err(keyYRes.error);
+    const keyY = keyYRes.value;
+
     // Map with keys: 1 (kty: 2 = EC2), 3 (alg: -7 = ES256), -1 (crv: 1 = P-256), -2 (x), -3 (y)
     const coseBytes = new Uint8Array(77);
     coseBytes.set(
@@ -268,7 +401,7 @@ export async function generateAuthData(
     authData.push(...coseBytes);
   }
 
-  return new Uint8Array(authData);
+  return ok(new Uint8Array(authData));
 }
 
 // Generate assertion signature
@@ -276,27 +409,32 @@ export async function generateAssertionSignature(
   authData: Uint8Array,
   clientDataHash: Uint8Array,
   privateKey: CryptoKey,
-): Promise<Uint8Array> {
+): Promise<Result<Uint8Array, TranslationKey>> {
   const sigBase = new Uint8Array(authData.length + clientDataHash.length);
   sigBase.set(authData, 0);
   sigBase.set(clientDataHash, authData.length);
 
-  const rawSignature = new Uint8Array(
-    await crypto.subtle.sign(
-      {
-        name: "ECDSA",
-        hash: { name: "SHA-256" },
-      },
-      privateKey,
-      sigBase,
-    ),
+  const sigRes = await signAsync(
+    {
+      name: "ECDSA",
+      hash: { name: "SHA-256" },
+    },
+    privateKey,
+    sigBase,
+    "fido2_error_assert_failed",
   );
+  if (sigRes.isErr()) return err(sigRes.error);
 
-  return p1363ToDer(rawSignature);
+  const rawSignature = new Uint8Array(sigRes.value);
+  const derRes = p1363ToDer(rawSignature);
+  if (derRes.isErr()) return err(derRes.error);
+  return ok(derRes.value);
 }
 
 // Convert Bitwarden-style credentialId (UUID or b64.) or raw base64url into raw Uint8Array
-export function getRawCredentialId(credId: string): Uint8Array {
+export function getRawCredentialId(
+  credId: string,
+): Result<Uint8Array, TranslationKey> {
   const clean = credId.trim();
   if (clean.includes("-") && clean.length === 36) {
     // Parse standard UUID format (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX) to 16 bytes raw array
@@ -329,16 +467,18 @@ export function getRawCredentialId(credId: string): Uint8Array {
     raw[14] = (v >>> 8) & 0xff;
     raw[15] = v & 0xff;
 
-    return raw;
+    return ok(raw);
   }
 
   if (clean.startsWith("b64.")) {
     return base64UrlToBuffer(clean.slice(4));
   }
 
-  const safeDecode = Result.fromThrowable(base64UrlToBuffer, () => new Error());
-  const decodeResult = safeDecode(clean);
-  return decodeResult.unwrapOr(new TextEncoder().encode(clean));
+  const decodeResult = base64UrlToBuffer(clean);
+  if (decodeResult.isOk()) {
+    return ok(decodeResult.value);
+  }
+  return ok(new TextEncoder().encode(clean));
 }
 
 export interface PasskeyRegisterOptions {
@@ -367,27 +507,44 @@ export interface PasskeyAssertOptions {
 export async function generatePasskeyRegisterResponse(
   options: PasskeyRegisterOptions,
   origin: string,
-): Promise<{ newCred: Fido2Credential; result: Record<string, unknown> }> {
+): Promise<
+  Result<
+    { newCred: Fido2Credential; result: Record<string, unknown> },
+    TranslationKey
+  >
+> {
   // 1. Create ECDSA keypair
-  const keyPair = await createPasskeyKeyPair();
+  const keyPairRes = await createPasskeyKeyPair();
+  if (keyPairRes.isErr()) return err(keyPairRes.error);
+  const keyPair = keyPairRes.value;
 
   // 2. Export private key in pkcs8 format to store in Vault
-  const pkcs8KeyBuffer = await crypto.subtle.exportKey(
+  const pkcs8KeyBufferRes = await exportKeyBufferAsync(
     "pkcs8",
     keyPair.privateKey,
+    "fido2_error_create_failed",
   );
-  const pkcs8Base64Url = bufferToBase64Url(new Uint8Array(pkcs8KeyBuffer));
+  if (pkcs8KeyBufferRes.isErr()) return err(pkcs8KeyBufferRes.error);
+  const pkcs8Base64Url = bufferToBase64Url(
+    new Uint8Array(pkcs8KeyBufferRes.value),
+  );
 
   // 3. Export public key in spki format
-  const spkiKeyBuffer = await crypto.subtle.exportKey(
+  const spkiKeyBufferRes = await exportKeyBufferAsync(
     "spki",
     keyPair.publicKey,
+    "fido2_error_create_failed",
   );
-  const spkiBase64Url = bufferToBase64Url(new Uint8Array(spkiKeyBuffer));
+  if (spkiKeyBufferRes.isErr()) return err(spkiKeyBufferRes.error);
+  const spkiBase64Url = bufferToBase64Url(
+    new Uint8Array(spkiKeyBufferRes.value),
+  );
 
   // 4. Generate credentialId (standard random UUID)
   const credentialIdStr = crypto.randomUUID();
-  const credentialIdBytes = getRawCredentialId(credentialIdStr);
+  const credentialIdBytesRes = getRawCredentialId(credentialIdStr);
+  if (credentialIdBytesRes.isErr()) return err(credentialIdBytesRes.error);
+  const credentialIdBytes = credentialIdBytesRes.value;
   const credIdBase64Url = bufferToBase64Url(credentialIdBytes);
 
   const creationDate = new Date().toISOString();
@@ -410,7 +567,7 @@ export async function generatePasskeyRegisterResponse(
   };
 
   // 6. Generate authData and CBOR attestationObject
-  const authData = await generateAuthData({
+  const authDataRes = await generateAuthData({
     rpId: options.rp.id || options.rp.name,
     credentialId: credentialIdBytes,
     counter: 0,
@@ -418,6 +575,8 @@ export async function generatePasskeyRegisterResponse(
     userVerified: true,
     publicKey: keyPair.publicKey,
   });
+  if (authDataRes.isErr()) return err(authDataRes.error);
+  const authData = authDataRes.value;
 
   const clientDataJSON = JSON.stringify({
     type: "webauthn.create",
@@ -440,7 +599,7 @@ export async function generatePasskeyRegisterResponse(
     },
   };
 
-  return { newCred, result };
+  return ok({ newCred, result });
 }
 
 export async function generatePasskeyAssertResponse(
@@ -448,23 +607,28 @@ export async function generatePasskeyAssertResponse(
   origin: string,
   cred: Fido2Credential,
   nextCounter: number,
-): Promise<{ result: Record<string, unknown> }> {
+): Promise<Result<{ result: Record<string, unknown> }, TranslationKey>> {
   // 1. Import ECDSA private key from base64url PKCS#8 stored in Vault
-  const pkcs8KeyBuffer = base64UrlToBuffer(cred.keyValue);
+  const pkcs8KeyBufferRes = base64UrlToBuffer(cred.keyValue);
+  if (pkcs8KeyBufferRes.isErr()) return err(pkcs8KeyBufferRes.error);
+  const pkcs8KeyBuffer = pkcs8KeyBufferRes.value;
   const keyData = pkcs8KeyBuffer.buffer;
   if (!(keyData instanceof ArrayBuffer)) {
-    throw new Error("Expected ArrayBuffer for key data");
+    return err("fido2_error_assert_failed");
   }
-  const privateKey = await crypto.subtle.importKey(
-    "pkcs8",
+  const privateKeyRes = await importKeyAsync({
+    format: "pkcs8",
     keyData,
-    {
+    algorithm: {
       name: "ECDSA",
       namedCurve: "P-256",
     },
-    true,
-    ["sign"],
-  );
+    extractable: true,
+    keyUsages: ["sign"],
+    errKey: "fido2_error_assert_failed",
+  });
+  if (privateKeyRes.isErr()) return err(privateKeyRes.error);
+  const privateKey = privateKeyRes.value;
 
   // 2. Construct assertion data
   const clientDataJSON = JSON.stringify({
@@ -475,35 +639,39 @@ export async function generatePasskeyAssertResponse(
   });
 
   const clientDataJSONBytes = new TextEncoder().encode(clientDataJSON);
-  const clientDataHash = new Uint8Array(
-    await crypto.subtle.digest("SHA-256", clientDataJSONBytes),
+  const clientDataHashRes = await digestAsync(
+    "SHA-256",
+    clientDataJSONBytes,
+    "fido2_error_assert_failed",
   );
+  if (clientDataHashRes.isErr()) return err(clientDataHashRes.error);
+  const clientDataHash = new Uint8Array(clientDataHashRes.value);
 
   // Lay tuy chon yeu cau xac thuc tu options. Mac dinh la true do nguoi dung da mo khoa bang Master Password
   const userVerified = options.userVerification !== "discouraged";
 
-  let rpId = options.rpId;
-  if (!rpId) {
-    const safeParseUrl = Result.fromThrowable(
-      (u: string) => new URL(u),
-      () => new Error(),
-    );
+  let rpId = options.rpId || origin;
+  if (!options.rpId) {
     const parseResult = safeParseUrl(origin);
     rpId = parseResult.map((u) => u.hostname).unwrapOr(origin);
   }
 
-  const authData = await generateAuthData({
+  const authDataRes = await generateAuthData({
     rpId,
     counter: nextCounter,
     userPresent: true,
     userVerified,
   });
+  if (authDataRes.isErr()) return err(authDataRes.error);
+  const authData = authDataRes.value;
 
-  const signature = await generateAssertionSignature(
+  const signatureRes = await generateAssertionSignature(
     authData,
     clientDataHash,
     privateKey,
   );
+  if (signatureRes.isErr()) return err(signatureRes.error);
+  const signature = signatureRes.value;
 
   // Tu dong tuong thich nguoc: Kiem tra xem trang web dang yeu cau dinh dang ID nao
   // - Neu yeu cau chuoi ASCII UUID 36 ky tu (co che cu), chung ta tra ve dinh dang do.
@@ -516,12 +684,16 @@ export async function generatePasskeyAssertResponse(
     (allowed: { id: string }) => allowed.id === b64_36,
   );
 
-  const rawCredId = useOld36ByteFormat
-    ? new TextEncoder().encode(cred.credentialId)
+  const rawIdRes = Array.isArray(cred.credentialId)
+    ? ok(new Uint8Array(cred.credentialId))
     : getRawCredentialId(cred.credentialId);
+
+  if (rawIdRes.isErr()) return err(rawIdRes.error);
+  const rawId = rawIdRes.value;
+
   const credIdBase64Url = useOld36ByteFormat
     ? b64_36
-    : bufferToBase64Url(rawCredId);
+    : bufferToBase64Url(rawId);
 
   const result = {
     id: credIdBase64Url,
@@ -534,5 +706,5 @@ export async function generatePasskeyAssertResponse(
     },
   };
 
-  return { result };
+  return ok({ result });
 }

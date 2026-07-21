@@ -58,7 +58,8 @@ import {
         base64 += "=";
         break;
       default:
-        throw new Error("Illegal base64url string!");
+        console.error("Illegal base64url string!");
+        return new ArrayBuffer(0);
     }
     const binary = atob(base64);
     const buffer = new ArrayBuffer(binary.length);
@@ -217,7 +218,7 @@ import {
       if (err instanceof Error && err.message === "fallback") {
         return originalCredentials.create(options);
       }
-      throw err;
+      return Promise.reject(err);
     }
   };
 
@@ -298,7 +299,7 @@ import {
       if (err instanceof Error && err.message === "fallback") {
         return originalCredentials.get(options);
       }
-      throw err;
+      return Promise.reject(err);
     }
   };
 })();

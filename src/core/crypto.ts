@@ -15,81 +15,75 @@ import { type TranslationKey } from "@/core/i18n.ts";
 export const ARGON2_ITERATIONS = 3;
 export const ARGON2_MEMORY = 65536; // 64MB
 
-export function deriveKey(
+export async function deriveKey(
   password: string,
   salt: Uint8Array,
-): ResultAsync<CryptoKey, TranslationKey> {
-  return ResultAsync.fromPromise(
-    (async () => {
-      const keyBytes = await argon2id({
-        password: password,
-        salt: salt,
-        iterations: ARGON2_ITERATIONS,
-        memorySize: ARGON2_MEMORY,
-        parallelism: 1,
-        hashLength: 32,
-        outputType: "binary",
-      });
-
-      const buffer = new ArrayBuffer(keyBytes.byteLength);
-      new Uint8Array(buffer).set(keyBytes);
-
-      return crypto.subtle.importKey(
-        "raw",
-        buffer,
-        { name: "AES-GCM", length: 256 },
-        true, // extractable = true to allow exportKey to Base64
-        ["encrypt", "decrypt"],
-      );
-    })(),
+): Promise<Result<CryptoKey, TranslationKey>> {
+  const argonRes = await ResultAsync.fromPromise(
+    argon2id({
+      password: password,
+      salt: salt,
+      iterations: ARGON2_ITERATIONS,
+      memorySize: ARGON2_MEMORY,
+      parallelism: 1,
+      hashLength: 32,
+      outputType: "binary",
+    }),
     (): TranslationKey => "settings_error_mp_fail",
   );
+  if (argonRes.isErr()) return err(argonRes.error);
+
+  const keyBytes = argonRes.value;
+  const buffer = new ArrayBuffer(keyBytes.byteLength);
+  new Uint8Array(buffer).set(keyBytes);
+
+  return await importAesGcmKey(buffer, "settings_error_mp_fail");
 }
 
-export function encryptData(
+export async function encryptData(
   data: string,
   key: CryptoKey,
-): ResultAsync<{ iv: string; ciphertext: string }, TranslationKey> {
-  return ResultAsync.fromPromise(
-    (async () => {
-      const encoder = new TextEncoder();
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const ciphertextBuffer = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        key,
-        encoder.encode(data),
-      );
+): Promise<Result<{ iv: string; ciphertext: string }, TranslationKey>> {
+  const encoder = new TextEncoder();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
 
-      const ivBase64 = arrayBufferToBase64(iv.buffer);
-      const ciphertextBase64 = arrayBufferToBase64(ciphertextBuffer);
-
-      return { iv: ivBase64, ciphertext: ciphertextBase64 };
-    })(),
+  const encryptRes = await ResultAsync.fromPromise(
+    crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encoder.encode(data),
+    ),
     (): TranslationKey => "toast_error",
   );
+  if (encryptRes.isErr()) return err(encryptRes.error);
+
+  const ciphertextBuffer = encryptRes.value;
+  const ivBase64 = arrayBufferToBase64(iv.buffer);
+  const ciphertextBase64 = arrayBufferToBase64(ciphertextBuffer);
+
+  return ok({ iv: ivBase64, ciphertext: ciphertextBase64 });
 }
 
-export function decryptData(
+export async function decryptData(
   ciphertextBase64: string,
   ivBase64: string,
   key: CryptoKey,
-): ResultAsync<string, TranslationKey> {
-  return ResultAsync.fromPromise(
-    (async () => {
-      const decoder = new TextDecoder();
-      const iv = new Uint8Array(base64ToArrayBuffer(ivBase64));
-      const ciphertext = new Uint8Array(base64ToArrayBuffer(ciphertextBase64));
+): Promise<Result<string, TranslationKey>> {
+  const decoder = new TextDecoder();
+  const iv = new Uint8Array(base64ToArrayBuffer(ivBase64));
+  const ciphertext = new Uint8Array(base64ToArrayBuffer(ciphertextBase64));
 
-      const decryptedBuffer = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv },
-        key,
-        ciphertext,
-      );
-
-      return decoder.decode(decryptedBuffer);
-    })(),
+  const decryptRes = await ResultAsync.fromPromise(
+    crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      key,
+      ciphertext,
+    ),
     (): TranslationKey => "login_error_wrong_mp",
   );
+  if (decryptRes.isErr()) return err(decryptRes.error);
+
+  return ok(decoder.decode(decryptRes.value));
 }
 
 export function generateSalt(): Uint8Array {
@@ -124,15 +118,15 @@ export async function setDerivedKey(key: CryptoKey | null): Promise<void> {
 export async function getOrDeriveKey(
   password: string,
   saltBase64: string,
-): Promise<CryptoKey> {
-  if (derivedCryptoKey) return derivedCryptoKey;
+): Promise<Result<CryptoKey, TranslationKey>> {
+  if (derivedCryptoKey) return ok(derivedCryptoKey);
 
   const saltBuffer = base64ToArrayBuffer(saltBase64);
   const salt = new Uint8Array(saltBuffer);
 
   const deriveRes = await deriveKey(password, salt);
   if (deriveRes.isErr()) {
-    throw new Error(deriveRes.error);
+    return err(deriveRes.error);
   }
   derivedCryptoKey = deriveRes.value;
 
@@ -141,7 +135,7 @@ export async function getOrDeriveKey(
   const base64 = arrayBufferToBase64(raw);
   await setSessionItem(SESSION_KEY_DERIVED_KEY, base64);
 
-  return derivedCryptoKey;
+  return ok(derivedCryptoKey);
 }
 
 export async function getSessionKey(): Promise<CryptoKey | null> {
@@ -198,6 +192,57 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
   if (decryptedRes.isErr()) return false;
 
   return decryptedRes.value === "verification_token";
+}
+
+export async function hashValue(
+  value: string,
+  saltBase64?: string,
+): Promise<Result<string, TranslationKey>> {
+  let saltStr = saltBase64;
+  if (!saltStr) {
+    const settings = await getAllSettings();
+    if (!settings.salt) return err("login_error_wrong_pin"); // Adjust if needed
+    saltStr = settings.salt;
+  }
+  const saltBuf = base64ToArrayBuffer(saltStr);
+  const saltUi8 = new Uint8Array(saltBuf);
+
+  const hashRes = await ResultAsync.fromPromise(
+    argon2id({
+      password: value,
+      salt: saltUi8,
+      parallelism: 1,
+      iterations: 3,
+      memorySize: 64 * 1024, // 64 MB
+      hashLength: 32,
+      outputType: "encoded",
+    }),
+    (error): TranslationKey => {
+      console.error("[Crypto] argon2id hashing failed:", error);
+      return "login_error_wrong_pin"; // Used commonly for pin/pass hash failures
+    },
+  );
+
+  return hashRes;
+}
+
+export function importAesGcmKey(
+  buffer: ArrayBuffer,
+  errorKey: TranslationKey,
+): ResultAsync<CryptoKey, TranslationKey> {
+  return ResultAsync.fromPromise(
+    crypto.subtle.importKey(
+      "raw",
+      buffer,
+      { name: "AES-GCM", length: 256 },
+      true,
+      ["encrypt", "decrypt"],
+    ),
+    (error): TranslationKey => {
+      console.error("[Crypto] Failed to import AES-GCM key:", error);
+      return errorKey;
+    },
+  );
 }
 
 export async function parseSshKey(privateKeyText: string): Promise<
