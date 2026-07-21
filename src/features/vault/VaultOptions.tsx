@@ -29,7 +29,7 @@ export const VaultOptions: Component = () => {
     setError("");
     const res = await syncVault();
     setLoading(false);
-    if (res.success) {
+    if (res.isOk()) {
       showToast(t("vault_sync_success"), "success");
     } else {
       setError(res.error || t("vault_sync_error"));

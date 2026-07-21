@@ -7,7 +7,7 @@ import {
 } from "@/features/sync/import-service.ts";
 import { showToast } from "@/core/ui-service.ts";
 import { ChevronRightIcon, UploadIcon } from "@/icons/svg/index.ts";
-import { t, type TranslationKey } from "@/core/i18n.ts";
+import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 
 export const ImportAccounts: Component = () => {
@@ -50,44 +50,28 @@ export const ImportAccounts: Component = () => {
       const result = event.target?.result;
       if (typeof result !== "string") return;
       const text = result;
-      try {
-        let res;
-        if (type === "json") {
-          res = await importJsonData(text);
-        } else {
-          res = await importCsvData(text, type);
-        }
-
-        if (res.success) {
-          showToast(
-            t("vault_import_success", { count: res.importedCount ?? 0 }),
-            "success",
-          );
-          navigate(View.Vault);
-        } else {
-          let errorKey: TranslationKey;
-          if (type === "json") {
-            errorKey = "vault_import_error_invalid";
-          } else if (type === "browser") {
-            errorKey = "import_error_browser_invalid";
-          } else {
-            errorKey = "import_error_bitwarden_invalid";
-          }
-          setError(res.error || t(errorKey));
-        }
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        const genericErrorKey: TranslationKey = type === "json"
-          ? "vault_import_error_fail"
-          : "vault_import_csv_error_fail";
-        setError(errMsg || t(genericErrorKey));
-      } finally {
-        setLoading(false);
-        // Reset file inputs
-        if (browserInputRef) browserInputRef.value = "";
-        if (bitwardenInputRef) bitwardenInputRef.value = "";
-        if (jsonInputRef) jsonInputRef.value = "";
+      let res;
+      if (type === "json") {
+        res = await importJsonData(text);
+      } else {
+        res = await importCsvData(text, type);
       }
+
+      if (res.isOk()) {
+        showToast(
+          t("vault_import_success", { count: res.value }),
+          "success",
+        );
+        navigate(View.Vault);
+      } else {
+        setError(t(res.error));
+      }
+
+      setLoading(false);
+      // Reset file inputs
+      if (browserInputRef) browserInputRef.value = "";
+      if (bitwardenInputRef) bitwardenInputRef.value = "";
+      if (jsonInputRef) jsonInputRef.value = "";
     };
     reader.readAsText(file);
   };

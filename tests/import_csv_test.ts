@@ -44,11 +44,12 @@ Deno.test("Browser CSV import mapping & validation", () => {
   const firefoxCsv =
     `"url","username","password","httpRealm","formActionOrigin","guid"\n"https://facebook.com/login","kien","manh",,"","{guid-123}"\n"chrome://FirefoxAccounts","9a36","{""key"":""val""}",,,`;
   const resFirefox = parseAndValidateBrowserCsv(firefoxCsv, existingItems);
-  assertEquals(resFirefox.success, true);
-  if (resFirefox.success) {
-    assertEquals(resFirefox.importedCount, 2);
-    const item1 = resFirefox.combinedItems[0];
-    const item2 = resFirefox.combinedItems[1];
+  assertEquals(resFirefox.isOk(), true);
+  if (resFirefox.isOk()) {
+    const val = resFirefox.value;
+    assertEquals(val.importedCount, 2);
+    const item1 = val.combinedItems[0];
+    const item2 = val.combinedItems[1];
     if (
       item1.type === VaultItemType.Login && item2.type === VaultItemType.Login
     ) {
@@ -68,10 +69,11 @@ Deno.test("Browser CSV import mapping & validation", () => {
   const chromeCsv =
     `name,url,username,password,note\nfacebook.com,https://facebook.com/,kien,manh,my note\ngoogle.com,https://google.com/,manh,kien,`;
   const resChrome = parseAndValidateBrowserCsv(chromeCsv, existingItems);
-  assertEquals(resChrome.success, true);
-  if (resChrome.success) {
-    assertEquals(resChrome.importedCount, 2);
-    const item1 = resChrome.combinedItems[0];
+  assertEquals(resChrome.isOk(), true);
+  if (resChrome.isOk()) {
+    const val = resChrome.value;
+    assertEquals(val.importedCount, 2);
+    const item1 = val.combinedItems[0];
     if (item1.type === VaultItemType.Login) {
       assertEquals(item1.name, "facebook.com");
       assertEquals(item1.notes, "my note");
@@ -85,9 +87,9 @@ Deno.test("Browser CSV import mapping & validation", () => {
   // 3. Missing mandatory columns
   const invalidCsv = `name,username,password\ngoogle.com,manh,kien`;
   const resInvalid = parseAndValidateBrowserCsv(invalidCsv, existingItems);
-  assertEquals(resInvalid.success, false);
-  if (!resInvalid.success) {
-    assertEquals(resInvalid.error.includes("thiếu các cột bắt buộc"), true);
+  assertEquals(resInvalid.isErr(), true);
+  if (resInvalid.isErr()) {
+    assertEquals(resInvalid.error, "import_error_browser_invalid");
   }
 });
 
@@ -97,13 +99,14 @@ Deno.test("Bitwarden CSV import mapping & validation", () => {
   const bitwardenCsv =
     `folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\n,1,login,127.0.0.1,,"field1:value1\nfield2:value2",1,http://127.0.0.1:8000/admin,uongsuadaubung,12345,\n,,note,My Secure Note,some note contents,"pin:4321",0,,,,,`;
   const resBw = parseAndValidateBitwardenCsv(bitwardenCsv, existingItems);
-  assertEquals(resBw.success, true);
-  if (resBw.success) {
-    assertEquals(resBw.importedCount, 2);
+  assertEquals(resBw.isOk(), true);
+  if (resBw.isOk()) {
+    const val = resBw.value;
+    assertEquals(val.importedCount, 2);
 
     // Login item
-    const item1 = resBw.combinedItems[0];
-    const item2 = resBw.combinedItems[1];
+    const item1 = val.combinedItems[0];
+    const item2 = val.combinedItems[1];
     if (
       item1.type === VaultItemType.Login &&
       item2.type === VaultItemType.SecureNote
@@ -138,5 +141,5 @@ Deno.test("Bitwarden CSV import mapping & validation", () => {
     invalidBwCsv,
     existingItems,
   );
-  assertEquals(resBwInvalid.success, false);
+  assertEquals(resBwInvalid.isErr(), true);
 });

@@ -4,7 +4,10 @@
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import { type TranslationKey } from "@/core/i18n.ts";
 
-export function getCurrentTab(): ResultAsync<chrome.tabs.Tab | null, TranslationKey> {
+export function getCurrentTab(): ResultAsync<
+  chrome.tabs.Tab | null,
+  TranslationKey
+> {
   if (typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.query) {
     return okAsync(null);
   }
@@ -94,7 +97,9 @@ export function captureVisibleTab(
 /**
  * Open a new tab with the specified URL, falling back to window.open if chrome.tabs is unavailable.
  */
-export function openTab(url: string): ResultAsync<chrome.tabs.Tab | null, TranslationKey> {
+export function openTab(
+  url: string,
+): ResultAsync<chrome.tabs.Tab | null, TranslationKey> {
   if (
     typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.create
   ) {
