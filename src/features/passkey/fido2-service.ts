@@ -198,7 +198,7 @@ export async function registerFido2Passkey(
     saveRes = await saveItem(newItem);
   }
 
-  if (!saveRes.success) {
+  if (saveRes.isErr()) {
     return err("fido2_error_save_failed");
   }
 
@@ -247,7 +247,7 @@ export async function assertFido2Passkey(
   };
 
   const saveRes = await saveItem(updatedItem);
-  if (!saveRes.success) {
+  if (saveRes.isErr()) {
     return err("fido2_error_counter_update_failed");
   }
 
