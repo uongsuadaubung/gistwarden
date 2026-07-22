@@ -81,13 +81,16 @@ export async function openTab(
   url: string,
 ): Promise<Result<chrome.tabs.Tab | null, TranslationKey>> {
   if (typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.create) {
-    try {
-      window.open(url, "_blank");
-      return ok(null);
-    } catch (e) {
-      console.warn("Failed to open URL in window.open:", e);
-      return err("toast_error");
-    }
+    return Result.fromThrowable(
+      () => {
+        window.open(url, "_blank");
+        return null;
+      },
+      (e): TranslationKey => {
+        console.warn("Failed to open URL in window.open:", e);
+        return "toast_error";
+      },
+    )();
   }
 
   const createRes = await ResultAsync.fromPromise(

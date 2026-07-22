@@ -61,24 +61,20 @@ export const Login: Component = () => {
     if (isConfigured && !hasSalt && mode === "masterPassword") {
       setGistStatus("checking");
       (async () => {
-        try {
-          const sendResult = await sendMessageToBackground({
-            type: MSG_DOWNLOAD_FROM_GIST,
-          });
-          if (sendResult.isErr()) {
-            setGistStatus("exists");
-            return;
-          }
-          const res = DownloadFromGistResponseSchema.safeParse(
-            sendResult.value,
-          );
-          if (res.success && res.data.success && res.data.content) {
-            setGistStatus("exists");
-          } else {
-            setGistStatus("new");
-          }
-        } catch (_err) {
+        const sendResult = await sendMessageToBackground({
+          type: MSG_DOWNLOAD_FROM_GIST,
+        });
+        if (sendResult.isErr()) {
           setGistStatus("exists");
+          return;
+        }
+        const res = DownloadFromGistResponseSchema.safeParse(
+          sendResult.value,
+        );
+        if (res.success && res.data.success && res.data.content) {
+          setGistStatus("exists");
+        } else {
+          setGistStatus("new");
         }
       })();
     } else {

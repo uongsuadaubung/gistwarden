@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { reconcile } from "solid-js/store";
 import { setStore, store } from "@/core/store.ts";
 import { setSessionItem } from "@/core/storage.ts";
@@ -15,8 +16,13 @@ import {
 } from "@/core/types.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result } from "neverthrow";
-
 import { sendMessageToBackground } from "@/core/messaging.ts";
+import { safeJsonParse } from "@/core/json-utils.ts";
+
+const EncryptedPayloadSchema = z.object({
+  ciphertext: z.string().optional(),
+  iv: z.string().optional(),
+});
 
 export async function syncVault(): Promise<Result<void, TranslationKey>> {
   setStore(STORE_KEY_SYNCING, true);
@@ -67,15 +73,15 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     return err(errorKey);
   }
 
-  let payload: { ciphertext?: string; iv?: string };
-  try {
-    payload = JSON.parse(res.content || "{}");
-  } catch (_e) {
+  const parsePayloadRes = safeJsonParse(res.content || "{}");
+  if (parsePayloadRes.isErr()) {
     const errorKey = "toast_error";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
+  const payloadParse = EncryptedPayloadSchema.safeParse(parsePayloadRes.value);
+  const payload = payloadParse.success ? payloadParse.data : {};
 
   const decryptRes = await decryptData(
     payload.ciphertext || "",
@@ -90,15 +96,14 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
   }
   const decrypted = decryptRes.value;
 
-  let decryptedJson: unknown;
-  try {
-    decryptedJson = JSON.parse(decrypted);
-  } catch (_e) {
+  const parseDecryptedRes = safeJsonParse(decrypted);
+  if (parseDecryptedRes.isErr()) {
     const errorKey = "toast_error";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
+  const decryptedJson = parseDecryptedRes.value;
 
   const parseVaultRes = VaultListSchema.safeParse(decryptedJson);
   if (!parseVaultRes.success) {
