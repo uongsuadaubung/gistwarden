@@ -17,6 +17,7 @@
     "npm:sass@^1.99.0": "1.101.0",
     "npm:solid-js@*": "1.9.14",
     "npm:solid-js@^1.9.14": "1.9.14",
+    "npm:tldts@^7.4.9": "7.4.9",
     "npm:zod@*": "4.4.3",
     "npm:zod@^4.4.3": "4.4.3"
   },
@@ -1747,6 +1748,7 @@
       "npm:sass@^1.99.0",
       "npm:solid-js@*",
       "npm:solid-js@^1.9.14",
+      "npm:tldts@^7.4.9",
       "npm:zod@^4.4.3"
     ]
   }
