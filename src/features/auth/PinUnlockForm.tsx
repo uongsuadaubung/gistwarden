@@ -1,8 +1,7 @@
-import { type Component, createSignal, Show } from "solid-js";
+import { type Component, createSignal } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
-import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
 
 export interface PinUnlockFormProps {
   error: string;
@@ -12,7 +11,6 @@ export interface PinUnlockFormProps {
 
 export const PinUnlockForm: Component<PinUnlockFormProps> = (props) => {
   const [pin, setPin] = createSignal("");
-  const [showPin, setShowPin] = createSignal(false);
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -27,27 +25,13 @@ export const PinUnlockForm: Component<PinUnlockFormProps> = (props) => {
         <div class="pos-relative d-flex align-items-center">
           <Input
             id="pin-unlock-input"
-            type={showPin() ? "text" : "password"}
+            type="password"
             placeholder={t("login_pin_placeholder")}
             value={pin()}
             onInput={(e) => setPin(e.currentTarget.value)}
             class="w-100 font-mono"
             autofocus
             required
-            rightActions={
-              <button
-                type="button"
-                class="action-btn input-action-btn"
-                onClick={() => setShowPin(!showPin())}
-              >
-                <Show
-                  fallback={<EyeIcon class="icon-inline" />}
-                  when={showPin()}
-                >
-                  <EyeOffIcon class="icon-inline" />
-                </Show>
-              </button>
-            }
           />
         </div>
       </div>

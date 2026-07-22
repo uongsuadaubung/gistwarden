@@ -1,8 +1,7 @@
-import { type Component, createSignal, Show } from "solid-js";
+import { type Component } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import Select from "@/components/ui/Select.tsx";
-import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
 import FormField from "@/components/ui/FormField.tsx";
 import type { ItemEditFormState } from "@/features/vault/item-edit/vault-edit-helper.ts";
 
@@ -44,9 +43,6 @@ interface CardEditFieldsProps {
 }
 
 export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
-  const [showCardNumber, setShowCardNumber] = createSignal(false);
-  const [showCardCode, setShowCardCode] = createSignal(false);
-
   return (
     <>
       <div class="detail-section-title">
@@ -72,27 +68,12 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
           <div class="pos-relative">
             <Input
               id="card-number"
-              type={showCardNumber() ? "text" : "password"}
+              type="password"
               class="password-font"
               value={props.formState.cardNumber}
               onInput={(e) =>
                 props.updateForm("cardNumber", e.currentTarget.value)}
               placeholder="•••• •••• •••• ••••"
-              rightActions={
-                <button
-                  type="button"
-                  class="action-btn input-action-btn"
-                  onClick={() => setShowCardNumber(!showCardNumber())}
-                  title={t("detail_card_number")}
-                >
-                  <Show
-                    when={showCardNumber()}
-                    fallback={<EyeIcon class="icon-inline" />}
-                  >
-                    <EyeOffIcon class="icon-inline" />
-                  </Show>
-                </button>
-              }
             />
           </div>
         </FormField>
@@ -139,27 +120,12 @@ export const CardEditFields: Component<CardEditFieldsProps> = (props) => {
           <div class="pos-relative">
             <Input
               id="card-code"
-              type={showCardCode() ? "text" : "password"}
+              type="password"
               class="password-font"
               value={props.formState.cardCode}
               onInput={(e) =>
                 props.updateForm("cardCode", e.currentTarget.value)}
               placeholder="123"
-              rightActions={
-                <button
-                  type="button"
-                  class="action-btn input-action-btn"
-                  onClick={() => setShowCardCode(!showCardCode())}
-                  title={t("detail_card_security_code")}
-                >
-                  <Show
-                    when={showCardCode()}
-                    fallback={<EyeIcon class="icon-inline" />}
-                  >
-                    <EyeOffIcon class="icon-inline" />
-                  </Show>
-                </button>
-              }
             />
           </div>
         </FormField>
