@@ -1,7 +1,6 @@
-import { type Component, createSignal, Show } from "solid-js";
+import { type Component } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
-import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
 import FormField from "@/components/ui/FormField.tsx";
 import type { ItemEditFormState } from "@/features/vault/item-edit/vault-edit-helper.ts";
 
@@ -16,9 +15,6 @@ interface IdentityEditFieldsProps {
 export const IdentityEditFields: Component<IdentityEditFieldsProps> = (
   props,
 ) => {
-  const [showSsn, setShowSsn] = createSignal(false);
-  const [showPassport, setShowPassport] = createSignal(false);
-
   return (
     <>
       {/* 1. Personal Details */}
@@ -41,12 +37,12 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (
             />
           </FormField>
           <FormField
-            id="id-first-name"
+            id="id-firstname"
             label={t("detail_identity_first_name")}
             class="mb-0"
           >
             <Input
-              id="id-first-name"
+              id="id-firstname"
               value={props.formState.firstName}
               onInput={(e) =>
                 props.updateForm("firstName", e.currentTarget.value)}
@@ -56,24 +52,24 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (
 
         <div class="grid-2">
           <FormField
-            id="id-middle-name"
+            id="id-middlename"
             label={t("detail_identity_middle_name")}
             class="mb-0"
           >
             <Input
-              id="id-middle-name"
+              id="id-middlename"
               value={props.formState.middleName}
               onInput={(e) =>
                 props.updateForm("middleName", e.currentTarget.value)}
             />
           </FormField>
           <FormField
-            id="id-last-name"
+            id="id-lastname"
             label={t("detail_identity_last_name")}
             class="mb-0"
           >
             <Input
-              id="id-last-name"
+              id="id-lastname"
               value={props.formState.lastName}
               onInput={(e) =>
                 props.updateForm("lastName", e.currentTarget.value)}
@@ -116,23 +112,9 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (
           >
             <Input
               id="id-ssn"
-              type={showSsn() ? "text" : "password"}
+              type="password"
               value={props.formState.ssn}
               onInput={(e) => props.updateForm("ssn", e.currentTarget.value)}
-              rightActions={
-                <button
-                  type="button"
-                  class="action-btn input-action-btn"
-                  onClick={() => setShowSsn(!showSsn())}
-                >
-                  <Show
-                    fallback={<EyeIcon class="icon-inline" />}
-                    when={showSsn()}
-                  >
-                    <EyeOffIcon class="icon-inline" />
-                  </Show>
-                </button>
-              }
             />
           </FormField>
           <FormField
@@ -142,24 +124,10 @@ export const IdentityEditFields: Component<IdentityEditFieldsProps> = (
           >
             <Input
               id="id-passport"
-              type={showPassport() ? "text" : "password"}
+              type="password"
               value={props.formState.passportNumber}
               onInput={(e) =>
                 props.updateForm("passportNumber", e.currentTarget.value)}
-              rightActions={
-                <button
-                  type="button"
-                  class="action-btn input-action-btn"
-                  onClick={() => setShowPassport(!showPassport())}
-                >
-                  <Show
-                    fallback={<EyeIcon class="icon-inline" />}
-                    when={showPassport()}
-                  >
-                    <EyeOffIcon class="icon-inline" />
-                  </Show>
-                </button>
-              }
             />
           </FormField>
         </div>

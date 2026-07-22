@@ -36,8 +36,6 @@ import {
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
 import {
-  EyeIcon,
-  EyeOffIcon,
   InfoIcon,
   LockIcon,
   QuestionIcon,
@@ -54,7 +52,6 @@ export const Fido2Prompt: Component = () => {
     "masterPassword",
   );
   const [pin, setPin] = createSignal("");
-  const [showPin, setShowPin] = createSignal(false);
 
   createEffect(() => {
     if (store.isLoaded) {
@@ -322,26 +319,12 @@ export const Fido2Prompt: Component = () => {
                     <div class="form-group text-left pos-relative">
                       <div class="pos-relative d-flex align-items-center">
                         <Input
-                          type={showPin() ? "text" : "password"}
+                          type="password"
                           placeholder={t("login_pin_placeholder")}
                           value={pin()}
                           onInput={(e) => setPin(e.currentTarget.value)}
                           autofocus
                           required
-                          rightActions={
-                            <button
-                              type="button"
-                              class="action-btn input-action-btn"
-                              onClick={() => setShowPin(!showPin())}
-                            >
-                              <Show
-                                fallback={<EyeIcon class="icon-inline" />}
-                                when={showPin()}
-                              >
-                                <EyeOffIcon class="icon-inline" />
-                              </Show>
-                            </button>
-                          }
                         />
                       </div>
                     </div>

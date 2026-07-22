@@ -3,7 +3,6 @@ import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
-import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
 
 interface SetPinModalProps {
   isOpen: boolean;
@@ -14,7 +13,6 @@ interface SetPinModalProps {
 export default function SetPinModal(props: SetPinModalProps) {
   const [pin, setPin] = createSignal("");
   const [requireRestart, setRequireRestart] = createSignal(true);
-  const [showPin, setShowPin] = createSignal(false);
   const [isClosing, setIsClosing] = createSignal(false);
   const [error, setError] = createSignal("");
 
@@ -23,7 +21,6 @@ export default function SetPinModal(props: SetPinModalProps) {
       setIsClosing(false);
       setPin("");
       setRequireRestart(true);
-      setShowPin(false);
       setError("");
     }
   });
@@ -91,27 +88,13 @@ export default function SetPinModal(props: SetPinModalProps) {
               <div class="pos-relative d-flex align-items-center">
                 <Input
                   id="set-pin-input"
-                  type={showPin() ? "text" : "password"}
+                  type="password"
                   value={pin()}
                   onInput={(e) => setPin(e.currentTarget.value)}
                   placeholder={t("login_pin_placeholder")}
                   class="w-100 font-mono"
                   autofocus
                   required
-                  rightActions={
-                    <button
-                      type="button"
-                      class="action-btn input-action-btn"
-                      onClick={() => setShowPin(!showPin())}
-                    >
-                      <Show
-                        fallback={<EyeIcon class="icon-inline" />}
-                        when={showPin()}
-                      >
-                        <EyeOffIcon class="icon-inline" />
-                      </Show>
-                    </button>
-                  }
                 />
               </div>
             </div>

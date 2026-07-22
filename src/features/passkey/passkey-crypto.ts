@@ -2,89 +2,43 @@ import { err, ok, Result, ResultAsync } from "neverthrow";
 import type { Fido2Credential } from "@/core/types.ts";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeParseUrl } from "@/core/domain-utils.ts";
+import { encode as cborEncode } from "cbor-x";
 
 // Utility functions to convert P1363 ECDSA signature to ASN.1 DER format
-function getParamSize(keySize: number) {
-  return ((keySize / 8) | 0) + (keySize % 8 === 0 ? 0 : 1);
-}
-
-const paramBytes = getParamSize(256); // ES256 param bytes (32)
-
-function countPadding(
-  buf: Uint8Array,
-  start: number,
-  end: number,
-): { padding: number; needs0x00: boolean } {
-  let padding = 0;
-  while (start + padding < end && buf[start + padding] === 0) {
-    padding++;
+function encodeDerInteger(bytes: Uint8Array): Uint8Array {
+  let start = 0;
+  while (start < bytes.length - 1 && bytes[start] === 0) {
+    start++;
   }
-  const needs0x00 = (buf[start + padding] & 0x80) === 0x80;
-  return { padding, needs0x00 };
+  const trimmed = bytes.subarray(start);
+  const needsZero = (trimmed[0] & 0x80) !== 0;
+  const len = trimmed.length + (needsZero ? 1 : 0);
+  const res = new Uint8Array(2 + len);
+  res[0] = 0x02;
+  res[1] = len;
+  if (needsZero) {
+    res[2] = 0x00;
+    res.set(trimmed, 3);
+  } else {
+    res.set(trimmed, 2);
+  }
+  return res;
 }
 
 export function p1363ToDer(
   signature: Uint8Array,
 ): Result<Uint8Array, TranslationKey> {
-  const signatureBytes = signature.length;
-  if (signatureBytes !== paramBytes * 2) {
+  if (signature.length !== 64) {
     return err("toast_error");
   }
-
-  const { padding: rPadding, needs0x00: rNeeds0x00 } = countPadding(
-    signature,
-    0,
-    paramBytes,
-  );
-  const { padding: sPadding, needs0x00: sNeeds0x00 } = countPadding(
-    signature,
-    paramBytes,
-    signature.length,
-  );
-
-  const rActualLength = paramBytes - rPadding;
-  const sActualLength = paramBytes - sPadding;
-
-  const rLength = rActualLength + (rNeeds0x00 ? 1 : 0);
-  const sLength = sActualLength + (sNeeds0x00 ? 1 : 0);
-
-  const rsBytes = 2 + rLength + 2 + sLength;
-  const shortLength = rsBytes < 0x80;
-
-  const dst = new Uint8Array((shortLength ? 2 : 3) + rsBytes);
-
-  let offset = 0;
-  dst[offset++] = 0x30; // ENCODED_TAG_SEQ
-  if (shortLength) {
-    dst[offset++] = rsBytes;
-  } else {
-    dst[offset++] = 0x80 | 1;
-    dst[offset++] = rsBytes & 0xff;
-  }
-
-  // Encoding 'R' component
-  dst[offset++] = 0x02; // ENCODED_TAG_INT
-  dst[offset++] = rLength;
-  if (rNeeds0x00) {
-    dst[offset++] = 0;
-  }
-  dst.set(signature.subarray(rPadding, rPadding + rActualLength), offset);
-  offset += rActualLength;
-
-  // Encoding 'S' component
-  dst[offset++] = 0x02; // ENCODED_TAG_INT
-  dst[offset++] = sLength;
-  if (sNeeds0x00) {
-    dst[offset++] = 0;
-  }
-  dst.set(
-    signature.subarray(
-      paramBytes + sPadding,
-      paramBytes + sPadding + sActualLength,
-    ),
-    offset,
-  );
-
+  const rBytes = encodeDerInteger(signature.subarray(0, 32));
+  const sBytes = encodeDerInteger(signature.subarray(32, 64));
+  const bodyLen = rBytes.length + sBytes.length;
+  const dst = new Uint8Array(2 + bodyLen);
+  dst[0] = 0x30;
+  dst[1] = bodyLen;
+  dst.set(rBytes, 2);
+  dst.set(sBytes, 2 + rBytes.length);
   return ok(dst);
 }
 
@@ -221,49 +175,15 @@ export async function createPasskeyKeyPair(): Promise<
   );
 }
 
-// Attestation Object CBOR Packer
+// Attestation Object CBOR Packer using cbor-x library
 export function packAttestationObject(authData: Uint8Array): Uint8Array {
-  // We need to encode { fmt: "none", attStmt: {}, authData: Uint8Array }
-  const fmtKey = [0x63, 0x66, 0x6d, 0x74]; // "fmt"
-  const fmtVal = [0x64, 0x6e, 0x6f, 0x6e, 0x65]; // "none"
-  const attStmtKey = [0x67, 0x61, 0x74, 0x74, 0x53, 0x74, 0x6d, 0x74]; // "attStmt"
-  const attStmtVal = [0xa0]; // empty map {}
-  const authDataKey = [0x68, 0x61, 0x75, 0x74, 0x68, 0x44, 0x61, 0x74, 0x61]; // "authData"
-
-  // authData byte string header
-  let authDataHeader: number[];
-  const len = authData.length;
-  if (len < 256) {
-    authDataHeader = [0x58, len];
-  } else {
-    authDataHeader = [0x59, (len >> 8) & 0xff, len & 0xff];
-  }
-
-  const totalLength = 1 + fmtKey.length + fmtVal.length + attStmtKey.length +
-    attStmtVal.length + authDataKey.length + authDataHeader.length +
-    authData.length;
-  const result = new Uint8Array(totalLength);
-
-  let offset = 0;
-  result[offset++] = 0xa3; // Map of 3 pairs
-
-  result.set(fmtKey, offset);
-  offset += fmtKey.length;
-  result.set(fmtVal, offset);
-  offset += fmtVal.length;
-
-  result.set(attStmtKey, offset);
-  offset += attStmtKey.length;
-  result.set(attStmtVal, offset);
-  offset += attStmtVal.length;
-
-  result.set(authDataKey, offset);
-  offset += authDataKey.length;
-  result.set(authDataHeader, offset);
-  offset += authDataHeader.length;
-  result.set(authData, offset);
-
-  return result;
+  return new Uint8Array(
+    cborEncode({
+      fmt: "none",
+      attStmt: {},
+      authData,
+    }),
+  );
 }
 
 // Generate AuthData
@@ -407,37 +327,14 @@ export function getRawCredentialId(
 ): Result<Uint8Array, TranslationKey> {
   const clean = credId.trim();
   if (clean.includes("-") && clean.length === 36) {
-    // Parse standard UUID format (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX) to 16 bytes raw array
-    const raw = new Uint8Array(16);
-    let v;
-
-    // Parse ########-....-....-....-............
-    raw[0] = (v = parseInt(clean.slice(0, 8), 16)) >>> 24;
-    raw[1] = (v >>> 16) & 0xff;
-    raw[2] = (v >>> 8) & 0xff;
-    raw[3] = v & 0xff;
-
-    // Parse ........-####-....-....-............
-    raw[4] = (v = parseInt(clean.slice(9, 13), 16)) >>> 8;
-    raw[5] = v & 0xff;
-
-    // Parse ........-....-####-....-............
-    raw[6] = (v = parseInt(clean.slice(14, 18), 16)) >>> 8;
-    raw[7] = v & 0xff;
-
-    // Parse ........-....-....-####-............
-    raw[8] = (v = parseInt(clean.slice(19, 23), 16)) >>> 8;
-    raw[9] = v & 0xff;
-
-    // Parse ........-....-....-....-############
-    raw[10] = ((v = parseInt(clean.slice(24, 36), 16)) / 0x10000000000) & 0xff;
-    raw[11] = (v / 0x100000000) & 0xff;
-    raw[12] = (v >>> 24) & 0xff;
-    raw[13] = (v >>> 16) & 0xff;
-    raw[14] = (v >>> 8) & 0xff;
-    raw[15] = v & 0xff;
-
-    return ok(raw);
+    const hex = clean.replace(/-/g, "");
+    const parseRes = Result.fromThrowable(
+      () => Uint8Array.fromHex(hex),
+      (): TranslationKey => "toast_error",
+    )();
+    if (parseRes.isOk() && parseRes.value.length === 16) {
+      return ok(parseRes.value);
+    }
   }
 
   if (clean.startsWith("b64.")) {
