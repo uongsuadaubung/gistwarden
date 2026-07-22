@@ -88,49 +88,19 @@ export function p1363ToDer(
   return ok(dst);
 }
 
-// Helpers for Base64URL conversions
+// Helpers for Base64URL conversions using native Uint8Array built-ins
 export function bufferToBase64Url(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
+  return bytes.toBase64({ alphabet: "base64url", omitPadding: true });
 }
 
 export function base64UrlToBuffer(
   str: string,
 ): Result<Uint8Array, TranslationKey> {
-  let output = str.replace(/-/g, "+").replace(/_/g, "/");
-  switch (output.length % 4) {
-    case 0:
-      break;
-    case 2:
-      output += "==";
-      break;
-    case 3:
-      output += "=";
-      break;
-    default:
-      return err("toast_error");
-  }
-
-  const safeAtob = Result.fromThrowable(
-    atob,
+  return Result.fromThrowable(
+    () => Uint8Array.fromBase64(str.trim(), { alphabet: "base64url" }),
     (): TranslationKey => "toast_error",
-  );
-  const atobRes = safeAtob(output);
-  if (atobRes.isErr()) return err(atobRes.error);
-
-  const binaryString = atobRes.value;
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return ok(bytes);
+  )();
 }
 
 // --- Crypto Suble Wrappers ---
