@@ -190,3 +190,27 @@ input[type="number"] {
     stroke-width: 2.5px;
   }
 }
+
+.caps-lock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fido2-bg-warning, #d97706);
+  background-color: var(--warning-translucent-15, rgba(245, 158, 11, 0.15));
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 4px;
+  line-height: 1;
+  user-select: none;
+  white-space: nowrap;
+  margin-right: 4px;
+
+  svg {
+    width: 12px;
+    height: 12px;
+    stroke-width: 2.5px;
+    flex-shrink: 0;
+  }
+}

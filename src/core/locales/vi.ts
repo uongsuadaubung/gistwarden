@@ -60,6 +60,7 @@ export default {
   login_error_oauth_fail: "Lỗi đăng nhập OAuth",
   login_error_empty_mp: "Vui lòng nhập Mật khẩu Master",
   login_error_wrong_mp: "Mật khẩu Master không đúng",
+  caps_lock_on: "Caps Lock đang bật",
   login_error_changed_mp_hint:
     "Nếu bạn vừa đổi Mật khẩu Master trên một thiết bị khác, bạn cần phải Đăng xuất và đăng nhập lại.",
   login_error_unlock_fail: "Lỗi mở khóa",

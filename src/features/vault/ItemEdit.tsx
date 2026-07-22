@@ -28,7 +28,7 @@ import {
 } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import CustomFieldsEdit from "@/features/vault/item-edit/CustomFieldsEdit.tsx";
 import { captureVisibleTab, getCurrentTab } from "@/core/tabs.ts";
-import { safeParseUrl } from "@/core/domain-utils.ts";
+import { getHostname, safeParseUrl } from "@/core/domain-utils.ts";
 import { safeDecodeQr } from "@/core/totp-utils.ts";
 
 export const ItemEdit: Component = () => {
@@ -61,6 +61,10 @@ export const ItemEdit: Component = () => {
           !url.startsWith("chrome://") && !url.startsWith("chrome-extension://")
         ) {
           updateForm("uris", [{ uri: url }]);
+          const hostname = getHostname(url);
+          if (hostname && !formState.name) {
+            updateForm("name", hostname);
+          }
         }
       }
     }
