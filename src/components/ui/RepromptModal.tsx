@@ -5,11 +5,8 @@ import { resolveReprompt } from "@/core/ui-service.ts";
 import { verifyMasterPassword } from "@/core/crypto.ts";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
-import { EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
-
 export default function RepromptModal() {
   const [password, setPassword] = createSignal("");
-  const [showPassword, setShowPassword] = createSignal(false);
   const [isClosing, setIsClosing] = createSignal(false);
   const [error, setError] = createSignal("");
 
@@ -17,7 +14,6 @@ export default function RepromptModal() {
     if (store.repromptModal.isOpen) {
       setIsClosing(false);
       setPassword("");
-      setShowPassword(false);
       setError("");
     }
   });
@@ -86,27 +82,13 @@ export default function RepromptModal() {
               <div class="pos-relative d-flex align-items-center">
                 <Input
                   id="reprompt-password-input"
-                  type={showPassword() ? "text" : "password"}
+                  type="password"
                   value={password()}
                   onInput={(e) => setPassword(e.currentTarget.value)}
                   placeholder={t("reprompt_modal_placeholder")}
                   class="w-100"
                   autofocus
                   required
-                  rightActions={
-                    <button
-                      type="button"
-                      class="action-btn input-action-btn"
-                      onClick={() => setShowPassword(!showPassword())}
-                    >
-                      <Show
-                        fallback={<EyeIcon class="icon-inline" />}
-                        when={showPassword()}
-                      >
-                        <EyeOffIcon class="icon-inline" />
-                      </Show>
-                    </button>
-                  }
                 />
               </div>
             </div>

@@ -3,8 +3,6 @@ import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import {
   DragIcon,
-  EyeIcon,
-  EyeOffIcon,
   MinusCircleIcon,
   PlusIcon,
   QrIcon,
@@ -24,8 +22,6 @@ interface LoginEditFieldsProps {
 }
 
 export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
-  const [showPassword, setShowPassword] = createSignal(false);
-  const [showTotpSecret, setShowTotpSecret] = createSignal(false);
   const [draggedIndex, setDraggedIndex] = createSignal<number | null>(null);
 
   const handleAddWebsite = () => {
@@ -90,27 +86,12 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
           <div class="pos-relative">
             <Input
               id="item-password"
-              type={showPassword() ? "text" : "password"}
+              type="password"
               class="password-font"
               value={props.formState.password}
               onInput={(e) =>
                 props.updateForm("password", e.currentTarget.value)}
               placeholder={t("edit_placeholder_password")}
-              rightActions={
-                <button
-                  type="button"
-                  class="action-btn input-action-btn"
-                  onClick={() => setShowPassword(!showPassword())}
-                  title={t("edit_label_password")}
-                >
-                  <Show
-                    when={showPassword()}
-                    fallback={<EyeIcon class="icon-inline" />}
-                  >
-                    <EyeOffIcon class="icon-inline" />
-                  </Show>
-                </button>
-              }
             />
           </div>
         </FormField>
@@ -151,41 +132,26 @@ export const LoginEditFields: Component<LoginEditFieldsProps> = (props) => {
           <div class="pos-relative">
             <Input
               id="item-totp"
-              type={showTotpSecret() ? "text" : "password"}
+              type="password"
               class="password-font"
               value={props.formState.totpSecret}
               onInput={(e) =>
                 props.updateForm("totpSecret", e.currentTarget.value)}
               placeholder={t("edit_placeholder_totp")}
               rightActions={
-                <>
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    onClick={() => setShowTotpSecret(!showTotpSecret())}
-                    title={t("edit_placeholder_totp")}
-                  >
-                    <Show
-                      when={showTotpSecret()}
-                      fallback={<EyeIcon class="icon-inline" />}
-                    >
-                      <EyeOffIcon class="icon-inline" />
-                    </Show>
-                  </button>
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    title={t("edit_placeholder_totp")}
-                    onClick={props.onScanQr}
-                    disabled={props.scanning}
-                  >
-                    <QrIcon
-                      class={props.scanning
-                        ? "spinning icon-inline"
-                        : "icon-inline"}
-                    />
-                  </button>
-                </>
+                <button
+                  type="button"
+                  class="action-btn input-action-btn"
+                  title={t("edit_placeholder_totp")}
+                  onClick={props.onScanQr}
+                  disabled={props.scanning}
+                >
+                  <QrIcon
+                    class={props.scanning
+                      ? "spinning icon-inline"
+                      : "icon-inline"}
+                  />
+                </button>
               }
             />
           </div>
