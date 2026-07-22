@@ -1,7 +1,7 @@
 import { type Component, createSignal, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
-import { EyeIcon, EyeOffIcon, UploadIcon } from "@/icons/svg/index.ts";
+import { UploadIcon } from "@/icons/svg/index.ts";
 import { parseSshKey } from "@/core/crypto.ts";
 import FormField from "@/components/ui/FormField.tsx";
 import type { ItemEditFormState } from "@/features/vault/item-edit/vault-edit-helper.ts";
@@ -16,7 +16,6 @@ interface SshKeyEditFieldsProps {
 }
 
 export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
-  const [showPrivateKey, setShowPrivateKey] = createSignal(false);
   const [errorMsg, setErrorMsg] = createSignal("");
 
   const handlePasteSshKey = async () => {
@@ -59,35 +58,20 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
           <div class="pos-relative">
             <Input
               id="ssh-private-key"
-              type={showPrivateKey() ? "text" : "password"}
+              type="password"
               value={props.formState.sshPrivateKey}
               readonly={true}
               placeholder={t("ssh_import_from_clipboard")}
               class="w-100"
               rightActions={
-                <>
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    onClick={() => setShowPrivateKey(!showPrivateKey())}
-                    title={t("detail_ssh_private_key")}
-                  >
-                    <Show
-                      fallback={<EyeIcon class="icon-inline" />}
-                      when={showPrivateKey()}
-                    >
-                      <EyeOffIcon class="icon-inline" />
-                    </Show>
-                  </button>
-                  <button
-                    type="button"
-                    class="action-btn input-action-btn"
-                    onClick={handlePasteSshKey}
-                    title={t("ssh_import_from_clipboard")}
-                  >
-                    <UploadIcon class="icon-inline" />
-                  </button>
-                </>
+                <button
+                  type="button"
+                  class="action-btn input-action-btn"
+                  onClick={handlePasteSshKey}
+                  title={t("ssh_import_from_clipboard")}
+                >
+                  <UploadIcon class="icon-inline" />
+                </button>
               }
             />
           </div>
