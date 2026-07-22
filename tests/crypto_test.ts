@@ -4,10 +4,12 @@ import {
   assertNotEquals,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
+  arrayBufferToBase64,
   decryptData,
   deriveKey,
   encryptData,
   generateSalt,
+  parseSshKey,
 } from "@/core/crypto.ts";
 import {
   base64UrlToBuffer,
@@ -277,4 +279,219 @@ Deno.test("Import Schema - validate Login and SecureNote separately", () => {
   const parsedNote = ImportItemSchema.parse(rawNote);
   assertEquals(parsedNote.type, 2);
   assertEquals(parsedNote.name, "");
+});
+
+Deno.test("Crypto - parseSshKey for OpenSSH keys", async () => {
+  // 1. Invalid key text
+  const invalidRes = await parseSshKey("invalid key content");
+  assertEquals(invalidRes.isErr(), true);
+  if (invalidRes.isErr()) {
+    assertEquals(invalidRes.error, "ssh_invalid_key");
+  }
+
+  // 2. Valid OpenSSH Ed25519 Private Key Payload construction
+  const magic = new TextEncoder().encode("openssh-key-v1\0");
+  const cipher = new Uint8Array([
+    0,
+    0,
+    0,
+    4,
+    ...new TextEncoder().encode("none"),
+  ]);
+  const kdf = new Uint8Array([0, 0, 0, 4, ...new TextEncoder().encode("none")]);
+  const kdfOpts = new Uint8Array([0, 0, 0, 0]);
+  const numKeys = new Uint8Array([0, 0, 0, 1]);
+
+  const keyType = new Uint8Array([
+    0,
+    0,
+    0,
+    11,
+    ...new TextEncoder().encode("ssh-ed25519"),
+  ]);
+  const pubBytes = new Uint8Array(36);
+  pubBytes[3] = 32;
+
+  const pubKeyBlob = new Uint8Array([...keyType, ...pubBytes]);
+  const pubKeyBlobLen = new Uint8Array(4);
+  new DataView(pubKeyBlobLen.buffer).setUint32(0, pubKeyBlob.length);
+
+  const fullBytes = new Uint8Array([
+    ...magic,
+    ...cipher,
+    ...kdf,
+    ...kdfOpts,
+    ...numKeys,
+    ...pubKeyBlobLen,
+    ...pubKeyBlob,
+  ]);
+
+  const base64Content = arrayBufferToBase64(fullBytes.buffer);
+  const validEd25519Key =
+    `-----BEGIN OPENSSH PRIVATE KEY-----\n${base64Content}\n-----END OPENSSH PRIVATE KEY-----`;
+
+  const validRes = await parseSshKey(validEd25519Key);
+  assertEquals(validRes.isOk(), true);
+  if (validRes.isOk()) {
+    const val = validRes.value;
+    assert(val.publicKey.startsWith("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA"));
+    assert(val.keyFingerprint.startsWith("SHA256:"));
+  }
+
+  // 3. Real user OpenSSH key test
+  const userKey = `-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACBR5QyI+Y/sjXLH1ndp6Yzd6kKUU7LGgm+zbIP4jWHiggAAAJgdRPzkHUT8
+5AAAAAtzc2gtZWQyNTUxOQAAACBR5QyI+Y/sjXLH1ndp6Yzd6kKUU7LGgm+zbIP4jWHigg
+AAAEDWJt9whxgWT2Cka/H9p3euSXxSw/KL8YI3wlqC1uYYYVHlDIj5j+yNcsfWd2npjN3q
+QpRTssaCb7Nsg/iNYeKCAAAAEWtleS0xNzg0NzMzMTg0MDY3AQIDBA==
+-----END OPENSSH PRIVATE KEY-----`;
+
+  const userRes = await parseSshKey(userKey);
+  assertEquals(userRes.isOk(), true);
+  if (userRes.isOk()) {
+    assertEquals(
+      userRes.value.publicKey,
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFHlDIj5j+yNcsfWd2npjN3qQpRTssaCb7Nsg/iNYeKC key-1784733184067",
+    );
+    assertEquals(
+      userRes.value.keyFingerprint,
+      "SHA256:CnS+ohLRpL0UiiU5NI2B6l0a5ERgU5GKmgfI9AcAJVU",
+    );
+  }
+
+  // 4. User OpenSSH RSA key test
+  const rsaKey = `-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAlwAAAAdzc2gtcn
+NhAAAAAwEAAQAAAIEAnRHxtPTRAv1ksCYjEZ7GyrrwUT4FIQ8RajycKRKhKM/xe6Hg3lAk
+XAWsqCynalq9kgisQdPwQxBdkG8GR0hjucDQ/3KsqjGmCphOTiIDoqHegwtr+nQ0hww420
+MA83NBCZOPsl4sy5HvrIYpdMYFL8g2nf6OaHvIJZFwKsEeXC8AAAIAfJj4CHyY+AgAAAAH
+c3NoLXJzYQAAAIEAnRHxtPTRAv1ksCYjEZ7GyrrwUT4FIQ8RajycKRKhKM/xe6Hg3lAkXA
+WsqCynalq9kgisQdPwQxBdkG8GR0hjucDQ/3KsqjGmCphOTiIDoqHegwtr+nQ0hww420MA
+83NBCZOPsl4sy5HvrIYpdMYFL8g2nf6OaHvIJZFwKsEeXC8AAAADAQABAAAAgQCQLkug32
+YJh47ov2lLoGM875LwEK1mpk1HJvH2Jfq32wIBihxAFnL54d+W1L6tOzRvG/T7zE/tT9WD
+YtbxkjqvdXDrbETvKSoxFDMPs0WINtGRMYwd6gxyfc3T9zF2sMGVKpNEFyxkUStGHsUFTI
+TsrQ3l8ad0bQODqSRpuzTPuQAAAEAmMHIwhhaLTYOLQsHv1A1vhbFbjriNyLL/0nokGdIu
+AGhNQaZ9hNhTc9yIecEc7Plz8Wk7pqqa8DPSWtHs44zHAAAAQQDJal+n3USLQI9MonJxeX
+OCG1oDrC1rMNyiwQLZmCliBVQ+9jPnJQjrX/gzw71skfq/x3g/RoSwhgUe/zWog7elAAAA
+QQDHowNUSZn9qQJl9vu1wpmXqcOZKtbKyC55AemXNmfv5TWXbKTEDzAsaGnDU4YtFAAgMr
+VJo4zyr0vAWCc9LlxDAAAABm5vbmFtZQECAwQ=
+-----END OPENSSH PRIVATE KEY-----`;
+
+  const rsaRes = await parseSshKey(rsaKey);
+  assertEquals(rsaRes.isOk(), true);
+  if (rsaRes.isOk()) {
+    assertEquals(
+      rsaRes.value.publicKey,
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCdEfG09NEC/WSwJiMRnsbKuvBRPgUhDxFqPJwpEqEoz/F7oeDeUCRcBayoLKdqWr2SCKxB0/BDEF2QbwZHSGO5wND/cqyqMaYKmE5OIgOiod6DC2v6dDSHDDjbQwDzc0EJk4+yXizLke+shil0xgUvyDad/o5oe8glkXAqwR5cLw== noname",
+    );
+    assertEquals(
+      rsaRes.value.keyFingerprint,
+      "SHA256:L7CgQB+hWtSJhmHLpTHOWUYPvr1a1jPyN0QmXKX81Xc",
+    );
+  }
+
+  // 5. Legacy PEM RSA Private Key test
+  const ver = new Uint8Array([0x02, 0x01, 0x00]);
+  const modBytes = new Uint8Array([
+    0x02,
+    0x41,
+    0x00,
+    0xbd,
+    0x11,
+    0xf1,
+    0xb4,
+    0xf4,
+    0xd1,
+    0x02,
+    0xfd,
+    0x64,
+    0xb0,
+    0x26,
+    0x23,
+    0x11,
+    0x9e,
+    0xc6,
+    0xca,
+    0xba,
+    0xf0,
+    0x51,
+    0x3e,
+    0x05,
+    0x21,
+    0x0f,
+    0x11,
+    0x6a,
+    0x3c,
+    0x9c,
+    0x29,
+    0x12,
+    0xa1,
+    0x28,
+    0xcf,
+    0xf1,
+    0x7b,
+    0xa1,
+    0xe0,
+    0xde,
+    0x50,
+    0x24,
+    0x5c,
+    0x05,
+    0xa4,
+    0xa8,
+    0x2c,
+    0xa7,
+    0x6a,
+    0x5a,
+    0xbd,
+    0x92,
+    0x08,
+    0xac,
+    0x41,
+    0xd3,
+    0xf0,
+    0x43,
+    0x10,
+    0x5d,
+    0x90,
+    0x6f,
+    0x06,
+    0x47,
+    0x48,
+    0xd0,
+    0xff,
+  ]);
+  const expBytes = new Uint8Array([0x02, 0x03, 0x01, 0x00, 0x01]);
+  const body = new Uint8Array([...ver, ...modBytes, ...expBytes]);
+  const der = new Uint8Array([0x30, body.length, ...body]);
+  const legacyRsaPem = `-----BEGIN RSA PRIVATE KEY-----\n${
+    arrayBufferToBase64(der.slice().buffer)
+  }\n-----END RSA PRIVATE KEY-----`;
+
+  const legacyRes = await parseSshKey(legacyRsaPem);
+  assertEquals(legacyRes.isOk(), true);
+  if (legacyRes.isOk()) {
+    assertEquals(
+      legacyRes.value.publicKey,
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAQQC9EfG09NEC/WSwJiMRnsbKuvBRPgUhDxFqPJwpEqEoz/F7oeDeUCRcBaSoLKdqWr2SCKxB0/BDEF2QbwZHSND/",
+    );
+    assertEquals(
+      legacyRes.value.keyFingerprint,
+      "SHA256:vY2uIrWJfhoAQuzUCbgyoTes/2sEV+PXv4tmueGH34c",
+    );
+  }
+
+  // 6. Direct Public Key string test
+  const directPubKey =
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFHlDIj5j+yNcsfWd2npjN3qQpRTssaCb7Nsg/iNYeKC my-key@host";
+  const pubKeyRes = await parseSshKey(directPubKey);
+  assertEquals(pubKeyRes.isOk(), true);
+  if (pubKeyRes.isOk()) {
+    assertEquals(pubKeyRes.value.publicKey, directPubKey);
+    assertEquals(
+      pubKeyRes.value.keyFingerprint,
+      "SHA256:CnS+ohLRpL0UiiU5NI2B6l0a5ERgU5GKmgfI9AcAJVU",
+    );
+  }
 });
