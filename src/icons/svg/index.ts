@@ -45,4 +45,5 @@ export { default as SunIcon } from "@/icons/svg/SunIcon.tsx";
 export { default as MoonIcon } from "@/icons/svg/MoonIcon.tsx";
 export { default as EnIcon } from "@/icons/svg/EnIcon.tsx";
 export { default as ViIcon } from "@/icons/svg/ViIcon.tsx";
+export { default as CapsLockIcon } from "@/icons/svg/CapsLockIcon.tsx";
 export * from "@/icons/svg/types.ts";
