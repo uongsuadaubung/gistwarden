@@ -1,3 +1,4 @@
+import { ResultAsync } from "neverthrow";
 import {
   APP_NAME,
   MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
@@ -168,60 +169,64 @@ import {
       attestation: options.publicKey.attestation,
     };
 
-    try {
-      const response = await sendToContentScript(
+    const createRes = await ResultAsync.fromPromise(
+      sendToContentScript(
         MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
         serializedOptions,
-      );
+      ),
+      (e) => e,
+    );
 
-      // Reconstruct PublicKeyCredential response by creating plain object first to avoid getter collision
-      const credential = {
-        id: response.id,
-        rawId: base64UrlToBuffer(response.rawId),
-        type: "public-key" as const,
-        authenticatorAttachment: "platform",
-        response: {
-          clientDataJSON: base64UrlToBuffer(response.response.clientDataJSON),
-          attestationObject: base64UrlToBuffer(
-            response.response.attestationObject || "",
-          ),
-          getAuthenticatorData: () =>
-            base64UrlToBuffer(response.response.authData || ""),
-          getPublicKey: () =>
-            base64UrlToBuffer(response.response.publicKey || ""),
-          getPublicKeyAlgorithm: () =>
-            response.response.publicKeyAlgorithm || -7,
-          getTransports: () => ["internal"],
-        },
-        getClientExtensionResults: () => ({}),
-        toJSON: () => ({
-          id: response.id,
-          rawId: response.rawId,
-          type: "public-key",
-          response: {
-            clientDataJSON: response.response.clientDataJSON,
-            attestationObject: response.response.attestationObject,
-            transports: ["internal"],
-          },
-          authenticatorAttachment: "platform",
-          clientExtensionResults: {},
-        }),
-      };
-
-      // Set prototype after properties are written to the instance
-      Object.setPrototypeOf(
-        credential.response,
-        AuthenticatorAttestationResponse.prototype,
-      );
-      Object.setPrototypeOf(credential, PublicKeyCredential.prototype);
-
-      return credential;
-    } catch (err) {
+    if (createRes.isErr()) {
+      const err = createRes.error;
       if (err instanceof Error && err.message === "fallback") {
         return originalCredentials.create(options);
       }
       return Promise.reject(err);
     }
+    const response = createRes.value;
+
+    // Reconstruct PublicKeyCredential response by creating plain object first to avoid getter collision
+    const credential = {
+      id: response.id,
+      rawId: base64UrlToBuffer(response.rawId),
+      type: "public-key" as const,
+      authenticatorAttachment: "platform",
+      response: {
+        clientDataJSON: base64UrlToBuffer(response.response.clientDataJSON),
+        attestationObject: base64UrlToBuffer(
+          response.response.attestationObject || "",
+        ),
+        getAuthenticatorData: () =>
+          base64UrlToBuffer(response.response.authData || ""),
+        getPublicKey: () =>
+          base64UrlToBuffer(response.response.publicKey || ""),
+        getPublicKeyAlgorithm: () => response.response.publicKeyAlgorithm || -7,
+        getTransports: () => ["internal"],
+      },
+      getClientExtensionResults: () => ({}),
+      toJSON: () => ({
+        id: response.id,
+        rawId: response.rawId,
+        type: "public-key",
+        response: {
+          clientDataJSON: response.response.clientDataJSON,
+          attestationObject: response.response.attestationObject,
+          transports: ["internal"],
+        },
+        authenticatorAttachment: "platform",
+        clientExtensionResults: {},
+      }),
+    };
+
+    // Set prototype after properties are written to the instance
+    Object.setPrototypeOf(
+      credential.response,
+      AuthenticatorAttestationResponse.prototype,
+    );
+    Object.setPrototypeOf(credential, PublicKeyCredential.prototype);
+
+    return credential;
   };
 
   // Override get (Assertion)
@@ -251,57 +256,62 @@ import {
       timeout: options.publicKey.timeout,
     };
 
-    try {
-      const response = await sendToContentScript(
+    const getRes = await ResultAsync.fromPromise(
+      sendToContentScript(
         MSG_FIDO2_CREDENTIAL_GET_REQUEST,
         serializedOptions,
-      );
+      ),
+      (e) => e,
+    );
 
-      // Reconstruct PublicKeyCredential response by creating plain object first to avoid getter collision
-      const credential = {
-        id: response.id,
-        rawId: base64UrlToBuffer(response.rawId),
-        type: "public-key" as const,
-        authenticatorAttachment: "platform",
-        response: {
-          clientDataJSON: base64UrlToBuffer(response.response.clientDataJSON),
-          authenticatorData: base64UrlToBuffer(
-            response.response.authenticatorData || "",
-          ),
-          signature: base64UrlToBuffer(response.response.signature || ""),
-          userHandle: response.response.userHandle
-            ? base64UrlToBuffer(response.response.userHandle)
-            : null,
-        },
-        getClientExtensionResults: () => ({}),
-        toJSON: () => ({
-          id: response.id,
-          rawId: response.rawId,
-          type: "public-key",
-          response: {
-            clientDataJSON: response.response.clientDataJSON,
-            authenticatorData: response.response.authenticatorData,
-            signature: response.response.signature,
-            userHandle: response.response.userHandle || null,
-          },
-          authenticatorAttachment: "platform",
-          clientExtensionResults: {},
-        }),
-      };
-
-      // Set prototype after properties are written to the instance
-      Object.setPrototypeOf(
-        credential.response,
-        AuthenticatorAssertionResponse.prototype,
-      );
-      Object.setPrototypeOf(credential, PublicKeyCredential.prototype);
-
-      return credential;
-    } catch (err) {
+    if (getRes.isErr()) {
+      const err = getRes.error;
       if (err instanceof Error && err.message === "fallback") {
         return originalCredentials.get(options);
       }
       return Promise.reject(err);
     }
+    const response = getRes.value;
+
+    // Reconstruct PublicKeyCredential response by creating plain object first to avoid getter collision
+    const credential = {
+      id: response.id,
+      rawId: base64UrlToBuffer(response.rawId),
+      type: "public-key" as const,
+      authenticatorAttachment: "platform",
+      response: {
+        clientDataJSON: base64UrlToBuffer(response.response.clientDataJSON),
+        authenticatorData: base64UrlToBuffer(
+          response.response.authenticatorData || "",
+        ),
+        signature: base64UrlToBuffer(response.response.signature || ""),
+        userHandle: response.response.userHandle
+          ? base64UrlToBuffer(response.response.userHandle)
+          : null,
+      },
+      getClientExtensionResults: () => ({}),
+      toJSON: () => ({
+        id: response.id,
+        rawId: response.rawId,
+        type: "public-key",
+        response: {
+          clientDataJSON: response.response.clientDataJSON,
+          authenticatorData: response.response.authenticatorData,
+          signature: response.response.signature,
+          userHandle: response.response.userHandle || null,
+        },
+        authenticatorAttachment: "platform",
+        clientExtensionResults: {},
+      }),
+    };
+
+    // Set prototype after properties are written to the instance
+    Object.setPrototypeOf(
+      credential.response,
+      AuthenticatorAssertionResponse.prototype,
+    );
+    Object.setPrototypeOf(credential, PublicKeyCredential.prototype);
+
+    return credential;
   };
 })();
