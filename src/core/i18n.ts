@@ -3,6 +3,10 @@ import { createSignal } from "solid-js";
 import en from "@/core/locales/en.ts";
 import vi from "@/core/locales/vi.ts";
 import { APP_NAME } from "@/core/constants.ts";
+import { SupportLanguage, SupportLanguageSchema } from "@/core/types.ts";
+import { getAllSettings } from "@/core/storage.ts";
+
+export { SupportLanguage, SupportLanguageSchema };
 
 const LangSchema = z.object({
   // Common buttons & notifications
@@ -24,6 +28,16 @@ const LangSchema = z.object({
   toast_pin_set_success: z.string(),
   toast_timeout_updated: z.string(),
   confirm_disable_pin: z.string(),
+
+  // Notification Toast Bar
+  notification_save_title: z.string(),
+  notification_update_title: z.string(),
+  notification_save_prompt_prefix: z.string(),
+  notification_save_prompt_suffix: z.string(),
+  notification_update_prompt_prefix: z.string(),
+  notification_update_prompt_suffix: z.string(),
+  notification_btn_save: z.string(),
+  notification_btn_update: z.string(),
 
   // Login Page
   login_title_locked: z.string(),
@@ -615,13 +629,6 @@ const LangSchema = z.object({
 
 type Lang = z.infer<typeof LangSchema>;
 
-export enum SupportLanguage {
-  En = "en",
-  Vi = "vi",
-}
-
-export const SupportLanguageSchema = z.enum(["en", "vi"]);
-
 export type TranslationKey = keyof Lang;
 
 export function isTranslationKey(key: string): key is TranslationKey {
@@ -638,11 +645,31 @@ const [currentLanguageCode, setCurrentLanguageCode] = createSignal<
   SupportLanguage
 >(SupportLanguage.En);
 
-export function setLanguage(code: SupportLanguage): void {
-  const raw = dictionaries[code];
+export function setLanguage(code: SupportLanguage | "en" | "vi"): void {
+  const enumCode = code === SupportLanguage.Vi
+    ? SupportLanguage.Vi
+    : SupportLanguage.En;
+  const raw = dictionaries[enumCode];
   setTranslations(LangSchema.parse(raw));
-  setCurrentLanguageCode(code);
+  setCurrentLanguageCode(enumCode);
 }
+
+export async function initI18n(): Promise<void> {
+  try {
+    const settings = await getAllSettings();
+    if (settings && settings.language) {
+      setLanguage(settings.language);
+    }
+  } catch (_err) {
+    // Ignore errors in non-extension environments
+  }
+}
+
+// Initialize default language matching SettingsSchema (En) so translations are ready on module load
+setLanguage(SupportLanguage.En);
+
+// Load user's saved language setting using getAllSettings()
+initI18n();
 
 export function t(
   key: TranslationKey,

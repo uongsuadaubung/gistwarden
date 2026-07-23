@@ -9,6 +9,8 @@ import { broadcastMessage } from "@/core/messaging.ts";
 import {
   ALARM_NAME_VAULT_TIMEOUT,
   FIDO2_PROMPT_HEIGHT,
+  MSG_CHECK_PENDING_NOTIFICATION,
+  MSG_CREDENTIALS_SUBMITTED,
   MSG_DELETE_GIST,
   MSG_DOWNLOAD_FROM_GIST,
   MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
@@ -18,6 +20,8 @@ import {
   MSG_REJECT_FIDO2_REQUEST,
   MSG_RESET_TIMEOUT,
   MSG_RESOLVE_FIDO2_REQUEST,
+  MSG_SAVE_CREDENTIAL_ACTION,
+  MSG_SHOW_NOTIFICATION_BAR,
   MSG_START_GITHUB_OAUTH,
   MSG_UPLOAD_TO_GIST,
   MSG_VALIDATE_TOKEN,
@@ -34,25 +38,64 @@ import {
   SESSION_KEY_SESSION_INITIALIZED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
+  STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
 } from "@/core/constants.ts";
 import {
   clearLocal,
   clearSession,
   getAllSettings,
+  getLocalItem,
   getSessionItem,
   hasAlarms,
   hasSessionStorage,
   hasStorageOnChanged,
+  removeLocalItem,
   removeSessionItem,
+  setLocalItem,
   setSessionItem,
   STORAGE_KEY,
 } from "@/core/storage.ts";
-import { safeParseUrl } from "@/core/domain-utils.ts";
+import {
+  getBaseDomain,
+  getDomainFromItem,
+  safeParseUrl,
+} from "@/core/domain-utils.ts";
+import { decryptData, encryptData, getSessionKey } from "@/core/crypto.ts";
+import { safeJsonParse } from "@/core/json-utils.ts";
+import {
+  isLoginItem,
+  type LoginVaultItem,
+  type VaultItem,
+  VaultItemType,
+  VaultListSchema,
+} from "@/core/types.ts";
+
 const PendingFido2RequestSchema = z.object({
   type: z.enum(["create", "get"]),
   options: z.unknown(),
   origin: z.string(),
   senderTabId: z.number(),
+});
+
+const EncryptedPayloadSchema = z.object({
+  ciphertext: z.string().optional(),
+  iv: z.string().optional(),
+  salt: z.string().optional(),
+});
+
+const SubmittedCredentialsSchema = z.object({
+  domain: z.string(),
+  url: z.string(),
+  username: z.string(),
+  password: z.string(),
+});
+
+const SaveActionPayloadSchema = z.object({
+  actionType: z.enum(["add", "update"]),
+  domain: z.string(),
+  username: z.string(),
+  password: z.string(),
+  itemId: z.string().optional(),
 });
 
 interface ChromeMessage {
@@ -62,9 +105,307 @@ interface ChromeMessage {
   result?: unknown;
   error?: string;
   data?: unknown;
+  credentials?: unknown;
+  choice?: string;
+  payload?: unknown;
 }
 
 let pendingFido2Callback: ((response: unknown) => void) | null = null;
+const pendingTabNotifications = new Map<
+  number,
+  { payload: unknown; timestamp: number }
+>();
+let lastGlobalPendingNotification: {
+  payload: unknown;
+  timestamp: number;
+  domain: string;
+} | null = null;
+
+async function getDecryptedVaultItems(): Promise<
+  {
+    items: VaultItem[];
+    key: CryptoKey;
+    salt: string;
+  } | null
+> {
+  const key = await getSessionKey();
+  if (!key) return null;
+
+  const rawVault = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
+  if (typeof rawVault !== "string" || !rawVault) {
+    return { items: [], key, salt: "" };
+  }
+
+  const parsePayloadRes = safeJsonParse(rawVault);
+  if (parsePayloadRes.isErr()) return { items: [], key, salt: "" };
+
+  const payloadParse = EncryptedPayloadSchema.safeParse(parsePayloadRes.value);
+  if (
+    !payloadParse.success || !payloadParse.data.ciphertext ||
+    !payloadParse.data.iv
+  ) {
+    return { items: [], key, salt: "" };
+  }
+
+  const { ciphertext, iv, salt } = payloadParse.data;
+  const decryptRes = await decryptData(ciphertext, iv, key);
+  if (decryptRes.isErr()) return { items: [], key, salt: salt || "" };
+
+  const parseItemsRes = safeJsonParse(decryptRes.value);
+  if (parseItemsRes.isErr()) return { items: [], key, salt: salt || "" };
+
+  const validateRes = VaultListSchema.safeParse(parseItemsRes.value);
+  if (!validateRes.success) return { items: [], key, salt: salt || "" };
+
+  return { items: validateRes.data, key, salt: salt || "" };
+}
+
+async function handleSubmittedCredentials(
+  rawCreds: unknown,
+  tabId: number,
+): Promise<void> {
+  const parseRes = SubmittedCredentialsSchema.safeParse(rawCreds);
+  if (!parseRes.success) return;
+  const creds = parseRes.data;
+
+  if (!creds.password || creds.password.trim().length === 0) return;
+
+  const vaultData = await getDecryptedVaultItems();
+  const items = vaultData ? vaultData.items : [];
+
+  const domain = creds.domain || getBaseDomain(creds.url);
+  const normalizedUser = creds.username.toLowerCase().trim();
+
+  const domainItems = items.filter((item) => {
+    if (!isLoginItem(item)) return false;
+    const itemDomain = getDomainFromItem(item);
+    if (!itemDomain) return false;
+    return getBaseDomain(itemDomain) === domain;
+  });
+
+  const matchingUserItem = domainItems.find((item) => {
+    if (!isLoginItem(item)) return false;
+    return (item.login.username || "").toLowerCase().trim() === normalizedUser;
+  });
+
+  let notificationPayload: unknown = null;
+
+  if (matchingUserItem && isLoginItem(matchingUserItem)) {
+    if (matchingUserItem.login.password === creds.password) {
+      // Duplicate exact login & password -> Ignore
+      return;
+    }
+    // Matching username but changed password -> Offer Update
+    notificationPayload = {
+      actionType: "update",
+      domain,
+      username: creds.username,
+      password: creds.password,
+      itemId: matchingUserItem.id,
+    };
+  } else {
+    // New credential -> Offer Add
+    notificationPayload = {
+      actionType: "add",
+      domain,
+      username: creds.username,
+      password: creds.password,
+    };
+  }
+
+  // Save pending notification for this tab (survives page navigation)
+  pendingTabNotifications.set(tabId, {
+    payload: notificationPayload,
+    timestamp: Date.now(),
+  });
+  lastGlobalPendingNotification = {
+    payload: notificationPayload,
+    timestamp: Date.now(),
+    domain,
+  };
+
+  // For AJAX/SPA forms or slow network (where page doesn't navigate within 300ms),
+  // send notification to current tab. If user does not interact on Page A and page navigates later,
+  // Page B will still receive the prompt cleanly.
+  setTimeout(() => {
+    const currentPending = pendingTabNotifications.get(tabId);
+    if (currentPending && currentPending.payload === notificationPayload) {
+      chrome.tabs.sendMessage(tabId, {
+        type: MSG_SHOW_NOTIFICATION_BAR,
+        payload: notificationPayload,
+      }).catch(() => {
+        // Tab may have navigated or closed
+      });
+    }
+  }, 300);
+}
+
+async function batchSavePayloads(
+  vaultData: { items: VaultItem[]; key: CryptoKey; salt: string },
+  payloads: z.infer<typeof SaveActionPayloadSchema>[],
+): Promise<boolean> {
+  if (payloads.length === 0) return true;
+
+  const updatedItems = [...vaultData.items];
+  const nowStr = new Date().toISOString();
+  let hasRealChanges = false;
+
+  for (const payload of payloads) {
+    const payloadDomain = getBaseDomain(payload.domain || "");
+    const payloadUser = payload.username.toLowerCase().trim();
+
+    const existingIdx = updatedItems.findIndex((item) => {
+      if (!isLoginItem(item)) return false;
+      if (payload.itemId && item.id === payload.itemId) {
+        return true;
+      }
+      const itemDomain = getDomainFromItem(item);
+      if (!itemDomain) return false;
+      const matchDomain = getBaseDomain(itemDomain) === payloadDomain;
+      const matchUser =
+        (item.login.username || "").toLowerCase().trim() === payloadUser;
+      return matchDomain && matchUser;
+    });
+
+    if (existingIdx !== -1) {
+      const existingItem = updatedItems[existingIdx];
+      if (isLoginItem(existingItem)) {
+        if (existingItem.login.password === payload.password) {
+          // Same Domain + Username + Password -> Duplicate, skip saving
+          continue;
+        }
+        // Same Domain + Username + Different Password -> Update password
+        updatedItems[existingIdx] = {
+          ...existingItem,
+          login: {
+            ...existingItem.login,
+            password: payload.password,
+          },
+          revisionDate: nowStr,
+        };
+        hasRealChanges = true;
+      }
+    } else {
+      // New Login -> Add to vault
+      const newItem: LoginVaultItem = {
+        id: crypto.randomUUID(),
+        type: VaultItemType.Login,
+        name: payload.domain || "New Login",
+        login: {
+          username: payload.username,
+          password: payload.password,
+          uris: payload.domain ? [{ uri: `https://${payload.domain}` }] : [],
+        },
+        notes: "",
+        favorite: false,
+        reprompt: 0,
+        fields: [],
+        creationDate: nowStr,
+        revisionDate: nowStr,
+      };
+      updatedItems.push(newItem);
+      hasRealChanges = true;
+    }
+  }
+
+  if (!hasRealChanges) {
+    return true;
+  }
+
+  const encryptRes = await encryptData(
+    JSON.stringify(updatedItems),
+    vaultData.key,
+  );
+  if (encryptRes.isErr()) return false;
+
+  const payloadObj = JSON.stringify({
+    salt: vaultData.salt,
+    iv: encryptRes.value.iv,
+    ciphertext: encryptRes.value.ciphertext,
+  });
+
+  const setRes = await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, payloadObj);
+  if (setRes.isErr()) return false;
+
+  vaultData.items = updatedItems;
+  const uploadRes = await uploadToGist(payloadObj);
+  return uploadRes.isOk();
+}
+
+let isProcessingPendingQueue = false;
+
+async function processPendingUnapprovedCredentials(): Promise<void> {
+  if (isProcessingPendingQueue) return;
+  isProcessingPendingQueue = true;
+
+  try {
+    const pendingRes = await getLocalItem(
+      STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
+    );
+    if (!Array.isArray(pendingRes) || pendingRes.length === 0) {
+      return;
+    }
+
+    // Immediately remove key from storage to prevent duplicate processing
+    await removeLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS);
+    pendingTabNotifications.clear();
+    lastGlobalPendingNotification = null;
+
+    const vaultData = await getDecryptedVaultItems();
+    if (!vaultData) return;
+
+    const validPayloads: z.infer<typeof SaveActionPayloadSchema>[] = [];
+    for (const rawItem of pendingRes) {
+      const parseRes = SaveActionPayloadSchema.safeParse(rawItem);
+      if (parseRes.success) {
+        validPayloads.push(parseRes.data);
+      }
+    }
+
+    if (validPayloads.length > 0) {
+      await batchSavePayloads(vaultData, validPayloads);
+    }
+  } finally {
+    isProcessingPendingQueue = false;
+  }
+}
+
+async function handleSaveCredentialAction(
+  rawPayload: unknown,
+): Promise<boolean> {
+  const parseRes = SaveActionPayloadSchema.safeParse(rawPayload);
+  if (!parseRes.success) return false;
+  const payload = parseRes.data;
+
+  const vaultData = await getDecryptedVaultItems();
+  if (!vaultData) {
+    // Vault is locked / user not logged in: queue for later auto-save
+    const rawPending = await getLocalItem(
+      STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
+    );
+    const pendingList: unknown[] = Array.isArray(rawPending) ? rawPending : [];
+    pendingList.push(payload);
+    await setLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS, pendingList);
+    return true;
+  }
+
+  // Combine current payload with any existing queued items into a single batch
+  const rawPending = await getLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS);
+  await removeLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS);
+
+  const pendingList: unknown[] = Array.isArray(rawPending) ? rawPending : [];
+  pendingList.push(payload);
+
+  const validPayloads: z.infer<typeof SaveActionPayloadSchema>[] = [];
+  for (const rawItem of pendingList) {
+    const pRes = SaveActionPayloadSchema.safeParse(rawItem);
+    if (pRes.success) {
+      validPayloads.push(pRes.data);
+    }
+  }
+
+  return await batchSavePayloads(vaultData, validPayloads);
+}
 
 // Message listener
 chrome.runtime.onMessage.addListener(
@@ -102,6 +443,52 @@ chrome.runtime.onMessage.addListener(
     }
 
     switch (message.type) {
+      case MSG_CHECK_PENDING_NOTIFICATION: {
+        if (sender.tab && sender.tab.id !== undefined) {
+          const pending = pendingTabNotifications.get(sender.tab.id);
+          if (pending && Date.now() - pending.timestamp < 120000) {
+            sendResponse({ success: true, payload: pending.payload });
+            pendingTabNotifications.delete(sender.tab.id);
+            return false;
+          }
+        }
+        if (
+          lastGlobalPendingNotification &&
+          Date.now() - lastGlobalPendingNotification.timestamp < 120000
+        ) {
+          const payload = lastGlobalPendingNotification.payload;
+          lastGlobalPendingNotification = null;
+          sendResponse({ success: true, payload });
+          return false;
+        }
+        sendResponse({ success: false });
+        return false;
+      }
+
+      case MSG_CREDENTIALS_SUBMITTED: {
+        if (sender.tab && sender.tab.id !== undefined) {
+          handleSubmittedCredentials(message.credentials, sender.tab.id);
+        }
+        sendResponse({ success: true });
+        return false;
+      }
+
+      case MSG_SAVE_CREDENTIAL_ACTION: {
+        if (sender.tab && sender.tab.id !== undefined) {
+          pendingTabNotifications.delete(sender.tab.id);
+        }
+        lastGlobalPendingNotification = null;
+
+        if (message.choice === "confirm") {
+          handleSaveCredentialAction(message.payload).then((ok) => {
+            sendResponse({ success: ok });
+          });
+          return true;
+        }
+        sendResponse({ success: true });
+        return false;
+      }
+
       case MSG_UPLOAD_TO_GIST:
         uploadToGist(message.content || "").then((res) => {
           sendResponse({
@@ -364,6 +751,9 @@ if (hasStorageOnChanged()) {
     if (areaName === "local" && changes[STORAGE_KEY]) {
       updateTimeoutAlarm();
     }
+    if (areaName === "session" && changes[SESSION_KEY_DERIVED_KEY]?.newValue) {
+      processPendingUnapprovedCredentials();
+    }
   });
 }
 
@@ -377,7 +767,6 @@ async function initSession() {
   );
 
   if (!sessionInitialized) {
-    // Lần đầu tiên chạy service worker trong phiên trình duyệt này (trình duyệt khởi động lại)
     const settings = await getAllSettings();
     const action = settings.vaultTimeoutAction || "lock";
     if (action === "logout") {

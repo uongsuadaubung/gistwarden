@@ -29,6 +29,13 @@ export enum VaultItemType {
   SshKey = 5,
 }
 
+export enum SupportLanguage {
+  En = "en",
+  Vi = "vi",
+}
+
+export const SupportLanguageSchema = z.enum(["en", "vi"]);
+
 // 1. URIs
 export const LoginUriSchema = z.object({
   uri: z.string(),

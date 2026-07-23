@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Gistwarden Test App</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <h1 class="card-title">Đăng Nhập</h1>
+        <p
+          class="card-subtitle">Thử nghiệm tính năng Autofill & Gợi ý Lưu Mật Khẩu</p>
+
+        <div id="alertBox"></div>
+
+        <form id="loginForm" action="/login" method="POST">
+          <div class="form-group">
+            <label class="form-label"
+              for="username">Tên tài khoản / Email</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              class="form-input"
+              placeholder="nhap@domain.com"
+              autocomplete="username"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Mật khẩu</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn-submit">Đăng Nhập</button>
+        </form>
+
+        <div class="footer-link">
+        Chưa có tài khoản? <a href="/register.html">Đăng ký ngay</a>
+      </div>
+      </div>
+    </div>
+
+    <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const msg = urlParams.get("msg");
+    const err = urlParams.get("err");
+    const alertBox = document.getElementById("alertBox");
+
+    if (msg) {
+      alertBox.className = "alert alert-success";
+      alertBox.textContent = msg;
+    } else if (err) {
+      alertBox.className = "alert alert-error";
+      alertBox.textContent = err;
+    }
+    </script>
+  </body>
+</html>
