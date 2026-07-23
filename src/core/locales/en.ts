@@ -19,6 +19,17 @@ export default {
   toast_timeout_updated: "Timeout settings updated",
   confirm_disable_pin: "Are you sure you want to disable PIN unlock?",
 
+  // Notification Toast Bar
+  notification_save_title: "Save password suggestion",
+  notification_update_title: "Update password suggestion",
+  notification_save_prompt_prefix: "Would you like to save the password for ",
+  notification_save_prompt_suffix: "?",
+  notification_update_prompt_prefix:
+    "Would you like to update the password for ",
+  notification_update_prompt_suffix: "?",
+  notification_btn_save: "Save Password",
+  notification_btn_update: "Update",
+
   // Login Page
   login_title_locked: "Vault is Locked",
   login_title_setup: "Configure GitHub Gist Cloud Storage",

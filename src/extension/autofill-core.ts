@@ -1,5 +1,14 @@
+import { getBaseDomain } from "@/core/domain-utils.ts";
+
+export interface SubmittedCredentials {
+  domain: string;
+  url: string;
+  username: string;
+  password: string;
+}
+
 // Helper to fill input field matching React/Angular state detection
-export function setInputValue(element: HTMLInputElement, value: string) {
+export function setInputValue(element: HTMLInputElement, value: string): void {
   element.focus();
 
   // React 15/16+ tracker workaround
@@ -118,4 +127,132 @@ export function performAutofill(username?: string, password?: string): boolean {
   }
 
   return filledAny;
+}
+
+export function extractSubmittedCredentials(
+  targetForm?: HTMLFormElement | null,
+): SubmittedCredentials | null {
+  const container: ParentNode = targetForm ?? document;
+  const passwordInputs = container.querySelectorAll<HTMLInputElement>(
+    'input[type="password"]',
+  );
+
+  if (passwordInputs.length === 0) {
+    return null;
+  }
+
+  let chosenPasswordInput: HTMLInputElement | null = null;
+  for (let i = 0; i < passwordInputs.length; i++) {
+    const input = passwordInputs[i];
+    if (input.value && input.value.trim().length > 0) {
+      chosenPasswordInput = input;
+      break;
+    }
+  }
+
+  if (!chosenPasswordInput) {
+    return null;
+  }
+
+  let usernameInput: HTMLInputElement | null = null;
+  const parentForm = chosenPasswordInput.closest("form");
+
+  if (parentForm) {
+    const candidateInputs = parentForm.querySelectorAll<HTMLInputElement>(
+      'input[type="text"], input[type="email"], input[type="tel"], input:not([type])',
+    );
+    for (let i = 0; i < candidateInputs.length; i++) {
+      const input = candidateInputs[i];
+      if (input === chosenPasswordInput) continue;
+      const pos = input.compareDocumentPosition(chosenPasswordInput);
+      if (pos & Node.DOCUMENT_POSITION_FOLLOWING) {
+        if (input.value && input.value.trim().length > 0) {
+          usernameInput = input;
+        }
+      }
+    }
+  }
+
+  if (!usernameInput) {
+    const allInputs = Array.from(
+      document.querySelectorAll<HTMLInputElement>("input"),
+    );
+    const passIdx = allInputs.indexOf(chosenPasswordInput);
+    if (passIdx > 0) {
+      for (let i = passIdx - 1; i >= 0; i--) {
+        const input = allInputs[i];
+        const type = input.type.toLowerCase();
+        if (
+          type === "text" || type === "email" || type === "tel" ||
+          !input.hasAttribute("type")
+        ) {
+          if (input.value && input.value.trim().length > 0) {
+            usernameInput = input;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  const currentUrl = window.location.href;
+  const domain = getBaseDomain(currentUrl);
+
+  return {
+    domain,
+    url: currentUrl,
+    username: usernameInput ? usernameInput.value.trim() : "",
+    password: chosenPasswordInput.value,
+  };
+}
+
+export function setupFormSubmitMonitoring(
+  onSubmitted: (creds: SubmittedCredentials) => void,
+): void {
+  let lastSubmittedTime = 0;
+
+  const triggerSubmission = (form?: HTMLFormElement | null) => {
+    const now = Date.now();
+    // Debounce duplicate submissions within 1000ms
+    if (now - lastSubmittedTime < 1000) return;
+
+    const creds = extractSubmittedCredentials(form);
+    if (creds && creds.password.length > 0) {
+      lastSubmittedTime = now;
+      onSubmitted(creds);
+    }
+  };
+
+  // Global submit event listener
+  document.addEventListener("submit", (evt: Event) => {
+    const targetForm = evt.target instanceof HTMLFormElement
+      ? evt.target
+      : null;
+    triggerSubmission(targetForm);
+  }, true);
+
+  // Global click event listener for submit buttons
+  document.addEventListener("click", (evt: MouseEvent) => {
+    if (!evt.isTrusted) return;
+    const target = evt.target instanceof HTMLElement ? evt.target : null;
+    if (!target) return;
+    const btn = target.closest<HTMLElement>(
+      'button[type="submit"], input[type="submit"], button:not([type]), .btn-submit',
+    );
+    if (btn) {
+      const parentForm = btn.closest("form");
+      triggerSubmission(parentForm);
+    }
+  }, true);
+
+  // Global keyup event listener for Enter / Space on submit buttons or inputs
+  document.addEventListener("keyup", (evt: KeyboardEvent) => {
+    if (!evt.isTrusted) return;
+    if (evt.key === "Enter") {
+      const target = evt.target instanceof HTMLElement ? evt.target : null;
+      if (!target) return;
+      const parentForm = target.closest("form");
+      triggerSubmission(parentForm);
+    }
+  }, true);
 }
