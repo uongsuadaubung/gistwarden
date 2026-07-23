@@ -160,10 +160,12 @@ Deno.test("Passkey Crypto - generatePasskeyRegisterResponse with AAGUID and COSE
   const { newCred, result } = regRes.value;
   assertEquals(newCred.rpId, "example.com");
   assertEquals(newCred.userName, "testuser");
-  assertEquals(
-    (result.response as Record<string, unknown>).publicKeyAlgorithm,
-    COSE_ALG_ES256,
-  );
+  const resp = result.response;
+  if (resp && typeof resp === "object" && "publicKeyAlgorithm" in resp) {
+    assertEquals(resp.publicKeyAlgorithm, COSE_ALG_ES256);
+  } else {
+    assert(false, "publicKeyAlgorithm missing");
+  }
   assertEquals(AAGUID.length, 16);
 });
 

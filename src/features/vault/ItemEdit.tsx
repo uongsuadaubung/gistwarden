@@ -58,11 +58,16 @@ export const ItemEdit: Component = () => {
       if (tabRes.isOk() && tabRes.value && tabRes.value.url) {
         const url = tabRes.value.url;
         if (
-          !url.startsWith("chrome://") && !url.startsWith("chrome-extension://")
+          !url.startsWith("chrome://") &&
+          !url.startsWith("chrome-extension://") &&
+          !url.startsWith("about:") &&
+          !url.startsWith("edge://")
         ) {
-          updateForm("uris", [{ uri: url }]);
+          if (formState.itemType === VaultItemType.Login) {
+            updateForm("uris", [{ uri: url }]);
+          }
           const hostname = getHostname(url);
-          if (hostname && !formState.name) {
+          if (hostname) {
             updateForm("name", hostname);
           }
         }

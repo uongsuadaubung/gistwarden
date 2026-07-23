@@ -3,11 +3,18 @@ import { store } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { syncVault } from "@/features/sync/sync-service.ts";
-import { setGlobalLoading, showToast } from "@/core/ui-service.ts";
+import { clearVault } from "@/features/vault/vault-service.ts";
+import {
+  confirm,
+  requestReprompt,
+  setGlobalLoading,
+  showToast,
+} from "@/core/ui-service.ts";
 import {
   ChevronRightIcon,
   DownloadIcon,
   SyncIcon,
+  TrashIcon,
   UploadIcon,
 } from "@/icons/svg/index.ts";
 import { t } from "@/core/i18n.ts";
@@ -31,6 +38,45 @@ export const VaultOptions: Component = () => {
       showToast(t("vault_sync_success"), "success");
     } else {
       setError(res.error || t("vault_sync_error"));
+    }
+  };
+
+  const handleClearVault = async () => {
+    if (
+      !(await confirm(
+        t("settings_clear_vault"),
+        t("settings_clear_vault_msg"),
+        "danger",
+      ))
+    ) {
+      return;
+    }
+    if (
+      !(await confirm(
+        t("settings_clear_vault_confirm_title"),
+        t("settings_clear_vault_confirm_msg"),
+        "danger",
+      ))
+    ) {
+      return;
+    }
+
+    const verified = await requestReprompt();
+    if (!verified) {
+      return;
+    }
+
+    setGlobalLoading(true);
+    setError("");
+    const res = await clearVault();
+    setGlobalLoading(false);
+    if (res.isOk()) {
+      showToast(
+        t("settings_clear_vault_success"),
+        "success",
+      );
+    } else {
+      setError(t(res.error));
     }
   };
 
@@ -109,6 +155,21 @@ export const VaultOptions: Component = () => {
               </div>
             </div>
             <ChevronRightIcon />
+          </div>
+
+          {/* Clear Vault */}
+          <div class="setting-row" onClick={handleClearVault}>
+            <div class="setting-row-left">
+              <TrashIcon class="text-error" />
+              <div>
+                <div class="setting-label text-error">
+                  {t("settings_clear_vault")}
+                </div>
+                <div class="setting-sub">
+                  {t("settings_clear_vault_sub")}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

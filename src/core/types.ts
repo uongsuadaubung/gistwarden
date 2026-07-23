@@ -216,11 +216,14 @@ export type VaultList = z.infer<typeof VaultListSchema>;
 
 // 8. Import Schemas
 export const ImportLoginItemSchema = z.object({
+  id: z.string().nullish(),
   type: z.literal(VaultItemType.Login),
   name: z.string(),
   notes: z.string().nullish(),
   favorite: z.boolean(),
   reprompt: z.number(),
+  creationDate: z.string().nullish(),
+  revisionDate: z.string().nullish(),
   fields: z.array(VaultFieldSchema).nullish(),
   login: z.object({
     username: z.string().nullish(),
@@ -240,11 +243,14 @@ export const ImportLoginItemSchema = z.object({
 });
 
 export const ImportSecureNoteItemSchema = z.object({
+  id: z.string().nullish(),
   type: z.literal(VaultItemType.SecureNote),
   name: z.string(),
   notes: z.string().nullish(),
   favorite: z.boolean(),
   reprompt: z.number(),
+  creationDate: z.string().nullish(),
+  revisionDate: z.string().nullish(),
   fields: z.array(VaultFieldSchema).nullish(),
   secureNote: z.object({
     type: z.number(),
@@ -252,11 +258,14 @@ export const ImportSecureNoteItemSchema = z.object({
 });
 
 export const ImportCardItemSchema = z.object({
+  id: z.string().nullish(),
   type: z.literal(VaultItemType.Card),
   name: z.string(),
   notes: z.string().nullish(),
   favorite: z.boolean(),
   reprompt: z.number(),
+  creationDate: z.string().nullish(),
+  revisionDate: z.string().nullish(),
   fields: z.array(VaultFieldSchema).nullish(),
   card: z.object({
     cardholderName: z.string().nullish(),
@@ -269,11 +278,14 @@ export const ImportCardItemSchema = z.object({
 });
 
 export const ImportIdentityItemSchema = z.object({
+  id: z.string().nullish(),
   type: z.literal(VaultItemType.Identity),
   name: z.string(),
   notes: z.string().nullish(),
   favorite: z.boolean(),
   reprompt: z.number(),
+  creationDate: z.string().nullish(),
+  revisionDate: z.string().nullish(),
   fields: z.array(VaultFieldSchema).nullish(),
   identity: z.object({
     title: z.string().nullish(),
@@ -298,11 +310,14 @@ export const ImportIdentityItemSchema = z.object({
 });
 
 export const ImportSshKeyItemSchema = z.object({
+  id: z.string().nullish(),
   type: z.literal(VaultItemType.SshKey),
   name: z.string(),
   notes: z.string().nullish(),
   favorite: z.boolean(),
   reprompt: z.number(),
+  creationDate: z.string().nullish(),
+  revisionDate: z.string().nullish(),
   fields: z.array(VaultFieldSchema).nullish(),
   sshKey: z.object({
     privateKey: z.string().nullish(),

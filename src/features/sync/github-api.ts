@@ -241,6 +241,51 @@ export async function downloadFromGist(): Promise<
   });
 }
 
+export async function downloadFromGistPublic(
+  gistId: string,
+): Promise<Result<{ content: string; updatedAt: number }, TranslationKey>> {
+  if (!gistId) return err("toast_error");
+
+  const res = await fetchText(`${GITHUB_API_BASE}/gists/${gistId}`, {
+    cache: "no-store",
+    headers: {
+      "Accept": "application/vnd.github.v3+json",
+    },
+  });
+
+  if (res.isErr()) {
+    return err(res.error);
+  }
+
+  const parseRes = safeJsonParse(res.value);
+  if (parseRes.isErr()) {
+    return err("toast_error");
+  }
+
+  const parsed = GistSchema.safeParse(parseRes.value);
+  if (!parsed.success) {
+    return err("toast_error");
+  }
+
+  const gist = parsed.data;
+  const file = gist.files[GIST_FILE_NAME];
+  if (!file) return err("toast_error");
+
+  let content = "";
+  if (file.content) {
+    content = file.content;
+  } else {
+    const rawFetchRes = await fetchText(file.raw_url, { cache: "no-store" });
+    if (rawFetchRes.isErr()) {
+      return err(rawFetchRes.error);
+    }
+    content = rawFetchRes.value;
+  }
+
+  const updatedAt = new Date(gist.updated_at).getTime();
+  return ok({ content, updatedAt });
+}
+
 export async function deleteGist(
   gistId: string,
 ): Promise<Result<void, TranslationKey>> {

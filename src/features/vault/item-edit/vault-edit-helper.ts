@@ -11,6 +11,7 @@ import {
   type VaultItem,
   VaultItemType,
 } from "@/core/types.ts";
+import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
 
 export const ItemEditFormSchema = z.object({
   itemType: z.enum(VaultItemType),
@@ -58,114 +59,8 @@ export type ItemEditFormState = z.infer<typeof ItemEditFormSchema>;
 export function getInitialFormState(
   item?: VaultItem | null,
 ): ItemEditFormState {
-  if (item) {
-    return {
-      itemType: item.type ?? VaultItemType.Login,
-      name: item.name ?? "",
-      notes: item.notes ?? "",
-      favorite: item.favorite ?? false,
-      reprompt: item.reprompt ?? 0,
-      fields: item.fields ? JSON.parse(JSON.stringify(item.fields)) : [],
-      username: item.type === VaultItemType.Login
-        ? (item.login.username ?? "")
-        : "",
-      password: item.type === VaultItemType.Login
-        ? (item.login.password ?? "")
-        : "",
-      uris: item.type === VaultItemType.Login
-        ? (item.login.uris && item.login.uris.length > 0
-          ? item.login.uris.map((u) => ({ uri: u.uri }))
-          : [{ uri: "" }])
-        : [],
-      totpSecret: item.type === VaultItemType.Login
-        ? (item.login.totp ?? "")
-        : "",
-      fidoCredentials: item.type === VaultItemType.Login
-        ? (item.login.fido2Credentials ?? [])
-        : [],
-      cardholderName: item.type === VaultItemType.Card
-        ? (item.card.cardholderName ?? "")
-        : "",
-      cardNumber: item.type === VaultItemType.Card
-        ? (item.card.number ?? "")
-        : "",
-      cardBrand: item.type === VaultItemType.Card
-        ? (item.card.brand ?? "Visa")
-        : "Visa",
-      cardExpMonth: item.type === VaultItemType.Card
-        ? (item.card.expMonth ?? "1")
-        : "1",
-      cardExpYear: item.type === VaultItemType.Card
-        ? (item.card.expYear ?? String(new Date().getFullYear()))
-        : String(new Date().getFullYear()),
-      cardCode: item.type === VaultItemType.Card ? (item.card.code ?? "") : "",
-      sshPrivateKey: item.type === VaultItemType.SshKey
-        ? (item.sshKey.privateKey ?? "")
-        : "",
-      sshPublicKey: item.type === VaultItemType.SshKey
-        ? (item.sshKey.publicKey ?? "")
-        : "",
-      sshFingerprint: item.type === VaultItemType.SshKey
-        ? (item.sshKey.keyFingerprint ?? "")
-        : "",
-      identityTitle: item.type === VaultItemType.Identity
-        ? (item.identity.title ?? "")
-        : "",
-      firstName: item.type === VaultItemType.Identity
-        ? (item.identity.firstName ?? "")
-        : "",
-      middleName: item.type === VaultItemType.Identity
-        ? (item.identity.middleName ?? "")
-        : "",
-      lastName: item.type === VaultItemType.Identity
-        ? (item.identity.lastName ?? "")
-        : "",
-      identityUsername: item.type === VaultItemType.Identity
-        ? (item.identity.username ?? "")
-        : "",
-      company: item.type === VaultItemType.Identity
-        ? (item.identity.company ?? "")
-        : "",
-      ssn: item.type === VaultItemType.Identity
-        ? (item.identity.ssn ?? "")
-        : "",
-      passportNumber: item.type === VaultItemType.Identity
-        ? (item.identity.passportNumber ?? "")
-        : "",
-      licenseNumber: item.type === VaultItemType.Identity
-        ? (item.identity.licenseNumber ?? "")
-        : "",
-      email: item.type === VaultItemType.Identity
-        ? (item.identity.email ?? "")
-        : "",
-      phone: item.type === VaultItemType.Identity
-        ? (item.identity.phone ?? "")
-        : "",
-      address1: item.type === VaultItemType.Identity
-        ? (item.identity.address1 ?? "")
-        : "",
-      address2: item.type === VaultItemType.Identity
-        ? (item.identity.address2 ?? "")
-        : "",
-      address3: item.type === VaultItemType.Identity
-        ? (item.identity.address3 ?? "")
-        : "",
-      city: item.type === VaultItemType.Identity
-        ? (item.identity.city ?? "")
-        : "",
-      state: item.type === VaultItemType.Identity
-        ? (item.identity.state ?? "")
-        : "",
-      postalCode: item.type === VaultItemType.Identity
-        ? (item.identity.postalCode ?? "")
-        : "",
-      country: item.type === VaultItemType.Identity
-        ? (item.identity.country ?? "")
-        : "",
-    };
-  }
-
-  return {
+  const currentYear = String(new Date().getFullYear());
+  const defaults: ItemEditFormState = {
     itemType: VaultItemType.Login,
     name: "",
     notes: "",
@@ -181,7 +76,7 @@ export function getInitialFormState(
     cardNumber: "",
     cardBrand: "Visa",
     cardExpMonth: "1",
-    cardExpYear: String(new Date().getFullYear()),
+    cardExpYear: currentYear,
     cardCode: "",
     sshPrivateKey: "",
     sshPublicKey: "",
@@ -205,6 +100,64 @@ export function getInitialFormState(
     postalCode: "",
     country: "",
   };
+
+  if (!item) return defaults;
+
+  const state: ItemEditFormState = {
+    ...defaults,
+    itemType: item.type ?? VaultItemType.Login,
+    name: item.name ?? "",
+    notes: item.notes ?? "",
+    favorite: item.favorite ?? false,
+    reprompt: item.reprompt ?? 0,
+    fields: item.fields ? JSON.parse(JSON.stringify(item.fields)) : [],
+  };
+
+  if (item.type === VaultItemType.Login) {
+    const login = item.login;
+    state.username = login.username ?? "";
+    state.password = login.password ?? "";
+    state.uris = login.uris && login.uris.length > 0
+      ? login.uris.map((u) => ({ uri: u.uri }))
+      : [{ uri: "" }];
+    state.totpSecret = login.totp ?? "";
+    state.fidoCredentials = login.fido2Credentials ?? [];
+  } else if (item.type === VaultItemType.Card) {
+    const card = item.card;
+    state.cardholderName = card.cardholderName ?? "";
+    state.cardNumber = card.number ?? "";
+    state.cardBrand = card.brand ?? "Visa";
+    state.cardExpMonth = card.expMonth ?? "1";
+    state.cardExpYear = card.expYear ?? currentYear;
+    state.cardCode = card.code ?? "";
+  } else if (item.type === VaultItemType.SshKey) {
+    const ssh = item.sshKey;
+    state.sshPrivateKey = ssh.privateKey ?? "";
+    state.sshPublicKey = ssh.publicKey ?? "";
+    state.sshFingerprint = ssh.keyFingerprint ?? "";
+  } else if (item.type === VaultItemType.Identity) {
+    const id = item.identity;
+    state.identityTitle = id.title ?? "";
+    state.firstName = id.firstName ?? "";
+    state.middleName = id.middleName ?? "";
+    state.lastName = id.lastName ?? "";
+    state.identityUsername = id.username ?? "";
+    state.company = id.company ?? "";
+    state.ssn = id.ssn ?? "";
+    state.passportNumber = id.passportNumber ?? "";
+    state.licenseNumber = id.licenseNumber ?? "";
+    state.email = id.email ?? "";
+    state.phone = id.phone ?? "";
+    state.address1 = id.address1 ?? "";
+    state.address2 = id.address2 ?? "";
+    state.address3 = id.address3 ?? "";
+    state.city = id.city ?? "";
+    state.state = id.state ?? "";
+    state.postalCode = id.postalCode ?? "";
+    state.country = id.country ?? "";
+  }
+
+  return state;
 }
 
 export function mapFormStateToVaultItem(
@@ -336,7 +289,7 @@ export function mapFormStateToVaultItem(
 }
 
 export function createDefaultVaultItem(type: VaultItemType): VaultItem {
-  const common = {
+  const common = createBaseVaultItem({
     id: "",
     name: "",
     notes: "",
@@ -345,7 +298,7 @@ export function createDefaultVaultItem(type: VaultItemType): VaultItem {
     fields: [],
     creationDate: "",
     revisionDate: "",
-  };
+  });
 
   switch (type) {
     case VaultItemType.SecureNote:

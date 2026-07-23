@@ -1,8 +1,66 @@
 import { t } from "@/core/i18n.ts";
-import { type VaultItem, VaultItemType, View } from "@/core/types.ts";
+import {
+  type BaseVaultItem,
+  CustomFieldType,
+  CustomFieldTypeSchema,
+  type VaultField,
+  type VaultItem,
+  VaultItemType,
+  View,
+} from "@/core/types.ts";
 import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import { deleteItem } from "@/features/vault/vault-service.ts";
 import { navigate } from "@/core/navigation.ts";
+
+export function mapCustomFields(
+  fields?:
+    | Array<
+      { name?: string | null; value?: string | null; type?: number | null }
+    >
+    | null,
+): VaultField[] {
+  if (!fields || !Array.isArray(fields)) return [];
+  return fields.map((f) => {
+    const parsed = CustomFieldTypeSchema.safeParse(f.type);
+    return {
+      name: (f.name ?? "").trim(),
+      value: (f.value ?? "").trim(),
+      type: parsed.success ? parsed.data : CustomFieldType.Text,
+    };
+  });
+}
+
+export interface CreateBaseVaultItemInput {
+  id?: string;
+  name?: string | null;
+  notes?: string | null;
+  favorite?: boolean | null;
+  reprompt?: number | null;
+  fields?:
+    | Array<
+      { name?: string | null; value?: string | null; type?: number | null }
+    >
+    | null;
+  creationDate?: string | null;
+  revisionDate?: string | null;
+  fallbackName?: string;
+}
+
+export function createBaseVaultItem(
+  input: CreateBaseVaultItemInput,
+): BaseVaultItem {
+  const now = new Date().toISOString();
+  return {
+    id: input.id !== undefined ? input.id : crypto.randomUUID(),
+    name: (input.name ?? "").trim() || (input.fallbackName ?? ""),
+    notes: (input.notes ?? "").trim(),
+    favorite: !!input.favorite,
+    reprompt: input.reprompt ?? 0,
+    fields: mapCustomFields(input.fields),
+    creationDate: input.creationDate || now,
+    revisionDate: input.revisionDate || now,
+  };
+}
 
 export const getVaultItemTypeLabel = (type: VaultItemType | "all") => {
   switch (type) {
