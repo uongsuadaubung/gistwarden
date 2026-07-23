@@ -8,8 +8,9 @@ import {
 } from "solid-js";
 import { store } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
-import { saveItem } from "@/features/vault/vault-service.ts";
+import { deleteVaultItems, saveItem } from "@/features/vault/vault-service.ts";
 import {
+  confirm,
   copyToClipboardWithMessage,
   setGlobalLoading,
   showToast,
@@ -35,9 +36,11 @@ import {
   GlobeIcon,
   IdentityIcon,
   KeyIcon,
+  ListCheckIcon,
   ListIcon,
   NoteIcon,
   SearchIcon,
+  TrashIcon,
 } from "@/icons/svg/index.ts";
 import { Input } from "@/components/ui/Input.tsx";
 import { VaultItemRow } from "@/features/vault/VaultItemRow.tsx";
@@ -111,6 +114,72 @@ export const Vault: Component = () => {
     setSelectedFilterType(type);
     sessionStorage.setItem(SESSION_KEY_SELECTED_FILTER_TYPE, String(type));
     setShowTypeDropdown(false);
+  };
+
+  const [isSelectMode, setIsSelectMode] = createSignal(false);
+  const [selectedItemIds, setSelectedItemIds] = createSignal<Set<string>>(
+    new Set<string>(),
+  );
+
+  const toggleSelectMode = () => {
+    const nextVal = !isSelectMode();
+    setIsSelectMode(nextVal);
+    setSelectedItemIds(new Set<string>());
+  };
+
+  const toggleSelectItem = (id: string) => {
+    const current = new Set(selectedItemIds());
+    if (current.has(id)) {
+      current.delete(id);
+    } else {
+      current.add(id);
+    }
+    setSelectedItemIds(current);
+  };
+
+  const getAllVisibleItemIds = (): string[] => {
+    const ids: string[] = [];
+    if (!search() && matchingItems().length > 0) {
+      matchingItems().forEach((item) => ids.push(item.id));
+    }
+    cardItems().forEach((item) => ids.push(item.id));
+    identityItems().forEach((item) => ids.push(item.id));
+    favoriteItems().forEach((item) => ids.push(item.id));
+    regularItems().forEach((item) => ids.push(item.id));
+    return Array.from(new Set(ids));
+  };
+
+  const handleSelectAll = () => {
+    const visibleIds = getAllVisibleItemIds();
+    if (selectedItemIds().size >= visibleIds.length && visibleIds.length > 0) {
+      setSelectedItemIds(new Set<string>());
+    } else {
+      setSelectedItemIds(new Set(visibleIds));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    const selected = Array.from(selectedItemIds());
+    if (selected.length === 0) return;
+
+    const confirmed = await confirm(
+      t("vault_confirm_bulk_delete_title"),
+      t("vault_confirm_bulk_delete_msg", { count: selected.length }),
+      "danger",
+    );
+    if (!confirmed) return;
+
+    setGlobalLoading(true);
+    const res = await deleteVaultItems(selected);
+    setGlobalLoading(false);
+
+    if (res.isOk()) {
+      showToast(t("toast_success"), "success");
+      setSelectedItemIds(new Set<string>());
+      setIsSelectMode(false);
+    } else {
+      showToast(t(res.error) || t("toast_error"), "error");
+    }
   };
 
   onMount(() => {
@@ -340,36 +409,90 @@ export const Vault: Component = () => {
       <div class="app-body">
         {/* Sticky Search & Filter Header */}
         <div class="vault-sticky-header">
-          {/* Search */}
-          <div class="search-row">
-            <div class="search-container">
-              <SearchIcon class="search-icon" />
-              <Input
-                type="text"
-                placeholder={t("vault_search_placeholder")}
-                value={search()}
-                onInput={(e) => updateSearch(e.currentTarget.value)}
-              />
-              <Show when={search()}>
+          <Show
+            when={isSelectMode()}
+            fallback={
+              <div class="search-row">
+                <div class="search-container">
+                  <SearchIcon class="search-icon" />
+                  <Input
+                    type="text"
+                    placeholder={t("vault_search_placeholder")}
+                    value={search()}
+                    onInput={(e) => updateSearch(e.currentTarget.value)}
+                  />
+                  <Show when={search()}>
+                    <button
+                      type="button"
+                      class="search-clear-btn"
+                      onClick={() => updateSearch("")}
+                      title={t("btn_clear")}
+                    >
+                      <CloseIcon />
+                    </button>
+                  </Show>
+                </div>
                 <button
                   type="button"
-                  class="search-clear-btn"
-                  onClick={() => updateSearch("")}
-                  title={t("btn_clear")}
+                  class={`filter-toggle-btn ${
+                    showFilterPanel() ? "active" : ""
+                  }`}
+                  onClick={toggleFilterPanel}
+                  title={t("vault_filter_title")}
+                >
+                  <FilterIcon />
+                </button>
+                <button
+                  type="button"
+                  class="filter-toggle-btn select-mode-toggle-btn"
+                  onClick={toggleSelectMode}
+                  title={t("vault_btn_select_mode")}
+                >
+                  <ListCheckIcon />
+                </button>
+              </div>
+            }
+          >
+            <div class="select-action-row">
+              <div class="select-info">
+                <button
+                  type="button"
+                  class="action-icon-btn exit-select-btn"
+                  onClick={toggleSelectMode}
+                  title={t("btn_close")}
                 >
                   <CloseIcon />
                 </button>
-              </Show>
+                <span class="selected-count-badge">
+                  {t("vault_selected_count", {
+                    count: selectedItemIds().size,
+                  })}
+                </span>
+              </div>
+              <div class="select-actions-group">
+                <button
+                  type="button"
+                  class="btn-select-all"
+                  onClick={handleSelectAll}
+                >
+                  {selectedItemIds().size >= getAllVisibleItemIds().length &&
+                      getAllVisibleItemIds().length > 0
+                    ? t("vault_deselect_all")
+                    : t("vault_select_all")}
+                </button>
+                <button
+                  type="button"
+                  class="btn-bulk-delete"
+                  disabled={selectedItemIds().size === 0}
+                  onClick={handleDeleteSelected}
+                  title={t("vault_btn_delete_selected")}
+                >
+                  <TrashIcon class="btn-icon" />
+                  <span>{t("btn_delete")}</span>
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              class={`filter-toggle-btn ${showFilterPanel() ? "active" : ""}`}
-              onClick={toggleFilterPanel}
-              title={t("vault_filter_title")}
-            >
-              <FilterIcon />
-            </button>
-          </div>
+          </Show>
 
           {/* Filter Panel */}
           <Show when={showFilterPanel()}>
@@ -492,6 +615,9 @@ export const Vault: Component = () => {
                   onDeleteItem={handleDeleteItem}
                   isSuggested={true}
                   onFillItem={handleFillItem}
+                  isSelectMode={isSelectMode()}
+                  isSelected={selectedItemIds().has(item.id)}
+                  onToggleSelect={toggleSelectItem}
                 />
               )}
             </For>
@@ -521,6 +647,9 @@ export const Vault: Component = () => {
                   onFavoriteItem={handleFavoriteItem}
                   onCloneItem={handleCloneItem}
                   onDeleteItem={handleDeleteItem}
+                  isSelectMode={isSelectMode()}
+                  isSelected={selectedItemIds().has(item.id)}
+                  onToggleSelect={toggleSelectItem}
                 />
               )}
             </For>
@@ -550,6 +679,9 @@ export const Vault: Component = () => {
                   onFavoriteItem={handleFavoriteItem}
                   onCloneItem={handleCloneItem}
                   onDeleteItem={handleDeleteItem}
+                  isSelectMode={isSelectMode()}
+                  isSelected={selectedItemIds().has(item.id)}
+                  onToggleSelect={toggleSelectItem}
                 />
               )}
             </For>
@@ -579,6 +711,9 @@ export const Vault: Component = () => {
                   onFavoriteItem={handleFavoriteItem}
                   onCloneItem={handleCloneItem}
                   onDeleteItem={handleDeleteItem}
+                  isSelectMode={isSelectMode()}
+                  isSelected={selectedItemIds().has(item.id)}
+                  onToggleSelect={toggleSelectItem}
                 />
               )}
             </For>
@@ -624,6 +759,9 @@ export const Vault: Component = () => {
                   onFavoriteItem={handleFavoriteItem}
                   onCloneItem={handleCloneItem}
                   onDeleteItem={handleDeleteItem}
+                  isSelectMode={isSelectMode()}
+                  isSelected={selectedItemIds().has(item.id)}
+                  onToggleSelect={toggleSelectItem}
                 />
               )}
             </For>

@@ -127,6 +127,13 @@ const LangSchema = z.object({
   vault_importing: z.string(),
   btn_clone: z.string(),
   vault_item_clone_suffix: z.string(),
+  vault_btn_select_mode: z.string(),
+  vault_selected_count: z.string(),
+  vault_select_all: z.string(),
+  vault_deselect_all: z.string(),
+  vault_btn_delete_selected: z.string(),
+  vault_confirm_bulk_delete_title: z.string(),
+  vault_confirm_bulk_delete_msg: z.string(),
 
   // Item Edit / Add Page
   edit_title_add_login: z.string(),

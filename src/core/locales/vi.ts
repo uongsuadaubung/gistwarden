@@ -124,6 +124,14 @@ export default {
   vault_importing: "Đang nhập dữ liệu...",
   btn_clone: "Nhân bản",
   vault_item_clone_suffix: "Bản sao",
+  vault_btn_select_mode: "Chọn nhiều",
+  vault_selected_count: "Đã chọn {count}",
+  vault_select_all: "Chọn tất cả",
+  vault_deselect_all: "Bỏ chọn tất cả",
+  vault_btn_delete_selected: "Xóa đã chọn",
+  vault_confirm_bulk_delete_title: "Xác nhận xóa tài khoản",
+  vault_confirm_bulk_delete_msg:
+    "Bạn có chắc chắn muốn xóa {count} tài khoản đã chọn không?",
 
   // Item Edit / Add Page
   edit_title_add_login: "Thêm tài khoản",
