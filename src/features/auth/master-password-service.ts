@@ -31,7 +31,7 @@ export async function changeMasterPassword(
 
   // 1. Generate a new salt
   const rawSalt = generateSalt();
-  const newSaltBase64 = btoa(String.fromCharCode(...rawSalt));
+  const newSaltBase64 = rawSalt.toBase64();
 
   // 2. Derive new key (Web Crypto API)
   const deriveResult = await deriveKey(newPass, rawSalt);

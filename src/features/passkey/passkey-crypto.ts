@@ -4,7 +4,27 @@ import type { TranslationKey } from "@/core/i18n.ts";
 import { safeParseUrl } from "@/core/domain-utils.ts";
 import { encode as cborEncode } from "cbor-x";
 
-// Utility functions to convert P1363 ECDSA signature to ASN.1 DER format
+// IANA COSE Key Parameters & Algorithm Identifiers (RFC 8152 / RFC 9052)
+export const COSE_KEY_PARAM_KTY = 1;
+export const COSE_KEY_PARAM_ALG = 3;
+export const COSE_KEY_PARAM_CRV = -1;
+export const COSE_KEY_PARAM_X = -2;
+export const COSE_KEY_PARAM_Y = -3;
+
+export const COSE_KTY_EC2 = 2;
+export const COSE_ALG_ES256 = -7;
+export const COSE_CRV_P256 = 1;
+
+// W3C WebAuthn Authenticator Data Flags (Section 6.1)
+export const AUTH_DATA_FLAG_UP = 0x01; // User Present (Bit 0)
+export const AUTH_DATA_FLAG_UV = 0x04; // User Verified (Bit 2)
+export const AUTH_DATA_FLAG_BE = 0x08; // Backup Eligibility (Bit 3)
+export const AUTH_DATA_FLAG_BS = 0x10; // Backup State (Bit 4)
+export const AUTH_DATA_FLAG_AT = 0x40; // Attested Credential Data Present (Bit 6)
+
+/**
+ * Hàm hỗ trợ mã hóa số nguyên dưới dạng cấu trúc DER Integer (ASN.1 DER Tag 0x02).
+ */
 function encodeDerInteger(bytes: Uint8Array): Uint8Array {
   let start = 0;
   while (start < bytes.length - 1 && bytes[start] === 0) {
@@ -25,6 +45,10 @@ function encodeDerInteger(bytes: Uint8Array): Uint8Array {
   return res;
 }
 
+/**
+ * Chuyển đổi định dạng chữ ký ECDSA từ chuẩn IEEE P1363 (chuỗi nhị phân thô (r || s) 64-byte)
+ * sang định dạng ASN.1 DER (RFC 3279 / RFC 5758 / X.509 DER structure).
+ */
 export function p1363ToDer(
   signature: Uint8Array,
 ): Result<Uint8Array, TranslationKey> {
@@ -186,26 +210,8 @@ export function packAttestationObject(authData: Uint8Array): Uint8Array {
   );
 }
 
-// Generate AuthData
-// AAGUID of Gistwarden: 4c617a79-5061-7373-6b65-794769737431 (LazyPasskeyGist1)
-export const AAGUID = new Uint8Array([
-  0x4c,
-  0x61,
-  0x7a,
-  0x79,
-  0x50,
-  0x61,
-  0x73,
-  0x73,
-  0x6b,
-  0x65,
-  0x79,
-  0x47,
-  0x69,
-  0x73,
-  0x74,
-  0x31,
-]);
+// AAGUID (Authenticator Attestation GUID) đại diện duy nhất cho Gistwarden Authenticator (16 bytes)
+export const AAGUID = new TextEncoder().encode("LazyPasskeyGist1");
 
 interface GenerateAuthDataParams {
   rpId: string;
@@ -232,13 +238,13 @@ export async function generateAuthData(
   const rpIdHash = new Uint8Array(rpIdHashRes.value);
   authData.push(...rpIdHash);
 
-  // 2. flags (1 byte)
+  // 2. flags (1 byte) according to W3C WebAuthn Spec Section 6.1
   let flags = 0;
-  if (params.userPresent) flags |= 0b00000001;
-  if (params.userVerified) flags |= 0b00000100;
-  if (params.publicKey) flags |= 0b01000000; // Has attested credential data
-  flags |= 0b00001000; // Backup eligibility (always eligible)
-  flags |= 0b00010000; // Backup state (always backed up via gist)
+  if (params.userPresent) flags |= AUTH_DATA_FLAG_UP;
+  if (params.userVerified) flags |= AUTH_DATA_FLAG_UV;
+  if (params.publicKey) flags |= AUTH_DATA_FLAG_AT; // Has attested credential data
+  flags |= AUTH_DATA_FLAG_BE; // Backup eligibility
+  flags |= AUTH_DATA_FLAG_BS; // Backup state
   authData.push(flags);
 
   // 3. signCount (4 bytes)
@@ -248,9 +254,8 @@ export async function generateAuthData(
 
   // 4. attestedCredentialData (if applicable)
   if (params.publicKey && params.credentialId) {
-    // aaguid (16 bytes)
-    const aaguid = new Uint8Array(16);
-    authData.push(...aaguid);
+    // aaguid (16 bytes đại diện cho Gistwarden Passkey Authenticator)
+    authData.push(...AAGUID);
 
     // credentialIdLength (2 bytes)
     const credIdLen = params.credentialId.length;
@@ -278,15 +283,15 @@ export async function generateAuthData(
     if (keyYRes.isErr()) return err(keyYRes.error);
     const keyY = keyYRes.value;
 
-    // Map with keys: 1 (kty: 2 = EC2), 3 (alg: -7 = ES256), -1 (crv: 1 = P-256), -2 (x), -3 (y)
-    const coseBytes = new Uint8Array(77);
-    coseBytes.set(
-      [0xa5, 0x01, 0x02, 0x03, 0x26, 0x20, 0x01, 0x21, 0x58, 0x20],
-      0,
-    );
-    coseBytes.set(keyX, 10);
-    coseBytes.set([0x22, 0x58, 0x20], 10 + 32);
-    coseBytes.set(keyY, 10 + 32 + 3);
+    // Mã hóa cấu trúc COSE EC2 Key (RFC 8152 / RFC 9052) theo chuẩn CBOR Map bằng cbor-x:
+    const coseMap = new Map<number, number | Uint8Array>([
+      [COSE_KEY_PARAM_KTY, COSE_KTY_EC2],
+      [COSE_KEY_PARAM_ALG, COSE_ALG_ES256],
+      [COSE_KEY_PARAM_CRV, COSE_CRV_P256],
+      [COSE_KEY_PARAM_X, keyX],
+      [COSE_KEY_PARAM_Y, keyY],
+    ]);
+    const coseBytes = new Uint8Array(cborEncode(coseMap));
 
     authData.push(...coseBytes);
   }
@@ -461,7 +466,7 @@ export async function generatePasskeyRegisterResponse(
       ),
       attestationObject: bufferToBase64Url(packAttestationObject(authData)),
       publicKey: spkiBase64Url,
-      publicKeyAlgorithm: -7, // ES256
+      publicKeyAlgorithm: COSE_ALG_ES256,
       authData: bufferToBase64Url(authData),
     },
   };

@@ -2,6 +2,24 @@ import { wordlist } from "@/core/wordlist.ts";
 import { err, ok, type Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 
+/**
+ * Triển khai thuật toán Rejection Sampling (CSPRNG Unbiased Uniform Integer)
+ * để sinh số nguyên ngẫu nhiên đều thuộc khoảng [0, max - 1].
+ * Thuật toán loại bỏ hoàn toàn Modulo Bias bằng cách loại bỏ phần dư vượt ngưỡng giới hạn.
+ */
+export function getRandomBoundedInt(max: number): number {
+  if (max <= 1) return 0;
+  const maxUint32 = 0xffffffff;
+  const limit = maxUint32 - (maxUint32 % max);
+  const bytes = new Uint32Array(1);
+  while (true) {
+    crypto.getRandomValues(bytes);
+    if (bytes[0] < limit) {
+      return bytes[0] % max;
+    }
+  }
+}
+
 export interface GeneratePasswordOptions {
   length: number;
   uppercase: boolean;
@@ -55,9 +73,7 @@ export function generatePassword(
   const resultChars: string[] = [];
 
   const getRandomChar = (str: string) => {
-    const bytes = new Uint32Array(1);
-    crypto.getRandomValues(bytes);
-    return str[bytes[0] % str.length];
+    return str[getRandomBoundedInt(str.length)];
   };
 
   if (options.numbers && minNum > 0 && availableN.length > 0) {
@@ -77,11 +93,9 @@ export function generatePassword(
     resultChars.push(getRandomChar(charset));
   }
 
-  // Shuffle the result characters
+  // Shuffle the result characters using Fisher-Yates with CSPRNG rejection sampling
   for (let i = resultChars.length - 1; i > 0; i--) {
-    const bytes = new Uint32Array(1);
-    crypto.getRandomValues(bytes);
-    const j = bytes[0] % (i + 1);
+    const j = getRandomBoundedInt(i + 1);
     const temp = resultChars[i];
     resultChars[i] = resultChars[j];
     resultChars[j] = temp;
@@ -104,11 +118,9 @@ export function generatePassphrase(
   if (words < 3 || words > 20) return err("gen_error_invalid_words_count");
 
   const chosenWords: string[] = [];
-  const bytes = new Uint32Array(words);
-  crypto.getRandomValues(bytes);
 
   for (let i = 0; i < words; i++) {
-    const wordIndex = bytes[i] % wordlist.length;
+    const wordIndex = getRandomBoundedInt(wordlist.length);
     let word = wordlist[wordIndex];
 
     if (options.capitalize) {
@@ -119,10 +131,8 @@ export function generatePassphrase(
   }
 
   if (options.includeNumber) {
-    const idxBytes = new Uint32Array(2);
-    crypto.getRandomValues(idxBytes);
-    const targetWordIdx = idxBytes[0] % chosenWords.length;
-    const randomDigit = idxBytes[1] % 10;
+    const targetWordIdx = getRandomBoundedInt(chosenWords.length);
+    const randomDigit = getRandomBoundedInt(10);
     chosenWords[targetWordIdx] = chosenWords[targetWordIdx] + randomDigit;
   }
 

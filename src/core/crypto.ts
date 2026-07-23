@@ -247,6 +247,10 @@ export function importAesGcmKey(
   );
 }
 
+/**
+ * Trình đọc giải mã cấu trúc ASN.1 DER (Distinguished Encoding Rules)
+ * dùng để phân tích cú pháp các khóa riêng RSA PEM theo chuẩn RFC 3447 / PKCS #1.
+ */
 class Asn1Reader {
   private offset = 0;
 
@@ -296,6 +300,10 @@ class Asn1Reader {
   }
 }
 
+/**
+ * Mã hóa số nguyên lớn theo chuẩn OpenSSH Wire Format mpint (Multiple Precision Integer)
+ * quy định tại RFC 4251 Section 5.
+ */
 function encodeMpint(bytes: Uint8Array): Uint8Array {
   let start = 0;
   while (start < bytes.length - 1 && bytes[start] === 0) {
@@ -347,6 +355,10 @@ function parseLegacyRsaPem(base64Str: string): Uint8Array | null {
   }
 }
 
+/**
+ * Trình đọc luồng dữ liệu nhị phân OpenSSH Wire Protocol theo chuẩn RFC 4251 Section 5.
+ * Hỗ trợ bóc tách các trường chuỗi (string), số nguyên 32-bit (uint32) và mảng byte thô.
+ */
 class SshBufferReader {
   private view: DataView;
   private offset = 0;

@@ -28,7 +28,7 @@ export async function setPinUnlock(
   const keyBytesB64 = arrayBufferToBase64(raw);
 
   const rawSalt = generateSalt();
-  const pinSaltBase64 = btoa(String.fromCharCode(...rawSalt));
+  const pinSaltBase64 = rawSalt.toBase64();
   const pinKeyRes = await deriveKey(pin, rawSalt);
   if (pinKeyRes.isErr()) {
     return err(pinKeyRes.error);
