@@ -386,6 +386,15 @@ async function handleSaveCredentialAction(
     const pendingList: unknown[] = Array.isArray(rawPending) ? rawPending : [];
     pendingList.push(payload);
     await setLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS, pendingList);
+
+    // Automatically open extension popup to prompt user to unlock/login
+    if (typeof chrome !== "undefined" && chrome.action?.openPopup) {
+      try {
+        await chrome.action.openPopup();
+      } catch (_err) {
+        // Ignore if browser restricts openPopup (e.g. non-focused window)
+      }
+    }
     return true;
   }
 
