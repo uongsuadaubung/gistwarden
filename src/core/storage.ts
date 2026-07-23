@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { VaultTimeoutActionSchema } from "@/core/types.ts";
 import {
   SupportLanguage,
   SupportLanguageSchema,
-  type TranslationKey,
-} from "@/core/i18n.ts";
+  VaultTimeoutActionSchema,
+} from "@/core/types.ts";
+import type { TranslationKey } from "@/core/i18n.ts";
 import { err, Result, ResultAsync } from "neverthrow";
 
 export const GithubUserSchema = z.object({
@@ -246,6 +246,18 @@ export async function setLocalItem(
   }
   return await ResultAsync.fromPromise(
     chrome.storage.local.set({ [key]: value }),
+    (_e): TranslationKey => "storage_error",
+  );
+}
+
+export async function removeLocalItem(
+  keys: string | string[],
+): Promise<Result<void, TranslationKey>> {
+  if (!hasLocalStorage()) {
+    return err("storage_error");
+  }
+  return await ResultAsync.fromPromise(
+    chrome.storage.local.remove(keys),
     (_e): TranslationKey => "storage_error",
   );
 }

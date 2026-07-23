@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Gistwarden Test App</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <h1 class="card-title">Tạo Tài Khoản</h1>
+        <p
+          class="card-subtitle">Thử nghiệm phát hiện Form Đăng Ký & Mật Khẩu Mới</p>
+
+        <div id="alertBox"></div>
+
+        <form id="registerForm" action="/register" method="POST">
+          <div class="form-group">
+            <label class="form-label"
+              for="username">Tên tài khoản / Email</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              class="form-input"
+              placeholder="nhap@domain.com"
+              autocomplete="username"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Mật khẩu mới</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              placeholder="••••••••"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn-submit">Đăng Ký Tài Khoản</button>
+        </form>
+
+        <div class="footer-link">
+        Đã có tài khoản? <a href="/index.html">Đăng nhập</a>
+      </div>
+      </div>
+    </div>
+
+    <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const err = urlParams.get("err");
+    const alertBox = document.getElementById("alertBox");
+
+    if (err) {
+      alertBox.className = "alert alert-error";
+      alertBox.textContent = err;
+    }
+    </script>
+  </body>
+</html>

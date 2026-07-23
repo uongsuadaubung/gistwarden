@@ -20,6 +20,16 @@ export default {
   confirm_disable_pin:
     "Bạn có chắc chắn muốn tắt tính năng mở khóa bằng mã PIN?",
 
+  // Notification Toast Bar
+  notification_save_title: "Gợi ý lưu mật khẩu",
+  notification_update_title: "Gợi ý cập nhật mật khẩu",
+  notification_save_prompt_prefix: "Bạn có muốn lưu mật khẩu cho ",
+  notification_save_prompt_suffix: " không?",
+  notification_update_prompt_prefix: "Bạn có muốn cập nhật mật khẩu cho ",
+  notification_update_prompt_suffix: " không?",
+  notification_btn_save: "Lưu mật khẩu",
+  notification_btn_update: "Cập nhật",
+
   // Login Page
   login_title_locked: "Két sắt đang bị Khóa",
   login_title_setup: "Cấu hình bộ lưu trữ đám mây GitHub Gist",
