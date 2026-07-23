@@ -61,7 +61,15 @@ export function filterMatchingDomainItems(
     if (aExact && !bExact) return -1;
     if (!aExact && bExact) return 1;
 
-    return a.name.localeCompare(b.name, undefined, {
+    const nameCmp = a.name.localeCompare(b.name, undefined, {
+      sensitivity: "base",
+      numeric: true,
+    });
+    if (nameCmp !== 0) return nameCmp;
+
+    const uA = (a.type === VaultItemType.Login ? a.login?.username : "") || "";
+    const uB = (b.type === VaultItemType.Login ? b.login?.username : "") || "";
+    return uA.localeCompare(uB, undefined, {
       sensitivity: "base",
       numeric: true,
     });

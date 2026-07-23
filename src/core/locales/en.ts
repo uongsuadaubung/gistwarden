@@ -29,6 +29,10 @@ export default {
   notification_update_prompt_suffix: "?",
   notification_btn_save: "Save Password",
   notification_btn_update: "Update",
+  notification_autofill_title: "Autofill Suggestion",
+  notification_autofill_prompt_prefix: "Autofill credentials for ",
+  notification_autofill_prompt_suffix: "?",
+  notification_btn_autofill: "Fill Now",
 
   // Login Page
   login_title_locked: "Vault is Locked",

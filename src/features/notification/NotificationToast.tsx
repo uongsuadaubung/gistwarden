@@ -1,14 +1,39 @@
-import { createSignal, onCleanup, onMount } from "solid-js";
+import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import { MSG_SAVE_CREDENTIAL_ACTION } from "@/core/constants.ts";
 
-export interface NotificationPayload {
+export interface SaveCredentialPayload {
   actionType: "add" | "update";
   domain: string;
   username: string;
-  password: string;
+  password?: string;
   itemId?: string;
+  onDismiss?: () => void;
 }
+
+export interface AutofillMatchingAccount {
+  itemId: string;
+  name?: string;
+  username: string;
+  password?: string;
+  totp?: string;
+}
+
+export interface AutofillSuggestionPayload {
+  actionType: "autofill";
+  domain: string;
+  username: string;
+  password?: string;
+  itemId?: string;
+  totp?: string;
+  accounts?: AutofillMatchingAccount[];
+  onFill?: (selectedAcc?: AutofillMatchingAccount) => void;
+  onDismiss?: () => void;
+}
+
+export type NotificationPayload =
+  | SaveCredentialPayload
+  | AutofillSuggestionPayload;
 
 interface NotificationToastProps {
   payload: NotificationPayload;
@@ -21,6 +46,26 @@ export function NotificationToast(props: NotificationToastProps) {
   let timerId: ReturnType<typeof setTimeout> | null = null;
   const [isPaused, setIsPaused] = createSignal(false);
   const [isClosing, setIsClosing] = createSignal(false);
+
+  const currentSelectedAccount = (): AutofillMatchingAccount => {
+    if (props.payload.actionType === "autofill") {
+      const list = props.payload.accounts;
+      if (list && list.length > 0) {
+        return list[0];
+      }
+      return {
+        itemId: props.payload.itemId || "",
+        username: props.payload.username,
+        password: props.payload.password,
+        totp: props.payload.totp,
+      };
+    }
+    return {
+      itemId: props.payload.itemId || "",
+      username: props.payload.username,
+      password: props.payload.password,
+    };
+  };
 
   const triggerCloseWithAnimation = (actionFn?: () => void) => {
     if (isClosing()) return;
@@ -88,6 +133,14 @@ export function NotificationToast(props: NotificationToastProps) {
 
   const handleAction = (userChoice: "confirm" | "dismiss") => {
     triggerCloseWithAnimation(() => {
+      if (props.payload.actionType === "autofill") {
+        if (userChoice === "confirm") {
+          props.payload.onFill?.(currentSelectedAccount());
+        } else if (userChoice === "dismiss") {
+          props.payload.onDismiss?.();
+        }
+        return;
+      }
       try {
         chrome.runtime.sendMessage({
           type: MSG_SAVE_CREDENTIAL_ACTION,
@@ -100,27 +153,59 @@ export function NotificationToast(props: NotificationToastProps) {
     });
   };
 
-  const userDisplay = () => props.payload.username || props.payload.domain;
+  const handleFillAccount = (acc: AutofillMatchingAccount) => {
+    triggerCloseWithAnimation(() => {
+      if (props.payload.actionType === "autofill") {
+        props.payload.onFill?.(acc);
+      }
+    });
+  };
 
-  const headerTitle = () =>
-    props.payload.actionType === "add"
+  const userDisplay = () => {
+    if (props.payload.actionType === "autofill") {
+      return currentSelectedAccount().username || props.payload.domain;
+    }
+    return props.payload.username || props.payload.domain;
+  };
+
+  const headerTitle = () => {
+    if (props.payload.actionType === "autofill") {
+      const count = props.payload.accounts?.length || 1;
+      return count > 1
+        ? `${t("notification_autofill_title")} (${count})`
+        : t("notification_autofill_title");
+    }
+    return props.payload.actionType === "add"
       ? t("notification_save_title")
       : t("notification_update_title");
+  };
 
-  const actionPromptPrefix = () =>
-    props.payload.actionType === "add"
+  const actionPromptPrefix = () => {
+    if (props.payload.actionType === "autofill") {
+      return t("notification_autofill_prompt_prefix");
+    }
+    return props.payload.actionType === "add"
       ? t("notification_save_prompt_prefix")
       : t("notification_update_prompt_prefix");
+  };
 
-  const actionPromptSuffix = () =>
-    props.payload.actionType === "add"
+  const actionPromptSuffix = () => {
+    if (props.payload.actionType === "autofill") {
+      return t("notification_autofill_prompt_suffix");
+    }
+    return props.payload.actionType === "add"
       ? t("notification_save_prompt_suffix")
       : t("notification_update_prompt_suffix");
+  };
 
-  const confirmBtnText = () =>
-    props.payload.actionType === "add"
+  const confirmBtnText = () => {
+    if (props.payload.actionType === "autofill") {
+      return t("notification_btn_autofill");
+    }
+    return props.payload.actionType === "add"
       ? t("notification_btn_save")
       : t("notification_btn_update");
+  };
 
   return (
     <>
@@ -234,6 +319,99 @@ export function NotificationToast(props: NotificationToastProps) {
           color: #60a5fa;
         }
 
+        .select-label {
+          margin-bottom: 4px;
+        }
+
+        .accounts-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-top: 6px;
+          max-height: 180px;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+
+        .accounts-list::-webkit-scrollbar {
+          width: 5px;
+          height: 5px;
+        }
+
+        .accounts-list::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .accounts-list::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+          transition: background 0.2s ease;
+        }
+
+        .accounts-list::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.4);
+        }
+
+        .account-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 10px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .account-item:hover {
+          background: rgba(59, 130, 246, 0.2);
+          border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .account-info {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          overflow: hidden;
+          max-width: 200px;
+        }
+
+        .account-name-sub {
+          font-size: 11px;
+          font-weight: 500;
+          color: #94a3b8;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .account-user {
+          font-weight: 600;
+          font-size: 13px;
+          color: #f1f5f9;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .btn-fill-small {
+          background: #2563eb;
+          color: #ffffff;
+          border: none;
+          border-radius: 4px;
+          padding: 4px 10px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .btn-fill-small:hover {
+          background: #3b82f6;
+        }
+
         .domain-subtext {
           font-size: 12px;
           color: #64748b;
@@ -285,6 +463,10 @@ export function NotificationToast(props: NotificationToastProps) {
           animation: gw-progress 5s linear forwards;
         }
 
+        .progress-bar.paused {
+          animation-play-state: paused;
+        }
+
         @keyframes gw-progress {
           from {
             transform: scaleX(1);
@@ -324,29 +506,82 @@ export function NotificationToast(props: NotificationToastProps) {
           </button>
         </div>
         <div class="body-content">
-          <span>{actionPromptPrefix()}</span>
-          <span class="user-highlight">{userDisplay()}</span>
-          <span>{actionPromptSuffix()}</span>
+          <Show
+            when={props.payload.actionType === "autofill" &&
+                props.payload.accounts &&
+                props.payload.accounts.length > 1
+              ? props.payload.accounts
+              : null}
+            fallback={
+              <>
+                <span>{actionPromptPrefix()}</span>
+                <span class="user-highlight">{userDisplay()}</span>
+                <span>{actionPromptSuffix()}</span>
+              </>
+            }
+          >
+            {(accountsList) => (
+              <>
+                <div class="select-label">
+                  <span>{actionPromptPrefix()}</span>
+                  <span class="user-highlight">{props.payload.domain}</span>
+                </div>
+                <div class="accounts-list">
+                  <For each={accountsList()}>
+                    {(acc) => (
+                      <div
+                        class="account-item"
+                        ref={(el) => {
+                          el.addEventListener("click", (e) => {
+                            e.stopPropagation();
+                            handleFillAccount(acc);
+                          });
+                        }}
+                      >
+                        <div class="account-info">
+                          <Show when={acc.name}>
+                            <span class="account-name-sub">{acc.name}</span>
+                          </Show>
+                          <span class="account-user">
+                            {acc.username || props.payload.domain}
+                          </span>
+                        </div>
+                        <button type="button" class="btn-fill-small">
+                          {t("notification_btn_autofill")}
+                        </button>
+                      </div>
+                    )}
+                  </For>
+                </div>
+              </>
+            )}
+          </Show>
           {props.payload.domain && (
             <div class="domain-subtext">{props.payload.domain}</div>
           )}
         </div>
-        <div class="actions">
-          <button
-            type="button"
-            class="btn btn-primary"
-            ref={(el) => {
-              el.addEventListener("click", (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                handleAction("confirm");
-              });
-            }}
-          >
-            {confirmBtnText()}
-          </button>
-        </div>
-        <div class="progress-bar" />
+        <Show
+          when={!(props.payload.actionType === "autofill" &&
+            props.payload.accounts &&
+            props.payload.accounts.length > 1)}
+        >
+          <div class="actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              ref={(el) => {
+                el.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleAction("confirm");
+                });
+              }}
+            >
+              {confirmBtnText()}
+            </button>
+          </div>
+        </Show>
+        <div class={`progress-bar ${isPaused() ? "paused" : ""}`} />
       </div>
     </>
   );

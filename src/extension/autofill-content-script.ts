@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   MSG_AUTOFILL_CREDENTIALS,
+  MSG_CHECK_AUTOFILL_SUGGESTION,
   MSG_CHECK_PENDING_NOTIFICATION,
   MSG_CREDENTIALS_SUBMITTED,
   MSG_SHOW_NOTIFICATION_BAR,
@@ -8,19 +9,44 @@ import {
 
 import {
   performAutofill,
+  setupAutofillFocusMonitoring,
   setupFormSubmitMonitoring,
   type SubmittedCredentials,
 } from "@/extension/autofill-core.ts";
 import { showNotificationBar } from "@/features/notification/index.ts";
 import { getBaseDomain } from "@/core/domain-utils.ts";
+import { generateTotpSafe } from "@/core/totp-utils.ts";
 
-const NotificationPayloadSchema = z.object({
+const SaveCredentialPayloadSchema = z.object({
   actionType: z.enum(["add", "update"]),
   domain: z.string(),
   username: z.string(),
-  password: z.string(),
+  password: z.string().optional(),
   itemId: z.string().optional(),
 });
+
+const AccountItemSchema = z.object({
+  itemId: z.string(),
+  name: z.string().optional(),
+  username: z.string(),
+  password: z.string().optional(),
+  totp: z.string().optional(),
+});
+
+const AutofillSuggestionPayloadSchema = z.object({
+  actionType: z.literal("autofill"),
+  domain: z.string(),
+  username: z.string(),
+  password: z.string().optional(),
+  itemId: z.string().optional(),
+  totp: z.string().optional(),
+  accounts: z.array(AccountItemSchema).optional(),
+});
+
+const NotificationPayloadSchema = z.discriminatedUnion("actionType", [
+  SaveCredentialPayloadSchema,
+  AutofillSuggestionPayloadSchema,
+]);
 
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -52,8 +78,58 @@ setupFormSubmitMonitoring((creds: SubmittedCredentials) => {
   });
 });
 
+// Setup monitoring for focus on login input fields to show Autofill Suggestion Toast (when unlocked)
+let autofillDismissedForTab = false;
+let isProgrammaticAutofilling = false;
+const currentDomain = window.location.hostname ||
+  getBaseDomain(window.location.href);
+
+setupAutofillFocusMonitoring(() => {
+  if (autofillDismissedForTab || isProgrammaticAutofilling) return;
+  chrome.runtime.sendMessage(
+    { type: MSG_CHECK_AUTOFILL_SUGGESTION, domain: currentDomain },
+    (response) => {
+      if (chrome.runtime.lastError) return;
+      if (response && response.success && response.payload) {
+        const parseRes = NotificationPayloadSchema.safeParse(response.payload);
+        if (parseRes.success && parseRes.data.actionType === "autofill") {
+          const payloadData = parseRes.data;
+          showNotificationBar({
+            ...payloadData,
+            onFill: (selectedAcc) => {
+              isProgrammaticAutofilling = true;
+              const u = selectedAcc?.username || payloadData.username;
+              const p = selectedAcc?.password || payloadData.password;
+              const tSecret = selectedAcc?.totp || payloadData.totp;
+
+              performAutofill(u, p);
+
+              if (tSecret) {
+                const totpRes = generateTotpSafe(tSecret);
+                if (totpRes.isOk()) {
+                  try {
+                    navigator.clipboard.writeText(totpRes.value);
+                  } catch (_err) {
+                    // Ignore clipboard write failures
+                  }
+                }
+              }
+
+              setTimeout(() => {
+                isProgrammaticAutofilling = false;
+              }, 500);
+            },
+            onDismiss: () => {
+              autofillDismissedForTab = true;
+            },
+          });
+        }
+      }
+    },
+  );
+});
+
 // Check if there is a pending notification bar for this tab upon page load
-const currentDomain = getBaseDomain(window.location.href);
 chrome.runtime.sendMessage(
   { type: MSG_CHECK_PENDING_NOTIFICATION, content: currentDomain },
   (response) => {

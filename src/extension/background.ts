@@ -9,6 +9,7 @@ import { broadcastMessage } from "@/core/messaging.ts";
 import {
   ALARM_NAME_VAULT_TIMEOUT,
   FIDO2_PROMPT_HEIGHT,
+  MSG_CHECK_AUTOFILL_SUGGESTION,
   MSG_CHECK_PENDING_NOTIFICATION,
   MSG_CREDENTIALS_SUBMITTED,
   MSG_DELETE_GIST,
@@ -60,6 +61,7 @@ import {
   getDomainFromItem,
   safeParseUrl,
 } from "@/core/domain-utils.ts";
+import { filterMatchingDomainItems } from "@/features/vault/vault-domain-matching.ts";
 import { decryptData, encryptData, getSessionKey } from "@/core/crypto.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import {
@@ -108,6 +110,7 @@ interface ChromeMessage {
   credentials?: unknown;
   choice?: string;
   payload?: unknown;
+  domain?: string;
 }
 
 let pendingFido2Callback: ((response: unknown) => void) | null = null;
@@ -168,7 +171,11 @@ async function handleSubmittedCredentials(
   if (!parseRes.success) return;
   const creds = parseRes.data;
 
-  if (!creds.password || creds.password.trim().length === 0) return;
+  const cleanPassword = creds.password.trim();
+  if (!cleanPassword) return;
+
+  // Ignore 6-digit numeric passwords as they are almost certainly 2FA TOTP / OTP codes
+  if (/^\d{6}$/.test(cleanPassword)) return;
 
   const vaultData = await getDecryptedVaultItems();
   const items = vaultData ? vaultData.items : [];
@@ -416,6 +423,58 @@ async function handleSaveCredentialAction(
   return await batchSavePayloads(vaultData, validPayloads);
 }
 
+async function handleCheckAutofillSuggestion(
+  domainStr: unknown,
+  sendResponse: (res: unknown) => void,
+): Promise<void> {
+  if (typeof domainStr !== "string" || !domainStr) {
+    sendResponse({ success: false, reason: "invalid_domain" });
+    return;
+  }
+
+  const vaultData = await getDecryptedVaultItems();
+  if (!vaultData) {
+    // Vault is locked -> silent mode (as requested by user)
+    sendResponse({ success: false, reason: "locked" });
+    return;
+  }
+
+  const matches = filterMatchingDomainItems(
+    vaultData.items,
+    domainStr,
+    VaultItemType.Login,
+  );
+
+  const matchingAccounts = matches
+    .filter(isLoginItem)
+    .map((m) => ({
+      itemId: m.id,
+      name: m.name,
+      username: m.login.username || "",
+      password: m.login.password || "",
+      totp: m.login.totp || "",
+    }));
+
+  if (matchingAccounts.length === 0) {
+    sendResponse({ success: false, reason: "no_matches" });
+    return;
+  }
+
+  const bestMatch = matchingAccounts[0];
+
+  sendResponse({
+    success: true,
+    payload: {
+      actionType: "autofill",
+      domain: domainStr,
+      username: bestMatch.username,
+      password: bestMatch.password,
+      totp: bestMatch.totp,
+      accounts: matchingAccounts,
+    },
+  });
+}
+
 // Message listener
 chrome.runtime.onMessage.addListener(
   (
@@ -452,6 +511,11 @@ chrome.runtime.onMessage.addListener(
     }
 
     switch (message.type) {
+      case MSG_CHECK_AUTOFILL_SUGGESTION: {
+        handleCheckAutofillSuggestion(message.domain, sendResponse);
+        return true;
+      }
+
       case MSG_CHECK_PENDING_NOTIFICATION: {
         if (sender.tab && sender.tab.id !== undefined) {
           const pending = pendingTabNotifications.get(sender.tab.id);
