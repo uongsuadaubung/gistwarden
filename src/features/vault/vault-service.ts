@@ -197,12 +197,22 @@ export async function saveItem(
 export async function deleteItem(
   id: string,
 ): Promise<Result<void, TranslationKey>> {
+  return await deleteVaultItems([id]);
+}
+
+export async function deleteVaultItems(
+  ids: string[],
+): Promise<Result<void, TranslationKey>> {
+  if (ids.length === 0) {
+    return ok();
+  }
   const key = await getSessionKey();
   if (!key || !store.salt) {
     return err("login_title_locked");
   }
 
-  const filtered = store.vaultItems.filter((v) => v.id !== id);
+  const idSet = new Set(ids);
+  const filtered = store.vaultItems.filter((v) => !idSet.has(v.id));
   const uploadRes = await syncVaultToGist(filtered, key, store.salt);
 
   if (uploadRes.isErr()) {

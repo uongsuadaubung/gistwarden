@@ -124,6 +124,14 @@ export default {
   vault_importing: "Importing vault data...",
   btn_clone: "Clone",
   vault_item_clone_suffix: "Copy",
+  vault_btn_select_mode: "Select mode",
+  vault_selected_count: "{count} selected",
+  vault_select_all: "Select all",
+  vault_deselect_all: "Deselect all",
+  vault_btn_delete_selected: "Delete selected",
+  vault_confirm_bulk_delete_title: "Confirm Deletion",
+  vault_confirm_bulk_delete_msg:
+    "Are you sure you want to delete {count} selected item(s)?",
 
   // Item Edit / Add Page
   edit_title_add_login: "Add Login",
