@@ -464,7 +464,7 @@ export async function unlock(
   // C. Nếu vẫn chưa có salt (cả cục bộ và trên Gist đều không có), tạo két sắt mới hoàn toàn
   if (!saltBase64) {
     const rawSalt = generateSalt();
-    saltBase64 = btoa(String.fromCharCode(...rawSalt));
+    saltBase64 = rawSalt.toBase64();
     await updateSettings({ salt: saltBase64 });
     setStore(STORE_KEY_SALT, saltBase64);
 

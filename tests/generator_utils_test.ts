@@ -5,6 +5,7 @@ import {
 import {
   generatePassphrase,
   generatePassword,
+  getRandomBoundedInt,
 } from "../src/features/generator/generator-utils.ts";
 
 Deno.test("generator-utils: generatePassword respects length", () => {
@@ -69,5 +70,12 @@ Deno.test("generator-utils: generatePassphrase includes numbers if requested", (
   assertEquals(phrase.isOk(), true);
   if (phrase.isOk()) {
     assertMatch(phrase.value, /[0-9]/);
+  }
+});
+
+Deno.test("generator-utils: getRandomBoundedInt stays strictly within bounds [0, max-1]", () => {
+  for (let i = 0; i < 100; i++) {
+    const val = getRandomBoundedInt(10);
+    assertEquals(val >= 0 && val < 10, true);
   }
 });

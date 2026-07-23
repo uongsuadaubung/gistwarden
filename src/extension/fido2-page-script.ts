@@ -73,19 +73,12 @@ import {
     return buffer;
   }
 
-  // Buffer to Base64URL helper
+  // Buffer to Base64URL helper using native Uint8Array.prototype.toBase64
   function bufferToBase64Url(buffer: BufferSource): string {
     const bytes = ArrayBuffer.isView(buffer)
       ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
       : new Uint8Array(buffer);
-    let binary = "";
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary)
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
+    return bytes.toBase64({ alphabet: "base64url", omitPadding: true });
   }
 
   // Request manager to map messages
@@ -125,7 +118,7 @@ import {
     data: unknown,
   ): Promise<Fido2Response> {
     return new Promise((resolve, reject) => {
-      const requestId = Math.random().toString(36).substring(2);
+      const requestId = crypto.randomUUID();
       pendingRequests.set(requestId, { resolve, reject });
 
       window.postMessage(
