@@ -29,6 +29,10 @@ export default {
   notification_update_prompt_suffix: " không?",
   notification_btn_save: "Lưu mật khẩu",
   notification_btn_update: "Cập nhật",
+  notification_autofill_title: "Gợi ý tự động điền",
+  notification_autofill_prompt_prefix: "Tự động điền tài khoản ",
+  notification_autofill_prompt_suffix: " ?",
+  notification_btn_autofill: "Điền ngay",
 
   // Login Page
   login_title_locked: "Két sắt đang bị Khóa",

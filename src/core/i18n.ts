@@ -38,6 +38,10 @@ const LangSchema = z.object({
   notification_update_prompt_suffix: z.string(),
   notification_btn_save: z.string(),
   notification_btn_update: z.string(),
+  notification_autofill_title: z.string(),
+  notification_autofill_prompt_prefix: z.string(),
+  notification_autofill_prompt_suffix: z.string(),
+  notification_btn_autofill: z.string(),
 
   // Login Page
   login_title_locked: z.string(),
