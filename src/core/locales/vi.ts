@@ -20,6 +20,35 @@ export default {
   confirm_disable_pin:
     "Bạn có chắc chắn muốn tắt tính năng mở khóa bằng mã PIN?",
 
+  // Detailed Error Messages
+  github_error_missing_token: "Không tìm thấy token truy cập GitHub.",
+  github_error_user_parse_failed:
+    "Không thể xác thực thông tin người dùng GitHub.",
+  github_error_gist_not_found:
+    "Không tìm thấy Gist dữ liệu két mật khẩu trên GitHub.",
+  github_error_create_gist_failed: "Tạo Gist mới trên GitHub thất bại.",
+  github_error_gist_file_missing:
+    "Không tìm thấy tệp dữ liệu trong Gist GitHub.",
+  github_error_gist_parse_failed:
+    "Dữ liệu Gist từ GitHub bị lỗi hoặc không đúng định dạng.",
+  github_error_missing_gist_id: "Thiếu Gist ID để xử lý yêu cầu.",
+  sync_error_corrupted_payload:
+    "Dữ liệu đồng bộ bị lỗi cấu trúc hoặc không giải mã được.",
+  sync_error_invalid_format: "Định dạng dữ liệu két mật khẩu không hợp lệ.",
+  sync_error_invalid_response: "Phản hồi từ tiến trình đồng bộ không hợp lệ.",
+  tab_error_get_current: "Không thể lấy thông tin thẻ trình duyệt hiện tại.",
+  tab_error_send_message: "Không thể gửi dữ liệu tới thẻ trình duyệt.",
+  tab_error_capture: "Không thể chụp hình thẻ trình duyệt.",
+  tab_error_open: "Không thể mở liên kết trong thẻ mới.",
+  messaging_error_send_failed: "Lỗi kết nối tới tiến trình nền (background).",
+  network_error_fetch_failed:
+    "Kết nối mạng thất bại. Vui lòng kiểm tra kết nối internet.",
+  network_error_http_status: "Máy chủ phản hồi với mã lỗi HTTP.",
+  network_error_read_failed: "Không thể đọc dữ liệu phản hồi từ máy chủ.",
+  crypto_error_encrypt_failed: "Mã hóa dữ liệu thất bại.",
+  totp_error_invalid_secret: "Khóa bí mật TOTP không hợp lệ.",
+  clipboard_copy_failed: "Không thể sao chép vào bộ nhớ tạm.",
+
   // Notification Toast Bar
   notification_save_title: "Gợi ý lưu mật khẩu",
   notification_update_title: "Gợi ý cập nhật mật khẩu",

@@ -3,7 +3,6 @@
   "specifiers": {
     "npm:@types/chrome@~0.1.42": "0.1.43",
     "npm:adm-zip@0.6": "0.6.0",
-    "npm:cbor-x@^1.6.4": "1.6.4",
     "npm:esbuild-plugin-solid@0.6": "0.6.0_esbuild@0.28.1_solid-js@1.9.14",
     "npm:esbuild@~0.28.1": "0.28.1",
     "npm:graceful-fs@*": "4.2.11",
@@ -289,36 +288,6 @@
         "css-tree"
       ],
       "bin": true
-    },
-    "@cbor-extract/cbor-extract-darwin-arm64@2.2.2": {
-      "integrity": "sha512-ZKZ/F8US7JR92J4DMct6cLW/Y66o2K576+zjlEN/MevH70bFIsB10wkZEQPLzl2oNh2SMGy55xpJ9JoBRl5DOA==",
-      "os": ["darwin"],
-      "cpu": ["arm64"]
-    },
-    "@cbor-extract/cbor-extract-darwin-x64@2.2.2": {
-      "integrity": "sha512-32b1mgc+P61Js+KW9VZv/c+xRw5EfmOcPx990JbCBSkYJFY0l25VinvyyWfl+3KjibQmAcYwmyzKF9J4DyKP/Q==",
-      "os": ["darwin"],
-      "cpu": ["x64"]
-    },
-    "@cbor-extract/cbor-extract-linux-arm64@2.2.2": {
-      "integrity": "sha512-wfqgzqCAy/Vn8i6WVIh7qZd0DdBFaWBjPdB6ma+Wihcjv0gHqD/mw3ouVv7kbbUNrab6dKEx/w3xQZEdeXIlzg==",
-      "os": ["linux"],
-      "cpu": ["arm64"]
-    },
-    "@cbor-extract/cbor-extract-linux-arm@2.2.2": {
-      "integrity": "sha512-tNg0za41TpQfkhWjptD+0gSD2fggMiDCSacuIeELyb2xZhr7PrhPe5h66Jc67B/5dmpIhI2QOUtv4SBsricyYQ==",
-      "os": ["linux"],
-      "cpu": ["arm"]
-    },
-    "@cbor-extract/cbor-extract-linux-x64@2.2.2": {
-      "integrity": "sha512-rpiLnVEsqtPJ+mXTdx1rfz4RtUGYIUg2rUAZgd1KjiC1SehYUSkJN7Yh+aVfSjvCGtVP0/bfkQkXpPXKbmSUaA==",
-      "os": ["linux"],
-      "cpu": ["x64"]
-    },
-    "@cbor-extract/cbor-extract-win32-x64@2.2.2": {
-      "integrity": "sha512-dI+9P7cfWxkTQ+oE+7Aa6onEn92PHgfWXZivjNheCRmTBDBf2fx6RyTi0cmgpYLnD1KLZK9ZYrMxaPZ4oiXhGA==",
-      "os": ["win32"],
-      "cpu": ["x64"]
     },
     "@csstools/color-helpers@5.1.0": {
       "integrity": "sha512-S11EXWJyy0Mz5SYvRmY8nJYTFFd1LCNV+7cXyAgQtOOuzb4EsgfqDufL+9esx72/eLhsRdGZwaldu/h+E4t4BA=="
@@ -990,28 +959,6 @@
     "caniuse-lite@1.0.30001799": {
       "integrity": "sha512-hG1bReV+OUU+MOqK4t/ZWI0tZOyz3rqS9XuhOUz1cIcbwBKjOyJEJuw9ER5JuNyqxNk8u/JUVbGibBOL1yrjFw=="
     },
-    "cbor-extract@2.2.2": {
-      "integrity": "sha512-hlSxxI9XO2yQfe9g6msd3g4xCfDqK5T5P0fRMLuaLHhxn4ViPrm+a+MUfhrvH2W962RGxcBwEGzLQyjbDG1gng==",
-      "dependencies": [
-        "node-gyp-build-optional-packages"
-      ],
-      "optionalDependencies": [
-        "@cbor-extract/cbor-extract-darwin-arm64",
-        "@cbor-extract/cbor-extract-darwin-x64",
-        "@cbor-extract/cbor-extract-linux-arm",
-        "@cbor-extract/cbor-extract-linux-arm64",
-        "@cbor-extract/cbor-extract-linux-x64",
-        "@cbor-extract/cbor-extract-win32-x64"
-      ],
-      "scripts": true,
-      "bin": true
-    },
-    "cbor-x@1.6.4": {
-      "integrity": "sha512-UGKHjp6RHC6QuZ2yy5LCKm7MojM4716DwoSaqwQpaH4DvZvbBTGcoDNTiG9Y2lByXZYFEs9WRkS5tLl96IrF1Q==",
-      "optionalDependencies": [
-        "cbor-extract"
-      ]
-    },
     "chokidar@5.0.0": {
       "integrity": "sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==",
       "dependencies": [
@@ -1441,13 +1388,6 @@
     "node-addon-api@7.1.1": {
       "integrity": "sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ=="
     },
-    "node-gyp-build-optional-packages@5.1.1": {
-      "integrity": "sha512-+P72GAjVAbTxjjwUmwjVrqrdZROD4nf8KgpBoDxqXXTiYZZt/ud60dE5yvCSr9lRO8e8yv6kgJIC0K0PfZFVQw==",
-      "dependencies": [
-        "detect-libc"
-      ],
-      "bin": true
-    },
     "node-releases@2.0.50": {
       "integrity": "sha512-J6l92tKHX6w8Jy5nO1Vuc01NoIiRGi/d6qBKVxh+IQ8Cr3b6HbVNfKiF8ZpFKufTwpwxMmce2W3iQZ861ZRyTg=="
     },
@@ -1797,7 +1737,6 @@
       "jsr:@std/assert@1",
       "npm:@types/chrome@~0.1.42",
       "npm:adm-zip@0.6",
-      "npm:cbor-x@^1.6.4",
       "npm:esbuild-plugin-solid@0.6",
       "npm:esbuild@~0.28.1",
       "npm:hash-wasm@^4.12.0",

@@ -16,6 +16,7 @@ import {
 import { showNotificationBar } from "@/features/notification/index.ts";
 import { getBaseDomain } from "@/core/domain-utils.ts";
 import { generateTotpSafe } from "@/core/totp-utils.ts";
+import { writeClipboardText } from "@/core/clipboard-utils.ts";
 
 const SaveCredentialPayloadSchema = z.object({
   actionType: z.enum(["add", "update"]),
@@ -107,11 +108,7 @@ setupAutofillFocusMonitoring(() => {
               if (tSecret) {
                 const totpRes = generateTotpSafe(tSecret);
                 if (totpRes.isOk()) {
-                  try {
-                    navigator.clipboard.writeText(totpRes.value);
-                  } catch (_err) {
-                    // Ignore clipboard write failures
-                  }
+                  writeClipboardText(totpRes.value);
                 }
               }
 

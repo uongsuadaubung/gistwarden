@@ -2,7 +2,10 @@ import { err, ok, Result, ResultAsync } from "neverthrow";
 import type { Fido2Credential } from "@/core/types.ts";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeParseUrl } from "@/core/domain-utils.ts";
-import { encode as cborEncode } from "cbor-x";
+import {
+  encodeCoseEC2PublicKey,
+  packAttestationObject,
+} from "@/core/cbor-utils.ts";
 
 // IANA COSE Key Parameters & Algorithm Identifiers (RFC 8152 / RFC 9052)
 export const COSE_KEY_PARAM_KTY = 1;
@@ -199,17 +202,6 @@ export async function createPasskeyKeyPair(): Promise<
   );
 }
 
-// Attestation Object CBOR Packer using cbor-x library
-export function packAttestationObject(authData: Uint8Array): Uint8Array {
-  return new Uint8Array(
-    cborEncode({
-      fmt: "none",
-      attStmt: {},
-      authData,
-    }),
-  );
-}
-
 // AAGUID (Authenticator Attestation GUID) đại diện duy nhất cho Gistwarden Authenticator (16 bytes)
 export const AAGUID = new TextEncoder().encode("LazyPasskeyGist1");
 
@@ -283,16 +275,8 @@ export async function generateAuthData(
     if (keyYRes.isErr()) return err(keyYRes.error);
     const keyY = keyYRes.value;
 
-    // Mã hóa cấu trúc COSE EC2 Key (RFC 8152 / RFC 9052) theo chuẩn CBOR Map bằng cbor-x:
-    const coseMap = new Map<number, number | Uint8Array>([
-      [COSE_KEY_PARAM_KTY, COSE_KTY_EC2],
-      [COSE_KEY_PARAM_ALG, COSE_ALG_ES256],
-      [COSE_KEY_PARAM_CRV, COSE_CRV_P256],
-      [COSE_KEY_PARAM_X, keyX],
-      [COSE_KEY_PARAM_Y, keyY],
-    ]);
-    const coseBytes = new Uint8Array(cborEncode(coseMap));
-
+    // Mã hóa cấu trúc COSE EC2 Key (RFC 8152 / RFC 9052) theo chuẩn CBOR Map
+    const coseBytes = encodeCoseEC2PublicKey(keyX, keyY);
     authData.push(...coseBytes);
   }
 

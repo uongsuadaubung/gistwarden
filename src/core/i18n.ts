@@ -29,6 +29,29 @@ const LangSchema = z.object({
   toast_timeout_updated: z.string(),
   confirm_disable_pin: z.string(),
 
+  // Detailed Error Messages
+  github_error_missing_token: z.string(),
+  github_error_user_parse_failed: z.string(),
+  github_error_gist_not_found: z.string(),
+  github_error_create_gist_failed: z.string(),
+  github_error_gist_file_missing: z.string(),
+  github_error_gist_parse_failed: z.string(),
+  github_error_missing_gist_id: z.string(),
+  sync_error_corrupted_payload: z.string(),
+  sync_error_invalid_format: z.string(),
+  sync_error_invalid_response: z.string(),
+  tab_error_get_current: z.string(),
+  tab_error_send_message: z.string(),
+  tab_error_capture: z.string(),
+  tab_error_open: z.string(),
+  messaging_error_send_failed: z.string(),
+  network_error_fetch_failed: z.string(),
+  network_error_http_status: z.string(),
+  network_error_read_failed: z.string(),
+  crypto_error_encrypt_failed: z.string(),
+  totp_error_invalid_secret: z.string(),
+  clipboard_copy_failed: z.string(),
+
   // Notification Toast Bar
   notification_save_title: z.string(),
   notification_update_title: z.string(),
@@ -642,10 +665,6 @@ type Lang = z.infer<typeof LangSchema>;
 
 export type TranslationKey = keyof Lang;
 
-export function isTranslationKey(key: string): key is TranslationKey {
-  return key in LangSchema.shape;
-}
-
 const dictionaries: Record<SupportLanguage, unknown> = {
   [SupportLanguage.En]: en,
   [SupportLanguage.Vi]: vi,
@@ -666,13 +685,9 @@ export function setLanguage(code: SupportLanguage | "en" | "vi"): void {
 }
 
 export async function initI18n(): Promise<void> {
-  try {
-    const settings = await getAllSettings();
-    if (settings && settings.language) {
-      setLanguage(settings.language);
-    }
-  } catch (_err) {
-    // Ignore errors in non-extension environments
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isOk() && settingsRes.value.language) {
+    setLanguage(settingsRes.value.language);
   }
 }
 

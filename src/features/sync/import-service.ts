@@ -22,7 +22,7 @@ export async function importJsonData(
 
   const key = await getSessionKey();
   if (!key || !store.salt) {
-    return err("toast_error");
+    return err("login_title_locked");
   }
 
   console.log(`[${APP_NAME} Import] Dang tai len Gist...`);
@@ -60,7 +60,7 @@ export async function importCsvData(
 
   const key = await getSessionKey();
   if (!key || !store.salt) {
-    return err("toast_error");
+    return err("login_title_locked");
   }
 
   console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
