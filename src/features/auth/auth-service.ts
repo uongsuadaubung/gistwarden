@@ -35,7 +35,6 @@ import {
   View,
 } from "@/core/types.ts";
 import {
-  isTranslationKey,
   setLanguage,
   SupportLanguage,
   type TranslationKey,
@@ -70,9 +69,12 @@ async function handleBrowserRestartCleanup(
   if (!hasSessionStorage()) {
     return;
   }
-  const sessionInitialized = await getSessionItem(
+  const sessionInitRes = await getSessionItem(
     SESSION_KEY_SESSION_INITIALIZED,
   );
+  const sessionInitialized = sessionInitRes.isOk()
+    ? sessionInitRes.value
+    : null;
   if (!sessionInitialized) {
     const action = settings.vaultTimeoutAction || "lock";
     if (action === "logout") {
@@ -87,7 +89,8 @@ async function handleBrowserRestartCleanup(
 }
 
 async function loadAndApplyTheme(): Promise<"dark" | "light"> {
-  const themeVal = await getLocalItem(LOCAL_STORAGE_KEY_THEME);
+  const themeRes = await getLocalItem(LOCAL_STORAGE_KEY_THEME);
+  const themeVal = themeRes.isOk() ? themeRes.value : null;
   const finalTheme = themeVal === "light" ? "light" : "dark";
   if (finalTheme === "light") {
     document.body.classList.add("light-theme");
@@ -101,7 +104,8 @@ async function resolveGithubToken(
   settings: AppSettings,
   key: CryptoKey | null,
 ): Promise<string> {
-  const sessionToken = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const sessionToken = sessionTokenRes.isOk() ? sessionTokenRes.value : null;
   let decryptedToken = "";
   if (settings.githubTokenEncrypted && settings.githubTokenIv && key) {
     const decryptRes = await decryptData(
@@ -124,7 +128,8 @@ async function resolveGithubToken(
 async function fetchEncryptedVaultContent(): Promise<
   Result<string | null, TranslationKey>
 > {
-  const cachedVal = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
+  const cachedRes = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
+  const cachedVal = cachedRes.isOk() ? cachedRes.value : null;
   if (typeof cachedVal === "string" && cachedVal) {
     return ok(cachedVal);
   }
@@ -169,14 +174,15 @@ async function resolveSavedViewAndItem(
       targetView = View.ItemDetail;
     }
   } else if (!isFido2Prompt) {
-    const sessionData = await getSessionItems([
+    const sessionDataRes = await getSessionItems([
       SESSION_KEY_LAST_VIEW,
       SESSION_KEY_LAST_SELECTED_ITEM_ID,
     ]);
+    const sessionData = sessionDataRes.isOk() ? sessionDataRes.value : {};
     const savedView = sessionData[SESSION_KEY_LAST_VIEW];
     const savedItemId = sessionData[SESSION_KEY_LAST_SELECTED_ITEM_ID];
 
-    const ViewSchema = z.nativeEnum(View);
+    const ViewSchema = z.enum(View);
     const viewParsed = ViewSchema.safeParse(savedView);
     if (viewParsed.success) {
       const viewVal = viewParsed.data;
@@ -267,7 +273,11 @@ function applyInitialView(
 export async function init() {
   console.log(`[Store] Initializing ${APP_NAME} Store...`);
 
-  const settings = await getAllSettings();
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isErr()) {
+    return;
+  }
+  const settings = settingsRes.value;
   await handleBrowserRestartCleanup(settings);
 
   const key = await getSessionKey();
@@ -275,8 +285,9 @@ export async function init() {
   const currentTheme = await loadAndApplyTheme();
 
   const decryptedToken = await resolveGithubToken(settings, key);
+  const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
   const githubConfigured = !!settings.githubTokenEncrypted ||
-    !!(await getSessionItem(SESSION_KEY_GITHUB_TOKEN));
+    (sessionTokenRes.isOk() && !!sessionTokenRes.value);
 
   setStore({
     githubToken: decryptedToken,
@@ -344,7 +355,8 @@ export async function init() {
 
   // Subscribe to settings changes
   subscribeToSettings(async (newSettings) => {
-    const sessionToken = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+    const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+    const sessionToken = sessionTokenRes.isOk() ? sessionTokenRes.value : null;
     const githubConfigured = !!newSettings.githubTokenEncrypted ||
       !!sessionToken;
     const finalToken = typeof sessionToken === "string" ? sessionToken : "";
@@ -402,7 +414,8 @@ async function setupUnlockedSession(
 
   await setSessionUnlocked(true);
 
-  const sessionVal = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const sessionRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const sessionVal = sessionRes.isOk() ? sessionRes.value : null;
   const finalToken = typeof sessionVal === "string" ? sessionVal : "";
   const finalView = targetView ||
     (store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault);
@@ -425,7 +438,8 @@ async function resolveGistContent(): Promise<
 > {
   let content = "";
 
-  const cachedVal = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
+  const cachedRes = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
+  const cachedVal = cachedRes.isOk() ? cachedRes.value : null;
   if (typeof cachedVal === "string" && cachedVal) {
     content = cachedVal;
   } else {
@@ -526,7 +540,7 @@ async function decryptGistVault(
     ) {
       return err("login_error_wrong_mp");
     }
-    return err(isTranslationKey(errMsg) ? errMsg : "login_error_wrong_mp");
+    return err(errMsg);
   }
 
   const itemsJsonRes = safeJsonParse(decryptRes.value);
@@ -560,8 +574,11 @@ async function decryptGistVault(
 export async function unlock(
   password: string,
 ): Promise<Result<void, TranslationKey>> {
-  const settings = await getAllSettings();
-  const sessionToken = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isErr()) return err(settingsRes.error);
+  const settings = settingsRes.value;
+  const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const sessionToken = sessionTokenRes.isOk() ? sessionTokenRes.value : null;
   const githubConfigured = !!settings.githubTokenEncrypted || !!sessionToken;
   if (!githubConfigured) {
     clearDerivedKey();

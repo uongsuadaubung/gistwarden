@@ -107,7 +107,7 @@ export async function saveItem(
 
     const parseResult = z.array(VaultItemSchema).safeParse(mappedItems);
     if (!parseResult.success) {
-      return err("storage_error");
+      return err("edit_error_save_failed");
     }
     updatedList = parseResult.data;
   } else {
@@ -175,7 +175,7 @@ export async function saveItem(
 
     const parseResult = VaultItemSchema.safeParse(baseItem);
     if (!parseResult.success) {
-      return err("storage_error");
+      return err("edit_error_save_failed");
     }
 
     updatedList = [...store.vaultItems, parseResult.data];
@@ -240,12 +240,12 @@ export async function clearVault(): Promise<Result<void, TranslationKey>> {
 
     const parseRes = SyncResponseSchema.safeParse(sendResult.value);
     if (!parseRes.success) {
-      return err("toast_error");
+      return err("settings_clear_vault_fail");
     }
     const res = parseRes.data;
 
     if (!res.success) {
-      return err("toast_error");
+      return err("settings_clear_vault_fail");
     }
   }
 

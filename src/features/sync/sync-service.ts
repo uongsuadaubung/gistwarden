@@ -48,7 +48,7 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
 
   const parseRes = DownloadFromGistResponseSchema.safeParse(sendResult.value);
   if (!parseRes.success) {
-    const errorKey = "toast_error";
+    const errorKey = "sync_error_invalid_response";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
@@ -56,7 +56,7 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
   const res = parseRes.data;
 
   if (!res.success) {
-    const errorKey = "toast_error";
+    const errorKey: TranslationKey = res.error || "vault_sync_error";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
@@ -75,7 +75,7 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
 
   const parsePayloadRes = safeJsonParse(res.content || "{}");
   if (parsePayloadRes.isErr()) {
-    const errorKey = "toast_error";
+    const errorKey = "sync_error_corrupted_payload";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
@@ -98,7 +98,7 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
 
   const parseDecryptedRes = safeJsonParse(decrypted);
   if (parseDecryptedRes.isErr()) {
-    const errorKey = "toast_error";
+    const errorKey = "sync_error_corrupted_payload";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
@@ -107,7 +107,7 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
 
   const parseVaultRes = VaultListSchema.safeParse(decryptedJson);
   if (!parseVaultRes.success) {
-    const errorKey = "storage_error";
+    const errorKey = "sync_error_invalid_format";
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);

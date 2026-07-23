@@ -178,7 +178,7 @@ export const deleteVaultItemWithConfirm = async (
     }
     return true;
   } else {
-    showToast(t(res.error) || t("toast_error"), "error");
+    showToast(t(res.error), "error");
     return false;
   }
 };

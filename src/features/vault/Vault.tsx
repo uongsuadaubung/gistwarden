@@ -178,7 +178,7 @@ export const Vault: Component = () => {
       setSelectedItemIds(new Set<string>());
       setIsSelectMode(false);
     } else {
-      showToast(t(res.error) || t("toast_error"), "error");
+      showToast(t(res.error), "error");
     }
   };
 
@@ -326,7 +326,7 @@ export const Vault: Component = () => {
     if (res.isOk()) {
       showToast(t("toast_success"), "success");
     } else {
-      showToast(t(res.error) || t("toast_error"), "error");
+      showToast(t(res.error), "error");
     }
     setActiveOptionsMenuId(""); // Close options dropdown
   };
@@ -348,7 +348,7 @@ export const Vault: Component = () => {
     if (res.isOk()) {
       showToast(t("toast_success"), "success");
     } else {
-      showToast(t(res.error) || t("toast_error"), "error");
+      showToast(t(res.error), "error");
     }
     setActiveOptionsMenuId(""); // Close options dropdown
   };
@@ -385,7 +385,7 @@ export const Vault: Component = () => {
           }
         } else {
           console.warn("Autofill failed:", rawResponseRes.error);
-          showToast(t("toast_error"), "error");
+          showToast(t(rawResponseRes.error), "error");
         }
       }
     }

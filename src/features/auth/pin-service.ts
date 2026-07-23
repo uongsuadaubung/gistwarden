@@ -58,8 +58,11 @@ export async function unlockWithPin(
     return err("login_error_wrong_pin");
   }
 
-  const saltBuffer = base64ToArrayBuffer(store.pinUnlockSalt);
-  const pinKeyRes = await deriveKey(pin, new Uint8Array(saltBuffer));
+  const saltBufferRes = base64ToArrayBuffer(store.pinUnlockSalt);
+  if (saltBufferRes.isErr()) {
+    return err("login_error_wrong_pin");
+  }
+  const pinKeyRes = await deriveKey(pin, new Uint8Array(saltBufferRes.value));
   if (pinKeyRes.isErr()) {
     return err("login_error_wrong_pin");
   }
@@ -73,8 +76,14 @@ export async function unlockWithPin(
     return err("login_error_wrong_pin");
   }
 
-  const buffer = base64ToArrayBuffer(decryptRes.value);
-  const importRes = await importAesGcmKey(buffer, "login_error_wrong_pin");
+  const bufferRes = base64ToArrayBuffer(decryptRes.value);
+  if (bufferRes.isErr()) {
+    return err("login_error_wrong_pin");
+  }
+  const importRes = await importAesGcmKey(
+    bufferRes.value,
+    "login_error_wrong_pin",
+  );
 
   if (importRes.isErr()) {
     return err(importRes.error);

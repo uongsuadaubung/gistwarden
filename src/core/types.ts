@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TranslationKey } from "@/core/i18n.ts";
 
 export enum View {
   Login = "Login",
@@ -380,14 +381,14 @@ export const ValidateTokenResponseSchema = z.object({
   success: z.boolean(),
   username: z.string().optional(),
   avatarUrl: z.string().optional(),
-  error: z.string().optional(),
+  error: z.custom<TranslationKey>().optional(),
 });
 export type ValidateTokenResponse = z.infer<typeof ValidateTokenResponseSchema>;
 
 export const DownloadFromGistResponseSchema = z.object({
   success: z.boolean(),
   content: z.string().optional(),
-  error: z.string().optional(),
+  error: z.custom<TranslationKey>().optional(),
 });
 export type DownloadFromGistResponse = z.infer<
   typeof DownloadFromGistResponseSchema
@@ -416,7 +417,7 @@ export const GetPendingFido2RequestResponseSchema = z.object({
     })).optional(),
   }).optional(),
   origin: z.string().optional(),
-  error: z.string().optional(),
+  error: z.custom<TranslationKey>().optional(),
 });
 export type GetPendingFido2RequestResponse = z.infer<
   typeof GetPendingFido2RequestResponseSchema

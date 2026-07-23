@@ -2,6 +2,8 @@ import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import { MSG_SAVE_CREDENTIAL_ACTION } from "@/core/constants.ts";
 
+import { notifyBackground } from "@/core/messaging.ts";
+
 export interface SaveCredentialPayload {
   actionType: "add" | "update";
   domain: string;
@@ -141,15 +143,11 @@ export function NotificationToast(props: NotificationToastProps) {
         }
         return;
       }
-      try {
-        chrome.runtime.sendMessage({
-          type: MSG_SAVE_CREDENTIAL_ACTION,
-          choice: userChoice,
-          payload: props.payload,
-        });
-      } catch (_err) {
-        // Ignore extension context errors
-      }
+      notifyBackground({
+        type: MSG_SAVE_CREDENTIAL_ACTION,
+        choice: userChoice,
+        payload: props.payload,
+      });
     });
   };
 

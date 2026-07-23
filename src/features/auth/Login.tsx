@@ -22,7 +22,7 @@ import { GithubSetupForm } from "@/features/auth/components/GithubSetupForm.tsx"
 import { MasterPasswordForm } from "@/features/auth/components/MasterPasswordForm.tsx";
 import { MasterPasswordCreate } from "@/features/auth/components/MasterPasswordCreate.tsx";
 import { AppIcon, SyncIcon } from "@/icons/svg/index.ts";
-import { isTranslationKey, t } from "@/core/i18n.ts";
+import { t, type TranslationKey } from "@/core/i18n.ts";
 import { getSessionItem, removeSessionItem } from "@/core/storage.ts";
 import { z } from "zod";
 import {
@@ -42,7 +42,7 @@ import { sendMessageToBackground } from "@/core/messaging.ts";
 const OauthResponseSchema = z.object({
   success: z.boolean().catch(false),
   token: z.string().optional(),
-  error: z.string().optional(),
+  error: z.custom<TranslationKey>().optional(),
 });
 
 export const Login: Component = () => {
@@ -85,7 +85,8 @@ export const Login: Component = () => {
   });
 
   onMount(async () => {
-    const rawToken = await getSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
+    const rawTokenRes = await getSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
+    const rawToken = rawTokenRes.isOk() ? rawTokenRes.value : null;
     const parsed = z.string().safeParse(rawToken);
 
     if (parsed.success && parsed.data) {
@@ -142,12 +143,8 @@ export const Login: Component = () => {
     setGlobalLoading(true);
     setError("");
 
-    const handleOauthError = (errVal: unknown) => {
-      const errMsg = errVal instanceof Error ? errVal.message : String(errVal);
-      const errKey = isTranslationKey(errMsg)
-        ? errMsg
-        : "login_error_oauth_fail";
-      setError(t(errKey));
+    const handleOauthError = (errVal: TranslationKey) => {
+      setError(t(errVal));
       setGlobalLoading(false);
     };
 

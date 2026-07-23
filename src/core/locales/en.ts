@@ -19,6 +19,32 @@ export default {
   toast_timeout_updated: "Timeout settings updated",
   confirm_disable_pin: "Are you sure you want to disable PIN unlock?",
 
+  // Detailed Error Messages
+  github_error_missing_token: "GitHub access token is missing.",
+  github_error_user_parse_failed: "Failed to authenticate GitHub user info.",
+  github_error_gist_not_found: "Vault Gist not found on GitHub.",
+  github_error_create_gist_failed: "Failed to create a new Gist on GitHub.",
+  github_error_gist_file_missing: "Vault data file missing in GitHub Gist.",
+  github_error_gist_parse_failed:
+    "Gist data from GitHub is invalid or corrupted.",
+  github_error_missing_gist_id: "Missing Gist ID to process request.",
+  sync_error_corrupted_payload:
+    "Sync data is corrupted or cannot be decrypted.",
+  sync_error_invalid_format: "Vault data format is invalid.",
+  sync_error_invalid_response: "Invalid response received from sync process.",
+  tab_error_get_current: "Failed to query current browser tab.",
+  tab_error_send_message: "Failed to send message to browser tab.",
+  tab_error_capture: "Failed to capture browser tab.",
+  tab_error_open: "Failed to open link in a new tab.",
+  messaging_error_send_failed: "Failed to communicate with background process.",
+  network_error_fetch_failed:
+    "Network request failed. Please check internet connection.",
+  network_error_http_status: "Server returned an HTTP error status.",
+  network_error_read_failed: "Failed to read response data from server.",
+  crypto_error_encrypt_failed: "Data encryption failed.",
+  totp_error_invalid_secret: "Invalid TOTP secret key.",
+  clipboard_copy_failed: "Failed to copy content to clipboard.",
+
   // Notification Toast Bar
   notification_save_title: "Save password suggestion",
   notification_update_title: "Update password suggestion",

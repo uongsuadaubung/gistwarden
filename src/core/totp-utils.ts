@@ -55,7 +55,7 @@ export function generateTotpSafe(
     },
     (err): TranslationKey => {
       console.error("TOTP Generation error:", err);
-      return "toast_error";
+      return "totp_error_invalid_secret";
     },
   )();
 }

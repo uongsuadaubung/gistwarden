@@ -12,12 +12,12 @@ export async function sendMessageToBackground(
     typeof chrome === "undefined" || !chrome.runtime ||
     !chrome.runtime.sendMessage
   ) {
-    return err("toast_error");
+    return err("messaging_error_send_failed");
   }
 
   const sendRes = await ResultAsync.fromPromise(
     chrome.runtime.sendMessage(message),
-    (): TranslationKey => "toast_error",
+    (): TranslationKey => "messaging_error_send_failed",
   );
   if (sendRes.isErr()) return err(sendRes.error);
   return ok(sendRes.value);
@@ -34,12 +34,12 @@ export async function notifyBackground(
     typeof chrome === "undefined" || !chrome.runtime ||
     !chrome.runtime.sendMessage
   ) {
-    return err("toast_error");
+    return err("messaging_error_send_failed");
   }
 
   const sendRes = await ResultAsync.fromPromise(
     chrome.runtime.sendMessage(message),
-    (): TranslationKey => "toast_error",
+    (): TranslationKey => "messaging_error_send_failed",
   );
   if (sendRes.isErr()) return err(sendRes.error);
   return ok(undefined);
@@ -57,12 +57,12 @@ export async function broadcastMessage(
     typeof chrome === "undefined" || !chrome.runtime ||
     !chrome.runtime.sendMessage
   ) {
-    return err("toast_error");
+    return err("messaging_error_send_failed");
   }
 
   const sendRes = await ResultAsync.fromPromise(
     chrome.runtime.sendMessage(message),
-    (): TranslationKey => "toast_error",
+    (): TranslationKey => "messaging_error_send_failed",
   );
   if (sendRes.isErr()) return err(sendRes.error);
   return ok(undefined);

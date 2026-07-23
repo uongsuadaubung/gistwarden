@@ -11,9 +11,9 @@ export async function fetchText(
 ): Promise<Result<string, TranslationKey>> {
   const fetchRes = await ResultAsync.fromPromise(
     fetch(url, options),
-    (e) => {
+    (e): TranslationKey => {
       console.warn(`[Fetch] Request to ${url} failed:`, e);
-      return "toast_error" as const;
+      return "network_error_fetch_failed";
     },
   );
   if (fetchRes.isErr()) {
@@ -21,14 +21,14 @@ export async function fetchText(
   }
   const res = fetchRes.value;
   if (!res.ok) {
-    return err("toast_error");
+    return err("network_error_http_status");
   }
 
   const textRes = await ResultAsync.fromPromise(
     res.text(),
-    (e) => {
+    (e): TranslationKey => {
       console.warn("[Fetch] Reading response text failed:", e);
-      return "toast_error" as const;
+      return "network_error_read_failed";
     },
   );
   if (textRes.isErr()) {

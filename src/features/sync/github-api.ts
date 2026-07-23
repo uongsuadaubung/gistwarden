@@ -36,7 +36,7 @@ async function githubRequest(
   options: RequestInit = {},
 ): Promise<Result<unknown, TranslationKey>> {
   const token = await getGithubToken();
-  if (!token) return err("toast_error");
+  if (!token) return err("github_error_missing_token");
 
   const res = await fetchText(`${GITHUB_API_BASE}${path}`, {
     ...options,
@@ -77,12 +77,12 @@ export async function validateToken(
 
   const parseRes = safeJsonParse(fetchRes.value);
   if (parseRes.isErr()) {
-    return err("toast_error");
+    return err("github_error_user_parse_failed");
   }
 
   const parsed = GithubUserSchema.safeParse(parseRes.value);
   if (!parsed.success) {
-    return err("toast_error");
+    return err("github_error_user_parse_failed");
   }
 
   return ok({
@@ -98,7 +98,7 @@ export async function findGistId(): Promise<Result<string, TranslationKey>> {
   }
   const parsed = GistArraySchema.safeParse(reqRes.value);
   if (!parsed.success) {
-    return err("toast_error");
+    return err("github_error_gist_parse_failed");
   }
   const target = parsed.data.find(
     (g) => g.description === GIST_DESCRIPTION && GIST_FILE_NAME in g.files,
@@ -126,7 +126,7 @@ export async function createGist(
   }
   const parsed = GistSchema.safeParse(reqRes.value);
   if (!parsed.success) {
-    return err("toast_error");
+    return err("github_error_create_gist_failed");
   }
   return ok(parsed.data);
 }
@@ -151,8 +151,9 @@ export async function updateGist(
 export async function uploadToGist(
   content: string,
 ): Promise<Result<void, TranslationKey>> {
-  const settings = await getAllSettings();
-  let gistId = settings.gistId;
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isErr()) return err(settingsRes.error);
+  let gistId = settingsRes.value.gistId;
 
   if (!gistId) {
     const findRes = await findGistId();
@@ -188,8 +189,9 @@ export async function uploadToGist(
 export async function downloadFromGist(): Promise<
   Result<{ content: string; updatedAt: number }, TranslationKey>
 > {
-  const settings = await getAllSettings();
-  let gistId = settings.gistId;
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isErr()) return err(settingsRes.error);
+  let gistId = settingsRes.value.gistId;
 
   if (!gistId) {
     const findRes = await findGistId();
@@ -198,7 +200,7 @@ export async function downloadFromGist(): Promise<
     }
     gistId = findRes.value;
     if (!gistId) {
-      return err("toast_error");
+      return err("github_error_gist_not_found");
     }
     const updateSettingsRes = await updateSettings({ gistId });
     if (updateSettingsRes.isErr()) {
@@ -212,11 +214,11 @@ export async function downloadFromGist(): Promise<
   }
   const parsed = GistSchema.safeParse(dataRes.value);
   if (!parsed.success) {
-    return err("toast_error");
+    return err("github_error_gist_parse_failed");
   }
   const gist = parsed.data;
   const file = gist.files[GIST_FILE_NAME];
-  if (!file) return err("toast_error");
+  if (!file) return err("github_error_gist_file_missing");
 
   let content = "";
   if (file.content) {
@@ -244,7 +246,7 @@ export async function downloadFromGist(): Promise<
 export async function downloadFromGistPublic(
   gistId: string,
 ): Promise<Result<{ content: string; updatedAt: number }, TranslationKey>> {
-  if (!gistId) return err("toast_error");
+  if (!gistId) return err("github_error_missing_gist_id");
 
   const res = await fetchText(`${GITHUB_API_BASE}/gists/${gistId}`, {
     cache: "no-store",
@@ -259,17 +261,17 @@ export async function downloadFromGistPublic(
 
   const parseRes = safeJsonParse(res.value);
   if (parseRes.isErr()) {
-    return err("toast_error");
+    return err("github_error_gist_parse_failed");
   }
 
   const parsed = GistSchema.safeParse(parseRes.value);
   if (!parsed.success) {
-    return err("toast_error");
+    return err("github_error_gist_parse_failed");
   }
 
   const gist = parsed.data;
   const file = gist.files[GIST_FILE_NAME];
-  if (!file) return err("toast_error");
+  if (!file) return err("github_error_gist_file_missing");
 
   let content = "";
   if (file.content) {

@@ -53,7 +53,7 @@ export async function encryptData(
       key,
       encoder.encode(data),
     ),
-    (): TranslationKey => "toast_error",
+    (): TranslationKey => "crypto_error_encrypt_failed",
   );
   if (encryptRes.isErr()) return err(encryptRes.error);
 
@@ -70,8 +70,13 @@ export async function decryptData(
   key: CryptoKey,
 ): Promise<Result<string, TranslationKey>> {
   const decoder = new TextDecoder();
-  const iv = new Uint8Array(base64ToArrayBuffer(ivBase64));
-  const ciphertext = new Uint8Array(base64ToArrayBuffer(ciphertextBase64));
+  const ivRes = base64ToArrayBuffer(ivBase64);
+  if (ivRes.isErr()) return err(ivRes.error);
+  const ciphertextRes = base64ToArrayBuffer(ciphertextBase64);
+  if (ciphertextRes.isErr()) return err(ciphertextRes.error);
+
+  const iv = new Uint8Array(ivRes.value);
+  const ciphertext = new Uint8Array(ciphertextRes.value);
 
   const decryptRes = await ResultAsync.fromPromise(
     crypto.subtle.decrypt(
@@ -94,10 +99,20 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return new Uint8Array(buffer).toBase64();
 }
 
-export function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const cleanBase64 = base64.replace(/\s/g, "");
-  const u8 = Uint8Array.fromBase64(cleanBase64);
-  return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+export function base64ToArrayBuffer(
+  base64: string,
+): Result<ArrayBuffer, TranslationKey> {
+  return Result.fromThrowable(
+    () => {
+      const cleanBase64 = base64.replace(/\s/g, "");
+      const u8 = Uint8Array.fromBase64(cleanBase64);
+      return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+    },
+    (e): TranslationKey => {
+      console.error("[Crypto] base64ToArrayBuffer error:", e);
+      return "crypto_error_encrypt_failed";
+    },
+  )();
 }
 
 let derivedCryptoKey: CryptoKey | null = null;
@@ -123,8 +138,9 @@ export async function getOrDeriveKey(
 ): Promise<Result<CryptoKey, TranslationKey>> {
   if (derivedCryptoKey) return ok(derivedCryptoKey);
 
-  const saltBuffer = base64ToArrayBuffer(saltBase64);
-  const salt = new Uint8Array(saltBuffer);
+  const saltBufferRes = base64ToArrayBuffer(saltBase64);
+  if (saltBufferRes.isErr()) return err(saltBufferRes.error);
+  const salt = new Uint8Array(saltBufferRes.value);
 
   const deriveRes = await deriveKey(password, salt);
   if (deriveRes.isErr()) {
@@ -143,9 +159,12 @@ export async function getOrDeriveKey(
 export async function getSessionKey(): Promise<CryptoKey | null> {
   if (derivedCryptoKey) return derivedCryptoKey;
 
-  const base64 = await getSessionItem(SESSION_KEY_DERIVED_KEY);
+  const base64Res = await getSessionItem(SESSION_KEY_DERIVED_KEY);
+  const base64 = base64Res.isOk() ? base64Res.value : null;
   if (typeof base64 === "string" && base64) {
-    const buffer = base64ToArrayBuffer(base64);
+    const bufferRes = base64ToArrayBuffer(base64);
+    if (bufferRes.isErr()) return null;
+    const buffer = bufferRes.value;
     const importRes = await ResultAsync.fromPromise(
       crypto.subtle.importKey(
         "raw",
@@ -170,12 +189,17 @@ export async function getSessionKey(): Promise<CryptoKey | null> {
 }
 
 export async function verifyMasterPassword(password: string): Promise<boolean> {
-  const ivB64 = await getSessionItem(SESSION_KEY_VERIFICATION_IV);
-  const ciphertextB64 = await getSessionItem(
+  const ivRes = await getSessionItem(SESSION_KEY_VERIFICATION_IV);
+  const ciphertextRes = await getSessionItem(
     SESSION_KEY_VERIFICATION_CIPHERTEXT,
   );
-  const settings = await getAllSettings();
-  const saltBase64 = settings.salt;
+  const ivB64 = ivRes.isOk() ? ivRes.value : null;
+  const ciphertextB64 = ciphertextRes.isOk() ? ciphertextRes.value : null;
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isErr()) {
+    return false;
+  }
+  const saltBase64 = settingsRes.value.salt;
   if (
     typeof ivB64 !== "string" ||
     typeof ciphertextB64 !== "string" ||
@@ -184,8 +208,9 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
     return false;
   }
 
-  const saltBuffer = base64ToArrayBuffer(saltBase64);
-  const salt = new Uint8Array(saltBuffer);
+  const saltBufferRes = base64ToArrayBuffer(saltBase64);
+  if (saltBufferRes.isErr()) return false;
+  const salt = new Uint8Array(saltBufferRes.value);
   const deriveRes = await deriveKey(password, salt);
   if (deriveRes.isErr()) return false;
   const key = deriveRes.value;
@@ -202,12 +227,15 @@ export async function hashValue(
 ): Promise<Result<string, TranslationKey>> {
   let saltStr = saltBase64;
   if (!saltStr) {
-    const settings = await getAllSettings();
-    if (!settings.salt) return err("login_error_wrong_pin"); // Adjust if needed
-    saltStr = settings.salt;
+    const settingsRes = await getAllSettings();
+    if (settingsRes.isErr() || !settingsRes.value.salt) {
+      return err("login_error_wrong_pin");
+    }
+    saltStr = settingsRes.value.salt;
   }
-  const saltBuf = base64ToArrayBuffer(saltStr);
-  const saltUi8 = new Uint8Array(saltBuf);
+  const saltBufRes = base64ToArrayBuffer(saltStr);
+  if (saltBufRes.isErr()) return err(saltBufRes.error);
+  const saltUi8 = new Uint8Array(saltBufRes.value);
 
   const hashRes = await ResultAsync.fromPromise(
     argon2id({
@@ -322,37 +350,50 @@ function encodeMpint(bytes: Uint8Array): Uint8Array {
 }
 
 function parseLegacyRsaPem(base64Str: string): Uint8Array | null {
-  try {
-    const bytes = new Uint8Array(base64ToArrayBuffer(base64Str));
-    const asn1 = new Asn1Reader(bytes);
-    const seq = asn1.readSequence();
-    if (!seq) return null;
+  const bytesRes = base64ToArrayBuffer(base64Str);
+  if (bytesRes.isErr()) return null;
+  const bytes = new Uint8Array(bytesRes.value);
 
-    const _version = seq.readIntegerBytes();
-    const modulus = seq.readIntegerBytes();
-    const publicExponent = seq.readIntegerBytes();
+  const asnRes = Result.fromThrowable(
+    () => {
+      const asn1 = new Asn1Reader(bytes);
+      const seq = asn1.readSequence();
+      if (!seq) return null;
+      const _version = seq.readIntegerBytes();
+      const modulus = seq.readIntegerBytes();
+      const publicExponent = seq.readIntegerBytes();
+      return { modulus, publicExponent };
+    },
+    (e) => {
+      console.error("[parseLegacyRsaPem Error]", e);
+      return null;
+    },
+  )();
 
-    if (!modulus || !publicExponent) return null;
-
-    const keyTypeBytes = new Uint8Array([
-      0,
-      0,
-      0,
-      7,
-      ...new TextEncoder().encode("ssh-rsa"),
-    ]);
-    const mpintE = encodeMpint(publicExponent);
-    const mpintN = encodeMpint(modulus);
-
-    return new Uint8Array([
-      ...keyTypeBytes,
-      ...mpintE,
-      ...mpintN,
-    ]);
-  } catch (e) {
-    console.error("[parseLegacyRsaPem Error]", e);
+  if (
+    asnRes.isErr() || !asnRes.value || !asnRes.value.modulus ||
+    !asnRes.value.publicExponent
+  ) {
     return null;
   }
+
+  const { modulus, publicExponent } = asnRes.value;
+
+  const keyTypeBytes = new Uint8Array([
+    0,
+    0,
+    0,
+    7,
+    ...new TextEncoder().encode("ssh-rsa"),
+  ]);
+  const mpintE = encodeMpint(publicExponent);
+  const mpintN = encodeMpint(modulus);
+
+  return new Uint8Array([
+    ...keyTypeBytes,
+    ...mpintE,
+    ...mpintN,
+  ]);
 }
 
 /**
@@ -414,8 +455,9 @@ export async function parseSshKey(privateKeyText: string): Promise<
   ) {
     const parts = trimmed.split(/\s+/);
     if (parts.length >= 2) {
-      try {
-        const pubKeyBlobBuffer = base64ToArrayBuffer(parts[1]);
+      const pubKeyBlobBufferRes = base64ToArrayBuffer(parts[1]);
+      if (pubKeyBlobBufferRes.isOk()) {
+        const pubKeyBlobBuffer = pubKeyBlobBufferRes.value;
         const hashRes = await ResultAsync.fromPromise(
           crypto.subtle.digest("SHA-256", pubKeyBlobBuffer),
           (e) => e,
@@ -428,8 +470,6 @@ export async function parseSshKey(privateKeyText: string): Promise<
             keyFingerprint: `SHA256:${hashBase64.replace(/=+$/, "")}`,
           });
         }
-      } catch (_e) {
-        // Fall through to error
       }
     }
   }
@@ -472,14 +512,12 @@ export async function parseSshKey(privateKeyText: string): Promise<
   const base64Lines = lines.filter((line) => !line.trim().startsWith("-----"));
   const base64Str = base64Lines.join("").replace(/[^A-Za-z0-9+/=]/g, "");
 
-  let buffer: ArrayBuffer;
-  try {
-    buffer = base64ToArrayBuffer(base64Str);
-  } catch (_e) {
+  const bufferRes = base64ToArrayBuffer(base64Str);
+  if (bufferRes.isErr()) {
     return err("ssh_invalid_key");
   }
 
-  const bytes = new Uint8Array(buffer);
+  const bytes = new Uint8Array(bufferRes.value);
   const reader = new SshBufferReader(bytes);
 
   // 1. Header Magic: "openssh-key-v1\0" (15 bytes)

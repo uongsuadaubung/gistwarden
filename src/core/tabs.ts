@@ -15,7 +15,7 @@ export async function getCurrentTab(): Promise<
     chrome.tabs.query({ active: true, currentWindow: true }),
     (e): TranslationKey => {
       console.warn("Failed to get current tab:", e);
-      return "toast_error";
+      return "tab_error_get_current";
     },
   );
   if (queryRes.isErr()) return err(queryRes.error);
@@ -34,14 +34,14 @@ export async function sendMessageToTab(
   if (
     typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.sendMessage
   ) {
-    return err("toast_error");
+    return err("tab_error_send_message");
   }
 
   const sendRes = await ResultAsync.fromPromise(
     chrome.tabs.sendMessage(tabId, message),
     (e): TranslationKey => {
       console.warn("Failed to send message to tab:", e);
-      return "toast_error";
+      return "tab_error_send_message";
     },
   );
   if (sendRes.isErr()) return err(sendRes.error);
@@ -58,7 +58,7 @@ export async function captureVisibleTab(
     typeof chrome === "undefined" || !chrome.tabs ||
     !chrome.tabs.captureVisibleTab
   ) {
-    return err("toast_error");
+    return err("tab_error_capture");
   }
 
   const opts = options || { format: "png" };
@@ -66,11 +66,11 @@ export async function captureVisibleTab(
     chrome.tabs.captureVisibleTab(opts),
     (e): TranslationKey => {
       console.warn("Failed to capture visible tab:", e);
-      return "toast_error";
+      return "tab_error_capture";
     },
   );
   if (captureRes.isErr()) return err(captureRes.error);
-  if (!captureRes.value) return err("toast_error");
+  if (!captureRes.value) return err("tab_error_capture");
   return ok(captureRes.value);
 }
 
@@ -88,7 +88,7 @@ export async function openTab(
       },
       (e): TranslationKey => {
         console.warn("Failed to open URL in window.open:", e);
-        return "toast_error";
+        return "tab_error_open";
       },
     )();
   }
@@ -97,9 +97,31 @@ export async function openTab(
     chrome.tabs.create({ url }),
     (e): TranslationKey => {
       console.warn("Failed to open tab via chrome.tabs:", e);
-      return "toast_error";
+      return "tab_error_open";
     },
   );
   if (createRes.isErr()) return err(createRes.error);
   return ok(createRes.value);
+}
+
+/**
+ * Automatically open extension popup if supported by browser action API.
+ */
+export async function openPopup(): Promise<Result<void, TranslationKey>> {
+  if (
+    typeof chrome === "undefined" || !chrome.action ||
+    !chrome.action.openPopup
+  ) {
+    return err("tab_error_open");
+  }
+
+  const openRes = await ResultAsync.fromPromise(
+    chrome.action.openPopup(),
+    (e): TranslationKey => {
+      console.warn("Failed to open extension popup:", e);
+      return "tab_error_open";
+    },
+  );
+  if (openRes.isErr()) return err(openRes.error);
+  return ok();
 }
