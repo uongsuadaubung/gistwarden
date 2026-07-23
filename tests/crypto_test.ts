@@ -12,9 +12,12 @@ import {
   parseSshKey,
 } from "@/core/crypto.ts";
 import {
+  AAGUID,
   base64UrlToBuffer,
   bufferToBase64Url,
+  COSE_ALG_ES256,
   createPasskeyKeyPair,
+  generatePasskeyRegisterResponse,
   getRawCredentialId,
   p1363ToDer,
 } from "@/features/passkey/passkey-crypto.ts";
@@ -141,6 +144,27 @@ Deno.test("Passkey Crypto - signature conversion and validation", async () => {
     testMessage,
   );
   assertEquals(verified, true);
+});
+
+Deno.test("Passkey Crypto - generatePasskeyRegisterResponse with AAGUID and COSE ES256", async () => {
+  const regRes = await generatePasskeyRegisterResponse(
+    {
+      rp: { id: "example.com", name: "Example RP" },
+      user: { id: "user123", name: "testuser" },
+      challenge: "random-challenge-string",
+    },
+    "https://example.com",
+  );
+
+  assert(regRes.isOk());
+  const { newCred, result } = regRes.value;
+  assertEquals(newCred.rpId, "example.com");
+  assertEquals(newCred.userName, "testuser");
+  assertEquals(
+    (result.response as Record<string, unknown>).publicKeyAlgorithm,
+    COSE_ALG_ES256,
+  );
+  assertEquals(AAGUID.length, 16);
 });
 
 Deno.test("TOTP - parseTotpSecret utility", () => {
