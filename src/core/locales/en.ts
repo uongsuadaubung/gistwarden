@@ -359,7 +359,7 @@ export default {
     "Are you sure you want to delete ALL items in the vault? This action cannot be undone and all data on GitHub Gist will be deleted.",
   settings_clear_vault_confirm_title: "Confirm Permanent Deletion",
   settings_clear_vault_confirm_msg:
-    "FINAL CONFIRMATION: Permanently delete all account data?",
+    "FINAL CONFIRMATION: Permanently delete all account data? Please ensure you have exported your backup data before proceeding.",
   settings_clear_vault_placeholder: "Enter Master Password to confirm...",
   settings_clear_vault_btn: "PERMANENTLY DELETE",
   settings_clear_vault_success: "All vault accounts deleted successfully!",
