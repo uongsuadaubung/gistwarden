@@ -1,5 +1,5 @@
 import { setStore, store } from "@/core/store.ts";
-import { err, ok, Result, ResultAsync } from "neverthrow";
+import { err, ok, Result } from "neverthrow";
 import { z } from "zod";
 import { type ConfirmType, type ToastType } from "@/core/types.ts";
 import {
@@ -11,6 +11,7 @@ import {
 import { setLocalItem, updateSettings } from "@/core/storage.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { fetchText } from "@/core/fetch-utils.ts";
+import { writeClipboardText } from "@/core/clipboard-utils.ts";
 import {
   LOCAL_STORAGE_KEY_THEME,
   OAUTH_WORKER_URL,
@@ -45,14 +46,10 @@ export async function copyToClipboardWithMessage(
   successMessageKey: TranslationKey = "detail_copied",
 ) {
   if (!text) return;
-  const copyRes = await ResultAsync.fromPromise(
-    navigator.clipboard.writeText(text),
-    (e) => e,
-  );
+  const copyRes = await writeClipboardText(text);
 
   if (copyRes.isErr()) {
-    console.error("Failed to copy to clipboard", copyRes.error);
-    showToast(t("toast_error"), "error");
+    showToast(t(copyRes.error), "error");
     return;
   }
 
@@ -144,7 +141,7 @@ export async function syncTimeOffset(): Promise<Result<void, TranslationKey>> {
 
   const jsonRes = safeJsonParse(textRes.value);
   if (jsonRes.isErr()) {
-    return err("toast_error");
+    return err("settings_sync_time_error");
   }
   const data = jsonRes.value;
 
@@ -162,5 +159,5 @@ export async function syncTimeOffset(): Promise<Result<void, TranslationKey>> {
     return ok();
   }
 
-  return err("toast_error");
+  return err("settings_sync_time_error");
 }

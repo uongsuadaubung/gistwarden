@@ -46,8 +46,11 @@ export async function updateSessionTimeout(
 export async function unlockWithKey(
   key: CryptoKey,
 ): Promise<Result<void, TranslationKey>> {
-  const settings = await getAllSettings();
-  const sessionToken = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isErr()) return err(settingsRes.error);
+  const settings = settingsRes.value;
+  const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const sessionToken = sessionTokenRes.isOk() ? sessionTokenRes.value : null;
   const githubConfigured = !!settings.githubTokenEncrypted || !!sessionToken;
   if (!githubConfigured) {
     clearDerivedKey();
@@ -107,7 +110,7 @@ export async function unlockWithKey(
 
   if (!hasExistingGist || !existingGistContent) {
     clearDerivedKey();
-    return err("toast_error");
+    return err("github_error_gist_not_found");
   }
 
   // F. Giải mã dữ liệu két sắt từ Gist
@@ -185,7 +188,8 @@ export async function unlockWithKey(
   );
   if (setVaultRes.isErr()) return err(setVaultRes.error);
 
-  const sessionVal = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const sessionRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const sessionVal = sessionRes.isOk() ? sessionRes.value : null;
   const finalToken = typeof sessionVal === "string" ? sessionVal : "";
   setStore({
     vaultItems: items,

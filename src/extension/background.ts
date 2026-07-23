@@ -42,8 +42,10 @@ import {
   STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
 } from "@/core/constants.ts";
 import {
+  clearAlarm,
   clearLocal,
   clearSession,
+  createAlarm,
   getAllSettings,
   getLocalItem,
   getSessionItem,
@@ -54,8 +56,10 @@ import {
   removeSessionItem,
   setLocalItem,
   setSessionItem,
+  SettingsSchema,
   STORAGE_KEY,
 } from "@/core/storage.ts";
+import { openPopup, sendMessageToTab } from "@/core/tabs.ts";
 import {
   getBaseDomain,
   getDomainFromItem,
@@ -100,6 +104,8 @@ const SaveActionPayloadSchema = z.object({
   itemId: z.string().optional(),
 });
 
+type SaveActionPayload = z.infer<typeof SaveActionPayloadSchema>;
+
 interface ChromeMessage {
   type: string;
   content?: string;
@@ -134,7 +140,8 @@ async function getDecryptedVaultItems(): Promise<
   const key = await getSessionKey();
   if (!key) return null;
 
-  const rawVault = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
+  const rawVaultRes = await getSessionItem(SESSION_KEY_ENCRYPTED_VAULT);
+  const rawVault = rawVaultRes.isOk() ? rawVaultRes.value : null;
   if (typeof rawVault !== "string" || !rawVault) {
     return { items: [], key, salt: "" };
   }
@@ -237,11 +244,9 @@ async function handleSubmittedCredentials(
   setTimeout(() => {
     const currentPending = pendingTabNotifications.get(tabId);
     if (currentPending && currentPending.payload === notificationPayload) {
-      chrome.tabs.sendMessage(tabId, {
+      sendMessageToTab(tabId, {
         type: MSG_SHOW_NOTIFICATION_BAR,
         payload: notificationPayload,
-      }).catch(() => {
-        // Tab may have navigated or closed
       });
     }
   }, 300);
@@ -249,7 +254,7 @@ async function handleSubmittedCredentials(
 
 async function batchSavePayloads(
   vaultData: { items: VaultItem[]; key: CryptoKey; salt: string },
-  payloads: z.infer<typeof SaveActionPayloadSchema>[],
+  payloads: SaveActionPayload[],
 ): Promise<boolean> {
   if (payloads.length === 0) return true;
 
@@ -345,36 +350,42 @@ async function processPendingUnapprovedCredentials(): Promise<void> {
   if (isProcessingPendingQueue) return;
   isProcessingPendingQueue = true;
 
-  try {
-    const pendingRes = await getLocalItem(
-      STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
-    );
-    if (!Array.isArray(pendingRes) || pendingRes.length === 0) {
-      return;
-    }
-
-    // Immediately remove key from storage to prevent duplicate processing
-    await removeLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS);
-    pendingTabNotifications.clear();
-    lastGlobalPendingNotification = null;
-
-    const vaultData = await getDecryptedVaultItems();
-    if (!vaultData) return;
-
-    const validPayloads: z.infer<typeof SaveActionPayloadSchema>[] = [];
-    for (const rawItem of pendingRes) {
-      const parseRes = SaveActionPayloadSchema.safeParse(rawItem);
-      if (parseRes.success) {
-        validPayloads.push(parseRes.data);
-      }
-    }
-
-    if (validPayloads.length > 0) {
-      await batchSavePayloads(vaultData, validPayloads);
-    }
-  } finally {
+  const pendingRes = await getLocalItem(
+    STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
+  );
+  if (
+    pendingRes.isErr() || !Array.isArray(pendingRes.value) ||
+    pendingRes.value.length === 0
+  ) {
     isProcessingPendingQueue = false;
+    return;
   }
+  const pendingItems = pendingRes.value;
+
+  // Immediately remove key from storage to prevent duplicate processing
+  await removeLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS);
+  pendingTabNotifications.clear();
+  lastGlobalPendingNotification = null;
+
+  const vaultData = await getDecryptedVaultItems();
+  if (!vaultData) {
+    isProcessingPendingQueue = false;
+    return;
+  }
+
+  const validPayloads: SaveActionPayload[] = [];
+  for (const rawItem of pendingItems) {
+    const parseRes = SaveActionPayloadSchema.safeParse(rawItem);
+    if (parseRes.success) {
+      validPayloads.push(parseRes.data);
+    }
+  }
+
+  if (validPayloads.length > 0) {
+    await batchSavePayloads(vaultData, validPayloads);
+  }
+
+  isProcessingPendingQueue = false;
 }
 
 async function handleSaveCredentialAction(
@@ -387,32 +398,30 @@ async function handleSaveCredentialAction(
   const vaultData = await getDecryptedVaultItems();
   if (!vaultData) {
     // Vault is locked / user not logged in: queue for later auto-save
-    const rawPending = await getLocalItem(
+    const rawPendingRes = await getLocalItem(
       STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
     );
+    const rawPending = rawPendingRes.isOk() ? rawPendingRes.value : null;
     const pendingList: unknown[] = Array.isArray(rawPending) ? rawPending : [];
     pendingList.push(payload);
     await setLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS, pendingList);
 
     // Automatically open extension popup to prompt user to unlock/login
-    if (typeof chrome !== "undefined" && chrome.action?.openPopup) {
-      try {
-        await chrome.action.openPopup();
-      } catch (_err) {
-        // Ignore if browser restricts openPopup (e.g. non-focused window)
-      }
-    }
+    await openPopup();
     return true;
   }
 
   // Combine current payload with any existing queued items into a single batch
-  const rawPending = await getLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS);
+  const rawPendingRes = await getLocalItem(
+    STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
+  );
+  const rawPending = rawPendingRes.isOk() ? rawPendingRes.value : null;
   await removeLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS);
 
   const pendingList: unknown[] = Array.isArray(rawPending) ? rawPending : [];
   pendingList.push(payload);
 
-  const validPayloads: z.infer<typeof SaveActionPayloadSchema>[] = [];
+  const validPayloads: SaveActionPayload[] = [];
   for (const rawItem of pendingList) {
     const pRes = SaveActionPayloadSchema.safeParse(rawItem);
     if (pRes.success) {
@@ -690,7 +699,10 @@ chrome.runtime.onMessage.addListener(
 
       case MSG_GET_PENDING_FIDO2_REQUEST: {
         const handleGetPendingFido2 = async () => {
-          const saved = await getSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST);
+          const savedRes = await getSessionItem(
+            SESSION_KEY_PENDING_FIDO2_REQUEST,
+          );
+          const saved = savedRes.isOk() ? savedRes.value : null;
           const parsed = PendingFido2RequestSchema.safeParse(saved);
           if (parsed.success) {
             sendResponse({
@@ -761,18 +773,24 @@ chrome.runtime.onMessage.addListener(
 
 // Timeout Alarm Management
 async function updateTimeoutAlarm() {
-  if (!hasAlarms()) return;
-  await chrome.alarms.clear(ALARM_NAME_VAULT_TIMEOUT);
-
-  const settings = await getAllSettings();
+  const resAlarm = await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
+  if (resAlarm.isErr()) {
+    return;
+  }
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isErr()) {
+    return;
+  }
+  const settings = settingsRes.value;
   const timeout = settings.vaultTimeout || "onRestart";
 
   if (timeout !== "onRestart") {
     const minutes = parseInt(timeout, 10);
     if (!isNaN(minutes) && minutes > 0) {
-      const derivedKey = await getSessionItem(SESSION_KEY_DERIVED_KEY);
+      const derivedKeyRes = await getSessionItem(SESSION_KEY_DERIVED_KEY);
+      const derivedKey = derivedKeyRes.isOk() ? derivedKeyRes.value : null;
       if (derivedKey) {
-        chrome.alarms.create(ALARM_NAME_VAULT_TIMEOUT, {
+        await createAlarm(ALARM_NAME_VAULT_TIMEOUT, {
           delayInMinutes: minutes,
         });
         console.debug(
@@ -789,7 +807,10 @@ if (hasAlarms()) {
       console.debug(
         `[Background] ${ALARM_NAME_VAULT_TIMEOUT} alarm fired. Locking/Logging out...`,
       );
-      const settings = await getAllSettings();
+      const settingsRes = await getAllSettings();
+      const settings = settingsRes.isOk()
+        ? settingsRes.value
+        : SettingsSchema.parse({});
       const action = settings.vaultTimeoutAction || "lock";
 
       // Clear session data and navigation state
@@ -835,12 +856,18 @@ async function initSession() {
   if (!hasSessionStorage()) {
     return;
   }
-  const sessionInitialized = await getSessionItem(
+  const sessionInitializedRes = await getSessionItem(
     SESSION_KEY_SESSION_INITIALIZED,
   );
+  const sessionInitialized = sessionInitializedRes.isOk()
+    ? sessionInitializedRes.value
+    : null;
 
   if (!sessionInitialized) {
-    const settings = await getAllSettings();
+    const settingsRes = await getAllSettings();
+    const settings = settingsRes.isOk()
+      ? settingsRes.value
+      : SettingsSchema.parse({});
     const action = settings.vaultTimeoutAction || "lock";
     if (action === "logout") {
       console.debug(

@@ -21,7 +21,7 @@ export async function setupGithub(
   }
   const parsed = ValidateTokenResponseSchema.safeParse(sendResult.value);
   if (!parsed.success) {
-    return err("toast_error");
+    return err("login_error_invalid_token");
   }
   const res = parsed.data;
 
