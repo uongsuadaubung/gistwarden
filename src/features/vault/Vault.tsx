@@ -42,15 +42,15 @@ import {
 import { Input } from "@/components/ui/Input.tsx";
 import { VaultItemRow } from "@/features/vault/VaultItemRow.tsx";
 import { t } from "@/core/i18n.ts";
-import {
-  getBaseDomain,
-  getHostname,
-  safeParseUrl,
-} from "@/core/domain-utils.ts";
+import { safeParseUrl } from "@/core/domain-utils.ts";
 import {
   deleteVaultItemWithConfirm,
   getVaultItemTypeLabel,
 } from "@/features/vault/vault-utils.ts";
+import {
+  filterMatchingDomainItems,
+  filterVaultItemsByQuery,
+} from "@/features/vault/vault-domain-matching.ts";
 
 const AutofillResponseSchema = z.object({
   success: z.boolean(),
@@ -157,87 +157,20 @@ export const Vault: Component = () => {
     fetchTab();
   });
 
-  const isMatchingDomain = (item: VaultItem, domain: string) => {
-    if (!domain) return false;
-    const targetBase = getBaseDomain(domain);
-    if (!targetBase) return false;
-
-    if (item.name.toLowerCase().includes(targetBase)) return true;
-    if (item.type === VaultItemType.Login && item.login.uris) {
-      return item.login.uris.some((u) => {
-        const itemBase = getBaseDomain(u.uri);
-        return itemBase && itemBase === targetBase;
-      });
-    }
-    return false;
-  };
-
-  const isExactDomainMatch = (item: VaultItem, domain: string) => {
-    if (!domain) return false;
-    const targetHost = getHostname(domain);
-    if (!targetHost) return false;
-
-    if (item.name.toLowerCase().includes(targetHost)) return true;
-    if (item.type === VaultItemType.Login && item.login.uris) {
-      return item.login.uris.some((u) => {
-        const itemHost = getHostname(u.uri);
-        return itemHost && itemHost === targetHost;
-      });
-    }
-    return false;
-  };
-
-  const sortByName = (items: VaultItem[]) => {
-    return [...items].sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, {
-        sensitivity: "base",
-        numeric: true,
-      })
+  const matchingItems = () => {
+    return filterMatchingDomainItems(
+      store.vaultItems,
+      currentTabDomain(),
+      selectedFilterType(),
     );
   };
 
-  const matchingItems = () => {
-    const domain = currentTabDomain();
-    if (!domain) return [];
-    let list = store.vaultItems;
-    const filterType = selectedFilterType();
-    if (filterType && filterType !== "all") {
-      list = list.filter((item) => item.type === filterType);
-    }
-    const filtered = list.filter((item) => isMatchingDomain(item, domain));
-
-    return [...filtered].sort((a, b) => {
-      const aExact = isExactDomainMatch(a, domain);
-      const bExact = isExactDomainMatch(b, domain);
-
-      if (aExact && !bExact) return -1;
-      if (!aExact && bExact) return 1;
-
-      return a.name.localeCompare(b.name, undefined, {
-        sensitivity: "base",
-        numeric: true,
-      });
-    });
-  };
-
   const allItems = () => {
-    const q = search().toLowerCase().trim();
-    const filterType = selectedFilterType();
-    let list = store.vaultItems;
-    if (filterType && filterType !== "all") {
-      list = list.filter((item) => item.type === filterType);
-    }
-    if (q) {
-      list = list.filter((item) => {
-        const nameMatch = item.name.toLowerCase().includes(q);
-        const usernameMatch = item.type === VaultItemType.Login &&
-          item.login.username?.toLowerCase().includes(q);
-        const uriMatch = item.type === VaultItemType.Login &&
-          item.login.uris?.some((u) => u.uri.toLowerCase().includes(q));
-        return nameMatch || usernameMatch || uriMatch;
-      });
-    }
-    return sortByName(list);
+    return filterVaultItemsByQuery(
+      store.vaultItems,
+      search(),
+      selectedFilterType(),
+    );
   };
 
   const cardItems = () => {
@@ -405,122 +338,125 @@ export const Vault: Component = () => {
 
       {/* Main Body */}
       <div class="app-body">
-        {/* Search */}
-        <div class="search-row">
-          <div class="search-container">
-            <SearchIcon class="search-icon" />
-            <Input
-              type="text"
-              placeholder={t("vault_search_placeholder")}
-              value={search()}
-              onInput={(e) => updateSearch(e.currentTarget.value)}
-            />
-            <Show when={search()}>
-              <button
-                type="button"
-                class="search-clear-btn"
-                onClick={() => updateSearch("")}
-                title={t("btn_clear")}
-              >
-                <CloseIcon />
-              </button>
-            </Show>
-          </div>
-          <button
-            type="button"
-            class={`filter-toggle-btn ${showFilterPanel() ? "active" : ""}`}
-            onClick={toggleFilterPanel}
-            title={t("vault_filter_title")}
-          >
-            <FilterIcon />
-          </button>
-        </div>
-
-        {/* Filter Panel */}
-        <Show when={showFilterPanel()}>
-          <div class="filter-panel">
-            <div
-              class="filter-dropdown-trigger"
-              onClick={() => setShowTypeDropdown(!showTypeDropdown())}
-            >
-              <ListIcon class="dropdown-icon" />
-              <span class="dropdown-label">
-                {getVaultItemTypeLabel(selectedFilterType())}
-              </span>
-              <ChevronDownIcon
-                class={`chevron-icon ${showTypeDropdown() ? "open" : ""}`}
+        {/* Sticky Search & Filter Header */}
+        <div class="vault-sticky-header">
+          {/* Search */}
+          <div class="search-row">
+            <div class="search-container">
+              <SearchIcon class="search-icon" />
+              <Input
+                type="text"
+                placeholder={t("vault_search_placeholder")}
+                value={search()}
+                onInput={(e) => updateSearch(e.currentTarget.value)}
               />
+              <Show when={search()}>
+                <button
+                  type="button"
+                  class="search-clear-btn"
+                  onClick={() => updateSearch("")}
+                  title={t("btn_clear")}
+                >
+                  <CloseIcon />
+                </button>
+              </Show>
             </div>
-            <Show when={showTypeDropdown()}>
-              <div class="filter-dropdown-menu">
-                <div
-                  class={`dropdown-item ${
-                    selectedFilterType() === "all" ? "selected" : ""
-                  }`}
-                  onClick={() => selectFilterType("all")}
-                >
-                  <ListIcon class="item-icon" />
-                  <span>{t("vault_filter_all_types")}</span>
-                </div>
-                <div
-                  class={`dropdown-item ${
-                    selectedFilterType() === VaultItemType.Login
-                      ? "selected"
-                      : ""
-                  }`}
-                  onClick={() => selectFilterType(VaultItemType.Login)}
-                >
-                  <GlobeIcon class="item-icon" />
-                  <span>{t("vault_item_login")}</span>
-                </div>
-                <div
-                  class={`dropdown-item ${
-                    selectedFilterType() === VaultItemType.Card
-                      ? "selected"
-                      : ""
-                  }`}
-                  onClick={() => selectFilterType(VaultItemType.Card)}
-                >
-                  <CardIcon class="item-icon" />
-                  <span>{t("vault_item_card")}</span>
-                </div>
-                <div
-                  class={`dropdown-item ${
-                    selectedFilterType() === VaultItemType.Identity
-                      ? "selected"
-                      : ""
-                  }`}
-                  onClick={() => selectFilterType(VaultItemType.Identity)}
-                >
-                  <IdentityIcon class="item-icon" />
-                  <span>{t("vault_item_identity")}</span>
-                </div>
-                <div
-                  class={`dropdown-item ${
-                    selectedFilterType() === VaultItemType.SecureNote
-                      ? "selected"
-                      : ""
-                  }`}
-                  onClick={() => selectFilterType(VaultItemType.SecureNote)}
-                >
-                  <NoteIcon class="item-icon" />
-                  <span>{t("vault_item_note")}</span>
-                </div>
-                <div
-                  class={`dropdown-item ${
-                    selectedFilterType() === VaultItemType.SshKey
-                      ? "selected"
-                      : ""
-                  }`}
-                  onClick={() => selectFilterType(VaultItemType.SshKey)}
-                >
-                  <KeyIcon class="item-icon" />
-                  <span>{t("vault_item_ssh_key")}</span>
-                </div>
-              </div>
-            </Show>
+            <button
+              type="button"
+              class={`filter-toggle-btn ${showFilterPanel() ? "active" : ""}`}
+              onClick={toggleFilterPanel}
+              title={t("vault_filter_title")}
+            >
+              <FilterIcon />
+            </button>
           </div>
-        </Show>
+
+          {/* Filter Panel */}
+          <Show when={showFilterPanel()}>
+            <div class="filter-panel">
+              <div
+                class="filter-dropdown-trigger"
+                onClick={() => setShowTypeDropdown(!showTypeDropdown())}
+              >
+                <ListIcon class="dropdown-icon" />
+                <span class="dropdown-label">
+                  {getVaultItemTypeLabel(selectedFilterType())}
+                </span>
+                <ChevronDownIcon
+                  class={`chevron-icon ${showTypeDropdown() ? "open" : ""}`}
+                />
+              </div>
+              <Show when={showTypeDropdown()}>
+                <div class="filter-dropdown-menu">
+                  <div
+                    class={`dropdown-item ${
+                      selectedFilterType() === "all" ? "selected" : ""
+                    }`}
+                    onClick={() => selectFilterType("all")}
+                  >
+                    <ListIcon class="item-icon" />
+                    <span>{t("vault_filter_all_types")}</span>
+                  </div>
+                  <div
+                    class={`dropdown-item ${
+                      selectedFilterType() === VaultItemType.Login
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() => selectFilterType(VaultItemType.Login)}
+                  >
+                    <GlobeIcon class="item-icon" />
+                    <span>{t("vault_item_login")}</span>
+                  </div>
+                  <div
+                    class={`dropdown-item ${
+                      selectedFilterType() === VaultItemType.Card
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() => selectFilterType(VaultItemType.Card)}
+                  >
+                    <CardIcon class="item-icon" />
+                    <span>{t("vault_item_card")}</span>
+                  </div>
+                  <div
+                    class={`dropdown-item ${
+                      selectedFilterType() === VaultItemType.Identity
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() => selectFilterType(VaultItemType.Identity)}
+                  >
+                    <IdentityIcon class="item-icon" />
+                    <span>{t("vault_item_identity")}</span>
+                  </div>
+                  <div
+                    class={`dropdown-item ${
+                      selectedFilterType() === VaultItemType.SecureNote
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() => selectFilterType(VaultItemType.SecureNote)}
+                  >
+                    <NoteIcon class="item-icon" />
+                    <span>{t("vault_item_note")}</span>
+                  </div>
+                  <div
+                    class={`dropdown-item ${
+                      selectedFilterType() === VaultItemType.SshKey
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() => selectFilterType(VaultItemType.SshKey)}
+                  >
+                    <KeyIcon class="item-icon" />
+                    <span>{t("vault_item_ssh_key")}</span>
+                  </div>
+                </div>
+              </Show>
+            </div>
+          </Show>
+        </div>
 
         {/* Sync Error */}
         <Show when={store.syncError}>

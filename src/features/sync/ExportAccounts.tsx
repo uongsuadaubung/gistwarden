@@ -31,6 +31,7 @@ export const ExportAccounts: Component = () => {
     if (type === "json") {
       const exportItems = store.vaultItems.map((item) => {
         const base = {
+          id: item.id,
           type: item.type,
           name: item.name,
           notes: item.notes || "",
@@ -40,6 +41,8 @@ export const ExportAccounts: Component = () => {
             name: f.name || "",
             value: f.value || "",
           })),
+          creationDate: item.creationDate,
+          revisionDate: item.revisionDate,
         };
 
         if (item.type === VaultItemType.Login) {

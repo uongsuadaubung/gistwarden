@@ -9,6 +9,7 @@ import { APP_NAME } from "@/core/constants.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
+import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
 
 /**
  * Phân tích và xác thực nội dung chuỗi JSON nhập từ tệp ({APP_NAME} hoặc Bitwarden xuất ra).
@@ -78,40 +79,34 @@ export function parseAndValidateImportJson(
       },
     );
 
+    const base = createBaseVaultItem({
+      id: item.id || undefined,
+      name: item.name,
+      notes: item.notes,
+      favorite: item.favorite,
+      reprompt: item.reprompt,
+      fields: item.fields,
+      creationDate: item.creationDate || undefined,
+      revisionDate: item.revisionDate || undefined,
+      fallbackName: item.type === VaultItemType.SecureNote
+        ? "Chưa đặt tên note"
+        : item.type === VaultItemType.Card
+        ? "Chưa đặt tên card"
+        : item.type === VaultItemType.Identity
+        ? "Chưa đặt tên danh tính"
+        : "Chưa đặt tên",
+    });
+
     if (item.type === VaultItemType.SecureNote) {
       return {
-        id: crypto.randomUUID(),
+        ...base,
         type: VaultItemType.SecureNote,
-        name: item.name || "Chưa đặt tên note",
-        notes: item.notes || "",
-        favorite: item.favorite || false,
-        reprompt: item.reprompt,
-        fields: item.fields
-          ? item.fields.map((f) => ({
-            name: f.name || "",
-            value: f.value || "",
-            type: f.type || 0,
-          }))
-          : [],
-        creationDate: now,
-        revisionDate: now,
       };
     } else if (item.type === VaultItemType.Card) {
       const cardData = item.card || {};
       return {
-        id: crypto.randomUUID(),
+        ...base,
         type: VaultItemType.Card,
-        name: item.name || "Chưa đặt tên card",
-        notes: item.notes || "",
-        favorite: item.favorite || false,
-        reprompt: item.reprompt,
-        fields: item.fields
-          ? item.fields.map((f) => ({
-            name: f.name || "",
-            value: f.value || "",
-            type: f.type || 0,
-          }))
-          : [],
         card: {
           cardholderName: cardData.cardholderName || "",
           brand: cardData.brand || "",
@@ -120,25 +115,12 @@ export function parseAndValidateImportJson(
           expYear: cardData.expYear || "",
           code: cardData.code || "",
         },
-        creationDate: now,
-        revisionDate: now,
       };
     } else if (item.type === VaultItemType.Identity) {
       const identityData = item.identity || {};
       return {
-        id: crypto.randomUUID(),
+        ...base,
         type: VaultItemType.Identity,
-        name: item.name || "Chưa đặt tên danh tính",
-        notes: item.notes || "",
-        favorite: item.favorite || false,
-        reprompt: item.reprompt,
-        fields: item.fields
-          ? item.fields.map((f) => ({
-            name: f.name || "",
-            value: f.value || "",
-            type: f.type || 0,
-          }))
-          : [],
         identity: {
           title: identityData.title || "",
           firstName: identityData.firstName || "",
@@ -159,17 +141,11 @@ export function parseAndValidateImportJson(
           postalCode: identityData.postalCode || "",
           country: identityData.country || "",
         },
-        creationDate: now,
-        revisionDate: now,
       };
     } else {
       return {
-        id: crypto.randomUUID(),
+        ...base,
         type: VaultItemType.Login,
-        name: item.name || "Chưa đặt tên",
-        notes: item.notes || "",
-        favorite: item.favorite || false,
-        reprompt: item.reprompt,
         login: {
           username: loginData?.username || "",
           password: loginData?.password || "",
@@ -195,15 +171,6 @@ export function parseAndValidateImportJson(
             discoverable: c.discoverable,
           })) || [],
         },
-        fields: item.fields
-          ? item.fields.map((f) => ({
-            name: f.name || "",
-            value: f.value || "",
-            type: f.type || 0,
-          }))
-          : [],
-        creationDate: now,
-        revisionDate: now,
       };
     }
   });

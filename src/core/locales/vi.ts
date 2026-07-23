@@ -360,7 +360,7 @@ export default {
     "Bạn có chắc chắn muốn xóa TOÀN BỘ tài khoản trong két sắt? Hành động này không thể hoàn tác và toàn bộ dữ liệu trên Gist sẽ bị xóa sạch.",
   settings_clear_vault_confirm_title: "Xác nhận xóa vĩnh viễn",
   settings_clear_vault_confirm_msg:
-    "XÁC NHẬN LẦN CUỐI: Xóa vĩnh viễn toàn bộ dữ liệu tài khoản?",
+    "XÁC NHẬN LẦN CUỐI: Xóa vĩnh viễn toàn bộ dữ liệu tài khoản? Vui lòng đảm bảo bạn đã xuất dữ liệu sao lưu (backup) trước khi tiếp tục.",
   settings_clear_vault_placeholder: "Nhập mật khẩu Master để xác nhận xóa...",
   settings_clear_vault_btn: "XÓA VĨNH VIỄN",
   settings_clear_vault_success:

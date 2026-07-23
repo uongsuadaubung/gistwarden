@@ -6,6 +6,7 @@ import {
 } from "@/core/types.ts";
 import { APP_NAME } from "@/core/constants.ts";
 import { parseCSV } from "@/core/csv-parser.ts";
+import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeParseUrl } from "@/core/domain-utils.ts";
@@ -48,7 +49,6 @@ export function parseAndValidateBrowserCsv(
     return err("import_error_browser_invalid");
   }
 
-  const now = new Date().toISOString();
   const newVaultItems: VaultItem[] = [];
 
   for (let r = 1; r < rows.length; r++) {
@@ -71,14 +71,15 @@ export function parseAndValidateBrowserCsv(
 
     const uris = urlVal ? [{ uri: urlVal, match: null }] : [];
 
+    const base = createBaseVaultItem({
+      name: nameVal,
+      notes: noteVal,
+      fallbackName: "Chưa đặt tên login",
+    });
+
     newVaultItems.push({
-      id: crypto.randomUUID(),
+      ...base,
       type: VaultItemType.Login,
-      name: nameVal || "Chưa đặt tên login",
-      notes: noteVal || "",
-      favorite: false,
-      reprompt: 0,
-      fields: [],
       login: {
         username: usernameVal,
         password: passwordVal,
@@ -88,8 +89,6 @@ export function parseAndValidateBrowserCsv(
         passwordRevisionDate: null,
         passwordHistory: [],
       },
-      creationDate: now,
-      revisionDate: now,
     });
   }
 
@@ -145,7 +144,6 @@ export function parseAndValidateBitwardenCsv(
     return err("import_error_bitwarden_invalid");
   }
 
-  const now = new Date().toISOString();
   const newVaultItems: VaultItem[] = [];
 
   for (let r = 1; r < rows.length; r++) {
@@ -178,34 +176,32 @@ export function parseAndValidateBitwardenCsv(
       }
     }
 
+    const uriVal = uriIdx !== -1 ? row[uriIdx] : "";
+    const usernameVal = usernameIdx !== -1 ? row[usernameIdx] : "";
+    const passwordVal = passwordIdx !== -1 ? row[passwordIdx] : "";
+    const totpVal = totpIdx !== -1 ? row[totpIdx] : "";
+    const uris = uriVal ? [{ uri: uriVal, match: null }] : [];
+
+    const base = createBaseVaultItem({
+      name: nameVal,
+      notes: notesVal,
+      favorite: favoriteVal,
+      reprompt: repromptVal,
+      fields: customFields,
+      fallbackName: typeVal === "note" || typeVal === "securenote"
+        ? "Chưa đặt tên note"
+        : extractDomain(uriVal) || "Chưa đặt tên login",
+    });
+
     if (typeVal === "note" || typeVal === "securenote") {
       newVaultItems.push({
-        id: crypto.randomUUID(),
+        ...base,
         type: VaultItemType.SecureNote,
-        name: nameVal || "Chưa đặt tên note",
-        notes: notesVal || "",
-        favorite: favoriteVal,
-        reprompt: repromptVal,
-        fields: customFields,
-        creationDate: now,
-        revisionDate: now,
       });
     } else {
-      const uriVal = uriIdx !== -1 ? row[uriIdx] : "";
-      const usernameVal = usernameIdx !== -1 ? row[usernameIdx] : "";
-      const passwordVal = passwordIdx !== -1 ? row[passwordIdx] : "";
-      const totpVal = totpIdx !== -1 ? row[totpIdx] : "";
-
-      const uris = uriVal ? [{ uri: uriVal, match: null }] : [];
-
       newVaultItems.push({
-        id: crypto.randomUUID(),
+        ...base,
         type: VaultItemType.Login,
-        name: nameVal || extractDomain(uriVal) || "Chưa đặt tên login",
-        notes: notesVal || "",
-        favorite: favoriteVal,
-        reprompt: repromptVal,
-        fields: customFields,
         login: {
           username: usernameVal,
           password: passwordVal,
@@ -215,8 +211,6 @@ export function parseAndValidateBitwardenCsv(
           passwordRevisionDate: null,
           passwordHistory: [],
         },
-        creationDate: now,
-        revisionDate: now,
       });
     }
   }

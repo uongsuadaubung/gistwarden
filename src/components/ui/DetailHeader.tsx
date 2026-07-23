@@ -1,5 +1,5 @@
 import { type Component, Show } from "solid-js";
-import { ArrowLeftIcon, ExternalLinkIcon } from "@/icons/svg/index.ts";
+import { ArrowLeftIcon, PopoutIcon } from "@/icons/svg/index.ts";
 import { handlePopout, isPopout } from "@/core/popout-utils.ts";
 import { t } from "@/core/i18n.ts";
 
@@ -23,7 +23,7 @@ export const DetailHeader: Component<DetailHeaderProps> = (props) => {
           onClick={handlePopout}
           title={t("vault_popout_title")}
         >
-          <ExternalLinkIcon />
+          <PopoutIcon />
         </button>
       </Show>
     </div>
