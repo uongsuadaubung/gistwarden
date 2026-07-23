@@ -256,3 +256,18 @@ export function setupFormSubmitMonitoring(
     }
   }, true);
 }
+
+export function setupAutofillFocusMonitoring(onFocusInput: () => void): void {
+  const handleFocus = (evt: FocusEvent) => {
+    if (!evt.isTrusted) return;
+    const target = evt.target instanceof HTMLInputElement ? evt.target : null;
+    if (!target) return;
+
+    const type = target.type ? target.type.toLowerCase() : "text";
+    if (type === "password" || type === "text" || type === "email") {
+      onFocusInput();
+    }
+  };
+
+  document.addEventListener("focusin", handleFocus, true);
+}

@@ -1,19 +1,29 @@
 # Tài Liệu Mô Tả Chi Tiết: Chức Năng Quản Lý Kho Vault & Thao Tác Hàng Loạt (Vault Management & Bulk Operations)
 
-Tài liệu này mô tả chi tiết kiến trúc, phân loại mục dữ liệu và luồng thuật toán rẽ nhánh **True / False** của tính năng **Quản lý Kho Vault** và **Thao tác Hàng loạt (Bulk Select / Bulk Delete)** trong Gistwarden.
+Tài liệu này mô tả chi tiết kiến trúc, phân loại mục dữ liệu và luồng thuật toán
+rẽ nhánh **True / False** của tính năng **Quản lý Kho Vault** và **Thao tác Hàng
+loạt (Bulk Select / Bulk Delete)** trong Gistwarden.
 
 ---
 
 ## 1. Tổng Quan (Overview)
 
-Gistwarden hỗ trợ quản lý 5 loại mục dữ liệu Vault (Vault Item Types) với cấu trúc phân loại chuẩn hóa:
-1. **Login (1)**: Tài khoản Đăng nhập (Username, Password, URIs, TOTP, FIDO2 Passkeys).
-2. **SecureNote (2)**: Ghi chú Bảo mật (Notes text).
-3. **Card (3)**: Thẻ Ngân hàng / Tín dụng (Cardholder, Number, Brand, ExpMonth, ExpYear, Code).
-4. **Identity (4)**: Thông tin Cá nhân / Định danh (Title, Name, SSN, Passport, Email, Phone, Address).
-5. **SshKey (5)**: Khóa SSH Keys (OpenSSH Private Key, Public Key, Passphrase, Fingerprint).
+Gistwarden hỗ trợ quản lý 5 loại mục dữ liệu Vault (Vault Item Types) với cấu
+trúc phân loại chuẩn hóa:
 
-Ngoài ra, ứng dụng cung cấp chế độ **Chọn nhiều (Select Mode)** hỗ trợ chọn từng mục, Chọn tất cả (Select All), Bỏ chọn tất cả (Deselect All) và Xóa hàng loạt (Bulk Delete) kèm Hộp thoại xác nhận (Confirmation Modal).
+1. **Login (1)**: Tài khoản Đăng nhập (Username, Password, URIs, TOTP, FIDO2
+   Passkeys).
+2. **SecureNote (2)**: Ghi chú Bảo mật (Notes text).
+3. **Card (3)**: Thẻ Ngân hàng / Tín dụng (Cardholder, Number, Brand, ExpMonth,
+   ExpYear, Code).
+4. **Identity (4)**: Thông tin Cá nhân / Định danh (Title, Name, SSN, Passport,
+   Email, Phone, Address).
+5. **SshKey (5)**: Khóa SSH Keys (OpenSSH Private Key, Public Key, Passphrase,
+   Fingerprint).
+
+Ngoài ra, ứng dụng cung cấp chế độ **Chọn nhiều (Select Mode)** hỗ trợ chọn từng
+mục, Chọn tất cả (Select All), Bỏ chọn tất cả (Deselect All) và Xóa hàng loạt
+(Bulk Delete) kèm Hộp thoại xác nhận (Confirmation Modal).
 
 ---
 
@@ -84,19 +94,25 @@ flowchart TD
 
 ## 📊 TÓM TẮT QUY TRÌNH RẼ NHÁNH TỔNG HỢP (Decision Matrix)
 
-| Bước | Câu hỏi điều kiện | Kết quả TRUE | Kết quả FALSE |
-| :--- | :--- | :--- | :--- |
-| **1.1** | Dữ liệu form nhập liệu hợp lệ theo Zod Schema? | Mã hóa Vault AES-GCM & Sync Gist | Báo lỗi từng trường nhập liệu |
-| **1.2** | Người dùng bấm "Xác nhận" xóa mục đơn lẻ? | Xóa khỏi Vault, Mã hóa & Sync Gist | Hủy thao tác - Giữ nguyên Vault |
-| **2.1** | Người dùng bấm "Chọn tất cả" (Select All)? | Thêm tất cả ID VaultItems vào `selectedIds` | N/A |
-| **2.2** | Số lượng mục đã chọn `selectedIds.size > 0`? | Hiển thị Hộp thoại Xác nhận xóa hàng loạt | Báo lỗi: Vui lòng chọn ít nhất 1 mục |
-| **2.3** | Người dùng bấm "Xóa" trên Hộp thoại Xác nhận? | Lọc bỏ các mục đã chọn, Reset Mode & Sync | Hủy thao tác - Giữ nguyên Vault |
+| Bước    | Câu hỏi điều kiện                              | Kết quả TRUE                                | Kết quả FALSE                        |
+| :------ | :--------------------------------------------- | :------------------------------------------ | :----------------------------------- |
+| **1.1** | Dữ liệu form nhập liệu hợp lệ theo Zod Schema? | Mã hóa Vault AES-GCM & Sync Gist            | Báo lỗi từng trường nhập liệu        |
+| **1.2** | Người dùng bấm "Xác nhận" xóa mục đơn lẻ?      | Xóa khỏi Vault, Mã hóa & Sync Gist          | Hủy thao tác - Giữ nguyên Vault      |
+| **2.1** | Người dùng bấm "Chọn tất cả" (Select All)?     | Thêm tất cả ID VaultItems vào `selectedIds` | N/A                                  |
+| **2.2** | Số lượng mục đã chọn `selectedIds.size > 0`?   | Hiển thị Hộp thoại Xác nhận xóa hàng loạt   | Báo lỗi: Vui lòng chọn ít nhất 1 mục |
+| **2.3** | Người dùng bấm "Xóa" trên Hộp thoại Xác nhận?  | Lọc bỏ các mục đã chọn, Reset Mode & Sync   | Hủy thao tác - Giữ nguyên Vault      |
 
 ---
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/features/vault/Vault.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/Vault.tsx)**: Component giao diện trang Vault chính, tìm kiếm, lọc loại mục và thanh công cụ Bulk Select Mode.
-2. **[`src/features/vault/VaultItemRow.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/VaultItemRow.tsx)**: Component hiển thị từng dòng mục Vault kèm Checkbox chọn nhiều.
-3. **[`src/features/vault/ItemEdit.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/ItemEdit.tsx)**: Form thêm mới và chỉnh sửa thông tin các loại mục Vault.
-4. **[`src/features/vault/vault-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/vault-service.ts)**: Dịch vụ lưu mục (`saveItem`), xóa mục (`deleteItem`), nhân bản mục (`cloneItem`) và xóa hàng loạt.
+1. **[`src/features/vault/Vault.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/Vault.tsx)**:
+   Component giao diện trang Vault chính, tìm kiếm, lọc loại mục và thanh công
+   cụ Bulk Select Mode.
+2. **[`src/features/vault/VaultItemRow.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/VaultItemRow.tsx)**:
+   Component hiển thị từng dòng mục Vault kèm Checkbox chọn nhiều.
+3. **[`src/features/vault/ItemEdit.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/ItemEdit.tsx)**:
+   Form thêm mới và chỉnh sửa thông tin các loại mục Vault.
+4. **[`src/features/vault/vault-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/vault-service.ts)**:
+   Dịch vụ lưu mục (`saveItem`), xóa mục (`deleteItem`), nhân bản mục
+   (`cloneItem`) và xóa hàng loạt.
