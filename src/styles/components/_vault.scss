@@ -102,6 +102,104 @@
   }
 }
 
+.select-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  margin-bottom: 12px;
+
+  .select-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .exit-select-btn {
+      width: 32px;
+      height: 32px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: var(--hover-bg);
+        color: var(--text);
+      }
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
+
+    .selected-count-badge {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+  }
+
+  .select-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .btn-select-all {
+      padding: 6px 12px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: var(--hover-bg);
+        border-color: var(--border-light, var(--border));
+      }
+    }
+
+    .btn-bulk-delete {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      background-color: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #ef4444;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background-color: #ef4444;
+        color: #ffffff;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-icon {
+        width: 14px;
+        height: 14px;
+        fill: currentColor;
+      }
+    }
+  }
+}
+
 .filter-panel {
   position: relative;
   margin-bottom: 12px;
@@ -216,6 +314,32 @@
     border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.2s, border-color 0.2s;
+
+    &.selectable {
+      user-select: none;
+    }
+
+    &.selected {
+      border-color: var(--primary);
+      background-color: var(--primary-light, rgba(59, 130, 246, 0.08));
+    }
+
+    .item-select-checkbox {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      flex-shrink: 0;
+
+      .checkbox-container {
+        gap: 0;
+      }
+
+      .checkbox-control {
+        width: 18px;
+        height: 18px;
+      }
+    }
 
     &:hover {
       background-color: var(--hover-bg);
