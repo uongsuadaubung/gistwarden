@@ -12,7 +12,7 @@ import {
 } from "@/core/types.ts";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result, ResultAsync } from "neverthrow";
-import { decryptData, getSessionKey } from "@/core/crypto.ts";
+import { clearDerivedKey, decryptData, getSessionKey } from "@/core/crypto.ts";
 import { store } from "@/core/store.ts";
 
 export const GithubUserSchema = z.object({
@@ -194,6 +194,7 @@ export async function configureSessionAccessLevel(
 export async function clearUnlockedSessionState(): Promise<
   Result<void, TranslationKey>
 > {
+  clearDerivedKey();
   return await removeSessionItem([...SESSION_KEYS_ON_LOCK]);
 }
 

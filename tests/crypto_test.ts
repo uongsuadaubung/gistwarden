@@ -5,12 +5,16 @@ import {
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   arrayBufferToBase64,
+  clearDerivedKey,
   decryptData,
   deriveKey,
   encryptData,
   generateSalt,
+  getSessionKey,
   parseSshKey,
+  setDerivedKey,
 } from "@/core/crypto.ts";
+import { clearUnlockedSessionState } from "@/core/storage.ts";
 import {
   AAGUID,
   base64UrlToBuffer,
@@ -519,5 +523,62 @@ VJo4zyr0vAWCc9LlxDAAAABm5vbmFtZQECAwQ=
       pubKeyRes.value.keyFingerprint,
       "SHA256:CnS+ohLRpL0UiiU5NI2B6l0a5ERgU5GKmgfI9AcAJVU",
     );
+  }
+});
+
+Deno.test("Crypto - DerivedKey Lifecycle & Memory Clearing", async () => {
+  const salt = generateSalt();
+  const deriveRes = await deriveKey("MasterPassword123", salt);
+  assert(deriveRes.isOk());
+  const sampleKey = deriveRes.value;
+
+  // 1. Set derived key
+  await setDerivedKey(sampleKey);
+
+  // 2. Clear derived key in-memory directly
+  clearDerivedKey();
+
+  // 3. Clear unlocked session state (clears both storage and in-memory key)
+  await clearUnlockedSessionState();
+  const clearedKey = await getSessionKey();
+  assertEquals(clearedKey, null);
+});
+
+Deno.test("Crypto - SSH & ASN.1 Reader Edge Cases & Malformed Inputs", async () => {
+  // 1. Empty key string
+  const emptyRes = await parseSshKey("");
+  assertEquals(emptyRes.isErr(), true);
+  if (emptyRes.isErr()) {
+    assertEquals(emptyRes.error, "ssh_invalid_key");
+  }
+
+  // 2. Invalid OpenSSH Magic header
+  const invalidMagicKey = `-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1pbnZhbGlkLW1hZ2lj
+-----END OPENSSH PRIVATE KEY-----`;
+  const invalidMagicRes = await parseSshKey(invalidMagicKey);
+  assertEquals(invalidMagicRes.isErr(), true);
+  if (invalidMagicRes.isErr()) {
+    assertEquals(invalidMagicRes.error, "ssh_invalid_key");
+  }
+
+  // 3. Malformed Legacy RSA PEM (Corrupted ASN.1 sequence)
+  const malformedRsaPem = `-----BEGIN RSA PRIVATE KEY-----
+AAAAAAAABBBBBBBBCCCCCCCC
+-----END RSA PRIVATE KEY-----`;
+  const malformedRsaRes = await parseSshKey(malformedRsaPem);
+  assertEquals(malformedRsaRes.isErr(), true);
+  if (malformedRsaRes.isErr()) {
+    assertEquals(malformedRsaRes.error, "ssh_invalid_key");
+  }
+
+  // 4. Truncated Base64 OpenSSH Header
+  const truncatedOpenSshKey = `-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEA
+-----END OPENSSH PRIVATE KEY-----`;
+  const truncatedRes = await parseSshKey(truncatedOpenSshKey);
+  assertEquals(truncatedRes.isErr(), true);
+  if (truncatedRes.isErr()) {
+    assertEquals(truncatedRes.error, "ssh_invalid_key");
   }
 });
