@@ -29,6 +29,7 @@ import {
   CopyIcon,
   EyeIcon,
   EyeOffIcon,
+  GlobeIcon,
   KeyIcon,
   NoteIcon,
   TrashIcon,
@@ -148,15 +149,15 @@ export const ItemDetail: Component = () => {
                   return (
                     <Show
                       when={domainStr}
-                      fallback={<KeyIcon />}
+                      fallback={<GlobeIcon />}
                     >
                       {(dom) => (
-                        <Favicon domain={dom()} fallback={<KeyIcon />} />
+                        <Favicon domain={dom()} fallback={<GlobeIcon />} />
                       )}
                     </Show>
                   );
                 }
-                return <KeyIcon />;
+                return <GlobeIcon />;
               };
 
               return (

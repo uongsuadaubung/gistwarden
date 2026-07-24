@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { reconcile } from "solid-js/store";
 import { setStore, store } from "@/core/store.ts";
 import {
   type AppSettings,
@@ -60,6 +61,7 @@ import {
   STORE_KEY_IS_LOADED,
   STORE_KEY_IS_LOCKED,
   STORE_KEY_SALT,
+  STORE_KEY_VAULT_ITEMS,
   STORE_KEY_VIEW,
 } from "@/core/constants.ts";
 
@@ -753,4 +755,18 @@ export async function acceptWelcome() {
     welcomeAccepted: true,
     view: View.Login,
   });
+}
+
+export async function reloadVaultItems(): Promise<void> {
+  const key = await getSessionKey();
+  if (!key || !store.salt || store.isLocked) return;
+
+  const contentRes = await fetchEncryptedVaultContent();
+  if (contentRes.isErr() || !contentRes.value) return;
+
+  const decryptVaultRes = await decryptGistVault(contentRes.value, key);
+  if (decryptVaultRes.isErr()) return;
+
+  const { items } = decryptVaultRes.value;
+  setStore(STORE_KEY_VAULT_ITEMS, reconcile(items));
 }

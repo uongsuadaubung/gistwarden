@@ -26,6 +26,7 @@ import {
   MSG_START_GITHUB_OAUTH,
   MSG_UPLOAD_TO_GIST,
   MSG_VALIDATE_TOKEN,
+  MSG_VAULT_ITEMS_UPDATED,
   MSG_VAULT_LOCKED,
   MSG_VAULT_LOGGED_OUT,
   POPUP_WIDTH,
@@ -341,6 +342,7 @@ async function batchSavePayloads(
 
   vaultData.items = updatedItems;
   const uploadRes = await uploadToGist(payloadObj);
+  broadcastMessage({ type: MSG_VAULT_ITEMS_UPDATED });
   return uploadRes.isOk();
 }
 

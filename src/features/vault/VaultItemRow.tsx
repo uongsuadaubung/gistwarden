@@ -10,6 +10,7 @@ import {
 import {
   CopyIcon,
   ExternalLinkIcon,
+  GlobeIcon,
   HeartFilledIcon,
   KeyIcon,
   MoreVerticalIcon,
@@ -123,9 +124,9 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
         <Show when={Number(props.item.type) === VaultItemType.Login}>
           <Show
             when={domain()}
-            fallback={<KeyIcon />}
+            fallback={<GlobeIcon />}
           >
-            {(dom) => <Favicon domain={dom()} fallback={<KeyIcon />} />}
+            {(dom) => <Favicon domain={dom()} fallback={<GlobeIcon />} />}
           </Show>
         </Show>
       </div>

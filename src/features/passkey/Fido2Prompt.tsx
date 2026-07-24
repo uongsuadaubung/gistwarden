@@ -36,6 +36,7 @@ import {
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
 import {
+  GlobeIcon,
   InfoIcon,
   LockIcon,
   QuestionIcon,
@@ -460,7 +461,7 @@ export const Fido2Prompt: Component = () => {
                   <For each={matchingAccounts()}>
                     {(item, idx) => (
                       <PasskeySelectRow
-                        icon={<LockIcon />}
+                        icon={<GlobeIcon />}
                         title={item.login.username || t("detail_no_value")}
                         subtitle={item.name}
                         active={selectedAccountIndex() === idx()}

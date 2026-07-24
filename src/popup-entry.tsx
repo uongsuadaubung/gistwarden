@@ -9,7 +9,12 @@ import {
 } from "solid-js";
 import { store } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
-import { init, lock, logout } from "@/features/auth/auth-service.ts";
+import {
+  init,
+  lock,
+  logout,
+  reloadVaultItems,
+} from "@/features/auth/auth-service.ts";
 import { navigate } from "@/core/navigation.ts";
 import {
   GeneratorIcon,
@@ -19,6 +24,7 @@ import {
 } from "@/icons/svg/index.ts";
 import {
   MSG_RESET_TIMEOUT,
+  MSG_VAULT_ITEMS_UPDATED,
   MSG_VAULT_LOCKED,
   MSG_VAULT_LOGGED_OUT,
 } from "@/core/constants.ts";
@@ -85,6 +91,11 @@ const App: Component = () => {
             "[Popup] Received VAULT_LOGGED_OUT message from background",
           );
           logout();
+        } else if (message.type === MSG_VAULT_ITEMS_UPDATED) {
+          console.debug(
+            "[Popup] Received VAULT_ITEMS_UPDATED message from background",
+          );
+          reloadVaultItems();
         }
       });
     }
