@@ -17,6 +17,7 @@ import {
 } from "@/core/ui-service.ts";
 import { Header } from "@/components/ui/Header.tsx";
 import { createDefaultVaultItem } from "@/features/vault/item-edit/vault-edit-helper.ts";
+import { VaultBatchActionBar } from "@/features/vault/components/VaultBatchActionBar.tsx";
 import { getCurrentTab, sendMessageToTab } from "@/core/tabs.ts";
 
 import {
@@ -40,7 +41,6 @@ import {
   ListIcon,
   NoteIcon,
   SearchIcon,
-  TrashIcon,
 } from "@/icons/svg/index.ts";
 import { Input } from "@/components/ui/Input.tsx";
 import { VaultItemRow } from "@/features/vault/VaultItemRow.tsx";
@@ -453,45 +453,13 @@ export const Vault: Component = () => {
               </div>
             }
           >
-            <div class="select-action-row">
-              <div class="select-info">
-                <button
-                  type="button"
-                  class="action-icon-btn exit-select-btn"
-                  onClick={toggleSelectMode}
-                  title={t("btn_close")}
-                >
-                  <CloseIcon />
-                </button>
-                <span class="selected-count-badge">
-                  {t("vault_selected_count", {
-                    count: selectedItemIds().size,
-                  })}
-                </span>
-              </div>
-              <div class="select-actions-group">
-                <button
-                  type="button"
-                  class="btn-select-all"
-                  onClick={handleSelectAll}
-                >
-                  {selectedItemIds().size >= getAllVisibleItemIds().length &&
-                      getAllVisibleItemIds().length > 0
-                    ? t("vault_deselect_all")
-                    : t("vault_select_all")}
-                </button>
-                <button
-                  type="button"
-                  class="btn-bulk-delete"
-                  disabled={selectedItemIds().size === 0}
-                  onClick={handleDeleteSelected}
-                  title={t("vault_btn_delete_selected")}
-                >
-                  <TrashIcon class="btn-icon" />
-                  <span>{t("btn_delete")}</span>
-                </button>
-              </div>
-            </div>
+            <VaultBatchActionBar
+              selectedCount={selectedItemIds().size}
+              allVisibleCount={getAllVisibleItemIds().length}
+              onToggleSelectMode={toggleSelectMode}
+              onSelectAll={handleSelectAll}
+              onDeleteSelected={handleDeleteSelected}
+            />
           </Show>
 
           {/* Filter Panel */}

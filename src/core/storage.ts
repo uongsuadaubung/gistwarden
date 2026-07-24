@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { SESSION_KEY_SESSION_UNLOCKED, STORAGE_KEY } from "@/core/constants.ts";
+import {
+  SESSION_KEY_SESSION_UNLOCKED,
+  SESSION_KEYS_ON_LOCK,
+  STORAGE_KEY,
+} from "@/core/constants.ts";
 
 import {
   SupportLanguage,
@@ -62,10 +66,6 @@ export function hasSessionStorage(): boolean {
 export function hasStorageOnChanged(): boolean {
   return typeof chrome !== "undefined" && !!chrome.storage &&
     !!chrome.storage.onChanged;
-}
-
-export function hasAlarms(): boolean {
-  return typeof chrome !== "undefined" && !!chrome.alarms;
 }
 
 export async function getAllSettings(): Promise<
@@ -191,6 +191,12 @@ export async function configureSessionAccessLevel(
   );
 }
 
+export async function clearUnlockedSessionState(): Promise<
+  Result<void, TranslationKey>
+> {
+  return await removeSessionItem([...SESSION_KEYS_ON_LOCK]);
+}
+
 export async function getGithubToken(): Promise<string> {
   const settingsRes = await getAllSettings();
   if (settingsRes.isOk()) {
@@ -307,31 +313,6 @@ export async function removeLocalItem(
   }
   return await ResultAsync.fromPromise(
     chrome.storage.local.remove(keys),
-    (_e): TranslationKey => "storage_error",
-  );
-}
-
-export async function clearAlarm(
-  name: string,
-): Promise<Result<boolean, TranslationKey>> {
-  if (!hasAlarms()) {
-    return err("storage_error");
-  }
-  return await ResultAsync.fromPromise(
-    chrome.alarms.clear(name),
-    (_e): TranslationKey => "storage_error",
-  );
-}
-
-export async function createAlarm(
-  name: string,
-  alarmInfo: chrome.alarms.AlarmCreateInfo,
-): Promise<Result<void, TranslationKey>> {
-  if (!hasAlarms()) {
-    return err("storage_error");
-  }
-  return await ResultAsync.fromPromise(
-    Promise.resolve(chrome.alarms.create(name, alarmInfo)),
     (_e): TranslationKey => "storage_error",
   );
 }

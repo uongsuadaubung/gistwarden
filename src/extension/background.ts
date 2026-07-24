@@ -13,9 +13,7 @@ import {
   type SaveActionPayload,
   SaveActionPayloadSchema,
 } from "@/core/messaging.ts";
-import { setLanguage, t } from "@/core/i18n.ts";
 import {
-  ALARM_NAME_VAULT_TIMEOUT,
   FIDO2_PROMPT_HEIGHT,
   MSG_CHECK_AUTOFILL_SUGGESTION,
   MSG_CHECK_PENDING_NOTIFICATION,
@@ -35,33 +33,22 @@ import {
   MSG_UPLOAD_TO_GIST,
   MSG_VALIDATE_TOKEN,
   MSG_VAULT_ITEMS_UPDATED,
-  MSG_VAULT_LOCKED,
-  MSG_VAULT_LOGGED_OUT,
   POPUP_WIDTH,
   SESSION_KEY_DERIVED_KEY,
   SESSION_KEY_ENCRYPTED_VAULT,
-  SESSION_KEY_GITHUB_TOKEN,
-  SESSION_KEY_LAST_SELECTED_ITEM_ID,
-  SESSION_KEY_LAST_VIEW,
   SESSION_KEY_PENDING_FIDO2_REQUEST,
   SESSION_KEY_PENDING_GITHUB_TOKEN,
   SESSION_KEY_SESSION_INITIALIZED,
-  SESSION_KEY_SESSION_UNLOCKED,
-  SESSION_KEY_VERIFICATION_CIPHERTEXT,
-  SESSION_KEY_VERIFICATION_IV,
   STORAGE_KEY,
   STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
 } from "@/core/constants.ts";
 import {
-  clearAlarm,
   clearLocal,
   clearSession,
   configureSessionAccessLevel,
-  createAlarm,
   getAllSettings,
   getLocalItem,
   getSessionItem,
-  hasAlarms,
   hasSessionStorage,
   hasStorageOnChanged,
   removeLocalItem,
@@ -70,6 +57,14 @@ import {
   setSessionItem,
   SettingsSchema,
 } from "@/core/storage.ts";
+import {
+  syncLockStateBadge,
+  updateExtensionBadge,
+} from "@/extension/background-badge.ts";
+import {
+  setupAlarmsListener,
+  updateTimeoutAlarm,
+} from "@/extension/background-alarms.ts";
 import { openPopup, sendMessageToTab } from "@/core/tabs.ts";
 import { getBaseDomain, getDomainFromItem } from "@/core/domain-utils.ts";
 import { filterMatchingDomainItems } from "@/features/vault/vault-domain-matching.ts";
@@ -744,114 +739,7 @@ onExtensionMessage(
 );
 
 // Timeout Alarm Management
-async function updateTimeoutAlarm() {
-  const resAlarm = await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
-  if (resAlarm.isErr()) {
-    return;
-  }
-  const settingsRes = await getAllSettings();
-  if (settingsRes.isErr()) {
-    return;
-  }
-  const settings = settingsRes.value;
-  const timeout = settings.vaultTimeout || "onRestart";
-
-  if (timeout !== "onRestart") {
-    const minutes = parseInt(timeout, 10);
-    if (!isNaN(minutes) && minutes > 0) {
-      const derivedKeyRes = await getSessionItem(SESSION_KEY_DERIVED_KEY);
-      const derivedKey = derivedKeyRes.isOk() ? derivedKeyRes.value : null;
-      if (derivedKey) {
-        await createAlarm(ALARM_NAME_VAULT_TIMEOUT, {
-          delayInMinutes: minutes,
-        });
-        console.debug(
-          `[Background] Set ${ALARM_NAME_VAULT_TIMEOUT} alarm for ${minutes} minutes`,
-        );
-      }
-    }
-  }
-}
-
-if (hasAlarms()) {
-  chrome.alarms.onAlarm.addListener(async (alarm) => {
-    if (alarm.name === ALARM_NAME_VAULT_TIMEOUT) {
-      console.debug(
-        `[Background] ${ALARM_NAME_VAULT_TIMEOUT} alarm fired. Locking/Logging out...`,
-      );
-      const settingsRes = await getAllSettings();
-      const settings = settingsRes.isOk()
-        ? settingsRes.value
-        : SettingsSchema.parse({});
-      const action = settings.vaultTimeoutAction || "lock";
-
-      // Clear session data and navigation state
-      const removeRes = await removeSessionItem([
-        SESSION_KEY_DERIVED_KEY,
-        SESSION_KEY_SESSION_UNLOCKED,
-        SESSION_KEY_VERIFICATION_IV,
-        SESSION_KEY_VERIFICATION_CIPHERTEXT,
-        SESSION_KEY_GITHUB_TOKEN,
-        SESSION_KEY_ENCRYPTED_VAULT,
-        SESSION_KEY_LAST_VIEW,
-        SESSION_KEY_LAST_SELECTED_ITEM_ID,
-      ]);
-      if (removeRes.isErr()) {
-        console.error(
-          "[Background] Failed to clear session items:",
-          removeRes.error,
-        );
-      }
-
-      if (action === "logout") {
-        await clearLocal();
-        broadcastMessage({ type: MSG_VAULT_LOGGED_OUT });
-      } else {
-        broadcastMessage({ type: MSG_VAULT_LOCKED });
-      }
-      await updateExtensionBadge(false);
-    }
-  });
-}
-
-async function updateExtensionBadge(isUnlocked: boolean): Promise<void> {
-  if (typeof chrome === "undefined" || !chrome.action) return;
-
-  const settingsRes = await getAllSettings();
-  if (settingsRes.isOk() && settingsRes.value.language) {
-    setLanguage(settingsRes.value.language);
-  }
-
-  if (isUnlocked) {
-    await chrome.action.setIcon({
-      path: {
-        "16": "icons/icon-16.png",
-        "32": "icons/icon-32.png",
-        "48": "icons/icon-48.png",
-        "128": "icons/icon-128.png",
-      },
-    });
-    await chrome.action.setBadgeText({ text: "" });
-    await chrome.action.setTitle({ title: t("badge_status_unlocked") });
-  } else {
-    await chrome.action.setIcon({
-      path: {
-        "16": "icons/icon-locked-16.png",
-        "32": "icons/icon-locked-32.png",
-        "48": "icons/icon-locked-48.png",
-        "128": "icons/icon-locked-128.png",
-      },
-    });
-    await chrome.action.setBadgeText({ text: "" });
-    await chrome.action.setTitle({ title: t("badge_status_locked") });
-  }
-}
-
-async function syncLockStateBadge(): Promise<void> {
-  const keyRes = await getSessionItem(SESSION_KEY_DERIVED_KEY);
-  const isUnlocked = keyRes.isOk() && !!keyRes.value;
-  await updateExtensionBadge(isUnlocked);
-}
+setupAlarmsListener();
 
 if (hasStorageOnChanged()) {
   chrome.storage.onChanged.addListener((changes, areaName) => {

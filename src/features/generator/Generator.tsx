@@ -8,7 +8,7 @@ import { CopyIcon, RefreshIcon } from "@/icons/svg/index.ts";
 import {
   generatePassphrase,
   generatePassword,
-} from "@/features/generator/generator-utils.ts";
+} from "@/core/generator-utils.ts";
 
 export const Generator: Component = () => {
   const [activeTab, setActiveTab] = createSignal<"password" | "passphrase">(

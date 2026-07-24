@@ -216,6 +216,31 @@ const customRulesPlugin: LintPlugin = {
         };
       },
     },
+
+    // Luật 8: Bắt buộc sử dụng Path Alias '@/' thay vì đường dẫn tương đối './' hay '../' bên trong thư mục src/
+    "use-alias-import": {
+      create(context: LintContext) {
+        return {
+          ImportDeclaration(node: LintNode & { source?: { value?: string } }) {
+            if (!context.filename) return;
+            const normalizedFilename = context.filename.replace(/\\/g, "/");
+            if (!normalizedFilename.includes("/src/")) return;
+
+            const importPath = node.source?.value;
+            if (
+              typeof importPath === "string" &&
+              (importPath.startsWith("./") || importPath.startsWith("../"))
+            ) {
+              context.report({
+                node,
+                message:
+                  `Do not use relative import path '${importPath}'. Use '@/' path alias instead inside 'src/' directory.`,
+              });
+            }
+          },
+        };
+      },
+    },
   },
 };
 

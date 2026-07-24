@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { reconcile } from "solid-js/store";
 import { setStore, store } from "@/core/store.ts";
+import { clearAlarm } from "@/core/alarms.ts";
 import {
   type AppSettings,
-  clearAlarm,
   clearLocal,
   clearSession,
+  clearUnlockedSessionState,
   getAllSettings,
   getGithubToken,
   getLocalItem,
@@ -13,7 +14,6 @@ import {
   getSessionItems,
   hasSessionStorage,
   isSessionUnlocked,
-  removeSessionItem,
   setSessionItem,
   setSessionUnlocked,
   subscribeToSettings,
@@ -51,13 +51,10 @@ import {
   LOCAL_STORAGE_KEY_THEME,
   MSG_DOWNLOAD_FROM_GIST,
   MSG_RESET_TIMEOUT,
-  SESSION_KEY_DERIVED_KEY,
   SESSION_KEY_ENCRYPTED_VAULT,
-  SESSION_KEY_GITHUB_TOKEN,
   SESSION_KEY_LAST_SELECTED_ITEM_ID,
   SESSION_KEY_LAST_VIEW,
   SESSION_KEY_SESSION_INITIALIZED,
-  SESSION_KEY_SESSION_UNLOCKED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
   STORE_KEY_IS_LOADED,
@@ -661,16 +658,7 @@ export async function unlock(
 export async function lock() {
   clearDerivedKey();
 
-  await removeSessionItem([
-    SESSION_KEY_DERIVED_KEY,
-    SESSION_KEY_SESSION_UNLOCKED,
-    SESSION_KEY_VERIFICATION_IV,
-    SESSION_KEY_VERIFICATION_CIPHERTEXT,
-    SESSION_KEY_GITHUB_TOKEN,
-    SESSION_KEY_ENCRYPTED_VAULT,
-    SESSION_KEY_LAST_VIEW,
-    SESSION_KEY_LAST_SELECTED_ITEM_ID,
-  ]);
+  await clearUnlockedSessionState();
 
   await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
 
@@ -685,16 +673,7 @@ export async function lock() {
 export async function logout() {
   clearDerivedKey();
 
-  await removeSessionItem([
-    SESSION_KEY_DERIVED_KEY,
-    SESSION_KEY_SESSION_UNLOCKED,
-    SESSION_KEY_VERIFICATION_IV,
-    SESSION_KEY_VERIFICATION_CIPHERTEXT,
-    SESSION_KEY_GITHUB_TOKEN,
-    SESSION_KEY_ENCRYPTED_VAULT,
-    SESSION_KEY_LAST_VIEW,
-    SESSION_KEY_LAST_SELECTED_ITEM_ID,
-  ]);
+  await clearUnlockedSessionState();
 
   await clearLocal();
 
