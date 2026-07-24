@@ -6,16 +6,15 @@ import {
   MSG_UPLOAD_TO_GIST,
   SESSION_KEY_ENCRYPTED_VAULT,
 } from "@/core/constants.ts";
+import { sendMessageToBackground } from "@/core/messaging.ts";
+import { t, type TranslationKey } from "@/core/i18n.ts";
+import { showToast } from "@/core/ui-service.ts";
+import { err, ok, Result } from "neverthrow";
 
 export const SyncResponseSchema = z.object({
   success: z.boolean(),
   error: z.string().optional(),
 });
-
-import { sendMessageToBackground } from "@/core/messaging.ts";
-import { t, type TranslationKey } from "@/core/i18n.ts";
-import { showToast } from "@/core/ui-service.ts";
-import { err, ok, Result } from "neverthrow";
 
 export async function syncVaultToGist(
   items: VaultItem[],

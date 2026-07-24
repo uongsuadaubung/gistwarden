@@ -1,5 +1,6 @@
 import { POPOUT_HEIGHT, POPUP_WIDTH } from "@/core/constants.ts";
 import { store } from "@/core/store.ts";
+import { getAssetUrl } from "@/core/runtime.ts";
 
 export const isPopout = (): boolean => {
   return new URLSearchParams(window.location.search).get("mode") === "tab";
@@ -33,7 +34,7 @@ export const handlePopout = () => {
       }
 
       chrome.windows.create({
-        url: chrome.runtime.getURL(url),
+        url: getAssetUrl(url),
         type: "popup",
         width: POPUP_WIDTH,
         height: POPOUT_HEIGHT,

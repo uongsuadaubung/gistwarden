@@ -15,6 +15,18 @@ miễn phí, riêng tư và độc lập:
   `DerivedKey` (Argon2id) của người dùng.
 - GitHub chỉ nhìn thấy các chuỗi Ciphertext vô nghĩa (Zero-Knowledge Cloud
   Storage).
+- **Cơ chế Bảo mật & Giải Mã GitHub Token On-The-Fly (On-Demand Decryption)**:
+  - GitHub Token luôn được lưu mã hóa bằng AES-GCM 256-bit trong
+    `chrome.storage.local`.
+  - **Không lưu Plaintext Token vào Storage**: Plaintext token tuyệt đối không
+    được ghi vào `chrome.storage.session` hay bất kỳ bộ nhớ cố định nào.
+  - **Giải mã On-The-Fly**: Khi ứng dụng cần gọi GitHub REST API (sync, fetch
+    user), hệ thống sẽ đọc `Master Key` từ Session và giải mã Token ngầm trực
+    tiếp trên biến RAM tạm thời. Biến này sẽ bị xóa khỏi RAM ngay khi request
+    API hoàn tất.
+  - **Bảo mật `TRUSTED_CONTEXTS`**: `chrome.storage.session` được cấu hình
+    `setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' })` để chặn triệt để các
+    Content Scripts từ trang web bên thứ ba truy cập vào phiên làm việc.
 - **Cơ chế Kiểm soát Giới hạn Gist (Gist Limits & Rate Limits)**:
   - **Giới hạn dung lượng 10MB**: Kiểm tra dung lượng mã hóa trước khi tải lên.
     Nếu dung lượng két sắt vượt quá 10MB, hệ thống báo lỗi

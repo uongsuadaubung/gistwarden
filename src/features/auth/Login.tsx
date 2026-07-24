@@ -71,10 +71,14 @@ export const Login: Component = () => {
         const res = DownloadFromGistResponseSchema.safeParse(
           sendResult.value,
         );
-        if (res.success && res.data.success && res.data.content) {
-          setGistStatus("exists");
+        if (res.success && res.data.success) {
+          if (res.data.content) {
+            setGistStatus("exists");
+          } else {
+            setGistStatus("new");
+          }
         } else {
-          setGistStatus("new");
+          setGistStatus("exists");
         }
       })();
     } else {

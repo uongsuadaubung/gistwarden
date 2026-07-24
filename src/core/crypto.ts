@@ -136,8 +136,6 @@ export async function getOrDeriveKey(
   password: string,
   saltBase64: string,
 ): Promise<Result<CryptoKey, TranslationKey>> {
-  if (derivedCryptoKey) return ok(derivedCryptoKey);
-
   const saltBufferRes = base64ToArrayBuffer(saltBase64);
   if (saltBufferRes.isErr()) return err(saltBufferRes.error);
   const salt = new Uint8Array(saltBufferRes.value);
@@ -146,14 +144,15 @@ export async function getOrDeriveKey(
   if (deriveRes.isErr()) {
     return err(deriveRes.error);
   }
-  derivedCryptoKey = deriveRes.value;
+  const key = deriveRes.value;
+  derivedCryptoKey = key;
 
   // Export raw bytes and save as Base64 to Session Storage
-  const raw = await crypto.subtle.exportKey("raw", derivedCryptoKey);
+  const raw = await crypto.subtle.exportKey("raw", key);
   const base64 = arrayBufferToBase64(raw);
   await setSessionItem(SESSION_KEY_DERIVED_KEY, base64);
 
-  return ok(derivedCryptoKey);
+  return ok(key);
 }
 
 export async function getSessionKey(): Promise<CryptoKey | null> {

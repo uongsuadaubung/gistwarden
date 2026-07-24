@@ -28,7 +28,8 @@ import {
   MSG_VAULT_LOCKED,
   MSG_VAULT_LOGGED_OUT,
 } from "@/core/constants.ts";
-import { notifyBackground } from "@/core/messaging.ts";
+import { notifyBackground, onExtensionMessage } from "@/core/messaging.ts";
+import { isRecord } from "@/core/storage.ts";
 
 // Import Views
 import Login from "@/features/auth/Login.tsx";
@@ -76,29 +77,25 @@ const App: Component = () => {
     await init();
 
     // Listen for background lock events
-    if (
-      typeof chrome !== "undefined" && chrome.runtime &&
-      chrome.runtime.onMessage
-    ) {
-      chrome.runtime.onMessage.addListener((message: { type: string }) => {
-        if (message.type === MSG_VAULT_LOCKED) {
-          console.debug(
-            "[Popup] Received VAULT_LOCKED message from background",
-          );
-          lock();
-        } else if (message.type === MSG_VAULT_LOGGED_OUT) {
-          console.debug(
-            "[Popup] Received VAULT_LOGGED_OUT message from background",
-          );
-          logout();
-        } else if (message.type === MSG_VAULT_ITEMS_UPDATED) {
-          console.debug(
-            "[Popup] Received VAULT_ITEMS_UPDATED message from background",
-          );
-          reloadVaultItems();
-        }
-      });
-    }
+    onExtensionMessage((message) => {
+      if (!isRecord(message)) return;
+      if (message.type === MSG_VAULT_LOCKED) {
+        console.debug(
+          "[Popup] Received VAULT_LOCKED message from background",
+        );
+        lock();
+      } else if (message.type === MSG_VAULT_LOGGED_OUT) {
+        console.debug(
+          "[Popup] Received VAULT_LOGGED_OUT message from background",
+        );
+        logout();
+      } else if (message.type === MSG_VAULT_ITEMS_UPDATED) {
+        console.debug(
+          "[Popup] Received VAULT_ITEMS_UPDATED message from background",
+        );
+        reloadVaultItems();
+      }
+    });
 
     // Reset inactivity timeout on user interaction
     const resetTimeout = () => {

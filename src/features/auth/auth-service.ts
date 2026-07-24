@@ -7,6 +7,7 @@ import {
   clearLocal,
   clearSession,
   getAllSettings,
+  getGithubToken,
   getLocalItem,
   getSessionItem,
   getSessionItems,
@@ -56,6 +57,7 @@ import {
   SESSION_KEY_LAST_SELECTED_ITEM_ID,
   SESSION_KEY_LAST_VIEW,
   SESSION_KEY_SESSION_INITIALIZED,
+  SESSION_KEY_SESSION_UNLOCKED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
   STORE_KEY_IS_LOADED,
@@ -100,31 +102,6 @@ async function loadAndApplyTheme(): Promise<"dark" | "light"> {
     document.body.classList.remove("light-theme");
   }
   return finalTheme;
-}
-
-async function resolveGithubToken(
-  settings: AppSettings,
-  key: CryptoKey | null,
-): Promise<string> {
-  const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-  const sessionToken = sessionTokenRes.isOk() ? sessionTokenRes.value : null;
-  let decryptedToken = "";
-  if (settings.githubTokenEncrypted && settings.githubTokenIv && key) {
-    const decryptRes = await decryptData(
-      settings.githubTokenEncrypted,
-      settings.githubTokenIv,
-      key,
-    );
-    if (decryptRes.isOk()) {
-      decryptedToken = decryptRes.value;
-      await setSessionItem(SESSION_KEY_GITHUB_TOKEN, decryptedToken);
-    } else {
-      console.error("Failed to decrypt GitHub Token:", decryptRes.error);
-    }
-  } else if (sessionToken && typeof sessionToken === "string") {
-    decryptedToken = sessionToken;
-  }
-  return decryptedToken;
 }
 
 async function fetchEncryptedVaultContent(): Promise<
@@ -286,10 +263,9 @@ export async function init() {
   const sessionUnlockedVal = await isSessionUnlocked();
   const currentTheme = await loadAndApplyTheme();
 
-  const decryptedToken = await resolveGithubToken(settings, key);
-  const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
+  const decryptedToken = await getGithubToken();
   const githubConfigured = !!settings.githubTokenEncrypted ||
-    (sessionTokenRes.isOk() && !!sessionTokenRes.value);
+    !!decryptedToken || !!store.githubToken;
 
   setStore({
     githubToken: decryptedToken,
@@ -358,13 +334,10 @@ export async function init() {
     applyInitialView(githubConfigured, settings.welcomeAccepted, isFido2Prompt);
   }
 
-  // Subscribe to settings changes
   subscribeToSettings(async (newSettings) => {
-    const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-    const sessionToken = sessionTokenRes.isOk() ? sessionTokenRes.value : null;
+    const finalToken = await getGithubToken();
     const githubConfigured = !!newSettings.githubTokenEncrypted ||
-      !!sessionToken;
-    const finalToken = typeof sessionToken === "string" ? sessionToken : "";
+      !!finalToken || !!store.githubToken;
 
     setStore({
       githubToken: finalToken,
@@ -423,9 +396,7 @@ async function setupUnlockedSession(
 
   await setSessionUnlocked(true);
 
-  const sessionRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-  const sessionVal = sessionRes.isOk() ? sessionRes.value : null;
-  const finalToken = typeof sessionVal === "string" ? sessionVal : "";
+  const finalToken = await getGithubToken();
   const finalView = targetView ||
     (store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault);
 
@@ -499,8 +470,9 @@ async function initializeNewVault(
   }
   const key = keyRes.value;
 
-  if (tokenToEncrypt) {
-    const encryptRes = await encryptData(tokenToEncrypt, key);
+  const activeToken = tokenToEncrypt || (await getGithubToken());
+  if (activeToken) {
+    const encryptRes = await encryptData(activeToken, key);
     if (encryptRes.isErr()) {
       clearDerivedKey();
       return err(encryptRes.error);
@@ -586,9 +558,9 @@ export async function unlock(
   const settingsRes = await getAllSettings();
   if (settingsRes.isErr()) return err(settingsRes.error);
   const settings = settingsRes.value;
-  const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-  const sessionToken = sessionTokenRes.isOk() ? sessionTokenRes.value : null;
-  const githubConfigured = !!settings.githubTokenEncrypted || !!sessionToken;
+  const currentToken = await getGithubToken();
+  const githubConfigured = !!settings.githubTokenEncrypted ||
+    !!currentToken || !!store.githubToken;
   if (!githubConfigured) {
     clearDerivedKey();
     return err("login_error_invalid_token");
@@ -617,14 +589,6 @@ export async function unlock(
         clearDerivedKey();
         return err(decryptRes.error);
       }
-      const setTokenRes = await setSessionItem(
-        SESSION_KEY_GITHUB_TOKEN,
-        decryptRes.value,
-      );
-      if (setTokenRes.isErr()) {
-        clearDerivedKey();
-        return err(setTokenRes.error);
-      }
     }
   }
 
@@ -643,7 +607,7 @@ export async function unlock(
 
   // C. Nếu chưa có salt (két sắt mới), tạo két sắt mới
   if (!saltBase64) {
-    const tokenToEncrypt = typeof sessionToken === "string" ? sessionToken : "";
+    const tokenToEncrypt = store.githubToken || "";
     return await initializeNewVault(password, tokenToEncrypt);
   }
 
@@ -658,8 +622,11 @@ export async function unlock(
   }
 
   // E. Onboarding token mã hóa
-  if (sessionToken && typeof sessionToken === "string") {
-    const encryptRes = await encryptData(sessionToken, key);
+  const activeToken = await getGithubToken();
+  if (
+    activeToken && (!settings.githubTokenEncrypted || !settings.githubTokenIv)
+  ) {
+    const encryptRes = await encryptData(activeToken, key);
     if (encryptRes.isErr()) {
       clearDerivedKey();
       return err(encryptRes.error);
@@ -696,6 +663,7 @@ export async function lock() {
 
   await removeSessionItem([
     SESSION_KEY_DERIVED_KEY,
+    SESSION_KEY_SESSION_UNLOCKED,
     SESSION_KEY_VERIFICATION_IV,
     SESSION_KEY_VERIFICATION_CIPHERTEXT,
     SESSION_KEY_GITHUB_TOKEN,
@@ -715,11 +683,11 @@ export async function lock() {
 }
 
 export async function logout() {
-  await setSessionUnlocked(false);
   clearDerivedKey();
 
   await removeSessionItem([
     SESSION_KEY_DERIVED_KEY,
+    SESSION_KEY_SESSION_UNLOCKED,
     SESSION_KEY_VERIFICATION_IV,
     SESSION_KEY_VERIFICATION_CIPHERTEXT,
     SESSION_KEY_GITHUB_TOKEN,

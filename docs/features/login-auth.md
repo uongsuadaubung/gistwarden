@@ -19,6 +19,11 @@ Architecture**:
   (hash-wasm: 3 vòng lặp, 64MB bộ nhớ)** kết hợp với Muối ngẫu nhiên (`Salt`).
 - Dữ liệu Vault được mã hóa đối xứng **AES-256-GCM** hoàn toàn tại máy người
   dùng trước khi lưu vào Storage hoặc đồng bộ GitHub Gist.
+- **Cơ chế An Toàn Phiên (Session Storage Security & On-The-Fly Token)**:
+  `chrome.storage.session` chỉ lưu `Master Key` và trạng thái mở khóa với cấp
+  truy cập `TRUSTED_CONTEXTS`. GitHub Token được mã hóa AES-GCM và chỉ giải mã
+  tạm thời trên RAM khi cần dùng, tuyệt đối không lưu plaintext token vào
+  Storage.
 
 ---
 
@@ -69,7 +74,7 @@ flowchart TD
     CheckVerifyPass -- True --> AuthSuccess[Xác thực Master Password thành công!]
     
     %% Mã PIN
-    CheckAuthType -- Mã PIN (PIN Code) --> DerivePinKey[Chạy PBKDF2 sinh chìa khóa phụ từ PIN + pinUnlockSalt]
+    CheckAuthType -- Mã PIN (PIN Code) --> DerivePinKey[Chạy Argon2id sinh chìa khóa phụ từ PIN + pinUnlockSalt]
     DerivePinKey --> DecryptPinVaultKey[Giải mã pinUnlockValue để khôi phục DerivedKey gốc]
     DecryptPinVaultKey --> CheckPinPass{Khôi phục DerivedKey THÀNH CÔNG?}
     CheckPinPass -- False --> ShowPinError[Hiển thị báo lỗi: Mã PIN không chính xác]

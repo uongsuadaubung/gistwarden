@@ -191,6 +191,31 @@ const customRulesPlugin: LintPlugin = {
         };
       },
     },
+
+    // Luật 7: Cấm các câu lệnh import nằm phía sau câu lệnh mã nguồn khác (bắt buộc tất cả import phải ở đầu file)
+    "imports-first": {
+      create(context: LintContext) {
+        return {
+          Program(node: LintNode & { body?: LintNode[] }) {
+            if (!node.body || !Array.isArray(node.body)) return;
+            let hasSeenNonImport = false;
+            for (const statement of node.body) {
+              if (statement.type === "ImportDeclaration") {
+                if (hasSeenNonImport) {
+                  context.report({
+                    node: statement,
+                    message:
+                      "All 'import' statements must be placed at the very top of the file before any other code statements.",
+                  });
+                }
+              } else {
+                hasSeenNonImport = true;
+              }
+            }
+          },
+        };
+      },
+    },
   },
 };
 

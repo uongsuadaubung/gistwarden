@@ -5,7 +5,14 @@ import {
   uploadToGist,
   validateToken,
 } from "@/features/sync/github-api.ts";
-import { broadcastMessage } from "@/core/messaging.ts";
+import { launchGithubOauthFlow } from "@/features/sync/github-auth.ts";
+import {
+  broadcastMessage,
+  ChromeMessageSchema,
+  onExtensionMessage,
+  type SaveActionPayload,
+  SaveActionPayloadSchema,
+} from "@/core/messaging.ts";
 import { setLanguage, t } from "@/core/i18n.ts";
 import {
   ALARM_NAME_VAULT_TIMEOUT,
@@ -39,14 +46,17 @@ import {
   SESSION_KEY_PENDING_FIDO2_REQUEST,
   SESSION_KEY_PENDING_GITHUB_TOKEN,
   SESSION_KEY_SESSION_INITIALIZED,
+  SESSION_KEY_SESSION_UNLOCKED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
+  STORAGE_KEY,
   STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
 } from "@/core/constants.ts";
 import {
   clearAlarm,
   clearLocal,
   clearSession,
+  configureSessionAccessLevel,
   createAlarm,
   getAllSettings,
   getLocalItem,
@@ -59,14 +69,9 @@ import {
   setLocalItem,
   setSessionItem,
   SettingsSchema,
-  STORAGE_KEY,
 } from "@/core/storage.ts";
 import { openPopup, sendMessageToTab } from "@/core/tabs.ts";
-import {
-  getBaseDomain,
-  getDomainFromItem,
-  safeParseUrl,
-} from "@/core/domain-utils.ts";
+import { getBaseDomain, getDomainFromItem } from "@/core/domain-utils.ts";
 import { filterMatchingDomainItems } from "@/features/vault/vault-domain-matching.ts";
 import { decryptData, encryptData, getSessionKey } from "@/core/crypto.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
@@ -77,6 +82,8 @@ import {
   VaultItemType,
   VaultListSchema,
 } from "@/core/types.ts";
+import { getAssetUrl } from "@/core/runtime.ts";
+import { setStore } from "@/core/store.ts";
 
 const PendingFido2RequestSchema = z.object({
   type: z.enum(["create", "get"]),
@@ -97,29 +104,6 @@ const SubmittedCredentialsSchema = z.object({
   username: z.string(),
   password: z.string(),
 });
-
-const SaveActionPayloadSchema = z.object({
-  actionType: z.enum(["add", "update"]),
-  domain: z.string(),
-  username: z.string(),
-  password: z.string(),
-  itemId: z.string().optional(),
-});
-
-type SaveActionPayload = z.infer<typeof SaveActionPayloadSchema>;
-
-interface ChromeMessage {
-  type: string;
-  content?: string;
-  token?: string;
-  result?: unknown;
-  error?: string;
-  data?: unknown;
-  credentials?: unknown;
-  choice?: string;
-  payload?: unknown;
-  domain?: string;
-}
 
 let pendingFido2Callback: ((response: unknown) => void) | null = null;
 const pendingTabNotifications = new Map<
@@ -270,7 +254,7 @@ async function batchSavePayloads(
 
     const existingIdx = updatedItems.findIndex((item) => {
       if (!isLoginItem(item)) return false;
-      if (payload.itemId && item.id === payload.itemId) {
+      if (payload.actionType === "update" && item.id === payload.itemId) {
         return true;
       }
       const itemDomain = getDomainFromItem(item);
@@ -488,15 +472,18 @@ async function handleCheckAutofillSuggestion(
 }
 
 // Message listener
-chrome.runtime.onMessage.addListener(
+onExtensionMessage(
   (
-    message: ChromeMessage,
+    rawMessage: unknown,
     sender: chrome.runtime.MessageSender,
-    sendResponse: (response: unknown) => void,
+    sendResponse: (response?: unknown) => void,
   ) => {
+    const parseRes = ChromeMessageSchema.safeParse(rawMessage);
+    if (!parseRes.success) return;
+    const message = parseRes.data;
     console.debug("[Background] Received message type:", message.type);
 
-    const extensionPageOrigin = chrome.runtime.getURL("");
+    const extensionPageOrigin = getAssetUrl("");
     const isExtensionSender = sender.url &&
       sender.url.startsWith(extensionPageOrigin);
 
@@ -608,9 +595,11 @@ chrome.runtime.onMessage.addListener(
         });
         return true;
 
-      case MSG_VALIDATE_TOKEN:
-        validateToken(message.token || "").then((res) => {
+      case MSG_VALIDATE_TOKEN: {
+        const token = message.token || "";
+        validateToken(token).then((res) => {
           if (res.isOk()) {
+            setStore({ githubToken: token, githubConfigured: true });
             sendResponse({
               success: true,
               username: res.value.username,
@@ -624,44 +613,24 @@ chrome.runtime.onMessage.addListener(
           }
         });
         return true;
+      }
 
       case MSG_START_GITHUB_OAUTH: {
-        const clientId = message.content || "";
-        const redirectUri = chrome.identity.getRedirectURL();
-        const authUrl =
-          `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=gist,read:user&state=${
-            encodeURIComponent(redirectUri)
-          }`;
-
-        chrome.identity.launchWebAuthFlow({
-          url: authUrl,
-          interactive: true,
-        }, async (redirectUrl) => {
-          if (chrome.runtime.lastError || !redirectUrl) {
-            const err = chrome.runtime.lastError?.message ||
-              "OAuth flow cancelled or failed";
-            sendResponse({ success: false, error: err });
-            return;
-          }
-          const urlRes = safeParseUrl(redirectUrl);
-          if (urlRes.isOk()) {
-            const token = urlRes.value.searchParams.get("token");
-            if (token) {
-              await setSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN, token);
-              sendResponse({ success: true, token });
-            } else {
-              sendResponse({
-                success: false,
-                error: "Token not found in redirect URL",
-              });
-            }
+        const handleStartOauth = async () => {
+          const clientId = message.content || "";
+          const oauthRes = await launchGithubOauthFlow(clientId);
+          if (oauthRes.isOk()) {
+            setStore({ githubToken: oauthRes.value, githubConfigured: true });
+            await setSessionItem(
+              SESSION_KEY_PENDING_GITHUB_TOKEN,
+              oauthRes.value,
+            );
+            sendResponse({ success: true, token: oauthRes.value });
           } else {
-            sendResponse({
-              success: false,
-              error: "Failed to parse redirect URL: " + urlRes.error,
-            });
+            sendResponse({ success: false, error: oauthRes.error });
           }
-        });
+        };
+        handleStartOauth();
         return true;
       }
 
@@ -691,7 +660,7 @@ chrome.runtime.onMessage.addListener(
 
         // Open a popup window for verification
         chrome.windows.create({
-          url: chrome.runtime.getURL("popup.html?mode=fido2-prompt"),
+          url: getAssetUrl("popup.html?mode=fido2-prompt"),
           type: "popup",
           width: POPUP_WIDTH,
           height: FIDO2_PROMPT_HEIGHT,
@@ -819,6 +788,7 @@ if (hasAlarms()) {
       // Clear session data and navigation state
       const removeRes = await removeSessionItem([
         SESSION_KEY_DERIVED_KEY,
+        SESSION_KEY_SESSION_UNLOCKED,
         SESSION_KEY_VERIFICATION_IV,
         SESSION_KEY_VERIFICATION_CIPHERTEXT,
         SESSION_KEY_GITHUB_TOKEN,
@@ -907,6 +877,7 @@ async function initSession() {
     await syncLockStateBadge();
     return;
   }
+  await configureSessionAccessLevel();
   const sessionInitializedRes = await getSessionItem(
     SESSION_KEY_SESSION_INITIALIZED,
   );

@@ -2,40 +2,24 @@ import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import { MSG_SAVE_CREDENTIAL_ACTION } from "@/core/constants.ts";
 
-import { notifyBackground } from "@/core/messaging.ts";
+import {
+  type AddCredentialPayload,
+  type AutofillMatchingAccount,
+  type AutofillSuggestionPayload,
+  type NotificationPayload,
+  notifyBackground,
+  type SaveCredentialPayload,
+  type UpdateCredentialPayload,
+} from "@/core/messaging.ts";
 
-export interface SaveCredentialPayload {
-  actionType: "add" | "update";
-  domain: string;
-  username: string;
-  password?: string;
-  itemId?: string;
-  onDismiss?: () => void;
-}
-
-export interface AutofillMatchingAccount {
-  itemId: string;
-  name?: string;
-  username: string;
-  password?: string;
-  totp?: string;
-}
-
-export interface AutofillSuggestionPayload {
-  actionType: "autofill";
-  domain: string;
-  username: string;
-  password?: string;
-  itemId?: string;
-  totp?: string;
-  accounts?: AutofillMatchingAccount[];
-  onFill?: (selectedAcc?: AutofillMatchingAccount) => void;
-  onDismiss?: () => void;
-}
-
-export type NotificationPayload =
-  | SaveCredentialPayload
-  | AutofillSuggestionPayload;
+export type {
+  AddCredentialPayload,
+  AutofillMatchingAccount,
+  AutofillSuggestionPayload,
+  NotificationPayload,
+  SaveCredentialPayload,
+  UpdateCredentialPayload,
+};
 
 interface NotificationToastProps {
   payload: NotificationPayload;
@@ -63,7 +47,7 @@ export function NotificationToast(props: NotificationToastProps) {
       };
     }
     return {
-      itemId: props.payload.itemId || "",
+      itemId: props.payload.actionType === "update" ? props.payload.itemId : "",
       username: props.payload.username,
       password: props.payload.password,
     };

@@ -1,7 +1,7 @@
 import { setStore, store } from "@/core/store.ts";
 import {
   getAllSettings,
-  getSessionItem,
+  getGithubToken,
   setSessionItem,
   setSessionUnlocked,
   updateSettings,
@@ -27,7 +27,6 @@ import {
   MSG_DOWNLOAD_FROM_GIST,
   MSG_RESET_TIMEOUT,
   SESSION_KEY_ENCRYPTED_VAULT,
-  SESSION_KEY_GITHUB_TOKEN,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
 } from "@/core/constants.ts";
@@ -49,9 +48,8 @@ export async function unlockWithKey(
   const settingsRes = await getAllSettings();
   if (settingsRes.isErr()) return err(settingsRes.error);
   const settings = settingsRes.value;
-  const sessionTokenRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-  const sessionToken = sessionTokenRes.isOk() ? sessionTokenRes.value : null;
-  const githubConfigured = !!settings.githubTokenEncrypted || !!sessionToken;
+  const githubConfigured = !!settings.githubTokenEncrypted ||
+    !!store.githubToken;
   if (!githubConfigured) {
     clearDerivedKey();
     return err("login_error_invalid_token");
@@ -62,22 +60,14 @@ export async function unlockWithKey(
   // Save key bytes to session storage
   await setDerivedKey(key);
 
-  // Decrypt GitHub Token
+  // Decrypt GitHub Token check
   if (settings.githubTokenEncrypted && settings.githubTokenIv) {
     const decryptRes = await decryptData(
       settings.githubTokenEncrypted,
       settings.githubTokenIv,
       key,
     );
-    if (decryptRes.isOk()) {
-      const setTokenRes = await setSessionItem(
-        SESSION_KEY_GITHUB_TOKEN,
-        decryptRes.value,
-      );
-      if (setTokenRes.isErr()) {
-        return err(setTokenRes.error);
-      }
-    } else {
+    if (decryptRes.isErr()) {
       console.warn("Failed to decrypt githubToken with provided key");
     }
   }
@@ -188,9 +178,7 @@ export async function unlockWithKey(
   );
   if (setVaultRes.isErr()) return err(setVaultRes.error);
 
-  const sessionRes = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-  const sessionVal = sessionRes.isOk() ? sessionRes.value : null;
-  const finalToken = typeof sessionVal === "string" ? sessionVal : "";
+  const finalToken = await getGithubToken();
   setStore({
     vaultItems: items,
     githubToken: finalToken,

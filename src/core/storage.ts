@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { SESSION_KEY_SESSION_UNLOCKED, STORAGE_KEY } from "@/core/constants.ts";
+
 import {
   SupportLanguage,
   SupportLanguageSchema,
@@ -6,6 +8,8 @@ import {
 } from "@/core/types.ts";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result, ResultAsync } from "neverthrow";
+import { decryptData, getSessionKey } from "@/core/crypto.ts";
+import { store } from "@/core/store.ts";
 
 export const GithubUserSchema = z.object({
   login: z.string(),
@@ -40,14 +44,6 @@ export const SettingsSchema = z.object({
 });
 
 export type AppSettings = z.infer<typeof SettingsSchema>;
-
-import {
-  APP_NAME,
-  SESSION_KEY_GITHUB_TOKEN,
-  SESSION_KEY_SESSION_UNLOCKED,
-} from "@/core/constants.ts";
-
-export const STORAGE_KEY = `${APP_NAME.toLowerCase()}_settings`;
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -176,10 +172,44 @@ export async function removeSessionItem(
   );
 }
 
+export async function configureSessionAccessLevel(
+  accessLevel: "TRUSTED_CONTEXTS" | "TRUSTED_AND_UNTRUSTED_CONTEXTS" =
+    "TRUSTED_CONTEXTS",
+): Promise<Result<void, TranslationKey>> {
+  if (
+    typeof chrome === "undefined" ||
+    !chrome.storage?.session?.setAccessLevel
+  ) {
+    return ok();
+  }
+  return await ResultAsync.fromPromise(
+    chrome.storage.session.setAccessLevel({ accessLevel }),
+    (e): TranslationKey => {
+      console.warn("[Storage] Failed to set session storage access level:", e);
+      return "storage_error";
+    },
+  );
+}
+
 export async function getGithubToken(): Promise<string> {
-  const res = await getSessionItem(SESSION_KEY_GITHUB_TOKEN);
-  const sessionToken = res.isOk() ? res.value : null;
-  return typeof sessionToken === "string" ? sessionToken : "";
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isOk()) {
+    const settings = settingsRes.value;
+    if (settings.githubTokenEncrypted && settings.githubTokenIv) {
+      const key = await getSessionKey();
+      if (key) {
+        const decryptRes = await decryptData(
+          settings.githubTokenEncrypted,
+          settings.githubTokenIv,
+          key,
+        );
+        if (decryptRes.isOk()) {
+          return decryptRes.value;
+        }
+      }
+    }
+  }
+  return store.githubToken || "";
 }
 
 export async function isSessionUnlocked(): Promise<boolean> {
