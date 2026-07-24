@@ -28,6 +28,7 @@ export const viewDepths: Record<View, number> = {
   [View.ImportAccounts]: 5,
   [View.ExportAccounts]: 5,
   [View.AutofillOptions]: 4,
+  [View.PasswordHistory]: 3,
 };
 
 let transitionToggle = false;

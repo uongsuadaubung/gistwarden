@@ -57,3 +57,11 @@ export function getDomainFromItem(item: VaultItem): string | null {
   }
   return safeParseUrl(hostname).map((url) => url.hostname).unwrapOr(null);
 }
+
+/**
+ * Trích xuất tên miền/hostname từ URL của tab đang mở
+ */
+export function extractDomainFromTabUrl(url?: string | null): string {
+  if (!url) return "";
+  return getHostname(url);
+}

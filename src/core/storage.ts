@@ -3,13 +3,17 @@ import {
   SESSION_KEY_SESSION_UNLOCKED,
   SESSION_KEYS_ON_LOCK,
   STORAGE_KEY,
+  STORAGE_KEY_PASSWORD_HISTORY,
 } from "@/core/constants.ts";
 
 import {
+  type GeneratedPasswordHistoryItem,
+  GeneratedPasswordHistoryListSchema,
   SupportLanguage,
   SupportLanguageSchema,
   VaultTimeoutActionSchema,
 } from "@/core/types.ts";
+
 import type { TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result, ResultAsync } from "neverthrow";
 import { clearDerivedKey, decryptData, getSessionKey } from "@/core/crypto.ts";
@@ -316,4 +320,37 @@ export async function removeLocalItem(
     chrome.storage.local.remove(keys),
     (_e): TranslationKey => "storage_error",
   );
+}
+
+export async function getPasswordHistory(): Promise<
+  Result<GeneratedPasswordHistoryItem[], TranslationKey>
+> {
+  const rawRes = await getLocalItem(STORAGE_KEY_PASSWORD_HISTORY);
+  if (rawRes.isErr()) {
+    return err(rawRes.error);
+  }
+  const raw = rawRes.value ?? [];
+  const parsed = GeneratedPasswordHistoryListSchema.safeParse(raw);
+  if (!parsed.success) {
+    return ok([]);
+  }
+  return ok(parsed.data);
+}
+
+export async function addPasswordHistoryItem(
+  item: GeneratedPasswordHistoryItem,
+): Promise<Result<void, TranslationKey>> {
+  const currentRes = await getPasswordHistory();
+  const history = currentRes.isOk() ? currentRes.value : [];
+  if (history.some((h) => h.password === item.password)) {
+    return ok();
+  }
+  const updated = [item, ...history].slice(0, 10);
+  return await setLocalItem(STORAGE_KEY_PASSWORD_HISTORY, updated);
+}
+
+export async function clearPasswordHistory(): Promise<
+  Result<void, TranslationKey>
+> {
+  return await setLocalItem(STORAGE_KEY_PASSWORD_HISTORY, []);
 }

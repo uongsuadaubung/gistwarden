@@ -21,6 +21,7 @@ export enum View {
   ImportAccounts = "ImportAccounts",
   ExportAccounts = "ExportAccounts",
   AutofillOptions = "AutofillOptions",
+  PasswordHistory = "PasswordHistory",
 }
 
 export enum VaultItemType {
@@ -49,6 +50,23 @@ export const PasswordHistorySchema = z.object({
   password: z.string().nullish(),
 });
 export type PasswordHistory = z.infer<typeof PasswordHistorySchema>;
+
+// Password Generator History
+export const GeneratedPasswordHistoryItemSchema = z.object({
+  password: z.string(),
+  copiedAt: z.number(),
+  domain: z.string(),
+});
+export type GeneratedPasswordHistoryItem = z.infer<
+  typeof GeneratedPasswordHistoryItemSchema
+>;
+
+export const GeneratedPasswordHistoryListSchema = z.array(
+  GeneratedPasswordHistoryItemSchema,
+);
+export type GeneratedPasswordHistoryList = z.infer<
+  typeof GeneratedPasswordHistoryListSchema
+>;
 
 // 2. FIDO2 Credentials
 export const Fido2CredentialSchema = z.object({

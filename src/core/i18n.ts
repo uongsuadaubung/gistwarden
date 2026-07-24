@@ -473,6 +473,14 @@ const LangSchema = z.object({
   gen_opt_capitalize: z.string(),
   gen_opt_include_number: z.string(),
   gen_passphrase_hint: z.string(),
+  gen_btn_password_history: z.string(),
+  history_title: z.string(),
+  history_empty: z.string(),
+  history_domain: z.string(),
+  history_copied_at: z.string(),
+  history_clear_btn: z.string(),
+  history_confirm_clear_msg: z.string(),
+  history_copied_toast: z.string(),
 
   // FIDO2 Prompt View
   fido2_title: z.string(),

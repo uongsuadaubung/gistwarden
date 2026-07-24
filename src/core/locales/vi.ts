@@ -506,6 +506,16 @@ export default {
   gen_opt_include_number: "Bao gồm số",
   gen_passphrase_hint:
     "Giá trị phải từ 3 đến 20. Sử dụng từ 6 từ trở lên để tạo cụm mật khẩu mạnh.",
+  gen_btn_password_history: "Lịch sử mật khẩu",
+  history_title: "Lịch sử mật khẩu",
+  history_empty: "Chưa có mật khẩu nào trong lịch sử sao chép.",
+  history_domain: "Tên miền",
+  history_copied_at: "Thời gian copy",
+  history_clear_btn: "Xóa lịch sử",
+  history_confirm_clear_msg:
+    "Bạn có chắc chắn muốn xóa toàn bộ lịch sử mật khẩu?",
+  history_copied_toast: "Đã sao chép mật khẩu!",
+
 
   // FIDO2 Prompt View
   fido2_title: "Xác thực Passkey",

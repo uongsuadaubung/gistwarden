@@ -501,6 +501,16 @@ export default {
   gen_opt_include_number: "Include number",
   gen_passphrase_hint:
     "Value must be between 3 and 20. Use 6 words or more to generate a strong passphrase.",
+  gen_btn_password_history: "Password History",
+  history_title: "Password History",
+  history_empty: "No copied password history yet.",
+  history_domain: "Domain",
+  history_copied_at: "Copied time",
+  history_clear_btn: "Clear History",
+  history_confirm_clear_msg:
+    "Are you sure you want to clear all password history?",
+  history_copied_toast: "Password copied!",
+
 
   // FIDO2 Prompt View
   fido2_title: "Passkey Authentication",

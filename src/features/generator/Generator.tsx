@@ -9,6 +9,12 @@ import {
   generatePassphrase,
   generatePassword,
 } from "@/core/generator-utils.ts";
+import { navigate } from "@/core/navigation.ts";
+import { View } from "@/core/types.ts";
+import { getCurrentTab } from "@/core/tabs.ts";
+import { addPasswordHistoryItem } from "@/core/storage.ts";
+import { extractDomainFromTabUrl } from "@/core/domain-utils.ts";
+import { copyToClipboardWithMessage } from "@/core/ui-service.ts";
 
 export const Generator: Component = () => {
   const [activeTab, setActiveTab] = createSignal<"password" | "passphrase">(
@@ -33,9 +39,14 @@ export const Generator: Component = () => {
   const [includeNumber, setIncludeNumber] = createSignal(false);
 
   const [copied, setCopied] = createSignal(false);
+  const [currentDomain, setCurrentDomain] = createSignal("");
 
-  onMount(() => {
+  onMount(async () => {
     generate();
+    const tabRes = await getCurrentTab();
+    if (tabRes.isOk() && tabRes.value?.url) {
+      setCurrentDomain(extractDomainFromTabUrl(tabRes.value.url));
+    }
   });
 
   const generate = () => {
@@ -94,9 +105,15 @@ export const Generator: Component = () => {
     ) {
       return;
     }
-    await navigator.clipboard.writeText(pwd);
+    await copyToClipboardWithMessage(pwd, "history_copied_toast");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+
+    await addPasswordHistoryItem({
+      password: pwd,
+      copiedAt: Date.now(),
+      domain: currentDomain(),
+    });
   };
 
   // Password Options Handlers
@@ -231,7 +248,7 @@ export const Generator: Component = () => {
               </button>
               <button
                 type="button"
-                class="icon-btn"
+                class={`icon-btn ${copied() ? "copied" : ""}`}
                 onClick={handleCopy}
                 title={copied() ? t("btn_copied") : t("btn_copy")}
               >
@@ -388,7 +405,7 @@ export const Generator: Component = () => {
               </button>
               <button
                 type="button"
-                class="icon-btn"
+                class={`icon-btn ${copied() ? "copied" : ""}`}
                 onClick={handleCopy}
                 title={copied() ? t("btn_copied") : t("btn_copy")}
               >
@@ -465,6 +482,17 @@ export const Generator: Component = () => {
             />
           </div>
         </Show>
+
+        {/* Password History Button at the bottom of the page */}
+        <div class="mt-20 pt-16 border-top text-center">
+          <button
+            type="button"
+            class="btn btn-secondary btn-block"
+            onClick={() => navigate(View.PasswordHistory)}
+          >
+            {t("gen_btn_password_history")}
+          </button>
+        </div>
       </div>
     </div>
   );

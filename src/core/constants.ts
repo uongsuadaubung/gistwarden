@@ -54,6 +54,8 @@ export const SESSION_KEY_SELECTED_FILTER_TYPE = "selectedFilterType";
 // Browser Local Storage Keys
 export const STORAGE_KEY = `${APP_NAME.toLowerCase()}_settings`;
 export const LOCAL_STORAGE_KEY_THEME = `${APP_NAME.toLowerCase()}_theme`;
+export const STORAGE_KEY_PASSWORD_HISTORY =
+  `${APP_NAME.toLowerCase()}_password_history`;
 
 // SolidJS Store Keys
 export const STORE_KEY_TOAST_MESSAGE = "toastMessage";

@@ -89,6 +89,10 @@
         background-color: var(--hover-bg);
       }
 
+      &.copied {
+        color: var(--success) !important;
+      }
+
       &:disabled {
         opacity: 0.4;
         cursor: not-allowed;
