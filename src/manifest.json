@@ -5,7 +5,7 @@
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },
   "name": "Gistwarden",
-  "version": "2026.7.24",
+  "version": "2026.7.24.1",
   "description": "Secure password, passkey, and TOTP manager synced to your private GitHub Gist.",
   "permissions": [
     "storage",
