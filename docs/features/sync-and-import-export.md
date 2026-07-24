@@ -15,12 +15,15 @@ miễn phí, riêng tư và độc lập:
   `DerivedKey` (Argon2id) của người dùng.
 - GitHub chỉ nhìn thấy các chuỗi Ciphertext vô nghĩa (Zero-Knowledge Cloud
   Storage).
-- **Hỗ trợ Đầy đủ Nhập & Xuất (Import & Export)** cả 2 dạng định dạng **CSV** và
-  **JSON**:
-  - **Xuất dữ liệu (Export)**: Tùy chọn xuất thành **Browser CSV**, **Bitwarden
-    CSV**, hoặc **Gistwarden JSON**.
-  - **Nhập dữ liệu (Import)**: Nhận diện và ánh xạ tự động từ **Browser CSV**,
-    **Bitwarden CSV**, hoặc **Gistwarden / Bitwarden JSON**.
+- **Cơ chế Kiểm soát Giới hạn Gist (Gist Limits & Rate Limits)**:
+  - **Giới hạn dung lượng 10MB**: Kiểm tra dung lượng mã hóa trước khi tải lên.
+    Nếu dung lượng két sắt vượt quá 10MB, hệ thống báo lỗi
+    `github_error_gist_size_limit` để chặn ghi đè hỏng Gist.
+  - **Cảnh báo sớm 5MB**: Khi két sắt tiệm cận 5MB, hệ thống tự động hiển thị
+    thông báo cảnh báo nhẹ để người dùng chủ động tối ưu dữ liệu.
+  - **Kiểm soát Tần suất Gọi API (Rate Limit)**: Nhận diện phản hồi
+    `HTTP 403 / 429` để đưa ra thông báo `github_error_rate_limit` chuẩn xác cho
+    người dùng.
 
 ---
 

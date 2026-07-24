@@ -13,7 +13,8 @@ export const SyncResponseSchema = z.object({
 });
 
 import { sendMessageToBackground } from "@/core/messaging.ts";
-import { type TranslationKey } from "@/core/i18n.ts";
+import { t, type TranslationKey } from "@/core/i18n.ts";
+import { showToast } from "@/core/ui-service.ts";
 import { err, ok, Result } from "neverthrow";
 
 export async function syncVaultToGist(
@@ -38,6 +39,23 @@ export async function syncVaultToGist(
     ciphertext: encrypted.ciphertext,
   });
 
+  // Check pre-upload size limits (GitHub Gist maximum limit is 10 MB)
+  const payloadBytes = new TextEncoder().encode(payload).length;
+  const MAX_GIST_BYTES = 10 * 1024 * 1024; // 10 MB
+  const WARN_GIST_BYTES = 5 * 1024 * 1024; // 5 MB
+
+  if (payloadBytes > MAX_GIST_BYTES) {
+    return err("github_error_gist_size_limit");
+  }
+
+  if (payloadBytes > WARN_GIST_BYTES) {
+    const sizeMB = (payloadBytes / (1024 * 1024)).toFixed(1);
+    showToast(
+      t("github_warning_gist_size_near_limit", { sizeMB }),
+      "info",
+    );
+  }
+
   const sendResult = await sendMessageToBackground({
     type: MSG_UPLOAD_TO_GIST,
     content: payload,
@@ -52,6 +70,12 @@ export async function syncVaultToGist(
   const res = parseResResult.data;
 
   if (!res.success) {
+    if (
+      res.error === "github_error_gist_size_limit" ||
+      res.error === "github_error_rate_limit"
+    ) {
+      return err(res.error);
+    }
     return err("storage_error");
   }
 

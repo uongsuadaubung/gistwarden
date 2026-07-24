@@ -32,6 +32,12 @@ export default {
   github_error_gist_parse_failed:
     "Dữ liệu Gist từ GitHub bị lỗi hoặc không đúng định dạng.",
   github_error_missing_gist_id: "Thiếu Gist ID để xử lý yêu cầu.",
+  github_error_gist_size_limit:
+    "Kích thước Két sắt vượt quá giới hạn của GitHub Gist (10MB). Vui lòng giảm bớt dữ liệu hoặc chia nhỏ két sắt.",
+  github_error_rate_limit:
+    "Đã vượt quá giới hạn lượt gọi GitHub API (Rate Limit). Vui lòng thử lại sau ít phút.",
+  github_warning_gist_size_near_limit:
+    "Cảnh báo: Dung lượng Két sắt ({sizeMB}MB) đang tiệm cận giới hạn 10MB của GitHub Gist.",
   sync_error_corrupted_payload:
     "Dữ liệu đồng bộ bị lỗi cấu trúc hoặc không giải mã được.",
   sync_error_invalid_format: "Định dạng dữ liệu két mật khẩu không hợp lệ.",

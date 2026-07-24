@@ -28,6 +28,12 @@ export default {
   github_error_gist_parse_failed:
     "Gist data from GitHub is invalid or corrupted.",
   github_error_missing_gist_id: "Missing Gist ID to process request.",
+  github_error_gist_size_limit:
+    "Vault payload size exceeds GitHub Gist limit (10MB). Please reduce items or split your vault.",
+  github_error_rate_limit:
+    "GitHub API rate limit exceeded. Please try again in a few minutes.",
+  github_warning_gist_size_near_limit:
+    "Warning: Vault size ({sizeMB}MB) is approaching GitHub Gist's 10MB limit.",
   sync_error_corrupted_payload:
     "Sync data is corrupted or cannot be decrypted.",
   sync_error_invalid_format: "Vault data format is invalid.",
