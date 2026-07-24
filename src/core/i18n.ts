@@ -43,7 +43,9 @@ const LangSchema = z.object({
   github_error_rate_limit: z.string(),
   github_warning_gist_size_near_limit: z.string(),
   sync_error_corrupted_payload: z.string(),
+  sync_error_remote_password_changed: z.string(),
   sync_error_invalid_format: z.string(),
+
   sync_error_invalid_response: z.string(),
   tab_error_get_current: z.string(),
   tab_error_send_message: z.string(),

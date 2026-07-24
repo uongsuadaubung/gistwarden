@@ -71,6 +71,7 @@ import { filterMatchingDomainItems } from "@/features/vault/vault-domain-matchin
 import { decryptData, encryptData, getSessionKey } from "@/core/crypto.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import {
+  EncryptedPayloadSchema,
   isLoginItem,
   type LoginVaultItem,
   type VaultItem,
@@ -85,12 +86,6 @@ const PendingFido2RequestSchema = z.object({
   options: z.unknown(),
   origin: z.string(),
   senderTabId: z.number(),
-});
-
-const EncryptedPayloadSchema = z.object({
-  ciphertext: z.string().optional(),
-  iv: z.string().optional(),
-  salt: z.string().optional(),
 });
 
 const SubmittedCredentialsSchema = z.object({
@@ -579,7 +574,7 @@ onExtensionMessage(
           if (res.isOk()) {
             sendResponse({
               success: true,
-              content: res.value.content,
+              content: res.value,
             });
           } else {
             sendResponse({

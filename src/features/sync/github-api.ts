@@ -5,13 +5,21 @@ import {
   GithubUserSchema,
   updateSettings,
 } from "@/core/storage.ts";
-import { APP_NAME } from "@/core/constants.ts";
+import { APP_NAME, MSG_DOWNLOAD_FROM_GIST } from "@/core/constants.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { fetchText } from "@/core/fetch-utils.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
+import { store } from "@/core/store.ts";
+import { sendMessageToBackground } from "@/core/messaging.ts";
+import {
+  DownloadFromGistResponseSchema,
+  EncryptedPayloadSchema,
+  type GistContentPayload,
+} from "@/core/types.ts";
 
 const GITHUB_API_BASE = "https://api.github.com";
+
 const GIST_DESCRIPTION = `${APP_NAME.toLowerCase()}_vault`;
 const GIST_FILE_NAME = `${APP_NAME.toLowerCase()}.json`;
 
@@ -187,7 +195,7 @@ export async function uploadToGist(
 }
 
 export async function downloadFromGist(): Promise<
-  Result<{ content: string; updatedAt: number }, TranslationKey>
+  Result<string, TranslationKey>
 > {
   const settingsRes = await getAllSettings();
   if (settingsRes.isErr()) return err(settingsRes.error);
@@ -231,21 +239,17 @@ export async function downloadFromGist(): Promise<
     content = fetchRes.value;
   }
 
-  const updatedAt = new Date(gist.updated_at).getTime();
   const updateSettingsRes = await updateSettings({ lastSync: Date.now() });
   if (updateSettingsRes.isErr()) {
     return err(updateSettingsRes.error);
   }
 
-  return ok({
-    content,
-    updatedAt,
-  });
+  return ok(content);
 }
 
 export async function downloadFromGistPublic(
   gistId: string,
-): Promise<Result<{ content: string; updatedAt: number }, TranslationKey>> {
+): Promise<Result<string, TranslationKey>> {
   if (!gistId) return err("github_error_missing_gist_id");
 
   const res = await fetchText(`${GITHUB_API_BASE}/gists/${gistId}`, {
@@ -273,19 +277,15 @@ export async function downloadFromGistPublic(
   const file = gist.files[GIST_FILE_NAME];
   if (!file) return err("github_error_gist_file_missing");
 
-  let content = "";
   if (file.content) {
-    content = file.content;
-  } else {
-    const rawFetchRes = await fetchText(file.raw_url, { cache: "no-store" });
-    if (rawFetchRes.isErr()) {
-      return err(rawFetchRes.error);
-    }
-    content = rawFetchRes.value;
+    return ok(file.content);
   }
 
-  const updatedAt = new Date(gist.updated_at).getTime();
-  return ok({ content, updatedAt });
+  const rawFetchRes = await fetchText(file.raw_url, { cache: "no-store" });
+  if (rawFetchRes.isErr()) {
+    return err(rawFetchRes.error);
+  }
+  return ok(rawFetchRes.value);
 }
 
 export async function deleteGist(
@@ -298,4 +298,50 @@ export async function deleteGist(
     return err(reqRes.error);
   }
   return ok();
+}
+
+/**
+ * Tải và Parse sẵn dữ liệu Gist thông minh (Smart Parsed Gist Fetcher).
+ * Tự động phân tích JSON và validate EncryptedPayloadSchema bằng Zod.
+ */
+export async function fetchGistContent(): Promise<
+  Result<GistContentPayload, TranslationKey>
+> {
+  let rawContent = "";
+
+  if (store.gistId) {
+    const publicRes = await downloadFromGistPublic(store.gistId);
+    if (publicRes.isErr()) {
+      return err(publicRes.error);
+    }
+    rawContent = publicRes.value;
+  } else {
+    const sendResult = await sendMessageToBackground({
+      type: MSG_DOWNLOAD_FROM_GIST,
+    });
+    if (sendResult.isErr()) {
+      return err(sendResult.error);
+    }
+
+    const parseRes = DownloadFromGistResponseSchema.safeParse(sendResult.value);
+    if (!parseRes.success || !parseRes.data.success) {
+      const errorKey: TranslationKey =
+        (parseRes.success && parseRes.data.error) || "vault_sync_error";
+      return err(errorKey);
+    }
+    rawContent = parseRes.data.content || "";
+  }
+
+  const parseJsonRes = safeJsonParse(rawContent || "{}");
+  const payloadParse = EncryptedPayloadSchema.safeParse(
+    parseJsonRes.isOk() ? parseJsonRes.value : {},
+  );
+  const payload = payloadParse.success ? payloadParse.data : {};
+
+  return ok({
+    ciphertext: payload.ciphertext,
+    iv: payload.iv,
+    salt: payload.salt,
+    rawContent,
+  });
 }

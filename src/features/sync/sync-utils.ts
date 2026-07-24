@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { encryptData } from "@/core/crypto.ts";
+import { decryptData, encryptData } from "@/core/crypto.ts";
 import { type VaultItem, VaultListSchema } from "@/core/types.ts";
-import { setSessionItem } from "@/core/storage.ts";
+
+import { setSessionItem, updateSettings } from "@/core/storage.ts";
 import {
   MSG_UPLOAD_TO_GIST,
   SESSION_KEY_ENCRYPTED_VAULT,
@@ -10,11 +11,54 @@ import { sendMessageToBackground } from "@/core/messaging.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";
 import { showToast } from "@/core/ui-service.ts";
 import { err, ok, Result } from "neverthrow";
+import { mergeVaultItems } from "@/features/sync/sync-merge.ts";
+import { safeJsonParse } from "@/core/json-utils.ts";
+import { store } from "@/core/store.ts";
+import { fetchGistContent } from "@/features/sync/github-api.ts";
 
 export const SyncResponseSchema = z.object({
   success: z.boolean(),
   error: z.string().optional(),
 });
+
+async function fetchAndMergeRemoteVault(
+  localItems: VaultItem[],
+  key: CryptoKey,
+): Promise<Result<VaultItem[], TranslationKey>> {
+  const fetchRes = await fetchGistContent();
+  if (fetchRes.isErr()) {
+    return ok(localItems);
+  }
+
+  const { ciphertext, iv } = fetchRes.value;
+  if (!ciphertext || !iv) {
+    return ok(localItems);
+  }
+
+  const decryptRes = await decryptData(ciphertext, iv, key);
+
+  // Early return ngay nếu giải mã thất bại (Master Password trên Gist đã bị máy khác đổi!)
+  if (decryptRes.isErr()) {
+    return err("sync_error_remote_password_changed");
+  }
+
+  const parseVaultRes = safeJsonParse(decryptRes.value);
+  if (parseVaultRes.isErr()) {
+    return ok(localItems);
+  }
+
+  const remoteVaultParse = VaultListSchema.safeParse(parseVaultRes.value);
+  if (!remoteVaultParse.success) {
+    return ok(localItems);
+  }
+
+  const merged = mergeVaultItems(
+    localItems,
+    remoteVaultParse.data,
+    store.lastSync || 0,
+  );
+  return ok(merged);
+}
 
 export async function syncVaultToGist(
   items: VaultItem[],
@@ -27,7 +71,18 @@ export async function syncVaultToGist(
   }
   const validatedList = parsedResult.data;
 
-  const encryptRes = await encryptData(JSON.stringify(validatedList), key);
+  // Pre-download check & merge dữ liệu với early return
+  const mergeResult = await fetchAndMergeRemoteVault(validatedList, key);
+  if (mergeResult.isErr()) {
+    return err(mergeResult.error);
+  }
+  const finalItemsToSave = mergeResult.value;
+
+  const encryptRes = await encryptData(
+    JSON.stringify(finalItemsToSave),
+    key,
+  );
+
   if (encryptRes.isErr()) {
     return err("storage_error");
   }
@@ -83,5 +138,7 @@ export async function syncVaultToGist(
     return err(setRes.error);
   }
 
-  return ok(validatedList);
+  await updateSettings({ lastSync: Date.now() });
+
+  return ok(finalItemsToSave);
 }

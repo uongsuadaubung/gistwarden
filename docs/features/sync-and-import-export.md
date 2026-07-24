@@ -27,6 +27,15 @@ miễn phí, riêng tư và độc lập:
   - **Bảo mật `TRUSTED_CONTEXTS`**: `chrome.storage.session` được cấu hình
     `setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' })` để chặn triệt để các
     Content Scripts từ trang web bên thứ ba truy cập vào phiên làm việc.
+- **Cơ chế Chống Xung Đột Đổi Mật Khẩu (Pre-download Password Conflict Check)**:
+  - Trước khi upload bất kỳ thay đổi nào lên Gist, ứng dụng tự động kéo payload
+    mới nhất từ Gist về và giải mã thử bằng Master Key hiện tại.
+  - Nếu giải mã thất bại ➔ Phát hiện Master Password đã bị thiết bị khác thay
+    đổi ➔ Chặn ngay thao tác ghi đè và báo lỗi `login_title_locked` để người
+    dùng đăng xuất/đồng bộ lại.
+- **Cơ chế Hợp Nhất Dữ Liệu Thông Minh (Item-level 3-way Merge)**:
+  - So sánh và hợp nhất tài khoản giữa Local và Remote dựa trên `id`,
+    `creationDate`, `revisionDate` và mốc đồng bộ `store.lastSync`.
 - **Cơ chế Kiểm soát Giới hạn Gist (Gist Limits & Rate Limits)**:
   - **Giới hạn dung lượng 10MB**: Kiểm tra dung lượng mã hóa trước khi tải lên.
     Nếu dung lượng két sắt vượt quá 10MB, hệ thống báo lỗi
@@ -62,32 +71,37 @@ flowchart TD
 
 ---
 
-## 🔄 GIAI ĐOẠN 2: Đồng Bộ 2 Chiều với GitHub Gist (Bi-directional Sync Phase)
+## 🔄 GIAI ĐOẠN 2: Đồng Bộ 2 Chiều & Hợp Nhất Dữ Liệu (Bi-directional Sync & Merge Phase)
 
 ```mermaid
 flowchart TD
-    SyncStart([Bắt đầu: Kích hoạt Sync Tự động hoặc Thủ công]) --> CheckGistId{Đã có Gist ID trong Cài đặt chưa?}
+    SyncStart([Bắt đầu: Kích hoạt Sync hoặc Save/Delete Item]) --> CheckGistId{Đã có Gist ID trong Cài đặt chưa?}
     
     CheckGistId -- False (Lần đầu Sync) --> CreateNewGist[Tạo Gist ẩn 'gistwarden_vault.json' mới trên GitHub]
     CreateNewGist --> SaveGistIdSettings[Lưu Gist ID vào Cài đặt AppSettings]
     SaveGistIdSettings --> UploadVaultContent
     
-    CheckGistId -- True (Đã có Gist) --> DownloadGistContent[Tải nội dung Gist từ GitHub API]
-    DownloadGistContent --> ComputeGistHash[Tính SHA-256 Hash nội dung Gist mới tải]
-    ComputeGistHash --> CompareHash{Hash trùng với lastSyncedHash trong Cài đặt?}
+    CheckGistId -- True (Đã có Gist) --> DownloadGistContent[Tải nội dung Gist hiện tại từ GitHub API]
+    DownloadGistContent --> TryDecryptGist[Giải mã Ciphertext bằng Master Key hiện tại]
+    TryDecryptGist --> CheckDecryptSuccess{Giải mã Gist THÀNH CÔNG?}
     
-    CompareHash -- True (Không có thay đổi trên Cloud) --> CheckLocalChanges{Dữ liệu Local có thay đổi mới không?}
-    CheckLocalChanges -- False --> SyncUpToDate([Đã đồng bộ mới nhất - Không cần hành động])
-    CheckLocalChanges -- True --> UploadVaultContent[Mã hóa AES-GCM & Đẩy Ciphertext mới lên Gist]
+    CheckDecryptSuccess -- False (Pass đã bị máy khác đổi) --> BlockUpload[Chặn Ghi đè & Báo lỗi Mật khẩu Master không khớp]
+    CheckDecryptSuccess -- True --> RunMerge[Thực thi mergeVaultItems với store.lastSync]
     
-    CompareHash -- False (Có dữ liệu mới từ Cloud) --> DecryptCloudVault[Dùng DerivedKey giải mã Ciphertext từ Gist]
-    DecryptCloudVault --> CheckDecryptSuccess{Giải mã dữ liệu Gist THÀNH CÔNG?}
-    CheckDecryptSuccess -- False --> ShowDecryptError[Báo lỗi: Mật khẩu Master không khớp với dữ liệu trên Gist]
-    CheckDecryptSuccess -- True --> MergeVaultItems[Trộn dữ liệu Vault giữa Cloud và Local theo RevisionDate]
-    MergeVaultItems --> UpdateLocalVault[Cập nhật Vault Local & Lưu lastSyncedHash mới]
+    RunMerge --> MergeStrategy{So sánh Item theo ID}
+    MergeStrategy -- Trùng ID --> PickNewerRevision[Giữ Item có revisionDate mới hơn]
+    MergeStrategy -- Chỉ có ở Local (creationDate > lastSync) --> KeepLocalItem[Giữ lại: Item mới được tạo ở Local]
+    MergeStrategy -- Chỉ có ở Local (creationDate <= lastSync) --> DropLocalItem[Loại bỏ: Item đã bị xóa trên Remote]
+    MergeStrategy -- Chỉ có ở Remote --> KeepRemoteItem[Giữ lại: Item mới được tạo trên Remote]
     
-    UploadVaultContent --> UpdateLocalVault
-    UpdateLocalVault --> SyncComplete([Hoàn tất Đồng bộ thành công!])
+    PickNewerRevision --> EncryptFinal[Mã hóa AES-GCM danh sách đã Hợp nhất]
+    KeepLocalItem --> EncryptFinal
+    DropLocalItem --> EncryptFinal
+    KeepRemoteItem --> EncryptFinal
+    
+    EncryptFinal --> UploadVaultContent[Đẩy Ciphertext mới lên Gist]
+    UploadVaultContent --> UpdateLastSync[Cập nhật store.lastSync = Date.now()]
+    UpdateLastSync --> SyncComplete([Hoàn tất Đồng bộ & Merge thành công!])
 ```
 
 ---
@@ -134,8 +148,9 @@ flowchart TD
 | :------ | :--------------------------------------------- | :----------------------------------------------------------- | :-------------------------------------------------- |
 | **1.1** | Token GitHub API có hợp lệ và có quyền `gist`? | Mã hóa Token & Lưu Cài đặt                                   | Hiển thị báo lỗi Token không hợp lệ                 |
 | **2.1** | Đã có Gist ID trong Cài đặt (AppSettings)?     | Tải nội dung Gist từ GitHub                                  | Tự động tạo Gist ẩn mới trên GitHub                 |
-| **2.2** | Hash nội dung Gist trùng với `lastSyncedHash`? | Không có thay đổi từ Cloud $\rightarrow$ Kiểm tra Local      | Có dữ liệu mới từ Cloud $\rightarrow$ Tải & Giải mã |
-| **2.3** | Giải mã Ciphertext từ Gist thành công?         | Trộn dữ liệu theo RevisionDate & Lưu Local                   | Báo lỗi Master Password không khớp                  |
+| **2.2** | Giải mã Pre-download Ciphertext từ Gist?       | Tiến hành Hợp nhất (`mergeVaultItems`)                       | Báo lỗi Master Password đã bị đổi từ xa & Chặn Push |
+| **2.3** | Item trùng ID giữa Local và Remote?            | Giữ Item có `revisionDate` gần hơn                           | Kiểm tra điều kiện `creationDate` vs `lastSync`     |
+| **2.4** | Item Local có `creationDate > lastSync`?       | Giữ lại (Item mới tạo trên Local)                            | Bỏ qua (Item đã bị xóa trên Remote)                 |
 | **3.1** | Định dạng Xuất dữ liệu (Export) chọn?          | **Gistwarden JSON**, **Bitwarden CSV**, hoặc **Browser CSV** | N/A                                                 |
 | **3.2** | File Nhập (Import) hợp lệ chuẩn CSV/JSON?      | Ánh xạ mục Vault, Validate & Lưu Batch                       | Báo lỗi định dạng file không hợp lệ                 |
 
@@ -143,22 +158,19 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/features/sync/ExportAccounts.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/ExportAccounts.tsx)**:
+1. **[`src/features/sync/sync-merge.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/sync-merge.ts)**:
+   Hàm thuần khiết `mergeVaultItems` xử lý hợp nhất dữ liệu 3-way giữa Local và
+   Remote.
+2. **[`src/features/sync/sync-utils.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/sync-utils.ts)**:
+   Tích hợp pre-download check kiểm tra mật khẩu & gọi `mergeVaultItems` trước
+   khi upload Gist.
+3. **[`src/features/sync/ExportAccounts.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/ExportAccounts.tsx)**:
    Giao diện và logic Xuất dữ liệu cả 3 định dạng: **JSON**, **Bitwarden CSV**,
    và **Browser CSV**.
-2. **[`src/features/sync/ImportAccounts.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/ImportAccounts.tsx)**:
+4. **[`src/features/sync/ImportAccounts.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/ImportAccounts.tsx)**:
    Giao diện Nhập dữ liệu tự động nhận diện file CSV và JSON.
-3. **[`src/features/sync/github-api.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/github-api.ts)**:
+5. **[`src/features/sync/github-api.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/github-api.ts)**:
    Các hàm giao tiếp REST API của GitHub Gist (`createGist`, `updateGist`,
    `getGist`).
-4. **[`src/features/sync/github-auth.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/github-auth.ts)**:
-   Xử lý luồng GitHub OAuth 2.0 via Cloudflare Worker (`startGithubOAuth`).
-5. **[`src/features/sync/sync-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/sync-service.ts)**:
-   Điều phối đồng bộ 2 chiều (`syncVaultWithGist`, `uploadToGist`,
-   `downloadFromGist`).
-6. **[`src/features/sync/csv-import.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/csv-import.ts)**:
-   Parser RFC 4180 đọc file CSV trình duyệt và Bitwarden CSV.
-7. **[`src/features/sync/csv-export.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/csv-export.ts)**:
-   Xuất dữ liệu Vault thành chuẩn Bitwarden CSV và Browser CSV.
-8. **[`src/features/sync/json-import.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/json-import.ts)**:
-   Nhập và ánh xạ file sao lưu JSON.
+6. **[`src/features/sync/sync-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/sync-service.ts)**:
+   Điều phối đồng bộ 2 chiều (`syncVault`, `downloadFromGist`).

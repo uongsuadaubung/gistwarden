@@ -424,9 +424,19 @@ export type GetPendingFido2RequestResponse = z.infer<
   typeof GetPendingFido2RequestResponseSchema
 >;
 
+// Schema Gốc: Dữ liệu Payload mã hóa chuẩn trên Gist (Bắt buộc ciphertext & iv)
 export const GistPayloadSchema = z.object({
-  salt: z.string().optional(),
-  iv: z.string(),
   ciphertext: z.string(),
+  iv: z.string(),
+  salt: z.string().optional(),
 });
 export type GistPayload = z.infer<typeof GistPayloadSchema>;
+
+// Kế thừa từ GistPayloadSchema: Chuyển các trường thành optional để parse an toàn từ Gist mới/trống
+export const EncryptedPayloadSchema = GistPayloadSchema.partial();
+export type EncryptedPayload = z.infer<typeof EncryptedPayloadSchema>;
+
+export const GistContentPayloadSchema = EncryptedPayloadSchema.extend({
+  rawContent: z.string(),
+});
+export type GistContentPayload = z.infer<typeof GistContentPayloadSchema>;

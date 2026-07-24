@@ -10,7 +10,10 @@ import {
 } from "solid-js";
 import { store } from "@/core/store.ts";
 import { setupGithub } from "@/features/sync/github-auth.ts";
+import { fetchGistContent } from "@/features/sync/github-api.ts";
+
 import { logout, unlock } from "@/features/auth/auth-service.ts";
+
 import { unlockWithPin } from "@/features/auth/pin-service.ts";
 import {
   confirm,
@@ -27,16 +30,13 @@ import { getSessionItem, removeSessionItem } from "@/core/storage.ts";
 import { z } from "zod";
 import {
   APP_NAME,
-  MSG_DOWNLOAD_FROM_GIST,
   MSG_START_GITHUB_OAUTH,
   OAUTH_CLIENT_ID,
   OAUTH_WORKER_URL,
   SESSION_KEY_PENDING_GITHUB_TOKEN,
 } from "@/core/constants.ts";
-import {
-  DownloadFromGistResponseSchema,
-  type LoginViewMode,
-} from "@/core/types.ts";
+import { type LoginViewMode } from "@/core/types.ts";
+
 import { sendMessageToBackground } from "@/core/messaging.ts";
 
 const OauthResponseSchema = z.object({
@@ -61,22 +61,11 @@ export const Login: Component = () => {
     if (isConfigured && !hasSalt && mode === "masterPassword") {
       setGistStatus("checking");
       (async () => {
-        const sendResult = await sendMessageToBackground({
-          type: MSG_DOWNLOAD_FROM_GIST,
-        });
-        if (sendResult.isErr()) {
+        const res = await fetchGistContent();
+        if (res.isOk() && res.value.rawContent) {
           setGistStatus("exists");
-          return;
-        }
-        const res = DownloadFromGistResponseSchema.safeParse(
-          sendResult.value,
-        );
-        if (res.success && res.data.success) {
-          if (res.data.content) {
-            setGistStatus("exists");
-          } else {
-            setGistStatus("new");
-          }
+        } else if (res.isOk() && !res.value.rawContent) {
+          setGistStatus("new");
         } else {
           setGistStatus("exists");
         }

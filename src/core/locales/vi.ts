@@ -42,7 +42,10 @@ export default {
     "Cảnh báo: Dung lượng Két sắt ({sizeMB}MB) đang tiệm cận giới hạn 10MB của GitHub Gist.",
   sync_error_corrupted_payload:
     "Dữ liệu đồng bộ bị lỗi cấu trúc hoặc không giải mã được.",
+  sync_error_remote_password_changed:
+    "Mật khẩu chính đã bị thay đổi từ thiết bị khác. Vui lòng đăng nhập lại.",
   sync_error_invalid_format: "Định dạng dữ liệu két mật khẩu không hợp lệ.",
+
   sync_error_invalid_response: "Phản hồi từ tiến trình đồng bộ không hợp lệ.",
   tab_error_get_current: "Không thể lấy thông tin thẻ trình duyệt hiện tại.",
   tab_error_send_message: "Không thể gửi dữ liệu tới thẻ trình duyệt.",

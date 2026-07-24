@@ -1,28 +1,18 @@
-import { z } from "zod";
 import { reconcile } from "solid-js/store";
 import { setStore, store } from "@/core/store.ts";
 import { setSessionItem } from "@/core/storage.ts";
 import {
-  MSG_DOWNLOAD_FROM_GIST,
   SESSION_KEY_ENCRYPTED_VAULT,
   STORE_KEY_SYNC_ERROR,
   STORE_KEY_SYNCING,
   STORE_KEY_VAULT_ITEMS,
 } from "@/core/constants.ts";
 import { decryptData, getSessionKey } from "@/core/crypto.ts";
-import {
-  DownloadFromGistResponseSchema,
-  VaultListSchema,
-} from "@/core/types.ts";
+import { VaultListSchema } from "@/core/types.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result } from "neverthrow";
-import { sendMessageToBackground } from "@/core/messaging.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
-
-const EncryptedPayloadSchema = z.object({
-  ciphertext: z.string().optional(),
-  iv: z.string().optional(),
-});
+import { fetchGistContent } from "@/features/sync/github-api.ts";
 
 export async function syncVault(): Promise<Result<void, TranslationKey>> {
   setStore(STORE_KEY_SYNCING, true);
@@ -36,27 +26,9 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     return err(errorKey);
   }
 
-  const sendResult = await sendMessageToBackground({
-    type: MSG_DOWNLOAD_FROM_GIST,
-  });
-  if (sendResult.isErr()) {
-    const errorKey = sendResult.error;
-    setStore(STORE_KEY_SYNCING, false);
-    setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    return err(errorKey);
-  }
-
-  const parseRes = DownloadFromGistResponseSchema.safeParse(sendResult.value);
-  if (!parseRes.success) {
-    const errorKey = "sync_error_invalid_response";
-    setStore(STORE_KEY_SYNCING, false);
-    setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    return err(errorKey);
-  }
-  const res = parseRes.data;
-
-  if (!res.success) {
-    const errorKey: TranslationKey = res.error || "vault_sync_error";
+  const fetchRes = await fetchGistContent();
+  if (fetchRes.isErr()) {
+    const errorKey = fetchRes.error;
     setStore(STORE_KEY_SYNCING, false);
     setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
@@ -64,8 +36,9 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
 
   const setSessionRes = await setSessionItem(
     SESSION_KEY_ENCRYPTED_VAULT,
-    res.content || "",
+    fetchRes.value.rawContent,
   );
+
   if (setSessionRes.isErr()) {
     const errorKey = setSessionRes.error;
     setStore(STORE_KEY_SYNCING, false);
@@ -73,21 +46,12 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     return err(errorKey);
   }
 
-  const parsePayloadRes = safeJsonParse(res.content || "{}");
-  if (parsePayloadRes.isErr()) {
-    const errorKey = "sync_error_corrupted_payload";
-    setStore(STORE_KEY_SYNCING, false);
-    setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
-    return err(errorKey);
-  }
-  const payloadParse = EncryptedPayloadSchema.safeParse(parsePayloadRes.value);
-  const payload = payloadParse.success ? payloadParse.data : {};
-
   const decryptRes = await decryptData(
-    payload.ciphertext || "",
-    payload.iv || "",
+    fetchRes.value.ciphertext || "",
+    fetchRes.value.iv || "",
     key,
   );
+
   if (decryptRes.isErr()) {
     const errorKey = decryptRes.error;
     setStore(STORE_KEY_SYNCING, false);

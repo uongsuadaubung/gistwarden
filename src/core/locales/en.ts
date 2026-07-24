@@ -38,7 +38,10 @@ export default {
     "Warning: Vault size ({sizeMB}MB) is approaching GitHub Gist's 10MB limit.",
   sync_error_corrupted_payload:
     "Sync data is corrupted or cannot be decrypted.",
+  sync_error_remote_password_changed:
+    "Master password has been changed on another device. Please log in again.",
   sync_error_invalid_format: "Vault data format is invalid.",
+
   sync_error_invalid_response: "Invalid response received from sync process.",
   tab_error_get_current: "Failed to query current browser tab.",
   tab_error_send_message: "Failed to send message to browser tab.",

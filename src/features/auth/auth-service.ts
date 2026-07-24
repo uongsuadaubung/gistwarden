@@ -44,7 +44,8 @@ import {
 import { err, ok, Result } from "neverthrow";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
-import { downloadFromGistPublic } from "@/features/sync/github-api.ts";
+import { fetchGistContent } from "@/features/sync/github-api.ts";
+
 import {
   ALARM_NAME_VAULT_TIMEOUT,
   APP_NAME,
@@ -110,25 +111,13 @@ async function fetchEncryptedVaultContent(): Promise<
     return ok(cachedVal);
   }
 
-  const sendResult = await sendMessageToBackground({
-    type: MSG_DOWNLOAD_FROM_GIST,
-  });
-  if (sendResult.isErr()) {
-    return err(sendResult.error);
-  }
-  const parsedFetchResResult = DownloadFromGistResponseSchema.safeParse(
-    sendResult.value,
-  );
-  if (!parsedFetchResResult.success) {
-    return err("storage_error");
-  }
-  const parsedFetchRes = parsedFetchResResult.data;
-  if (parsedFetchRes.success && parsedFetchRes.content) {
+  const fetchRes = await fetchGistContent();
+  if (fetchRes.isOk() && fetchRes.value.rawContent) {
     await setSessionItem(
       SESSION_KEY_ENCRYPTED_VAULT,
-      parsedFetchRes.content,
+      fetchRes.value.rawContent,
     );
-    return ok(parsedFetchRes.content);
+    return ok(fetchRes.value.rawContent);
   }
 
   return ok(null);
@@ -303,14 +292,15 @@ export async function init() {
     await loadAndDecryptVault(key, isFido2Prompt, params);
   } else {
     if (settings.gistId && settings.salt) {
-      const publicRes = await downloadFromGistPublic(settings.gistId);
-      if (publicRes.isOk() && publicRes.value.content) {
-        const content = publicRes.value.content;
+      const publicRes = await fetchGistContent();
+      if (publicRes.isOk() && publicRes.value.rawContent) {
+        const content = publicRes.value.rawContent;
         const payloadJsonRes = safeJsonParse(content);
         if (payloadJsonRes.isOk()) {
           const payloadResult = GistPayloadSchema.safeParse(
             payloadJsonRes.value,
           );
+
           if (payloadResult.success) {
             const payload = payloadResult.data;
             if (
