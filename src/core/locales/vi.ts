@@ -19,6 +19,8 @@ export default {
   toast_timeout_updated: "Cài đặt thời gian chờ đã cập nhật",
   confirm_disable_pin:
     "Bạn có chắc chắn muốn tắt tính năng mở khóa bằng mã PIN?",
+  badge_status_locked: "{APP_NAME} (Đã khóa)",
+  badge_status_unlocked: "{APP_NAME} (Đã mở khóa)",
 
   // Detailed Error Messages
   github_error_missing_token: "Không tìm thấy token truy cập GitHub.",

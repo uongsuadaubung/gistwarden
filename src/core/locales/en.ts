@@ -18,6 +18,8 @@ export default {
   toast_pin_set_success: "PIN set successfully!",
   toast_timeout_updated: "Timeout settings updated",
   confirm_disable_pin: "Are you sure you want to disable PIN unlock?",
+  badge_status_locked: "{APP_NAME} (Locked)",
+  badge_status_unlocked: "{APP_NAME} (Unlocked)",
 
   // Detailed Error Messages
   github_error_missing_token: "GitHub access token is missing.",

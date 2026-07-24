@@ -6,6 +6,7 @@ import {
   validateToken,
 } from "@/features/sync/github-api.ts";
 import { broadcastMessage } from "@/core/messaging.ts";
+import { setLanguage, t } from "@/core/i18n.ts";
 import {
   ALARM_NAME_VAULT_TIMEOUT,
   FIDO2_PROMPT_HEIGHT,
@@ -838,17 +839,64 @@ if (hasAlarms()) {
       } else {
         broadcastMessage({ type: MSG_VAULT_LOCKED });
       }
+      await updateExtensionBadge(false);
     }
   });
+}
+
+async function updateExtensionBadge(isUnlocked: boolean): Promise<void> {
+  if (typeof chrome === "undefined" || !chrome.action) return;
+
+  const settingsRes = await getAllSettings();
+  if (settingsRes.isOk() && settingsRes.value.language) {
+    setLanguage(settingsRes.value.language);
+  }
+
+  if (isUnlocked) {
+    await chrome.action.setIcon({
+      path: {
+        "16": "icons/icon-16.png",
+        "32": "icons/icon-32.png",
+        "48": "icons/icon-48.png",
+        "128": "icons/icon-128.png",
+      },
+    });
+    await chrome.action.setBadgeText({ text: "" });
+    await chrome.action.setTitle({ title: t("badge_status_unlocked") });
+  } else {
+    await chrome.action.setIcon({
+      path: {
+        "16": "icons/icon-locked-16.png",
+        "32": "icons/icon-locked-32.png",
+        "48": "icons/icon-locked-48.png",
+        "128": "icons/icon-locked-128.png",
+      },
+    });
+    await chrome.action.setBadgeText({ text: "" });
+    await chrome.action.setTitle({ title: t("badge_status_locked") });
+  }
+}
+
+async function syncLockStateBadge(): Promise<void> {
+  const keyRes = await getSessionItem(SESSION_KEY_DERIVED_KEY);
+  const isUnlocked = keyRes.isOk() && !!keyRes.value;
+  await updateExtensionBadge(isUnlocked);
 }
 
 if (hasStorageOnChanged()) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === "local" && changes[STORAGE_KEY]) {
       updateTimeoutAlarm();
+      syncLockStateBadge();
     }
-    if (areaName === "session" && changes[SESSION_KEY_DERIVED_KEY]?.newValue) {
-      processPendingUnapprovedCredentials();
+    if (areaName === "session") {
+      if (changes[SESSION_KEY_DERIVED_KEY]) {
+        const isUnlocked = !!changes[SESSION_KEY_DERIVED_KEY].newValue;
+        updateExtensionBadge(isUnlocked);
+        if (isUnlocked) {
+          processPendingUnapprovedCredentials();
+        }
+      }
     }
   });
 }
@@ -856,6 +904,7 @@ if (hasStorageOnChanged()) {
 // Khởi tạo phiên làm việc và xử lý đăng xuất khi khởi động lại trình duyệt
 async function initSession() {
   if (!hasSessionStorage()) {
+    await syncLockStateBadge();
     return;
   }
   const sessionInitializedRes = await getSessionItem(
@@ -880,6 +929,8 @@ async function initSession() {
     }
     await setSessionItem(SESSION_KEY_SESSION_INITIALIZED, true);
   }
+
+  await syncLockStateBadge();
 }
 
 initSession();

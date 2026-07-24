@@ -28,6 +28,8 @@ const LangSchema = z.object({
   toast_pin_set_success: z.string(),
   toast_timeout_updated: z.string(),
   confirm_disable_pin: z.string(),
+  badge_status_locked: z.string(),
+  badge_status_unlocked: z.string(),
 
   // Detailed Error Messages
   github_error_missing_token: z.string(),
