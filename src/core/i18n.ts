@@ -352,6 +352,8 @@ const LangSchema = z.object({
   settings_autofill_options_sub: z.string(),
   autofill_options_title: z.string(),
   autofill_options_header: z.string(),
+  show_autofill_suggestions_label: z.string(),
+  show_autofill_suggestions_sub: z.string(),
   auto_submit_on_autofill_label: z.string(),
   auto_submit_on_autofill_sub: z.string(),
   settings_account_security: z.string(),

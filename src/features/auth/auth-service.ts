@@ -311,6 +311,8 @@ export async function init() {
     sessionUnlocked: sessionUnlockedVal,
     timeOffset: settings.timeOffset || 0,
     autoSubmitOnAutofill: settings.autoSubmitOnAutofill ?? true,
+    showAutofillSuggestionsOnFocus: settings.showAutofillSuggestionsOnFocus ??
+      true,
   });
 
   setLanguage(

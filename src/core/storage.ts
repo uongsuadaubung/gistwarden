@@ -36,6 +36,7 @@ export const SettingsSchema = z.object({
   timeOffset: z.number().default(0),
   // Autofill settings
   autoSubmitOnAutofill: z.boolean().default(true),
+  showAutofillSuggestionsOnFocus: z.boolean().default(true),
 });
 
 export type AppSettings = z.infer<typeof SettingsSchema>;

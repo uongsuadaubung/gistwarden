@@ -366,7 +366,10 @@ export default {
   settings_autofill_options_label: "Gợi ý & Tự động điền",
   settings_autofill_options_sub: "Cấu hình gợi ý điền và tự động đăng nhập",
   autofill_options_title: "Tùy chọn tự động điền",
-  autofill_options_header: "Đăng nhập tự động",
+  autofill_options_header: "Gợi ý & Tự động đăng nhập",
+  show_autofill_suggestions_label: "Hiển thị gợi ý điền khi chọn ô nhập liệu",
+  show_autofill_suggestions_sub:
+    "Tự động bật ô gợi ý tài khoản khi bạn click/focus vào các ô nhập thông tin đăng nhập",
   auto_submit_on_autofill_label: "Tự động đăng nhập sau khi tự điền",
   auto_submit_on_autofill_sub:
     "Tự động gửi form hoặc click nút Đăng nhập sau khi chọn tài khoản từ gợi ý",

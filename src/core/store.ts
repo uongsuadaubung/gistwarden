@@ -63,6 +63,7 @@ export interface AppStore {
   sessionUnlocked: boolean;
   timeOffset: number;
   autoSubmitOnAutofill: boolean;
+  showAutofillSuggestionsOnFocus: boolean;
 }
 
 export const [store, setStore] = createStore<AppStore>({
@@ -113,4 +114,5 @@ export const [store, setStore] = createStore<AppStore>({
   sessionUnlocked: false,
   timeOffset: 0,
   autoSubmitOnAutofill: true,
+  showAutofillSuggestionsOnFocus: true,
 });

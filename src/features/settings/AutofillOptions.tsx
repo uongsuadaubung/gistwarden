@@ -16,7 +16,12 @@ export const AutofillOptions: Component = () => {
     await updateSettings({ autoSubmitOnAutofill: checked });
   };
 
+  const handleShowSuggestionsToggle = async (checked: boolean) => {
+    await updateSettings({ showAutofillSuggestionsOnFocus: checked });
+  };
+
   const isAutoSubmitEnabled = () => store.autoSubmitOnAutofill;
+  const isShowSuggestionsEnabled = () => store.showAutofillSuggestionsOnFocus;
 
   return (
     <div class="app-container">
@@ -30,6 +35,16 @@ export const AutofillOptions: Component = () => {
           {t("autofill_options_header")}
         </div>
         <div class="card p-16 mb-20 d-flex flex-column gap-8">
+          <Checkbox
+            id="autofill-show-suggestions"
+            checked={isShowSuggestionsEnabled()}
+            onChange={handleShowSuggestionsToggle}
+            label={t("show_autofill_suggestions_label")}
+          />
+          <div class="font-sz-12 text-secondary pl-28 mb-12">
+            {t("show_autofill_suggestions_sub")}
+          </div>
+
           <Checkbox
             id="autofill-auto-submit"
             checked={isAutoSubmitEnabled()}

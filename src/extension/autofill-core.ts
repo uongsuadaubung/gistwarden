@@ -358,15 +358,83 @@ export function setupFormSubmitMonitoring(
   }, true);
 }
 
-export function setupAutofillFocusMonitoring(onFocusInput: () => void): void {
+export function isSearchOrFilterInput(input: HTMLInputElement): boolean {
+  const type = (input.type || "").toLowerCase();
+  if (type === "search") return true;
+
+  const role = (input.getAttribute("role") || "").toLowerCase();
+  if (role === "searchbox") return true;
+
+  const autocomplete = (input.getAttribute("autocomplete") || "").toLowerCase();
+  if (autocomplete === "search") return true;
+
+  const searchKeywords = [
+    "search",
+    "filter",
+    "query",
+    "find",
+    "filterable",
+    "repo",
+  ];
+
+  const attrText = [
+    input.id,
+    input.name,
+    input.placeholder,
+    input.getAttribute("aria-label"),
+    input.className,
+    input.getAttribute("data-query-name"),
+  ].join(" ").toLowerCase();
+
+  return searchKeywords.some((kw) => attrText.includes(kw));
+}
+
+export function isCandidateLoginInput(input: HTMLInputElement): boolean {
+  const type = (input.type || "").toLowerCase();
+
+  if (type === "password") return true;
+
+  if (
+    type !== "text" && type !== "email" && type !== "tel" &&
+    input.hasAttribute("type")
+  ) {
+    return false;
+  }
+
+  if (isSearchOrFilterInput(input)) {
+    return false;
+  }
+
+  const form = input.closest("form");
+  const hasPasswordInForm = form
+    ? form.querySelector('input[type="password"]') !== null
+    : false;
+  if (hasPasswordInForm) return true;
+
+  const hasPasswordOnPage =
+    document.querySelector('input[type="password"]') !== null;
+
+  const nameOrId = (
+    input.name + " " + input.id + " " +
+    (input.getAttribute("autocomplete") || "")
+  ).toLowerCase();
+  const isUsernameKeyword = ["username", "login", "email", "user"].some((kw) =>
+    nameOrId.includes(kw)
+  );
+
+  return isUsernameKeyword || hasPasswordOnPage;
+}
+
+export function setupAutofillFocusMonitoring(
+  onFocusInput: (target: HTMLInputElement) => void,
+): void {
   const handleFocus = (evt: FocusEvent) => {
     if (!evt.isTrusted) return;
     const target = evt.target instanceof HTMLInputElement ? evt.target : null;
     if (!target) return;
 
-    const type = target.type ? target.type.toLowerCase() : "text";
-    if (type === "password" || type === "text" || type === "email") {
-      onFocusInput();
+    if (isCandidateLoginInput(target)) {
+      onFocusInput(target);
     }
   };
 

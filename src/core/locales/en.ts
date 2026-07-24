@@ -364,7 +364,10 @@ export default {
   settings_autofill_options_sub:
     "Configure autofill suggestions and auto-submit",
   autofill_options_title: "Autofill Options",
-  autofill_options_header: "Auto-submit login",
+  autofill_options_header: "Autofill & Auto-submit",
+  show_autofill_suggestions_label: "Show autofill suggestions on input focus",
+  show_autofill_suggestions_sub:
+    "Automatically display credential suggestion popup when focusing on login input fields",
   auto_submit_on_autofill_label: "Auto-submit after autofill",
   auto_submit_on_autofill_sub:
     "Automatically submit form or click Login button after selecting an account from suggestions",

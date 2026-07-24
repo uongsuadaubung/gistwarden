@@ -88,52 +88,68 @@ const currentDomain = window.location.hostname ||
 
 setupAutofillFocusMonitoring(() => {
   if (autofillDismissedForTab || isProgrammaticAutofilling) return;
-  chrome.runtime.sendMessage(
-    { type: MSG_CHECK_AUTOFILL_SUGGESTION, domain: currentDomain },
-    (response) => {
-      if (chrome.runtime.lastError) return;
-      if (response && response.success && response.payload) {
-        const parseRes = NotificationPayloadSchema.safeParse(response.payload);
-        if (parseRes.success && parseRes.data.actionType === "autofill") {
-          const payloadData = parseRes.data;
-          showNotificationBar({
-            ...payloadData,
-            onFill: (selectedAcc) => {
-              isProgrammaticAutofilling = true;
-              const u = selectedAcc?.username || payloadData.username;
-              const p = selectedAcc?.password || payloadData.password;
-              const tSecret = selectedAcc?.totp || payloadData.totp;
 
-              chrome.storage.local.get(STORAGE_KEY, (res) => {
-                let autoSubmit = true;
-                const raw = res ? res[STORAGE_KEY] : null;
-                if (
-                  isRecord(raw) && typeof raw.autoSubmitOnAutofill === "boolean"
-                ) {
-                  autoSubmit = raw.autoSubmitOnAutofill;
+  chrome.storage.local.get(STORAGE_KEY, (res) => {
+    let showSuggestions = true;
+    const raw = res ? res[STORAGE_KEY] : null;
+    if (
+      isRecord(raw) &&
+      typeof raw.showAutofillSuggestionsOnFocus === "boolean"
+    ) {
+      showSuggestions = raw.showAutofillSuggestionsOnFocus;
+    }
+    if (!showSuggestions) return;
+
+    chrome.runtime.sendMessage(
+      { type: MSG_CHECK_AUTOFILL_SUGGESTION, domain: currentDomain },
+      (response) => {
+        if (chrome.runtime.lastError) return;
+        if (response && response.success && response.payload) {
+          const parseRes = NotificationPayloadSchema.safeParse(
+            response.payload,
+          );
+          if (parseRes.success && parseRes.data.actionType === "autofill") {
+            const payloadData = parseRes.data;
+            showNotificationBar({
+              ...payloadData,
+              onFill: (selectedAcc) => {
+                isProgrammaticAutofilling = true;
+                const u = selectedAcc?.username || payloadData.username;
+                const p = selectedAcc?.password || payloadData.password;
+                const tSecret = selectedAcc?.totp || payloadData.totp;
+
+                chrome.storage.local.get(STORAGE_KEY, (res) => {
+                  let autoSubmit = true;
+                  const raw = res ? res[STORAGE_KEY] : null;
+                  if (
+                    isRecord(raw) &&
+                    typeof raw.autoSubmitOnAutofill === "boolean"
+                  ) {
+                    autoSubmit = raw.autoSubmitOnAutofill;
+                  }
+                  performAutofill(u, p, autoSubmit);
+                });
+
+                if (tSecret) {
+                  const totpRes = generateTotpSafe(tSecret);
+                  if (totpRes.isOk()) {
+                    writeClipboardText(totpRes.value);
+                  }
                 }
-                performAutofill(u, p, autoSubmit);
-              });
 
-              if (tSecret) {
-                const totpRes = generateTotpSafe(tSecret);
-                if (totpRes.isOk()) {
-                  writeClipboardText(totpRes.value);
-                }
-              }
-
-              setTimeout(() => {
-                isProgrammaticAutofilling = false;
-              }, 500);
-            },
-            onDismiss: () => {
-              autofillDismissedForTab = true;
-            },
-          });
+                setTimeout(() => {
+                  isProgrammaticAutofilling = false;
+                }, 500);
+              },
+              onDismiss: () => {
+                autofillDismissedForTab = true;
+              },
+            });
+          }
         }
-      }
-    },
-  );
+      },
+    );
+  });
 });
 
 // Check if there is a pending notification bar for this tab upon page load
