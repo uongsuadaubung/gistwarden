@@ -1,4 +1,4 @@
-import { type Component } from "solid-js";
+import { type Component, Show } from "solid-js";
 import { store } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
@@ -17,11 +17,18 @@ export const AutofillOptions: Component = () => {
   };
 
   const handleShowSuggestionsToggle = async (checked: boolean) => {
-    await updateSettings({ showAutofillSuggestionsOnFocus: checked });
+    if (!checked) {
+      await updateSettings({
+        showAutofillSuggestionsOnFocus: false,
+        autoSubmitOnAutofill: false,
+      });
+    } else {
+      await updateSettings({ showAutofillSuggestionsOnFocus: true });
+    }
   };
 
-  const isAutoSubmitEnabled = () => store.autoSubmitOnAutofill;
   const isShowSuggestionsEnabled = () => store.showAutofillSuggestionsOnFocus;
+  const isAutoSubmitEnabled = () => store.autoSubmitOnAutofill;
 
   return (
     <div class="app-container">
@@ -34,26 +41,32 @@ export const AutofillOptions: Component = () => {
         <div class="detail-section-title mt-0">
           {t("autofill_options_header")}
         </div>
-        <div class="card p-16 mb-20 d-flex flex-column gap-8">
-          <Checkbox
-            id="autofill-show-suggestions"
-            checked={isShowSuggestionsEnabled()}
-            onChange={handleShowSuggestionsToggle}
-            label={t("show_autofill_suggestions_label")}
-          />
-          <div class="font-sz-12 text-secondary pl-28 mb-12">
-            {t("show_autofill_suggestions_sub")}
+        <div class="card p-16 mb-20 d-flex flex-column gap-16">
+          <div>
+            <Checkbox
+              id="autofill-show-suggestions"
+              checked={isShowSuggestionsEnabled()}
+              onChange={handleShowSuggestionsToggle}
+              label={t("show_autofill_suggestions_label")}
+            />
+            <div class="font-sz-12 text-secondary pl-28 mt-4">
+              {t("show_autofill_suggestions_sub")}
+            </div>
           </div>
 
-          <Checkbox
-            id="autofill-auto-submit"
-            checked={isAutoSubmitEnabled()}
-            onChange={handleAutoSubmitToggle}
-            label={t("auto_submit_on_autofill_label")}
-          />
-          <div class="font-sz-12 text-secondary pl-28">
-            {t("auto_submit_on_autofill_sub")}
-          </div>
+          <Show when={isShowSuggestionsEnabled()}>
+            <div class="pl-24">
+              <Checkbox
+                id="autofill-auto-submit"
+                checked={isAutoSubmitEnabled()}
+                onChange={handleAutoSubmitToggle}
+                label={t("auto_submit_on_autofill_label")}
+              />
+              <div class="font-sz-12 text-secondary pl-28 mt-4">
+                {t("auto_submit_on_autofill_sub")}
+              </div>
+            </div>
+          </Show>
         </div>
       </div>
     </div>

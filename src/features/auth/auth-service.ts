@@ -384,6 +384,9 @@ export async function init() {
       vaultTimeout: newSettings.vaultTimeout,
       vaultTimeoutAction: newSettings.vaultTimeoutAction,
       autoSubmitOnAutofill: newSettings.autoSubmitOnAutofill ?? true,
+      showAutofillSuggestionsOnFocus:
+        newSettings.showAutofillSuggestionsOnFocus ??
+          true,
     });
     if (newSettings.language !== store.language) {
       setLanguage(
