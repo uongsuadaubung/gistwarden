@@ -247,7 +247,7 @@ export async function downloadFromGist(): Promise<
   return ok(content);
 }
 
-export async function downloadFromGistPublic(
+async function downloadFromGistPublic(
   gistId: string,
 ): Promise<Result<string, TranslationKey>> {
   if (!gistId) return err("github_error_missing_gist_id");
