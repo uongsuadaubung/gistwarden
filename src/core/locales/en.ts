@@ -387,6 +387,7 @@ export default {
   timeout_action_lock: "Lock",
   timeout_action_logout: "Log out",
   timeout_on_restart: "On browser restart",
+  timeout_on_system_lock: "On system lock or browser restart",
   timeout_1min: "1 minute",
   timeout_5min: "5 minutes",
   timeout_15min: "15 minutes",
@@ -510,7 +511,6 @@ export default {
   history_confirm_clear_msg:
     "Are you sure you want to clear all password history?",
   history_copied_toast: "Password copied!",
-
 
   // FIDO2 Prompt View
   fido2_title: "Passkey Authentication",

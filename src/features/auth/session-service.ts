@@ -18,6 +18,7 @@ import {
   GistPayloadSchema,
   VaultListSchema,
   type VaultTimeoutAction,
+  type VaultTimeoutValue,
   View,
 } from "@/core/types.ts";
 import { type TranslationKey } from "@/core/i18n.ts";
@@ -25,21 +26,21 @@ import { err, ok, Result } from "neverthrow";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import {
   MSG_DOWNLOAD_FROM_GIST,
-  MSG_RESET_TIMEOUT,
+  MSG_USER_ACTIVITY,
   SESSION_KEY_ENCRYPTED_VAULT,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
 } from "@/core/constants.ts";
 
 export async function updateSessionTimeout(
-  timeout: string,
+  timeout: VaultTimeoutValue,
   action: VaultTimeoutAction,
 ): Promise<void> {
   await updateSettings({
     vaultTimeout: timeout,
     vaultTimeoutAction: action,
   });
-  notifyBackground({ type: MSG_RESET_TIMEOUT });
+  notifyBackground({ type: MSG_USER_ACTIVITY });
 }
 
 export async function unlockWithKey(
@@ -187,7 +188,7 @@ export async function unlockWithKey(
     view: targetView,
     selectedItem,
   });
-  notifyBackground({ type: MSG_RESET_TIMEOUT });
+  notifyBackground({ type: MSG_USER_ACTIVITY });
 
   return ok();
 }

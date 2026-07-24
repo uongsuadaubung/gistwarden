@@ -1,6 +1,10 @@
 import { type Component, createSignal, Show } from "solid-js";
 import { store } from "@/core/store.ts";
-import { View } from "@/core/types.ts";
+import {
+  type VaultTimeoutAction,
+  type VaultTimeoutValue,
+  View,
+} from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { disablePinUnlock, setPinUnlock } from "@/features/auth/pin-service.ts";
 import { updateSessionTimeout } from "@/features/auth/session-service.ts";
@@ -58,13 +62,12 @@ export const AccountSecurity: Component = () => {
   };
 
   const handleRequireRestartChange = async (checked: boolean) => {
-    // Just update settings directly
     await updateSettings({ requireMasterPasswordOnRestart: checked });
   };
 
   const handleTimeoutChange = async (
-    timeout: string,
-    action: "lock" | "logout",
+    timeout: VaultTimeoutValue,
+    action: VaultTimeoutAction,
   ) => {
     await updateSessionTimeout(timeout, action);
     showToast(

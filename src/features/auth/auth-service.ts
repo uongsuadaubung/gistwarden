@@ -16,7 +16,6 @@ import {
   isSessionUnlocked,
   setSessionItem,
   setSessionUnlocked,
-  subscribeToSettings,
   updateSettings,
 } from "@/core/storage.ts";
 import {
@@ -51,7 +50,7 @@ import {
   APP_NAME,
   LOCAL_STORAGE_KEY_THEME,
   MSG_DOWNLOAD_FROM_GIST,
-  MSG_RESET_TIMEOUT,
+  MSG_USER_ACTIVITY,
   SESSION_KEY_ENCRYPTED_VAULT,
   SESSION_KEY_LAST_SELECTED_ITEM_ID,
   SESSION_KEY_LAST_VIEW,
@@ -194,7 +193,7 @@ async function loadAndDecryptVault(
       isLocked: false,
       view: isFido2Prompt ? View.Fido2Prompt : View.Vault,
     });
-    notifyBackground({ type: MSG_RESET_TIMEOUT });
+    notifyBackground({ type: MSG_USER_ACTIVITY });
     return;
   }
 
@@ -217,7 +216,7 @@ async function loadAndDecryptVault(
     view: targetView,
     selectedItem,
   });
-  notifyBackground({ type: MSG_RESET_TIMEOUT });
+  notifyBackground({ type: MSG_USER_ACTIVITY });
 }
 
 function applyInitialView(
@@ -321,40 +320,6 @@ export async function init() {
     applyInitialView(githubConfigured, settings.welcomeAccepted, isFido2Prompt);
   }
 
-  subscribeToSettings(async (newSettings) => {
-    const finalToken = await getGithubToken();
-    const githubConfigured = !!newSettings.githubTokenEncrypted ||
-      !!finalToken || !!store.githubToken;
-
-    setStore({
-      githubToken: finalToken,
-      githubConfigured,
-      gistId: newSettings.gistId,
-      salt: newSettings.salt,
-      cachedGithubUser: newSettings.cachedGithubUser,
-      lastSync: newSettings.lastSync,
-      language: newSettings.language,
-      welcomeAccepted: newSettings.welcomeAccepted,
-      pinUnlockEnabled: newSettings.pinUnlockEnabled,
-      pinUnlockValue: newSettings.pinUnlockValue,
-      pinUnlockIv: newSettings.pinUnlockIv,
-      pinUnlockSalt: newSettings.pinUnlockSalt,
-      requireMasterPasswordOnRestart:
-        newSettings.requireMasterPasswordOnRestart,
-      vaultTimeout: newSettings.vaultTimeout,
-      vaultTimeoutAction: newSettings.vaultTimeoutAction,
-      autoSubmitOnAutofill: newSettings.autoSubmitOnAutofill ?? true,
-      showAutofillSuggestionsOnFocus:
-        newSettings.showAutofillSuggestionsOnFocus ??
-          true,
-    });
-    if (newSettings.language !== store.language) {
-      setLanguage(
-        newSettings.language === "vi" ? SupportLanguage.Vi : SupportLanguage.En,
-      );
-    }
-  });
-
   setStore(STORE_KEY_IS_LOADED, true);
 }
 
@@ -396,7 +361,7 @@ async function setupUnlockedSession(
     selectedItem,
     sessionUnlocked: true,
   });
-  notifyBackground({ type: MSG_RESET_TIMEOUT });
+  notifyBackground({ type: MSG_USER_ACTIVITY });
   return ok();
 }
 

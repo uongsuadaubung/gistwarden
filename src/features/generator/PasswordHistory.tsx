@@ -41,7 +41,6 @@ export const PasswordHistory: Component = () => {
     setHistoryItems([]);
   };
 
-
   return (
     <div class="app-container">
       <div class="app-body">
@@ -102,7 +101,6 @@ export const PasswordHistory: Component = () => {
               <span>{t("history_clear_btn")}</span>
             </button>
           </div>
-
         </Show>
       </div>
     </div>

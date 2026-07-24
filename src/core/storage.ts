@@ -12,12 +12,13 @@ import {
   SupportLanguage,
   SupportLanguageSchema,
   VaultTimeoutActionSchema,
+  VaultTimeoutValueSchema,
 } from "@/core/types.ts";
 
 import type { TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result, ResultAsync } from "neverthrow";
 import { clearDerivedKey, decryptData, getSessionKey } from "@/core/crypto.ts";
-import { store } from "@/core/store.ts";
+import { setStore, store } from "@/core/store.ts";
 
 export const GithubUserSchema = z.object({
   login: z.string(),
@@ -43,7 +44,7 @@ export const SettingsSchema = z.object({
   pinUnlockSalt: z.string().default(""),
   requireMasterPasswordOnRestart: z.boolean().default(true),
   // Session timeout settings
-  vaultTimeout: z.string().default("onRestart"),
+  vaultTimeout: VaultTimeoutValueSchema.default("onSystemLock"),
   vaultTimeoutAction: VaultTimeoutActionSchema.default("lock"),
   timeOffset: z.number().default(0),
   // Autofill settings
@@ -90,6 +91,7 @@ export async function getAllSettings(): Promise<
 export async function updateSettings(
   patch: Partial<AppSettings>,
 ): Promise<Result<void, TranslationKey>> {
+  setStore(patch);
   if (!hasLocalStorage()) {
     return err("storage_error");
   }
@@ -235,28 +237,6 @@ export async function setSessionUnlocked(unlocked: boolean): Promise<void> {
   } else {
     await removeSessionItem(SESSION_KEY_SESSION_UNLOCKED);
   }
-}
-
-export function subscribeToSettings(callback: (settings: AppSettings) => void) {
-  if (!hasStorageOnChanged()) {
-    return;
-  }
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === "local" && changes[STORAGE_KEY]) {
-      const newValue = changes[STORAGE_KEY].newValue;
-      if (newValue) {
-        const parsedResult = SettingsSchema.safeParse(newValue);
-        if (parsedResult.success) {
-          callback(parsedResult.data);
-        } else {
-          console.error(
-            "[Storage] Failed to parse updated settings:",
-            parsedResult.error,
-          );
-        }
-      }
-    }
-  });
 }
 
 export async function clearLocal(): Promise<Result<void, TranslationKey>> {

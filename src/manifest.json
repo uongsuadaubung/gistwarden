@@ -12,7 +12,8 @@
     "activeTab",
     "alarms",
     "identity",
-    "clipboardRead"
+    "clipboardRead",
+    "idle"
   ],
   "host_permissions": [
     "https://api.github.com/*",

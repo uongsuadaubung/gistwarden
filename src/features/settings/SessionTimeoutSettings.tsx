@@ -1,20 +1,31 @@
 import { type Component, createEffect, createSignal } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import Select from "@/components/ui/Select.tsx";
+import {
+  type VaultTimeoutAction,
+  VaultTimeoutActionSchema,
+  type VaultTimeoutValue,
+  VaultTimeoutValueSchema,
+} from "@/core/types.ts";
 
 interface SessionTimeoutSettingsProps {
-  timeout: string;
-  action: "lock" | "logout";
-  onChange: (timeout: string, action: "lock" | "logout") => void;
+  timeout: VaultTimeoutValue;
+  action: VaultTimeoutAction;
+  onChange: (timeout: VaultTimeoutValue, action: VaultTimeoutAction) => void;
 }
 
 export const SessionTimeoutSettings: Component<SessionTimeoutSettingsProps> = (
   props,
 ) => {
-  const [selectedTimeout, setSelectedTimeout] = createSignal(props.timeout);
-  const [selectedAction, setSelectedAction] = createSignal(props.action);
+  const [selectedTimeout, setSelectedTimeout] = createSignal<VaultTimeoutValue>(
+    props.timeout,
+  );
+  const [selectedAction, setSelectedAction] = createSignal<VaultTimeoutAction>(
+    props.action,
+  );
 
   const timeoutOptions = () => [
+    { value: "onSystemLock", label: t("timeout_on_system_lock") },
     { value: "onRestart", label: t("timeout_on_restart") },
     { value: "1", label: t("timeout_1min") },
     { value: "5", label: t("timeout_5min") },
@@ -37,19 +48,20 @@ export const SessionTimeoutSettings: Component<SessionTimeoutSettingsProps> = (
   const handleTimeoutChange = (
     e: { currentTarget: { value: string } },
   ) => {
-    const val = e.currentTarget.value;
-    setSelectedTimeout(val);
-    props.onChange(val, selectedAction());
+    const parsed = VaultTimeoutValueSchema.safeParse(e.currentTarget.value);
+    if (parsed.success) {
+      setSelectedTimeout(parsed.data);
+      props.onChange(parsed.data, selectedAction());
+    }
   };
 
   const handleActionChange = (
     e: { currentTarget: { value: string } },
   ) => {
-    const val = e.currentTarget.value;
-    if (val === "lock" || val === "logout") {
-      const actionVal: "lock" | "logout" = val;
-      setSelectedAction(actionVal);
-      props.onChange(selectedTimeout(), actionVal);
+    const parsed = VaultTimeoutActionSchema.safeParse(e.currentTarget.value);
+    if (parsed.success) {
+      setSelectedAction(parsed.data);
+      props.onChange(selectedTimeout(), parsed.data);
     }
   };
 

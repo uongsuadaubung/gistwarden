@@ -25,21 +25,19 @@ import {
   MSG_FIDO2_HEARTBEAT,
   MSG_GET_PENDING_FIDO2_REQUEST,
   MSG_REJECT_FIDO2_REQUEST,
-  MSG_RESET_TIMEOUT,
   MSG_RESOLVE_FIDO2_REQUEST,
   MSG_SAVE_CREDENTIAL_ACTION,
   MSG_SHOW_NOTIFICATION_BAR,
   MSG_START_GITHUB_OAUTH,
   MSG_UPLOAD_TO_GIST,
+  MSG_USER_ACTIVITY,
   MSG_VALIDATE_TOKEN,
   MSG_VAULT_ITEMS_UPDATED,
   POPUP_WIDTH,
-  SESSION_KEY_DERIVED_KEY,
   SESSION_KEY_ENCRYPTED_VAULT,
   SESSION_KEY_PENDING_FIDO2_REQUEST,
   SESSION_KEY_PENDING_GITHUB_TOKEN,
   SESSION_KEY_SESSION_INITIALIZED,
-  STORAGE_KEY,
   STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
 } from "@/core/constants.ts";
 import {
@@ -50,21 +48,18 @@ import {
   getLocalItem,
   getSessionItem,
   hasSessionStorage,
-  hasStorageOnChanged,
   removeLocalItem,
   removeSessionItem,
   setLocalItem,
   setSessionItem,
   SettingsSchema,
 } from "@/core/storage.ts";
-import {
-  syncLockStateBadge,
-  updateExtensionBadge,
-} from "@/extension/background-badge.ts";
+import { syncLockStateBadge } from "@/extension/background-badge.ts";
 import {
   setupAlarmsListener,
   updateTimeoutAlarm,
 } from "@/extension/background-alarms.ts";
+import { setupIdleListener } from "@/extension/background-idle.ts";
 import { openPopup, sendMessageToTab } from "@/core/tabs.ts";
 import { getBaseDomain, getDomainFromItem } from "@/core/domain-utils.ts";
 import { filterMatchingDomainItems } from "@/features/vault/vault-domain-matching.ts";
@@ -486,7 +481,7 @@ onExtensionMessage(
       MSG_GET_PENDING_FIDO2_REQUEST,
       MSG_RESOLVE_FIDO2_REQUEST,
       MSG_REJECT_FIDO2_REQUEST,
-      MSG_RESET_TIMEOUT,
+      MSG_USER_ACTIVITY,
       MSG_FIDO2_HEARTBEAT,
     ];
 
@@ -723,8 +718,12 @@ onExtensionMessage(
         sendResponse({ success: true });
         return false;
 
-      case MSG_RESET_TIMEOUT:
-        updateTimeoutAlarm().then(() => sendResponse({ success: true }));
+      case MSG_USER_ACTIVITY:
+        Promise.all([
+          updateTimeoutAlarm(),
+          syncLockStateBadge(),
+          processPendingUnapprovedCredentials(),
+        ]).then(() => sendResponse({ success: true }));
         return true;
 
       default:
@@ -733,26 +732,9 @@ onExtensionMessage(
   },
 );
 
-// Timeout Alarm Management
+// Listener Management
 setupAlarmsListener();
-
-if (hasStorageOnChanged()) {
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === "local" && changes[STORAGE_KEY]) {
-      updateTimeoutAlarm();
-      syncLockStateBadge();
-    }
-    if (areaName === "session") {
-      if (changes[SESSION_KEY_DERIVED_KEY]) {
-        const isUnlocked = !!changes[SESSION_KEY_DERIVED_KEY].newValue;
-        updateExtensionBadge(isUnlocked);
-        if (isUnlocked) {
-          processPendingUnapprovedCredentials();
-        }
-      }
-    }
-  });
-}
+setupIdleListener();
 
 // Khởi tạo phiên làm việc và xử lý đăng xuất khi khởi động lại trình duyệt
 async function initSession() {

@@ -23,7 +23,7 @@ import {
   VaultIcon,
 } from "@/icons/svg/index.ts";
 import {
-  MSG_RESET_TIMEOUT,
+  MSG_USER_ACTIVITY,
   MSG_VAULT_ITEMS_UPDATED,
   MSG_VAULT_LOCKED,
   MSG_VAULT_LOGGED_OUT,
@@ -100,7 +100,7 @@ const App: Component = () => {
 
     // Reset inactivity timeout on user interaction
     const resetTimeout = () => {
-      notifyBackground({ type: MSG_RESET_TIMEOUT });
+      notifyBackground({ type: MSG_USER_ACTIVITY });
     };
 
     resetTimeout();

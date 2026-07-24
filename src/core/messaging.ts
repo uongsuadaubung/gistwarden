@@ -12,11 +12,11 @@ import {
   MSG_FIDO2_HEARTBEAT,
   MSG_GET_PENDING_FIDO2_REQUEST,
   MSG_REJECT_FIDO2_REQUEST,
-  MSG_RESET_TIMEOUT,
   MSG_RESOLVE_FIDO2_REQUEST,
   MSG_SAVE_CREDENTIAL_ACTION,
   MSG_START_GITHUB_OAUTH,
   MSG_UPLOAD_TO_GIST,
+  MSG_USER_ACTIVITY,
   MSG_VALIDATE_TOKEN,
 } from "@/core/constants.ts";
 
@@ -172,8 +172,8 @@ export const Fido2HeartbeatMsgSchema = z.object({
   type: z.literal(MSG_FIDO2_HEARTBEAT),
 });
 
-export const ResetTimeoutMsgSchema = z.object({
-  type: z.literal(MSG_RESET_TIMEOUT),
+export const UserActivityMsgSchema = z.object({
+  type: z.literal(MSG_USER_ACTIVITY),
 });
 
 export const ChromeMessageSchema = z.discriminatedUnion("type", [
@@ -192,7 +192,7 @@ export const ChromeMessageSchema = z.discriminatedUnion("type", [
   ResolveFido2RequestMsgSchema,
   RejectFido2RequestMsgSchema,
   Fido2HeartbeatMsgSchema,
-  ResetTimeoutMsgSchema,
+  UserActivityMsgSchema,
 ]);
 
 export type ChromeMessage = z.infer<typeof ChromeMessageSchema>;
@@ -248,7 +248,7 @@ export async function sendMessageToBackground(
 
 /**
  * Send a message to the background script in a fire-and-forget manner.
- * Use this for signals that do not require a response (e.g., MSG_RESET_TIMEOUT).
+ * Use this for signals that do not require a response (e.g., MSG_USER_ACTIVITY).
  */
 export async function notifyBackground(
   message: unknown,

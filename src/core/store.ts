@@ -7,6 +7,7 @@ import {
   type ToastType,
   type VaultItem,
   type VaultTimeoutAction,
+  type VaultTimeoutValue,
   View,
 } from "@/core/types.ts";
 
@@ -58,7 +59,7 @@ export interface AppStore {
   pinUnlockSalt: string;
   requireMasterPasswordOnRestart: boolean;
   // Session timeout settings
-  vaultTimeout: string;
+  vaultTimeout: VaultTimeoutValue;
   vaultTimeoutAction: VaultTimeoutAction;
   sessionUnlocked: boolean;
   timeOffset: number;
@@ -109,7 +110,7 @@ export const [store, setStore] = createStore<AppStore>({
   pinUnlockIv: "",
   pinUnlockSalt: "",
   requireMasterPasswordOnRestart: true,
-  vaultTimeout: "onRestart",
+  vaultTimeout: "onSystemLock",
   vaultTimeoutAction: "lock",
   sessionUnlocked: false,
   timeOffset: 0,

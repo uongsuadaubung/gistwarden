@@ -379,6 +379,19 @@ export type ConfirmType = z.infer<typeof ConfirmTypeSchema>;
 export const VaultTimeoutActionSchema = z.enum(["lock", "logout"]);
 export type VaultTimeoutAction = z.infer<typeof VaultTimeoutActionSchema>;
 
+// Vault Timeout Value Types
+export const VaultTimeoutValueSchema = z.enum([
+  "onSystemLock",
+  "onRestart",
+  "1",
+  "5",
+  "15",
+  "30",
+  "60",
+  "240",
+]);
+export type VaultTimeoutValue = z.infer<typeof VaultTimeoutValueSchema>;
+
 // Theme Types
 export enum ThemeMode {
   Dark = "dark",

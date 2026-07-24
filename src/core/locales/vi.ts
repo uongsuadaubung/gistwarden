@@ -389,6 +389,7 @@ export default {
   timeout_action_lock: "Khóa",
   timeout_action_logout: "Đăng xuất",
   timeout_on_restart: "Khi khởi động lại trình duyệt",
+  timeout_on_system_lock: "Khi khóa máy tính hoặc khởi động lại trình duyệt",
   timeout_1min: "1 phút",
   timeout_5min: "5 phút",
   timeout_15min: "15 phút",
@@ -515,7 +516,6 @@ export default {
   history_confirm_clear_msg:
     "Bạn có chắc chắn muốn xóa toàn bộ lịch sử mật khẩu?",
   history_copied_toast: "Đã sao chép mật khẩu!",
-
 
   // FIDO2 Prompt View
   fido2_title: "Xác thực Passkey",
