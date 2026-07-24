@@ -355,6 +355,13 @@ export default {
   settings_theme_light: "Sáng",
   settings_vault_options_label: "Tùy chọn két sắt",
   settings_vault_options_sub: "Đồng bộ, nhập và xuất dữ liệu",
+  settings_autofill_options_label: "Gợi ý & Tự động điền",
+  settings_autofill_options_sub: "Cấu hình gợi ý điền và tự động đăng nhập",
+  autofill_options_title: "Tùy chọn tự động điền",
+  autofill_options_header: "Đăng nhập tự động",
+  auto_submit_on_autofill_label: "Tự động đăng nhập sau khi tự điền",
+  auto_submit_on_autofill_sub:
+    "Tự động gửi form hoặc click nút Đăng nhập sau khi chọn tài khoản từ gợi ý",
   settings_account_security: "Bảo mật tài khoản",
   settings_account_security_sub: "Khóa bằng mã PIN và thời gian chờ phiên",
   account_security_title: "Bảo mật tài khoản",

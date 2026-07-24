@@ -1,8 +1,8 @@
 # Tài Liệu Mô Tả Chi Tiết: Chức Năng Quản Lý Kho Vault & Thao Tác Hàng Loạt (Vault Management & Bulk Operations)
 
 Tài liệu này mô tả chi tiết kiến trúc, phân loại mục dữ liệu và luồng thuật toán
-rẽ nhánh **True / False** của tính năng **Quản lý Kho Vault** và **Thao tác Hàng
-loạt (Bulk Select / Bulk Delete)** trong Gistwarden.
+xử lý điều kiện của tính năng **Quản lý Kho Vault** và **Thao tác Hàng loạt
+(Bulk Select / Bulk Delete)** trong Gistwarden.
 
 ---
 
@@ -92,7 +92,7 @@ flowchart TD
 
 ---
 
-## 📊 TÓM TẮT QUY TRÌNH RẼ NHÁNH TỔNG HỢP (Decision Matrix)
+## 📊 TÓM TẮT QUY TRÌNH XỬ LÝ ĐIỀU KIỆN TỔNG HỢP (Decision Matrix)
 
 | Bước    | Câu hỏi điều kiện                              | Kết quả TRUE                                | Kết quả FALSE                        |
 | :------ | :--------------------------------------------- | :------------------------------------------ | :----------------------------------- |

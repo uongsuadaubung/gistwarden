@@ -43,6 +43,7 @@ import Troubleshooting from "@/features/settings/Troubleshooting.tsx";
 import Welcome from "@/features/welcome/Welcome.tsx";
 import AccountSecurity from "@/features/auth/AccountSecurity.tsx";
 import ChangeMasterPassword from "@/features/auth/ChangeMasterPassword.tsx";
+import AutofillOptions from "@/features/settings/AutofillOptions.tsx";
 import ConfirmModal from "@/components/ui/ConfirmModal.tsx";
 import RepromptModal from "@/components/ui/RepromptModal.tsx";
 import { t } from "@/core/i18n.ts";
@@ -177,6 +178,9 @@ const App: Component = () => {
                 </TransitionView>
                 <TransitionView when={store.view === View.ChangeMasterPassword}>
                   <ChangeMasterPassword />
+                </TransitionView>
+                <TransitionView when={store.view === View.AutofillOptions}>
+                  <AutofillOptions />
                 </TransitionView>
               </div>
 

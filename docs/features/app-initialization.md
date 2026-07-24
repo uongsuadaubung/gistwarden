@@ -1,9 +1,8 @@
 # Tài Liệu Mô Tả Chi Tiết: Luồng Khởi Tạo Ứng Dụng & Vòng Đời Boot (App Initialization & Boot Lifecycle)
 
 Tài liệu này mô tả chi tiết kiến trúc, thứ tự ưu tiên nạp module và luồng thuật
-toán rẽ nhánh **True / False** của **Luồng Khởi Tạo Ứng Dụng (App
-Initialization)** trong Gistwarden từ lúc mở Popup / Extension cho tới khi hoàn
-tất nạp kho dữ liệu.
+toán xử lý điều kiện của **Luồng Khởi Tạo Ứng Dụng (App Initialization)** trong
+Gistwarden từ lúc mở Popup / Extension cho tới khi hoàn tất nạp kho dữ liệu.
 
 ---
 
@@ -107,7 +106,7 @@ flowchart TD
 
 ---
 
-## 📊 TÓM TẮT QUY TRÌNH RẼ NHÁNH TỔNG HỢP (Decision Matrix)
+## 📊 TÓM TẮT QUY TRÌNH XỬ LÝ ĐIỀU KIỆN TỔNG HỢP (Decision Matrix)
 
 | Bước    | Câu hỏi điều kiện                                        | Kết quả TRUE                                    | Kết quả FALSE                                 |
 | :------ | :------------------------------------------------------- | :---------------------------------------------- | :-------------------------------------------- |

@@ -34,6 +34,8 @@ export const SettingsSchema = z.object({
   vaultTimeout: z.string().default("onRestart"),
   vaultTimeoutAction: VaultTimeoutActionSchema.default("lock"),
   timeOffset: z.number().default(0),
+  // Autofill settings
+  autoSubmitOnAutofill: z.boolean().default(true),
 });
 
 export type AppSettings = z.infer<typeof SettingsSchema>;
@@ -46,7 +48,7 @@ import {
 
 export const STORAGE_KEY = `${APP_NAME.toLowerCase()}_settings`;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 

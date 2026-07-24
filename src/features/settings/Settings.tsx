@@ -6,6 +6,7 @@ import { openTab } from "@/core/tabs.ts";
 import { getAssetUrl } from "@/core/runtime.ts";
 
 import {
+  AutofillIcon,
   ChevronRightIcon,
   InfoIcon,
   PaletteIcon,
@@ -73,6 +74,25 @@ export const Settings: Component = () => {
                 </div>
                 <div class="setting-sub">
                   {t("settings_vault_options_sub")}
+                </div>
+              </div>
+            </div>
+            <ChevronRightIcon />
+          </div>
+
+          {/* Autofill Options */}
+          <div
+            class="setting-row"
+            onClick={() => navigate(View.AutofillOptions)}
+          >
+            <div class="setting-row-left">
+              <AutofillIcon />
+              <div>
+                <div class="setting-label">
+                  {t("settings_autofill_options_label")}
+                </div>
+                <div class="setting-sub">
+                  {t("settings_autofill_options_sub")}
                 </div>
               </div>
             </div>

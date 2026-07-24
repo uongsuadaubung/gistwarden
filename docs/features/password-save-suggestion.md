@@ -1,8 +1,8 @@
 # Tài Liệu Mô Tả Chi Tiết: Chức Năng Gợi Ý Lưu Mật Khẩu (Password Save Suggestion)
 
-Tài liệu me tả chia nhỏ luồng hoạt động của tính năng **Gợi ý Lưu mật khẩu**
+Tài liệu mô tả chia nhỏ luồng hoạt động của tính năng **Gợi ý Lưu mật khẩu**
 thành **4 Giai đoạn chi tiết**, tích hợp các sơ đồ thuật toán (Flowchart) nêu rõ
-từng bước rẽ nhánh **True / False** và xử lý Edge Cases.
+từng bước xử lý điều kiện và xử lý Edge Cases.
 
 ---
 
@@ -91,7 +91,7 @@ flowchart TD
 
 ---
 
-## 📊 TÓM TẮT QUY TRÌNH RẼ NHÁNH TỔNG HỢP (Decision Matrix)
+## 📊 TÓM TẮT QUY TRÌNH XỬ LÝ ĐIỀU KIỆN TỔNG HỢP (Decision Matrix)
 
 | Bước    | Câu hỏi điều kiện                                          | Kết quả TRUE                                   | Kết quả FALSE                                |
 | :------ | :--------------------------------------------------------- | :--------------------------------------------- | :------------------------------------------- |

@@ -352,6 +352,14 @@ export default {
   settings_theme_light: "Light",
   settings_vault_options_label: "Vault Options",
   settings_vault_options_sub: "Sync, import and export data",
+  settings_autofill_options_label: "Autofill & Auto-submit",
+  settings_autofill_options_sub:
+    "Configure autofill suggestions and auto-submit",
+  autofill_options_title: "Autofill Options",
+  autofill_options_header: "Auto-submit login",
+  auto_submit_on_autofill_label: "Auto-submit after autofill",
+  auto_submit_on_autofill_sub:
+    "Automatically submit form or click Login button after selecting an account from suggestions",
   settings_account_security: "Account Security",
   settings_account_security_sub: "PIN unlock and session timeout options",
   account_security_title: "Account Security",

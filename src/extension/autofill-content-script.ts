@@ -17,6 +17,7 @@ import { showNotificationBar } from "@/features/notification/index.ts";
 import { getBaseDomain } from "@/core/domain-utils.ts";
 import { generateTotpSafe } from "@/core/totp-utils.ts";
 import { writeClipboardText } from "@/core/clipboard-utils.ts";
+import { isRecord, STORAGE_KEY } from "@/core/storage.ts";
 
 const SaveCredentialPayloadSchema = z.object({
   actionType: z.enum(["add", "update"]),
@@ -103,7 +104,16 @@ setupAutofillFocusMonitoring(() => {
               const p = selectedAcc?.password || payloadData.password;
               const tSecret = selectedAcc?.totp || payloadData.totp;
 
-              performAutofill(u, p);
+              chrome.storage.local.get(STORAGE_KEY, (res) => {
+                let autoSubmit = true;
+                const raw = res ? res[STORAGE_KEY] : null;
+                if (
+                  isRecord(raw) && typeof raw.autoSubmitOnAutofill === "boolean"
+                ) {
+                  autoSubmit = raw.autoSubmitOnAutofill;
+                }
+                performAutofill(u, p, autoSubmit);
+              });
 
               if (tSecret) {
                 const totpRes = generateTotpSafe(tSecret);

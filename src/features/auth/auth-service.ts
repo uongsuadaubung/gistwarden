@@ -308,6 +308,7 @@ export async function init() {
     vaultTimeoutAction: settings.vaultTimeoutAction,
     sessionUnlocked: sessionUnlockedVal,
     timeOffset: settings.timeOffset || 0,
+    autoSubmitOnAutofill: settings.autoSubmitOnAutofill ?? true,
   });
 
   setLanguage(
@@ -378,6 +379,7 @@ export async function init() {
         newSettings.requireMasterPasswordOnRestart,
       vaultTimeout: newSettings.vaultTimeout,
       vaultTimeoutAction: newSettings.vaultTimeoutAction,
+      autoSubmitOnAutofill: newSettings.autoSubmitOnAutofill ?? true,
     });
     if (newSettings.language !== store.language) {
       setLanguage(

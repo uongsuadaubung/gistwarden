@@ -1,8 +1,8 @@
 # Tài Liệu Mô Tả Chi Tiết: Chức Năng Cửa Sổ Popup Passkey (FIDO2 / WebAuthn)
 
-Tài liệu này mô tả chi tiết kiến trúc, quy trình xử lý và luồng thuật toán rẽ
-nhánh **True / False** của cửa sổ **Popup Passkey (FIDO2 Prompt)** trong
-Gistwarden khi trang web yêu cầu Tạo (Create) hoặc Đăng nhập (Get) bằng Passkey.
+Tài liệu này mô tả chi tiết kiến trúc, quy trình xử lý và luồng thuật toán của
+cửa sổ **Popup Passkey (FIDO2 Prompt)** trong Gistwarden khi trang web yêu cầu
+Tạo (Create) hoặc Đăng nhập (Get) bằng Passkey.
 
 ---
 
@@ -95,7 +95,7 @@ flowchart TD
 
 ---
 
-## 📊 TÓM TẮT QUY TRÌNH RẼ NHÁNH TỔNG HỢP (Decision Matrix)
+## 📊 TÓM TẮT QUY TRÌNH XỬ LÝ ĐIỀU KIỆN TỔNG HỢP (Decision Matrix)
 
 | Bước    | Câu hỏi điều kiện                                     | Kết quả TRUE                                   | Kết quả FALSE                                      |
 | :------ | :---------------------------------------------------- | :--------------------------------------------- | :------------------------------------------------- |

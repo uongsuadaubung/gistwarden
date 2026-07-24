@@ -1,8 +1,8 @@
 # Tài Liệu Mô Tả Chi Tiết: Chức Năng Mã Xác Thực TOTP (2FA) & Trình Sinh Mật Khẩu (Password & Passphrase Generator)
 
 Tài liệu này mô tả chi tiết kiến trúc, công thức toán học mật mã và luồng thuật
-toán rẽ nhánh **True / False** của công cụ **Tính mã TOTP 2FA** và **Trình sinh
-Mật khẩu / Cụm mật khẩu an toàn (Generator)** trong Gistwarden.
+toán xử lý điều kiện của công cụ **Tính mã TOTP 2FA** và **Trình sinh Mật khẩu /
+Cụm mật khẩu an toàn (Generator)** trong Gistwarden.
 
 ---
 
@@ -85,7 +85,7 @@ flowchart TD
 
 ---
 
-## 📊 TÓM TẮT QUY TRÌNH RẼ NHÁNH TỔNG HỢP (Decision Matrix)
+## 📊 TÓM TẮT QUY TRÌNH XỬ LÝ ĐIỀU KIỆN TỔNG HỢP (Decision Matrix)
 
 | Bước    | Câu hỏi điều kiện                                                                 | Kết quả TRUE                             | Kết quả FALSE                        |
 | :------ | :-------------------------------------------------------------------------------- | :--------------------------------------- | :----------------------------------- |

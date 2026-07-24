@@ -62,6 +62,7 @@ export interface AppStore {
   vaultTimeoutAction: VaultTimeoutAction;
   sessionUnlocked: boolean;
   timeOffset: number;
+  autoSubmitOnAutofill: boolean;
 }
 
 export const [store, setStore] = createStore<AppStore>({
@@ -111,4 +112,5 @@ export const [store, setStore] = createStore<AppStore>({
   vaultTimeoutAction: "lock",
   sessionUnlocked: false,
   timeOffset: 0,
+  autoSubmitOnAutofill: true,
 });

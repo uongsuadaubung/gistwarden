@@ -29,8 +29,97 @@ export function setInputValue(element: HTMLInputElement, value: string): void {
   element.blur();
 }
 
-export function performAutofill(username?: string, password?: string): boolean {
+const LOGIN_BUTTON_KEYWORDS = [
+  "login",
+  "log in",
+  "sign in",
+  "signin",
+  "submit",
+  "đăng nhập",
+  "tiếp tục",
+  "next",
+  "continue",
+];
+
+function isLoginKeywordMatch(text: string): boolean {
+  const normalized = text.toLowerCase().trim();
+  return LOGIN_BUTTON_KEYWORDS.some((kw) => normalized.includes(kw));
+}
+
+function submitElementFoundAndClicked(container: ParentNode): boolean {
+  // 1. Search type="submit" elements
+  const submitElements = container.querySelectorAll<HTMLElement>(
+    'button[type="submit"], input[type="submit"]',
+  );
+  if (submitElements.length > 0) {
+    submitElements[0].click();
+    return true;
+  }
+
+  // 2. Search candidate buttons with login keywords
+  const candidateButtons = container.querySelectorAll<HTMLElement>(
+    'button, [type="button"], a.btn, .btn, [role="button"]',
+  );
+  for (let i = 0; i < candidateButtons.length; i++) {
+    const btn = candidateButtons[i];
+    const btnText =
+      (btn.innerText || btn.getAttribute("value") || btn.id || btn.className ||
+        "").toLowerCase();
+    if (isLoginKeywordMatch(btnText)) {
+      btn.click();
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function autoSubmitLogin(
+  targetForm?: HTMLFormElement | null,
+  targetInput?: HTMLInputElement | null,
+): void {
+  // Strategy 1: Search within form if form exists
+  if (targetForm) {
+    if (submitElementFoundAndClicked(targetForm)) {
+      return;
+    }
+    if (typeof targetForm.requestSubmit === "function") {
+      targetForm.requestSubmit();
+      return;
+    }
+    targetForm.submit();
+    return;
+  }
+
+  // Strategy 2: Formless fields - traverse DOM tree upwards from targetInput
+  let currentElement: HTMLElement | null = targetInput ?? null;
+  while (currentElement && currentElement.tagName !== "HTML") {
+    if (submitElementFoundAndClicked(currentElement)) {
+      return;
+    }
+    const rootNode = currentElement.getRootNode();
+    if (!currentElement.parentElement && rootNode instanceof ShadowRoot) {
+      const host = rootNode.host;
+      if (host instanceof HTMLElement) {
+        currentElement = host;
+        continue;
+      }
+    }
+    currentElement = currentElement.parentElement;
+  }
+
+  // Fallback: Document search
+  submitElementFoundAndClicked(document);
+}
+
+export function performAutofill(
+  username?: string,
+  password?: string,
+  autoSubmit: boolean = false,
+): boolean {
   let filledAny = false;
+  let targetForm: HTMLFormElement | null = null;
+  let targetInput: HTMLInputElement | null = null;
 
   // Find all password fields on the page
   const passwordFields = document.querySelectorAll('input[type="password"]');
@@ -41,6 +130,9 @@ export function performAutofill(username?: string, password?: string): boolean {
       if (!(passwordField instanceof HTMLInputElement)) continue;
 
       const form = passwordField.closest("form");
+      if (!targetForm && form) targetForm = form;
+      if (!targetInput) targetInput = passwordField;
+
       let usernameField: HTMLInputElement | null = null;
 
       // 1. Search username input within the same form
@@ -120,10 +212,19 @@ export function performAutofill(username?: string, password?: string): boolean {
         if (username) {
           setInputValue(input, username);
           filledAny = true;
+          if (!targetInput) targetInput = input;
+          const form = input.closest("form");
+          if (!targetForm && form) targetForm = form;
         }
         break;
       }
     }
+  }
+
+  if (autoSubmit && filledAny) {
+    setTimeout(() => {
+      autoSubmitLogin(targetForm, targetInput);
+    }, 100);
   }
 
   return filledAny;

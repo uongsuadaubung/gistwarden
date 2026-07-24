@@ -1,8 +1,8 @@
 # Tài Liệu Mô Tả Chi Tiết: Chức Năng Đăng Nhập & Mở Khóa Vault (Login & Auth Flow)
 
 Tài liệu này mô tả chi tiết kiến trúc, quy trình xử lý mật mã (Cryptography) và
-luồng thuật toán rẽ nhánh **True / False** của tính năng **Đăng nhập & Mở khóa
-Vault** trong Gistwarden bằng Mật khẩu Master (Master Password) hoặc Mã PIN (PIN
+luồng thuật toán xử lý điều kiện của tính năng **Đăng nhập & Mở khóa Vault**
+trong Gistwarden bằng Mật khẩu Master (Master Password) hoặc Mã PIN (PIN
 Unlock).
 
 ---
@@ -105,7 +105,7 @@ flowchart TD
 
 ---
 
-## 📊 TÓM TẮT QUY TRÌNH RẼ NHÁNH TỔNG HỢP (Decision Matrix)
+## 📊 TÓM TẮT QUY TRÌNH XỬ LÝ ĐIỀU KIỆN TỔNG HỢP (Decision Matrix)
 
 | Bước    | Câu hỏi điều kiện                                              | Kết quả TRUE                                              | Kết quả FALSE                            |
 | :------ | :------------------------------------------------------------- | :-------------------------------------------------------- | :--------------------------------------- |

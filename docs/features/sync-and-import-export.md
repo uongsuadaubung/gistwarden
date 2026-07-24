@@ -1,8 +1,8 @@
 # Tài Liệu Mô Tả Chi Tiết: Chức Năng Đồng Bộ GitHub Gist & Nhập/Xuất Dữ Liệu (Sync & Import/Export)
 
-Tài liệu này mô tả chi tiết kiến trúc, quy trình xử lý và luồng thuật toán rẽ
-nhánh **True / False** của tính năng **Đồng bộ GitHub Gist** và **Nhập/Xuất Dữ
-liệu** (CSV & JSON) trong Gistwarden.
+Tài liệu này mô tả chi tiết kiến trúc, quy trình xử lý và luồng thuật toán của
+tính năng **Đồng bộ GitHub Gist** và **Nhập/Xuất Dữ liệu** (CSV & JSON) trong
+Gistwarden.
 
 ---
 
@@ -113,7 +113,7 @@ flowchart TD
 
 ---
 
-## 📊 TÓM TẮT QUY TRÌNH RẼ NHÁNH TỔNG HỢP (Decision Matrix)
+## 📊 TÓM TẮT QUY TRÌNH XỬ LÝ ĐIỀU KIỆN TỔNG HỢP (Decision Matrix)
 
 | Bước    | Câu hỏi điều kiện                              | Kết quả TRUE                                                 | Kết quả FALSE                                       |
 | :------ | :--------------------------------------------- | :----------------------------------------------------------- | :-------------------------------------------------- |

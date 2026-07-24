@@ -20,6 +20,7 @@ export enum View {
   ChangeMasterPassword = "ChangeMasterPassword",
   ImportAccounts = "ImportAccounts",
   ExportAccounts = "ExportAccounts",
+  AutofillOptions = "AutofillOptions",
 }
 
 export enum VaultItemType {
