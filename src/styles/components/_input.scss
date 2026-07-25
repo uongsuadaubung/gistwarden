@@ -214,3 +214,47 @@ input[type="number"] {
     flex-shrink: 0;
   }
 }
+
+.match-detection-container {
+  padding: 14px;
+  background-color: var(--surface-card, var(--bg-card, var(--bg)));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+
+  .match-detection-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .match-detection-desc {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-muted);
+    margin-top: 10px;
+
+    .text-warning-bold {
+      color: var(--warning, #f59e0b);
+      font-weight: 600;
+      display: block;
+      margin-top: 4px;
+    }
+
+    .match-warning-link {
+      color: var(--link-color);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      font-weight: 500;
+      display: inline-block;
+      margin-top: 2px;
+
+      &:hover {
+        color: var(--link-hover-color);
+        opacity: 0.9;
+      }
+    }
+  }
+}

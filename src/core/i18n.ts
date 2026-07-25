@@ -687,6 +687,26 @@ const LangSchema = z.object({
   guide_privacy_sec3_desc: z.string(),
   guide_privacy_sec4_title: z.string(),
   guide_privacy_sec4_desc: z.string(),
+
+  // URI Match Detection
+  match_mode_default: z.string(),
+  match_mode_domain: z.string(),
+  match_mode_host: z.string(),
+  match_mode_starts_with: z.string(),
+  match_mode_exact: z.string(),
+  match_mode_regex: z.string(),
+  match_mode_never: z.string(),
+  match_mode_setting_title: z.string(),
+  match_mode_setting_desc: z.string(),
+  match_warning_modal_title: z.string(),
+  match_warning_modal_msg: z.string(),
+  match_warning_inline: z.string(),
+  match_warning_modal_continue: z.string(),
+  match_warning_modal_cancel: z.string(),
+  match_detection_label: z.string(),
+  match_detection_desc: z.string(),
+  match_mode_header_advanced: z.string(),
+  match_warning_learn_more: z.string(),
 });
 
 type Lang = z.infer<typeof LangSchema>;

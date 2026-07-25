@@ -785,4 +785,28 @@ export default {
   guide_privacy_sec4_title: "🔌 Extension Permissions",
   guide_privacy_sec4_desc:
     "The extension only requests the minimum necessary permissions to function: 'storage' to cache your local extension preferences (like language or theme), 'webNavigation' and 'activeTab' to safely autofill credentials, and connection permission to GitHub APIs for vault syncing.",
+
+  // URI Match Detection
+  match_mode_default: "Default ({mode})",
+  match_mode_domain: "Base domain",
+  match_mode_host: "Host",
+  match_mode_starts_with: "Starts with",
+  match_mode_exact: "Exact",
+  match_mode_regex: "Regular expression",
+  match_mode_never: "Never",
+  match_mode_setting_title: "Default URI Match Detection",
+  match_mode_setting_desc:
+    "Choose the default policy for matching website URLs to autofill suggestions.",
+  match_warning_modal_title: "Security Warning",
+  match_warning_modal_msg:
+    "'{mode}' is an advanced option with increased risk of exposing credentials if configured improperly.",
+  match_warning_inline:
+    "Warning: '{mode}' is an advanced option with increased risk of exposing credentials.",
+  match_warning_modal_continue: "Continue",
+  match_warning_modal_cancel: "Cancel",
+  match_detection_label: "Match detection",
+  match_detection_desc:
+    "URI match detection is how {APP_NAME} identifies autofill suggestions.",
+  match_mode_header_advanced: "Advanced options",
+  match_warning_learn_more: "Learn more about match detection",
 };

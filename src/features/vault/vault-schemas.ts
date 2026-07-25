@@ -5,8 +5,20 @@ import {
 } from "@/features/vault/vault-types.ts";
 import { Fido2CredentialSchema } from "@/features/passkey/fido2-schemas.ts";
 
+export enum UriMatchMode {
+  Domain = 0,
+  Host = 1,
+  StartsWith = 2,
+  Exact = 3,
+  Regex = 4,
+  Never = 5,
+}
+
+export const UriMatchModeSchema = z.nativeEnum(UriMatchMode);
+
 export const LoginUriSchema = z.object({
   uri: z.string(),
+  match: UriMatchModeSchema.nullish(),
 });
 export type LoginUri = z.infer<typeof LoginUriSchema>;
 

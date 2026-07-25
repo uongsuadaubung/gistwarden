@@ -791,4 +791,28 @@ export default {
   guide_privacy_sec4_title: "🔌 Quyền hạn của Tiện ích mở rộng",
   guide_privacy_sec4_desc:
     "Tiện ích chỉ yêu cầu các quyền tối thiểu cần thiết để hoạt động: quyền 'storage' để lưu cấu hình tiện ích cục bộ (như ngôn ngữ hay giao diện), quyền 'webNavigation' và 'activeTab' để hỗ trợ điền thông tin đăng nhập tự động, và quyền kết nối API đến GitHub để thực hiện đồng bộ két sắt.",
+
+  // URI Match Detection
+  match_mode_default: "Mặc định ({mode})",
+  match_mode_domain: "Tên miền gốc (Base domain)",
+  match_mode_host: "Hostname chính xác (Host)",
+  match_mode_starts_with: "Bắt đầu bằng (Starts with)",
+  match_mode_exact: "Khớp hoàn toàn (Exact)",
+  match_mode_regex: "Biểu thức chính quy (Regex)",
+  match_mode_never: "Không bao giờ gợi ý (Never)",
+  match_mode_setting_title: "Tùy chọn Khớp Tên miền Mặc định",
+  match_mode_setting_desc:
+    "Chọn chính sách mặc định để so sánh địa chỉ website với gợi ý tự động điền.",
+  match_warning_modal_title: "Cảnh báo Bảo mật",
+  match_warning_modal_msg:
+    "'{mode}' là tùy chọn nâng cao có rủi ro cao làm lộ thông tin đăng nhập nếu cấu hình không đúng cách.",
+  match_warning_inline:
+    "Cảnh báo: '{mode}' là tùy chọn nâng cao có rủi ro làm lộ thông tin đăng nhập.",
+  match_warning_modal_continue: "Tiếp tục",
+  match_warning_modal_cancel: "Hủy",
+  match_detection_label: "Chế độ khớp tên miền",
+  match_detection_desc:
+    "Chế độ khớp URI xác định cách {APP_NAME} nhận diện các gợi ý tự động điền.",
+  match_mode_header_advanced: "Tùy chọn nâng cao",
+  match_warning_learn_more: "Tìm hiểu thêm về khớp tên miền",
 };

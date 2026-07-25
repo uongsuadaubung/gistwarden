@@ -71,7 +71,7 @@ export function getInitialFormState(
     fields: [],
     username: "",
     password: "",
-    uris: [{ uri: "" }],
+    uris: [{ uri: "", match: null }],
     totpSecret: "",
     fidoCredentials: [],
     cardholderName: "",
@@ -120,8 +120,8 @@ export function getInitialFormState(
     state.username = login.username ?? "";
     state.password = login.password ?? "";
     state.uris = login.uris && login.uris.length > 0
-      ? login.uris.map((u) => ({ uri: u.uri }))
-      : [{ uri: "" }];
+      ? login.uris.map((u) => ({ uri: u.uri, match: u.match ?? null }))
+      : [{ uri: "", match: null }];
     state.totpSecret = login.totp ?? "";
     state.fidoCredentials = login.fido2Credentials ?? [];
   } else if (item.type === VaultItemType.Card) {
@@ -233,6 +233,7 @@ export function mapFormStateToVaultItem(
     const mappedUris = validatedForm.uris
       .map((u) => ({
         uri: u.uri.trim(),
+        match: u.match ?? null,
       }))
       .filter((u) => u.uri);
 

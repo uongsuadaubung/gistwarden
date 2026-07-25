@@ -6,6 +6,7 @@ import type {
   VaultItem,
 } from "@/features/vault/vault-schemas.ts";
 import type { Fido2Credential } from "@/features/passkey/fido2-schemas.ts";
+import { isMatchingDomain } from "@/features/vault/vault-domain-matching.ts";
 import { saveItem } from "@/features/vault/vault-service.ts";
 import {
   generatePasskeyAssertResponse,
@@ -15,9 +16,22 @@ import {
   MSG_REJECT_FIDO2_REQUEST,
   MSG_RESOLVE_FIDO2_REQUEST,
 } from "@/core/constants.ts";
-import { getBaseDomain, safeParseUrl } from "@/core/domain-utils.ts";
 import { accountStore } from "@/core/store.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
+import { getBaseDomain, safeParseUrl } from "@/core/domain-utils.ts";
+
+const getDomainFromUrl = (urlStr: string): string => {
+  const parseResult = safeParseUrl(urlStr);
+  return parseResult.map((u) => u.hostname.toLowerCase()).unwrapOr(
+    urlStr.toLowerCase(),
+  );
+};
+
+const isDomainMatch = (domainA: string, domainB: string): boolean => {
+  const baseA = getBaseDomain(domainA);
+  const baseB = getBaseDomain(domainB);
+  return !!baseA && baseA === baseB;
+};
 
 export interface Fido2Request {
   success: boolean;
@@ -49,38 +63,19 @@ export interface MatchingPasskey {
   vaultItemId: string;
 }
 
-const getDomainFromUrl = (urlStr: string): string => {
-  const parseResult = safeParseUrl(urlStr);
-  return parseResult.map((u) => u.hostname.toLowerCase()).unwrapOr(
-    urlStr.toLowerCase(),
-  );
-};
-
-const isDomainMatch = (domainA: string, domainB: string): boolean => {
-  const baseA = getBaseDomain(domainA);
-  const baseB = getBaseDomain(domainB);
-  return !!baseA && baseA === baseB;
-};
-
 export function findMatchingFido2Accounts(
   vaultItems: VaultItem[],
   rpId: string,
   origin: string,
 ): LoginVaultItem[] {
   const rpIdNormalized = rpId.toLowerCase().trim();
-  const originHost = getDomainFromUrl(origin);
 
   return vaultItems.filter((item): item is LoginVaultItem => {
     if (item.type !== VaultItemType.Login || !item.login) return false;
-
-    const uris = item.login.uris;
-    if (!uris || uris.length === 0) return false;
-
-    return uris.some((u) => {
-      const uriHost = getDomainFromUrl(u.uri);
-      return isDomainMatch(uriHost, rpIdNormalized) ||
-        isDomainMatch(uriHost, originHost);
-    });
+    return (
+      isMatchingDomain(item, rpIdNormalized) ||
+      isMatchingDomain(item, origin)
+    );
   });
 }
 

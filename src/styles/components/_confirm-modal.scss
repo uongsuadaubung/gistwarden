@@ -69,6 +69,18 @@
       line-height: 1.5;
       white-space: pre-wrap;
       text-align: left;
+
+      a {
+        color: var(--link-color);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        font-weight: 500;
+
+        &:hover {
+          color: var(--link-hover-color);
+          opacity: 0.9;
+        }
+      }
     }
 
     .confirm-modal-actions {

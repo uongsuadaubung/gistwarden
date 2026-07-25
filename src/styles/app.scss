@@ -49,6 +49,7 @@
 
   --error: #ff4e63;
   --success: #18dc7a;
+  --warning: #f59e0b;
   --error-translucent-15: rgba(229, 62, 62, 0.15);
   --success-translucent-15: rgba(56, 161, 105, 0.15);
   --warning-translucent-15: rgba(245, 158, 11, 0.15);
@@ -67,6 +68,10 @@
   --alert-danger-text: #feb2b2;
   --alert-success-text: #c6f6d5;
   --alert-info-text: #bee3f8;
+
+  /* Link colors */
+  --link-color: #93c5fd;
+  --link-hover-color: #bfdbfe;
 }
 
 body.light-theme {
@@ -74,6 +79,9 @@ body.light-theme {
   --primary: #175ddc;
   --primary-hover: #0d43af;
   --primary-accent: #175ddc;
+
+  --link-color: #175ddc;
+  --link-hover-color: #0d43af;
 
   --bg: #f7f9fa;
   --surface: #ffffff;
@@ -97,6 +105,7 @@ body.light-theme {
 
   --error: #c10007;
   --success: #008236;
+  --warning: #d97706;
   --error-translucent-15: rgba(193, 0, 7, 0.08);
   --success-translucent-15: rgba(0, 130, 54, 0.08);
   --warning-translucent-15: rgba(245, 158, 11, 0.08);
@@ -143,6 +152,18 @@ textarea {
   -moz-user-select: text;
   -ms-user-select: text;
   user-select: text;
+}
+
+a {
+  color: var(--link-color);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s, opacity 0.2s;
+
+  &:hover {
+    color: var(--link-hover-color);
+    opacity: 0.9;
+  }
 }
 
 .app-root-wrapper {

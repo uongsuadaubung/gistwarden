@@ -10,6 +10,8 @@ import {
 export interface SelectOption {
   value: string | number;
   label: string;
+  isHeader?: boolean;
+  disabled?: boolean;
 }
 
 interface SelectProps {
@@ -46,8 +48,8 @@ export const Select: Component<SelectProps> = (props) => {
 
   const selectedOption = () => {
     return props.options.find((opt) =>
-      String(opt.value) === String(props.value)
-    ) || props.options[0];
+      !opt.isHeader && String(opt.value) === String(props.value)
+    ) || props.options.find((opt) => !opt.isHeader) || props.options[0];
   };
 
   const handleSelect = (val: string | number) => {
@@ -91,14 +93,23 @@ export const Select: Component<SelectProps> = (props) => {
         <div class="select-dropdown-options">
           <For each={props.options}>
             {(opt) => (
-              <div
-                class={`select-dropdown-item ${
-                  String(opt.value) === String(props.value) ? "selected" : ""
-                }`}
-                onClick={() => handleSelect(opt.value)}
+              <Show
+                when={!opt.isHeader}
+                fallback={
+                  <div class="select-dropdown-header">
+                    {opt.label}
+                  </div>
+                }
               >
-                {opt.label}
-              </div>
+                <div
+                  class={`select-dropdown-item ${
+                    String(opt.value) === String(props.value) ? "selected" : ""
+                  } ${opt.disabled ? "disabled" : ""}`}
+                  onClick={() => !opt.disabled && handleSelect(opt.value)}
+                >
+                  {opt.label}
+                </div>
+              </Show>
             )}
           </For>
         </div>
