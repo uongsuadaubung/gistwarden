@@ -7,7 +7,7 @@ import {
   Show,
 } from "solid-js";
 import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
-import { navigate, selectItem } from "@/core/navigation.ts";
+import { navigate, openItem, selectItem } from "@/core/navigation.ts";
 import { deleteVaultItems, saveItem } from "@/features/vault/vault-service.ts";
 import {
   confirm,
@@ -370,24 +370,15 @@ export const Vault: Component = () => {
 
   const handleCloneItem = async (item: VaultItem, e: MouseEvent) => {
     e.stopPropagation();
+    setActiveOptionsMenuId(""); // Close options dropdown
 
-    // Omit ID to force saveItem into the "New" creation path
-    const { id: _id, name, ...rest } = item;
-
-    const cloned = {
-      ...rest,
-      name: `${name} - ${t("vault_item_clone_suffix")}`,
+    const clonedItem: VaultItem = {
+      ...item,
+      id: "",
+      name: `${item.name} - ${t("vault_item_clone_suffix")}`,
     };
 
-    setGlobalLoading(true);
-    const res = await saveItem(cloned);
-    setGlobalLoading(false);
-    if (res.isOk()) {
-      showToast(t("toast_success"), "success");
-    } else {
-      showToast(t(res.error), "error");
-    }
-    setActiveOptionsMenuId(""); // Close options dropdown
+    await openItem(clonedItem, View.ItemEdit);
   };
 
   const handleDeleteItem = async (item: VaultItem, e: MouseEvent) => {
