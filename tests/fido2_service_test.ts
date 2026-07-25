@@ -45,6 +45,7 @@ const mockVaultItems: VaultItem[] = [
     login: {
       username: "user2",
       password: "123",
+      uris: [], // No URIs defined
     },
   },
 ];
@@ -59,14 +60,14 @@ Deno.test("fido2-service: findMatchingFido2Accounts matches by URI", () => {
   assertEquals(matches[0].name, "GitHub");
 });
 
-Deno.test("fido2-service: findMatchingFido2Accounts matches by Name", () => {
+Deno.test("fido2-service: findMatchingFido2Accounts ignores items without matching URI", () => {
   const matches = findMatchingFido2Accounts(
     mockVaultItems,
     "example.com",
     "https://example.com",
   );
-  assertEquals(matches.length, 1);
-  assertEquals(matches[0].name, "example.com");
+  // Item 2 has name "example.com" but no URIs -> must return 0 matches
+  assertEquals(matches.length, 0);
 });
 
 Deno.test("fido2-service: findMatchingFido2Credentials matches rpId", () => {

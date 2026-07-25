@@ -121,6 +121,10 @@ import {
       const requestId = crypto.randomUUID();
       pendingRequests.set(requestId, { resolve, reject });
 
+      const targetOrigin = window.location.origin !== "null"
+        ? window.location.origin
+        : "*";
+
       window.postMessage(
         {
           source: `${APP_NAME.toLowerCase()}-page-script`,
@@ -129,7 +133,7 @@ import {
           type,
           data,
         },
-        "*",
+        targetOrigin,
       );
     });
   }

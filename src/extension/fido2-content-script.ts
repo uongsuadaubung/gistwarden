@@ -36,6 +36,10 @@ window.addEventListener("message", async (event) => {
   if (sendResult.isOk()) {
     const response = sendResult.value;
 
+    const targetOrigin = window.location.origin !== "null"
+      ? window.location.origin
+      : "*";
+
     // Forward the response back to page script
     const parsed = Fido2ResponseSchema.safeParse(response);
     const resData = parsed.success
@@ -51,9 +55,13 @@ window.addEventListener("message", async (event) => {
         result: resData.result,
         error: resData.error,
       },
-      "*",
+      targetOrigin,
     );
   } else {
+    const targetOrigin = window.location.origin !== "null"
+      ? window.location.origin
+      : "*";
+
     window.postMessage(
       {
         source: `${APP_NAME.toLowerCase()}-content-script`,
@@ -62,7 +70,7 @@ window.addEventListener("message", async (event) => {
         success: false,
         error: sendResult.error,
       },
-      "*",
+      targetOrigin,
     );
   }
 });

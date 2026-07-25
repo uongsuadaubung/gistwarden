@@ -8,14 +8,13 @@ export function isMatchingDomain(item: VaultItem, domain: string): boolean {
   const targetBase = getBaseDomain(domain);
   if (!targetBase) return false;
 
-  if (item.name.toLowerCase().includes(targetBase)) return true;
-  if (item.login.uris) {
-    return item.login.uris.some((u) => {
-      const itemBase = getBaseDomain(u.uri);
-      return itemBase && itemBase === targetBase;
-    });
-  }
-  return false;
+  const uris = item.login.uris;
+  if (!uris || uris.length === 0) return false;
+
+  return uris.some((u) => {
+    const itemBase = getBaseDomain(u.uri);
+    return Boolean(itemBase && itemBase === targetBase);
+  });
 }
 
 export function isExactDomainMatch(item: VaultItem, domain: string): boolean {
@@ -24,14 +23,13 @@ export function isExactDomainMatch(item: VaultItem, domain: string): boolean {
   const targetHost = getHostname(domain);
   if (!targetHost) return false;
 
-  if (item.name.toLowerCase().includes(targetHost)) return true;
-  if (item.login.uris) {
-    return item.login.uris.some((u) => {
-      const itemHost = getHostname(u.uri);
-      return itemHost && itemHost === targetHost;
-    });
-  }
-  return false;
+  const uris = item.login.uris;
+  if (!uris || uris.length === 0) return false;
+
+  return uris.some((u) => {
+    const itemHost = getHostname(u.uri);
+    return Boolean(itemHost && itemHost === targetHost);
+  });
 }
 
 export function sortVaultItemsByName(items: VaultItem[]): VaultItem[] {

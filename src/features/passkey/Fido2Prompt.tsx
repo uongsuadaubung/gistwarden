@@ -92,11 +92,43 @@ export const Fido2Prompt: Component = () => {
     }
   };
 
-  onMount(async () => {
-    // If vault is already unlocked, load pending request immediately
-    if (!accountStore.isLocked) {
-      await loadPendingRequest();
+  // Reactive effect to re-run matching whenever vault items or pending request update
+  createEffect(() => {
+    const req = pendingReq();
+    const items = accountStore.vaultItems;
+    if (!accountStore.isLocked && req) {
+      if (req.type === "get") {
+        let rpId = req.options.rpId;
+        if (!rpId) {
+          const safeParseUrl = Result.fromThrowable(
+            (u: string) => new URL(u),
+            () => new Error(),
+          );
+          const parseResult = safeParseUrl(req.origin);
+          rpId = parseResult.map((u) => u.hostname).unwrapOr(req.origin);
+        }
+        const list = findMatchingFido2Credentials(items, rpId);
+        setMatchingCredentials(list);
+      } else if (req.type === "create") {
+        const rpId = req.options.rp?.id || req.options.rp?.name || "";
+        const matches = findMatchingFido2Accounts(items, rpId, req.origin);
+        setMatchingAccounts(matches);
+        if (matches.length > 0) {
+          if (selectedAccountIndex() === null) {
+            setSelectedAccountIndex(0);
+            initPasskeyOptions(matches[0]);
+          }
+        } else {
+          setSelectedAccountIndex(null);
+          setSelectedPasskeyOption("add");
+        }
+      }
     }
+  });
+
+  onMount(async () => {
+    // Load pending request
+    await loadPendingRequest();
 
     // Set up heartbeat timer to keep Background Service Worker alive
     const timer = setInterval(() => {

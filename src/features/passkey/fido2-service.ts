@@ -73,25 +73,14 @@ export function findMatchingFido2Accounts(
   return vaultItems.filter((item): item is LoginVaultItem => {
     if (item.type !== VaultItemType.Login || !item.login) return false;
 
-    if (item.login.uris) {
-      const hasMatchingUri = item.login.uris.some((u) => {
-        const uriHost = getDomainFromUrl(u.uri);
-        return isDomainMatch(uriHost, rpIdNormalized) ||
-          isDomainMatch(uriHost, originHost);
-      });
-      if (hasMatchingUri) return true;
-    }
+    const uris = item.login.uris;
+    if (!uris || uris.length === 0) return false;
 
-    const itemName = item.name.toLowerCase().trim();
-    if (
-      itemName === rpIdNormalized ||
-      itemName === originHost ||
-      isDomainMatch(itemName, rpIdNormalized)
-    ) {
-      return true;
-    }
-
-    return false;
+    return uris.some((u) => {
+      const uriHost = getDomainFromUrl(u.uri);
+      return isDomainMatch(uriHost, rpIdNormalized) ||
+        isDomainMatch(uriHost, originHost);
+    });
   });
 }
 
@@ -100,11 +89,19 @@ export function findMatchingFido2Credentials(
   rpId: string,
 ): MatchingPasskey[] {
   const list: MatchingPasskey[] = [];
+  const targetRpId = rpId?.trim().toLowerCase() || "";
+  const targetHost = getDomainFromUrl(rpId);
+
   vaultItems.forEach((item) => {
     if (item.type !== VaultItemType.Login) return;
     if (item.login.fido2Credentials) {
       item.login.fido2Credentials.forEach((cred: Fido2Credential) => {
-        if (cred.rpId?.trim().toLowerCase() === rpId?.trim().toLowerCase()) {
+        const credRpId = cred.rpId?.trim().toLowerCase() || "";
+        const credHost = getDomainFromUrl(cred.rpId || "");
+        const isMatch = credRpId === targetRpId ||
+          (!!credHost && !!targetHost && isDomainMatch(credHost, targetHost));
+
+        if (isMatch) {
           list.push({
             vaultItemId: item.id,
             vaultItemName: item.name,
