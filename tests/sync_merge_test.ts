@@ -1,14 +1,14 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { mergeVaultItems } from "@/features/sync/sync-merge.ts";
-import {
-  type CardVaultItem,
-  type IdentityVaultItem,
-  type LoginVaultItem,
-  type SecureNoteVaultItem,
-  type SshKeyVaultItem,
-  type VaultItem,
-  VaultItemType,
-} from "@/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
+import type {
+  CardVaultItem,
+  IdentityVaultItem,
+  LoginVaultItem,
+  SecureNoteVaultItem,
+  SshKeyVaultItem,
+  VaultItem,
+} from "@/features/vault/vault-schemas.ts";
 
 const createMockLogin = (
   id: string,

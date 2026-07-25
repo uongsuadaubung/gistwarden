@@ -10,7 +10,7 @@ import {
   Switch,
 } from "solid-js";
 import { Result } from "neverthrow";
-import { store } from "@/core/store.ts";
+import { accountStore, settingsStore } from "@/core/store.ts";
 import { unlock } from "@/features/auth/auth-service.ts";
 import { unlockWithPin } from "@/features/auth/pin-service.ts";
 import { setGlobalLoading } from "@/core/ui-service.ts";
@@ -20,10 +20,8 @@ import {
   MSG_GET_PENDING_FIDO2_REQUEST,
 } from "@/core/constants.ts";
 import { notifyBackground, sendMessageToBackground } from "@/core/messaging.ts";
-import {
-  GetPendingFido2RequestResponseSchema,
-  type LoginVaultItem,
-} from "@/core/types.ts";
+import { GetPendingFido2RequestResponseSchema } from "@/features/passkey/fido2-schemas.ts";
+import type { LoginVaultItem } from "@/features/vault/vault-schemas.ts";
 import {
   assertFido2Passkey,
   type Fido2Request,
@@ -55,10 +53,10 @@ export const Fido2Prompt: Component = () => {
   const [pin, setPin] = createSignal("");
 
   createEffect(() => {
-    if (store.isLoaded) {
-      if (store.pinUnlockEnabled) {
-        if (store.requireMasterPasswordOnRestart) {
-          setViewMode(store.sessionUnlocked ? "pin" : "masterPassword");
+    if (accountStore.isLoaded && settingsStore.isLoaded) {
+      if (accountStore.pinUnlockEnabled) {
+        if (settingsStore.requireMasterPasswordOnRestart) {
+          setViewMode(accountStore.sessionUnlocked ? "pin" : "masterPassword");
         } else {
           setViewMode("pin");
         }
@@ -96,7 +94,7 @@ export const Fido2Prompt: Component = () => {
 
   onMount(async () => {
     // If vault is already unlocked, load pending request immediately
-    if (!store.isLocked) {
+    if (!accountStore.isLocked) {
       await loadPendingRequest();
     }
 
@@ -114,7 +112,11 @@ export const Fido2Prompt: Component = () => {
     rpId: string,
     origin: string,
   ) => {
-    const matches = findMatchingFido2Accounts(store.vaultItems, rpId, origin);
+    const matches = findMatchingFido2Accounts(
+      accountStore.vaultItems,
+      rpId,
+      origin,
+    );
     setMatchingAccounts(matches);
     if (matches.length > 0) {
       setSelectedAccountIndex(0);
@@ -172,7 +174,7 @@ export const Fido2Prompt: Component = () => {
   };
 
   const findMatchingPasskeys = (rpId: string) => {
-    const list = findMatchingFido2Credentials(store.vaultItems, rpId);
+    const list = findMatchingFido2Credentials(accountStore.vaultItems, rpId);
     setMatchingCredentials(list);
   };
 
@@ -270,7 +272,7 @@ export const Fido2Prompt: Component = () => {
       <div class="fido2-body">
         <Switch>
           {/* 1. Chưa đăng nhập / Chưa cấu hình GitHub */}
-          <Match when={!store.githubConfigured}>
+          <Match when={!accountStore.githubConfigured}>
             <div class="prompt-content">
               <div class="prompt-icon-wrapper">
                 <div class="fido2-large-icon bg-danger">
@@ -292,7 +294,7 @@ export const Fido2Prompt: Component = () => {
           </Match>
 
           {/* 2. Đã cấu hình nhưng két sắt bị khóa */}
-          <Match when={store.isLocked}>
+          <Match when={accountStore.isLocked}>
             <div class="prompt-content">
               <div class="prompt-icon-wrapper">
                 <div class="fido2-large-icon bg-warning">
@@ -378,7 +380,7 @@ export const Fido2Prompt: Component = () => {
                       />
                     </div>
 
-                    <Show when={store.pinUnlockEnabled}>
+                    <Show when={accountStore.pinUnlockEnabled}>
                       <div class="text-center mt-8 mb-12">
                         <a
                           href="#"
@@ -416,7 +418,7 @@ export const Fido2Prompt: Component = () => {
         </Switch>
 
         {/* 3. Đã mở khóa két sắt */}
-        <Show when={store.githubConfigured && !store.isLocked}>
+        <Show when={accountStore.githubConfigured && !accountStore.isLocked}>
           <div class="prompt-content">
             <Show when={error()}>
               <div class="alert alert-danger mb-16">{error()}</div>

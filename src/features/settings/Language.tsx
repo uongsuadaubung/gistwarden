@@ -1,5 +1,5 @@
 import { type Component, Show } from "solid-js";
-import { store } from "@/core/store.ts";
+import { settingsStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { updateLanguage } from "@/core/ui-service.ts";
@@ -33,7 +33,7 @@ export const Language: Component = () => {
               <EnIcon width="20" height="20" />
               <span class="font-sz-14">{t("settings_lang_en")}</span>
             </div>
-            <Show when={store.language === "en"}>
+            <Show when={settingsStore.language === "en"}>
               <svg
                 class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"
@@ -60,7 +60,7 @@ export const Language: Component = () => {
               <ViIcon width="20" height="20" />
               <span class="font-sz-14">{t("settings_lang_vi")}</span>
             </div>
-            <Show when={store.language === "vi"}>
+            <Show when={settingsStore.language === "vi"}>
               <svg
                 class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"

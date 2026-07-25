@@ -1,5 +1,5 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { type IdentityVaultItem } from "@/core/types.ts";
+import type { IdentityVaultItem } from "@/features/vault/vault-schemas.ts";
 import { t } from "@/core/i18n.ts";
 import { CopyIcon, EyeIcon, EyeOffIcon } from "@/icons/svg/index.ts";
 

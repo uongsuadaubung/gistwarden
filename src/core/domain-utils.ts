@@ -1,6 +1,7 @@
 import { getDomain, getHostname as tldtsGetHostname } from "tldts";
 import { Result } from "neverthrow";
-import { isLoginItem, type VaultItem } from "@/core/types.ts";
+import { isLoginItem } from "@/features/vault/vault-types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 
 /**
  * Phân tích URL an toàn sử dụng neverthrow Result.

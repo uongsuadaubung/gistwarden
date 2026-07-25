@@ -1,5 +1,6 @@
 import Papa from "papaparse";
-import { type VaultItem, VaultItemType } from "@/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 
 /**
  * Xuất danh sách tài khoản sang tệp CSV của trình duyệt (Chrome, Edge).

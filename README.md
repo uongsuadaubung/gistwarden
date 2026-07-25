@@ -159,41 +159,6 @@ personal GitHub Gists. Follow these simple steps:
 
 ---
 
-## 📂 Project Structure
-
-```text
-totp-generate/
-├── .github/              # GitHub Actions workflows configuration
-├── dist/                 # Compiled production outputs (Chrome & Firefox)
-├── src/                  # Main extension source code
-│   ├── components/       # UI Components (SolidJS)
-│   │   └── guide/        # Guide page specific tabs
-│   ├── domains/          # Domain Logic
-│   │   └── github/       # GitHub Gist API client
-│   ├── extension/        # Extension Entrypoints
-│   │   ├── background.ts # Background script managing OAuth & FIDO2 prompts
-│   │   ├── fido2-content-script.ts # Injected scripts detecting WebAuthn credentials
-│   │   └── fido2-page-script.ts    # Direct injection page hooks
-│   ├── icons/            # Asset SVG icons
-│   ├── images/           # Asset images for visual user guide
-│   ├── shared/           # Common utilities, constants, locales, and store states
-│   │   ├── locales/      # Translation files (en.ts, vi.ts)
-│   │   ├── i18n.ts       # Localization engine
-│   │   └── store.ts      # Global reactive SolidJS state store
-│   ├── views/            # Screen views (Login, Vault, Settings, Welcome onboarding)
-│   ├── guide.html        # Detailed user guide HTML anchor
-│   ├── popup.html        # Popup window HTML anchor
-│   ├── popup-entry.tsx   # SolidJS popup renderer entrypoint
-│   └── guide-entry.tsx   # SolidJS guide renderer entrypoint
-├── tests/                # Unit test suites (Argon2id, AES verification)
-├── build.ts              # esbuild compiler & SCSS post-processor (TypeScript)
-├── deno.json             # Deno configuration, tasks, and compiler settings
-├── deno.lock             # Deno lock file managing dependencies securely
-└── version.ts            # Automatic versioning bumping script (TypeScript)
-```
-
----
-
 ## 🏗️ Development & Build Commands
 
 This project uses **Deno** natively to develop, lint, format, and bundle.

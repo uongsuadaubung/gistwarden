@@ -1,6 +1,6 @@
 import { argon2id } from "hash-wasm";
 import {
-  getAllSettings,
+  getAccountSettings,
   getSessionItem,
   removeSessionItem,
   setSessionItem,
@@ -194,7 +194,7 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
   );
   const ivB64 = ivRes.isOk() ? ivRes.value : null;
   const ciphertextB64 = ciphertextRes.isOk() ? ciphertextRes.value : null;
-  const settingsRes = await getAllSettings();
+  const settingsRes = await getAccountSettings();
   if (settingsRes.isErr()) {
     return false;
   }
@@ -226,13 +226,13 @@ export async function hashValue(
 ): Promise<Result<string, TranslationKey>> {
   let saltStr = saltBase64;
   if (!saltStr) {
-    const settingsRes = await getAllSettings();
+    const settingsRes = await getAccountSettings();
     if (settingsRes.isErr() || !settingsRes.value.salt) {
       return err("login_error_wrong_pin");
     }
     saltStr = settingsRes.value.salt;
   }
-  const saltBufRes = base64ToArrayBuffer(saltStr);
+  const saltBufRes = base64ToArrayBuffer(saltStr || "");
   if (saltBufRes.isErr()) return err(saltBufRes.error);
   const saltUi8 = new Uint8Array(saltBufRes.value);
 

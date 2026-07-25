@@ -1,5 +1,12 @@
-import { store } from "@/core/store.ts";
-import { updateSettings } from "@/core/storage.ts";
+import {
+  accountStore,
+  setAccountStore,
+  setSettingsStore,
+} from "@/core/store.ts";
+import {
+  updateAccountSettings,
+  updateExtensionSettings,
+} from "@/core/storage.ts";
 import {
   arrayBufferToBase64,
   base64ToArrayBuffer,
@@ -40,11 +47,21 @@ export async function setPinUnlock(
   }
   const { iv, ciphertext } = encryptRes.value;
 
-  await updateSettings({
+  setAccountStore({
     pinUnlockEnabled: true,
     pinUnlockValue: ciphertext,
     pinUnlockIv: iv,
     pinUnlockSalt: pinSaltBase64,
+  });
+  setSettingsStore("requireMasterPasswordOnRestart", requireRestart);
+
+  await updateAccountSettings({
+    pinUnlockEnabled: true,
+    pinUnlockValue: ciphertext,
+    pinUnlockIv: iv,
+    pinUnlockSalt: pinSaltBase64,
+  });
+  await updateExtensionSettings({
     requireMasterPasswordOnRestart: requireRestart,
   });
 
@@ -54,11 +71,15 @@ export async function setPinUnlock(
 export async function unlockWithPin(
   pin: string,
 ): Promise<Result<void, TranslationKey>> {
-  if (!store.pinUnlockValue || !store.pinUnlockIv || !store.pinUnlockSalt) {
+  if (
+    !accountStore.pinUnlockValue ||
+    !accountStore.pinUnlockIv ||
+    !accountStore.pinUnlockSalt
+  ) {
     return err("login_error_wrong_pin");
   }
 
-  const saltBufferRes = base64ToArrayBuffer(store.pinUnlockSalt);
+  const saltBufferRes = base64ToArrayBuffer(accountStore.pinUnlockSalt);
   if (saltBufferRes.isErr()) {
     return err("login_error_wrong_pin");
   }
@@ -68,8 +89,8 @@ export async function unlockWithPin(
   }
   const pinKey = pinKeyRes.value;
   const decryptRes = await decryptData(
-    store.pinUnlockValue,
-    store.pinUnlockIv,
+    accountStore.pinUnlockValue,
+    accountStore.pinUnlockIv,
     pinKey,
   );
   if (decryptRes.isErr()) {
@@ -98,11 +119,21 @@ export async function unlockWithPin(
 }
 
 export async function disablePinUnlock(): Promise<void> {
-  await updateSettings({
+  setAccountStore({
     pinUnlockEnabled: false,
     pinUnlockValue: "",
     pinUnlockIv: "",
     pinUnlockSalt: "",
+  });
+  setSettingsStore("requireMasterPasswordOnRestart", true);
+
+  await updateAccountSettings({
+    pinUnlockEnabled: false,
+    pinUnlockValue: "",
+    pinUnlockIv: "",
+    pinUnlockSalt: "",
+  });
+  await updateExtensionSettings({
     requireMasterPasswordOnRestart: true,
   });
 }

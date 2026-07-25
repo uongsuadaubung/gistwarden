@@ -1,16 +1,18 @@
 import { z } from "zod";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
+import type {
+  CardVaultItem,
+  IdentityVaultItem,
+  LoginVaultItem,
+  SecureNoteVaultItem,
+  SshKeyVaultItem,
+  VaultItem,
+} from "@/features/vault/vault-schemas.ts";
 import {
-  type CardVaultItem,
-  Fido2CredentialSchema,
-  type IdentityVaultItem,
   LoginUriSchema,
-  type LoginVaultItem,
-  type SecureNoteVaultItem,
-  type SshKeyVaultItem,
   VaultFieldSchema,
-  type VaultItem,
-  VaultItemType,
-} from "@/core/types.ts";
+} from "@/features/vault/vault-schemas.ts";
+import { Fido2CredentialSchema } from "@/features/passkey/fido2-schemas.ts";
 import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
 
 export const ItemEditFormSchema = z.object({

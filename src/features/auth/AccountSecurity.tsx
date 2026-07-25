@@ -1,15 +1,15 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { store } from "@/core/store.ts";
+import { accountStore, setSettingsStore, settingsStore } from "@/core/store.ts";
+import { View } from "@/core/types.ts";
 import {
   type VaultTimeoutAction,
   type VaultTimeoutValue,
-  View,
-} from "@/core/types.ts";
+} from "@/core/storage-schemas.ts";
 import { navigate } from "@/core/navigation.ts";
 import { disablePinUnlock, setPinUnlock } from "@/features/auth/pin-service.ts";
 import { updateSessionTimeout } from "@/features/auth/session-service.ts";
 import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
-import { updateSettings } from "@/core/storage.ts";
+import { updateExtensionSettings } from "@/core/storage.ts";
 import { ChevronRightIcon, KeyIcon } from "@/icons/svg/index.ts";
 import { t } from "@/core/i18n.ts";
 import SetPinModal from "@/features/auth/SetPinModal.tsx";
@@ -62,7 +62,8 @@ export const AccountSecurity: Component = () => {
   };
 
   const handleRequireRestartChange = async (checked: boolean) => {
-    await updateSettings({ requireMasterPasswordOnRestart: checked });
+    setSettingsStore("requireMasterPasswordOnRestart", checked);
+    await updateExtensionSettings({ requireMasterPasswordOnRestart: checked });
   };
 
   const handleTimeoutChange = async (
@@ -76,12 +77,10 @@ export const AccountSecurity: Component = () => {
     );
   };
 
-  // Using a trick in SolidJS to trigger reactively for store state
-  // because nested setStore doesn't trigger unless we access it.
-  const isPinEnabled = () => store.pinUnlockEnabled;
-  const isRequireRestart = () => store.requireMasterPasswordOnRestart;
-  const currentTimeout = () => store.vaultTimeout;
-  const currentTimeoutAction = () => store.vaultTimeoutAction;
+  const isPinEnabled = () => accountStore.pinUnlockEnabled;
+  const isRequireRestart = () => settingsStore.requireMasterPasswordOnRestart;
+  const currentTimeout = () => settingsStore.vaultTimeout;
+  const currentTimeoutAction = () => settingsStore.vaultTimeoutAction;
 
   return (
     <div class="app-container">
@@ -118,19 +117,18 @@ export const AccountSecurity: Component = () => {
           </Show>
         </div>
 
-        {/* Section 2: Session Timeout */}
-        <div class="detail-section-title">{t("session_timeout_header")}</div>
-        <div class="card p-16 mb-20 overflow-visible">
-          <SessionTimeoutSettings
-            timeout={currentTimeout()}
-            action={currentTimeoutAction()}
-            onChange={handleTimeoutChange}
-          />
-        </div>
+        {/* Section 2: Vault Timeout Settings */}
+        <SessionTimeoutSettings
+          timeout={currentTimeout()}
+          action={currentTimeoutAction()}
+          onChange={handleTimeoutChange}
+        />
 
-        {/* Section 3: Master Password */}
-        <div class="detail-section-title">{t("settings_change_mp_title")}</div>
-        <div class="card card-list mb-0">
+        {/* Section 3: Change Master Password Action */}
+        <div class="detail-section-title">
+          {t("settings_change_mp_title")}
+        </div>
+        <div class="card card-list">
           <div
             class="setting-row"
             onClick={() => navigate(View.ChangeMasterPassword)}
@@ -138,21 +136,25 @@ export const AccountSecurity: Component = () => {
             <div class="setting-row-left">
               <KeyIcon />
               <div>
-                <div class="setting-label">{t("settings_change_mp")}</div>
-                <div class="setting-sub">{t("settings_change_mp_sub")}</div>
+                <div class="setting-label">
+                  {t("settings_change_mp_title")}
+                </div>
+                <div class="setting-sub">
+                  {t("settings_change_mp_sub")}
+                </div>
               </div>
             </div>
             <ChevronRightIcon />
           </div>
         </div>
-      </div>
 
-      {/* Set PIN Modal */}
-      <SetPinModal
-        isOpen={isPinModalOpen()}
-        onClose={() => setIsPinModalOpen(false)}
-        onSave={handleSavePin}
-      />
+        {/* Modal đặt mã PIN */}
+        <SetPinModal
+          isOpen={isPinModalOpen()}
+          onClose={() => setIsPinModalOpen(false)}
+          onSave={handleSavePin}
+        />
+      </div>
     </div>
   );
 };

@@ -166,41 +166,6 @@ Gists cá nhân của bạn. Thực hiện theo các bước đơn giản sau:
 
 ---
 
-## 📂 Cấu trúc thư mục dự án
-
-```text
-totp-generate/
-├── .github/              # Cấu hình GitHub Actions chạy tự động hóa
-├── dist/                 # Thư mục đầu ra sản phẩm (Chrome & Firefox)
-├── src/                  # Mã nguồn chính của extension
-│   ├── components/       # Các component giao diện SolidJS
-│   │   └── guide/        # Các tab nội dung trang hướng dẫn sử dụng
-│   ├── domains/          # Logic nghiệp vụ
-│   │   └── github/       # Client gọi API GitHub Gist
-│   ├── extension/        # Điểm khởi chạy extension
-│   │   ├── background.ts # Script chạy ngầm quản lý OAuth và FIDO2
-│   │   ├── fido2-content-script.ts # Script chèn phát hiện khóa WebAuthn
-│   │   └── fido2-page-script.ts    # Script can thiệp trang web tạo/xác thực khóa
-│   ├── icons/            # File icon dạng SVG
-│   ├── images/           # Ảnh minh họa trực quan cho trang hướng dẫn
-│   ├── shared/           # Tiện ích chung, hằng số, locales và trạng thái store
-│   │   ├── locales/      # File dịch thuật tiếng Anh (en.ts) và tiếng Việt (vi.ts)
-│   │   ├── i18n.ts       # Công cụ xử lý đa ngôn ngữ
-│   │   └── store.ts      # Quản lý trạng thái SolidJS store
-│   ├── views/            # Các màn hình chính (Đăng nhập, Két sắt, Cài đặt, Chào mừng)
-│   ├── guide.html        # Khung HTML trang Hướng dẫn sử dụng
-│   ├── popup.html        # Khung HTML giao diện popup nhỏ
-│   ├── popup-entry.tsx   # Điểm render SolidJS cho cửa sổ popup
-│   └── guide-entry.tsx   # Điểm render SolidJS cho trang hướng dẫn
-├── tests/                # Bộ kiểm thử đơn vị (kiểm tra Argon2id, mã hóa AES)
-├── build.ts              # Script biên dịch esbuild và xử lý SCSS (TypeScript)
-├── deno.json             # File cấu hình task Deno và trình biên dịch
-├── deno.lock             # File khóa phiên bản thư viện Deno an toàn
-└── version.ts            # Script tự động nâng số phiên bản (TypeScript)
-```
-
----
-
 ## 🏗️ Các lệnh phát triển và đóng gói
 
 Dự án sử dụng **Deno** nguyên bản để phát triển, kiểm tra cú pháp, định dạng và

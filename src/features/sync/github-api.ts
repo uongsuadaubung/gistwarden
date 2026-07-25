@@ -1,22 +1,24 @@
 import { z } from "zod";
 import {
-  getAllSettings,
+  getAccountSettings,
   getGithubToken,
-  GithubUserSchema,
-  updateSettings,
+  updateAccountSettings,
 } from "@/core/storage.ts";
+import {
+  DownloadFromGistResponseSchema,
+  GithubUserSchema,
+} from "@/core/storage-schemas.ts";
+import {
+  EncryptedPayloadSchema,
+  type GistContentPayload,
+} from "@/features/sync/sync-schemas.ts";
 import { APP_NAME, MSG_DOWNLOAD_FROM_GIST } from "@/core/constants.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { fetchText } from "@/core/fetch-utils.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
-import { store } from "@/core/store.ts";
+import { accountStore } from "@/core/store.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
-import {
-  DownloadFromGistResponseSchema,
-  EncryptedPayloadSchema,
-  type GistContentPayload,
-} from "@/core/types.ts";
 
 const GITHUB_API_BASE = "https://api.github.com";
 
@@ -159,7 +161,7 @@ export async function updateGist(
 export async function uploadToGist(
   content: string,
 ): Promise<Result<void, TranslationKey>> {
-  const settingsRes = await getAllSettings();
+  const settingsRes = await getAccountSettings();
   if (settingsRes.isErr()) return err(settingsRes.error);
   let gistId = settingsRes.value.gistId;
 
@@ -184,7 +186,7 @@ export async function uploadToGist(
     gistId = createRes.value.id;
   }
 
-  const updateSettingsRes = await updateSettings({
+  const updateSettingsRes = await updateAccountSettings({
     gistId,
     lastSync: Date.now(),
   });
@@ -197,7 +199,7 @@ export async function uploadToGist(
 export async function downloadFromGist(): Promise<
   Result<string, TranslationKey>
 > {
-  const settingsRes = await getAllSettings();
+  const settingsRes = await getAccountSettings();
   if (settingsRes.isErr()) return err(settingsRes.error);
   let gistId = settingsRes.value.gistId;
 
@@ -210,7 +212,7 @@ export async function downloadFromGist(): Promise<
     if (!gistId) {
       return err("github_error_gist_not_found");
     }
-    const updateSettingsRes = await updateSettings({ gistId });
+    const updateSettingsRes = await updateAccountSettings({ gistId });
     if (updateSettingsRes.isErr()) {
       return err(updateSettingsRes.error);
     }
@@ -239,7 +241,9 @@ export async function downloadFromGist(): Promise<
     content = fetchRes.value;
   }
 
-  const updateSettingsRes = await updateSettings({ lastSync: Date.now() });
+  const updateSettingsRes = await updateAccountSettings({
+    lastSync: Date.now(),
+  });
   if (updateSettingsRes.isErr()) {
     return err(updateSettingsRes.error);
   }
@@ -309,8 +313,8 @@ export async function fetchGistContent(): Promise<
 > {
   let rawContent = "";
 
-  if (store.gistId) {
-    const publicRes = await downloadFromGistPublic(store.gistId);
+  if (accountStore.gistId) {
+    const publicRes = await downloadFromGistPublic(accountStore.gistId);
     if (publicRes.isErr()) {
       return err(publicRes.error);
     }

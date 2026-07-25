@@ -8,7 +8,7 @@ import {
   Switch,
   untrack,
 } from "solid-js";
-import { store } from "@/core/store.ts";
+import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
 import { setupGithub } from "@/features/sync/github-auth.ts";
 import { fetchGistContent } from "@/features/sync/github-api.ts";
 
@@ -35,7 +35,7 @@ import {
   OAUTH_WORKER_URL,
   SESSION_KEY_PENDING_GITHUB_TOKEN,
 } from "@/core/constants.ts";
-import { type LoginViewMode } from "@/core/types.ts";
+import { type LoginViewMode } from "@/core/storage-schemas.ts";
 
 import { sendMessageToBackground } from "@/core/messaging.ts";
 
@@ -54,8 +54,8 @@ export const Login: Component = () => {
   >("exists");
 
   createEffect(() => {
-    const isConfigured = store.githubConfigured;
-    const hasSalt = store.salt;
+    const isConfigured = accountStore.githubConfigured;
+    const hasSalt = accountStore.salt;
     const mode = viewMode();
 
     if (isConfigured && !hasSalt && mode === "masterPassword") {
@@ -71,7 +71,7 @@ export const Login: Component = () => {
         }
       })();
     } else {
-      if (!untrack(() => store.globalLoading)) {
+      if (!untrack(() => uiStore.globalLoading)) {
         setGistStatus("exists");
       }
     }
@@ -95,10 +95,10 @@ export const Login: Component = () => {
   });
 
   createEffect(() => {
-    if (store.isLoaded) {
-      if (store.pinUnlockEnabled) {
-        if (store.requireMasterPasswordOnRestart) {
-          setViewMode(store.sessionUnlocked ? "pin" : "masterPassword");
+    if (accountStore.isLoaded && settingsStore.isLoaded) {
+      if (accountStore.pinUnlockEnabled) {
+        if (settingsStore.requireMasterPasswordOnRestart) {
+          setViewMode(accountStore.sessionUnlocked ? "pin" : "masterPassword");
         } else {
           setViewMode("pin");
         }
@@ -198,7 +198,7 @@ export const Login: Component = () => {
   };
 
   const handleForgotPassword = async () => {
-    const gistId = store.gistId;
+    const gistId = accountStore.gistId;
     if (
       await confirm(
         t("login_forgot_password_title"),
@@ -219,7 +219,9 @@ export const Login: Component = () => {
       <div class="login-lang-selector">
         <button
           type="button"
-          class={`lang-toggle-btn ${store.language === "en" ? "active" : ""}`}
+          class={`lang-toggle-btn ${
+            settingsStore.language === "en" ? "active" : ""
+          }`}
           onClick={() => updateLanguage("en")}
         >
           EN
@@ -227,7 +229,9 @@ export const Login: Component = () => {
         <span class="lang-divider">|</span>
         <button
           type="button"
-          class={`lang-toggle-btn ${store.language === "vi" ? "active" : ""}`}
+          class={`lang-toggle-btn ${
+            settingsStore.language === "vi" ? "active" : ""
+          }`}
           onClick={() => updateLanguage("vi")}
         >
           VI
@@ -239,7 +243,7 @@ export const Login: Component = () => {
         <h2 class="login-brand-title">{APP_NAME}</h2>
         <p class="login-subtitle">
           <Show
-            when={store.githubConfigured}
+            when={accountStore.githubConfigured}
             fallback={t("login_title_setup")}
           >
             {t("login_title_locked")}
@@ -258,7 +262,7 @@ export const Login: Component = () => {
       </Show>
 
       <Show
-        when={store.githubConfigured}
+        when={accountStore.githubConfigured}
         fallback={
           <GithubSetupForm
             onSaveToken={handleSaveToken}

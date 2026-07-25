@@ -1,30 +1,51 @@
 import { createStore } from "solid-js/store";
-import type { GithubUser } from "@/core/storage.ts";
+import { ThemeMode, View } from "@/core/types.ts";
 import {
   type ConfirmType,
-  ThemeMode,
+  type GithubUser,
   type ThemeModeType,
   type ToastType,
-  type VaultItem,
   type VaultTimeoutAction,
   type VaultTimeoutValue,
-  View,
-} from "@/core/types.ts";
+} from "@/core/storage-schemas.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 
-export interface AppStore {
+export interface ExtensionSettingsStore {
+  language: "en" | "vi";
+  welcomeAccepted: boolean;
+  theme: ThemeModeType;
+  requireMasterPasswordOnRestart: boolean;
+  vaultTimeout: VaultTimeoutValue;
+  vaultTimeoutAction: VaultTimeoutAction;
+  timeOffset: number;
+  autoSubmitOnAutofill: boolean;
+  showAutofillSuggestionsOnFocus: boolean;
+  enablePageAnimations: boolean;
+  isLoaded: boolean;
+}
+
+export interface AccountStore {
   githubToken: string;
   githubConfigured: boolean;
   gistId: string;
   salt: string;
   cachedGithubUser: GithubUser | null;
   lastSync: number;
-  language: "en" | "vi";
-  welcomeAccepted: boolean;
 
   isLoaded: boolean;
   isLocked: boolean;
-  view: View;
+  sessionUnlocked: boolean;
   vaultItems: VaultItem[];
+
+  // PIN settings
+  pinUnlockEnabled: boolean;
+  pinUnlockValue: string;
+  pinUnlockIv: string;
+  pinUnlockSalt: string;
+}
+
+export interface UiSessionStore {
+  view: View;
   selectedItem: VaultItem | null;
 
   syncing: boolean;
@@ -34,7 +55,7 @@ export interface AppStore {
   toastMessage: string;
   toastType: ToastType;
 
-  // Reusable Confirmation Modal States
+  // Confirmation & Reprompt Modal States
   confirmModal: {
     isOpen: boolean;
     title: string;
@@ -42,53 +63,55 @@ export interface AppStore {
     type: ConfirmType;
     resolve: ((value: boolean) => void) | null;
   };
-  // Master Password Reprompt Modal States
   repromptModal: {
     isOpen: boolean;
     resolve: ((value: boolean) => void) | null;
   };
+
   transitionClass: string;
-  theme: ThemeModeType;
   globalLoading: boolean;
   globalLoadingText: string;
-
-  // PIN settings
-  pinUnlockEnabled: boolean;
-  pinUnlockValue: string;
-  pinUnlockIv: string;
-  pinUnlockSalt: string;
-  requireMasterPasswordOnRestart: boolean;
-  // Session timeout settings
-  vaultTimeout: VaultTimeoutValue;
-  vaultTimeoutAction: VaultTimeoutAction;
-  sessionUnlocked: boolean;
-  timeOffset: number;
-  autoSubmitOnAutofill: boolean;
-  showAutofillSuggestionsOnFocus: boolean;
 }
 
-export const [store, setStore] = createStore<AppStore>({
+export const initialExtensionSettings: Omit<
+  ExtensionSettingsStore,
+  "isLoaded"
+> = {
+  language: "en",
+  welcomeAccepted: false,
+  theme: ThemeMode.Dark,
+  requireMasterPasswordOnRestart: true,
+  vaultTimeout: "onSystemLock",
+  vaultTimeoutAction: "lock",
+  timeOffset: 0,
+  autoSubmitOnAutofill: true,
+  showAutofillSuggestionsOnFocus: true,
+  enablePageAnimations: true,
+};
+
+export const initialAccountState: Omit<AccountStore, "isLoaded"> = {
   githubToken: "",
   githubConfigured: false,
   gistId: "",
   salt: "",
   cachedGithubUser: null,
   lastSync: 0,
-  language: "en",
-  welcomeAccepted: false,
-
-  isLoaded: false,
   isLocked: true,
-  view: View.Login,
+  sessionUnlocked: false,
   vaultItems: [],
-  selectedItem: null,
+  pinUnlockEnabled: false,
+  pinUnlockValue: "",
+  pinUnlockIv: "",
+  pinUnlockSalt: "",
+};
 
+export const initialUiState: UiSessionStore = {
+  view: View.Login,
+  selectedItem: null,
   syncing: false,
   syncError: "",
-
   toastMessage: "",
   toastType: "success",
-
   confirmModal: {
     isOpen: false,
     title: "",
@@ -101,19 +124,35 @@ export const [store, setStore] = createStore<AppStore>({
     resolve: null,
   },
   transitionClass: "",
-  theme: ThemeMode.Dark,
   globalLoading: false,
   globalLoadingText: "",
+};
 
-  pinUnlockEnabled: false,
-  pinUnlockValue: "",
-  pinUnlockIv: "",
-  pinUnlockSalt: "",
-  requireMasterPasswordOnRestart: true,
-  vaultTimeout: "onSystemLock",
-  vaultTimeoutAction: "lock",
-  sessionUnlocked: false,
-  timeOffset: 0,
-  autoSubmitOnAutofill: true,
-  showAutofillSuggestionsOnFocus: true,
+export const [settingsStore, setSettingsStore] = createStore<
+  ExtensionSettingsStore
+>({
+  ...initialExtensionSettings,
+  isLoaded: false,
 });
+
+export const [accountStore, setAccountStore] = createStore<AccountStore>({
+  ...initialAccountState,
+  isLoaded: false,
+});
+
+export const [uiStore, setUiStore] = createStore<UiSessionStore>({
+  ...initialUiState,
+});
+
+export function resetAccountStore(): void {
+  setAccountStore({
+    ...initialAccountState,
+    isLoaded: true,
+  });
+}
+
+export function resetUiStore(): void {
+  setUiStore({
+    ...initialUiState,
+  });
+}

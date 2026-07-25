@@ -1,5 +1,5 @@
 import { reconcile } from "solid-js/store";
-import { setStore, store } from "@/core/store.ts";
+import { accountStore, setAccountStore } from "@/core/store.ts";
 import { getSessionKey } from "@/core/crypto.ts";
 import { APP_NAME } from "@/core/constants.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
@@ -14,14 +14,17 @@ import { err, ok, Result } from "neverthrow";
 export async function importJsonData(
   jsonString: string,
 ): Promise<Result<number, TranslationKey>> {
-  const importRes = parseAndValidateImportJson(jsonString, store.vaultItems);
+  const importRes = parseAndValidateImportJson(
+    jsonString,
+    accountStore.vaultItems,
+  );
   if (importRes.isErr()) {
     return err(importRes.error);
   }
   const importVal = importRes.value;
 
   const key = await getSessionKey();
-  if (!key || !store.salt) {
+  if (!key || !accountStore.salt) {
     return err("login_title_locked");
   }
 
@@ -29,7 +32,7 @@ export async function importJsonData(
   const uploadRes = await syncVaultToGist(
     importVal.combinedItems,
     key,
-    store.salt,
+    accountStore.salt,
   );
 
   if (uploadRes.isErr()) {
@@ -37,7 +40,7 @@ export async function importJsonData(
   }
   const validatedList = uploadRes.value;
 
-  setStore(
+  setAccountStore(
     "vaultItems",
     reconcile(validatedList),
   );
@@ -50,8 +53,8 @@ export async function importCsvData(
   type: "browser" | "bitwarden",
 ): Promise<Result<number, TranslationKey>> {
   const importRes = type === "bitwarden"
-    ? parseAndValidateBitwardenCsv(csvString, store.vaultItems)
-    : parseAndValidateBrowserCsv(csvString, store.vaultItems);
+    ? parseAndValidateBitwardenCsv(csvString, accountStore.vaultItems)
+    : parseAndValidateBrowserCsv(csvString, accountStore.vaultItems);
 
   if (importRes.isErr()) {
     return err(importRes.error);
@@ -59,7 +62,7 @@ export async function importCsvData(
   const importVal = importRes.value;
 
   const key = await getSessionKey();
-  if (!key || !store.salt) {
+  if (!key || !accountStore.salt) {
     return err("login_title_locked");
   }
 
@@ -67,7 +70,7 @@ export async function importCsvData(
   const uploadRes = await syncVaultToGist(
     importVal.combinedItems,
     key,
-    store.salt,
+    accountStore.salt,
   );
 
   if (uploadRes.isErr()) {
@@ -75,7 +78,7 @@ export async function importCsvData(
   }
   const validatedList = uploadRes.value;
 
-  setStore(
+  setAccountStore(
     "vaultItems",
     reconcile(validatedList),
   );

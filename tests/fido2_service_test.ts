@@ -3,7 +3,8 @@ import {
   findMatchingFido2Accounts,
   findMatchingFido2Credentials,
 } from "../src/features/passkey/fido2-service.ts";
-import { type VaultItem, VaultItemType } from "../src/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 
 const mockVaultItems: VaultItem[] = [
   {

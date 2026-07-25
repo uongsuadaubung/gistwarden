@@ -1,5 +1,5 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { store } from "@/core/store.ts";
+import { accountStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { syncVault } from "@/features/sync/sync-service.ts";
@@ -103,8 +103,8 @@ export const VaultOptions: Component = () => {
                   {t("vault_options_sync_manual")}
                 </div>
                 <div class="setting-sub">
-                  {t("settings_last_sync")}: {store.lastSync
-                    ? new Date(store.lastSync).toLocaleTimeString()
+                  {t("settings_last_sync")}: {accountStore.lastSync
+                    ? new Date(accountStore.lastSync).toLocaleTimeString()
                     : t("settings_sync_never")}
                 </div>
               </div>

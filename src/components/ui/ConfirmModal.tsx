@@ -1,5 +1,5 @@
 import { type Component, Show } from "solid-js";
-import { store } from "@/core/store.ts";
+import { uiStore } from "@/core/store.ts";
 import { resolveConfirm } from "@/core/ui-service.ts";
 import Button from "@/components/ui/Button.tsx";
 import { t } from "@/core/i18n.ts";
@@ -7,20 +7,20 @@ import { t } from "@/core/i18n.ts";
 export const ConfirmModal: Component = () => {
   const boxClass = () => {
     const base = "confirm-modal-box";
-    const type = store.confirmModal.type || "info";
+    const type = uiStore.confirmModal.type || "info";
     return `${base} type-${type}`;
   };
 
   return (
-    <Show when={store.confirmModal.isOpen}>
+    <Show when={uiStore.confirmModal.isOpen}>
       <div class="confirm-modal-backdrop">
         <div class={boxClass()}>
           <h4 class="confirm-modal-title">
-            {store.confirmModal.title || t("confirm_title")}
+            {uiStore.confirmModal.title || t("confirm_title")}
           </h4>
           <p
             class="confirm-modal-message"
-            innerHTML={store.confirmModal.message}
+            innerHTML={uiStore.confirmModal.message}
           />
           <div class="confirm-modal-actions">
             <Button
@@ -30,7 +30,7 @@ export const ConfirmModal: Component = () => {
               {t("btn_cancel")}
             </Button>
             <Button
-              variant={store.confirmModal.type === "danger"
+              variant={uiStore.confirmModal.type === "danger"
                 ? "danger"
                 : "primary"}
               onClick={() => resolveConfirm(true)}

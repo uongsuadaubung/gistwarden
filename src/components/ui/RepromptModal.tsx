@@ -1,17 +1,18 @@
 import { createEffect, createSignal, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
-import { store } from "@/core/store.ts";
+import { uiStore } from "@/core/store.ts";
 import { resolveReprompt } from "@/core/ui-service.ts";
 import { verifyMasterPassword } from "@/core/crypto.ts";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
+
 export default function RepromptModal() {
   const [password, setPassword] = createSignal("");
   const [isClosing, setIsClosing] = createSignal(false);
   const [error, setError] = createSignal("");
 
   createEffect(() => {
-    if (store.repromptModal.isOpen) {
+    if (uiStore.repromptModal.isOpen) {
       setIsClosing(false);
       setPassword("");
       setError("");
@@ -49,7 +50,7 @@ export default function RepromptModal() {
   };
 
   return (
-    <Show when={store.repromptModal.isOpen}>
+    <Show when={uiStore.repromptModal.isOpen}>
       <div
         class={`modal-overlay bottom-slide ${isClosing() ? "is-closing" : ""}`}
         onClick={triggerClose}

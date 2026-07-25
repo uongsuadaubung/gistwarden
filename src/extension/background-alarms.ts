@@ -6,12 +6,12 @@ import {
 } from "@/core/constants.ts";
 import { clearAlarm, createAlarm, hasAlarms, onAlarm } from "@/core/alarms.ts";
 import {
-  clearLocal,
   clearUnlockedSessionState,
-  getAllSettings,
+  getExtensionSettings,
   getSessionItem,
-  SettingsSchema,
+  resetAccountSettings,
 } from "@/core/storage.ts";
+import { ExtensionSettingsSchema } from "@/core/storage-schemas.ts";
 import { broadcastMessage } from "@/core/messaging.ts";
 import { updateExtensionBadge } from "@/extension/background-badge.ts";
 
@@ -20,7 +20,7 @@ export async function updateTimeoutAlarm(): Promise<void> {
 
   await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
 
-  const settingsRes = await getAllSettings();
+  const settingsRes = await getExtensionSettings();
   if (settingsRes.isErr()) {
     return;
   }
@@ -50,10 +50,10 @@ export function setupAlarmsListener(): () => void {
       console.debug(
         `[Background] ${ALARM_NAME_VAULT_TIMEOUT} alarm fired. Locking/Logging out...`,
       );
-      const settingsRes = await getAllSettings();
+      const settingsRes = await getExtensionSettings();
       const settings = settingsRes.isOk()
         ? settingsRes.value
-        : SettingsSchema.parse({});
+        : ExtensionSettingsSchema.parse({});
       const action = settings.vaultTimeoutAction || "lock";
 
       const removeRes = await clearUnlockedSessionState();
@@ -65,7 +65,7 @@ export function setupAlarmsListener(): () => void {
       }
 
       if (action === "logout") {
-        await clearLocal();
+        await resetAccountSettings();
         broadcastMessage({ type: MSG_VAULT_LOGGED_OUT });
       } else {
         broadcastMessage({ type: MSG_VAULT_LOCKED });

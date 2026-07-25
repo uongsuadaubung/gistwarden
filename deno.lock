@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "npm:@solidjs/router@~0.16.2": "0.16.2_solid-js@1.9.14",
     "npm:@types/chrome@~0.1.42": "0.1.43",
     "npm:adm-zip@0.6": "0.6.0",
     "npm:esbuild-plugin-solid@0.6": "0.6.0_esbuild@0.28.1_solid-js@1.9.14",
@@ -855,6 +856,12 @@
       "integrity": "sha512-5BqxR/pshjey51iliyzTD5Xi3EN0aLmQ2lZ3lvefVV9c82BvrLo2/6OT55iifpWBufs6kdwWbuOKS841DrmK9A==",
       "os": ["linux"],
       "cpu": ["x64"]
+    },
+    "@solidjs/router@0.16.2_solid-js@1.9.14": {
+      "integrity": "sha512-pncbV4SGUwGGlELlDWc3B4KDVB0Kt+7+7ct+GTN7D8CgetGSJMzl8RzyAFz+/TtSuFFzp9IzrjrACHUpGzxsKQ==",
+      "dependencies": [
+        "solid-js"
+      ]
     },
     "@tokenizer/inflate@0.4.1": {
       "integrity": "sha512-2mAv+8pkG6GIZiF1kNg1jAjh27IDxEPKwdGul3snfztFerfPGI1LjDezZp3i7BElXompqEtPmoPx6c2wgtWsOA==",
@@ -1735,6 +1742,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
+      "npm:@solidjs/router@~0.16.2",
       "npm:@types/chrome@~0.1.42",
       "npm:adm-zip@0.6",
       "npm:esbuild-plugin-solid@0.6",

@@ -1,7 +1,7 @@
 import { encryptData, getSessionKey } from "@/core/crypto.ts";
-import { updateSettings } from "@/core/storage.ts";
-import { setStore } from "@/core/store.ts";
-import { ValidateTokenResponseSchema } from "@/core/types.ts";
+import { updateAccountSettings } from "@/core/storage.ts";
+import { setAccountStore } from "@/core/store.ts";
+import { ValidateTokenResponseSchema } from "@/core/storage-schemas.ts";
 import { MSG_VALIDATE_TOKEN } from "@/core/constants.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
 import { err, ok, Result } from "neverthrow";
@@ -32,7 +32,7 @@ export async function setupGithub(
         return err(encryptRes.error);
       }
       const { iv, ciphertext } = encryptRes.value;
-      await updateSettings({
+      await updateAccountSettings({
         githubTokenEncrypted: ciphertext,
         githubTokenIv: iv,
         cachedGithubUser: {
@@ -41,7 +41,7 @@ export async function setupGithub(
         },
       });
     } else {
-      await updateSettings({
+      await updateAccountSettings({
         cachedGithubUser: {
           login: res.username || "",
           avatar_url: res.avatarUrl || "",
@@ -49,7 +49,7 @@ export async function setupGithub(
       });
     }
 
-    setStore({
+    setAccountStore({
       githubToken: token,
       githubConfigured: true,
       cachedGithubUser: {

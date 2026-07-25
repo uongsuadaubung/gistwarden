@@ -3,8 +3,9 @@ import { createSignal } from "solid-js";
 import en from "@/core/locales/en.ts";
 import vi from "@/core/locales/vi.ts";
 import { APP_NAME } from "@/core/constants.ts";
-import { SupportLanguage, SupportLanguageSchema } from "@/core/types.ts";
-import { getAllSettings } from "@/core/storage.ts";
+import { SupportLanguage } from "@/core/types.ts";
+import { SupportLanguageSchema } from "@/core/storage-schemas.ts";
+import { getExtensionSettings } from "@/core/storage.ts";
 
 export { SupportLanguage, SupportLanguageSchema };
 
@@ -349,6 +350,8 @@ const LangSchema = z.object({
   settings_troubleshooting_sub: z.string(),
   settings_theme_dark: z.string(),
   settings_theme_light: z.string(),
+  settings_enable_animations_label: z.string(),
+  settings_enable_animations_sub: z.string(),
   settings_vault_options_label: z.string(),
   settings_vault_options_sub: z.string(),
   settings_autofill_options_label: z.string(),
@@ -710,7 +713,7 @@ export function setLanguage(code: SupportLanguage | "en" | "vi"): void {
 }
 
 export async function initI18n(): Promise<void> {
-  const settingsRes = await getAllSettings();
+  const settingsRes = await getExtensionSettings();
   if (settingsRes.isOk() && settingsRes.value.language) {
     setLanguage(settingsRes.value.language);
   }

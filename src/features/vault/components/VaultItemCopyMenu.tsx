@@ -3,9 +3,9 @@ import {
   isCardItem,
   isLoginItem,
   isSshKeyItem,
-  type VaultItem,
   VaultItemType,
-} from "@/core/types.ts";
+} from "@/features/vault/vault-types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 import { CopyIcon } from "@/icons/svg/index.ts";
 import { t } from "@/core/i18n.ts";
 

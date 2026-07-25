@@ -1,5 +1,6 @@
 import { type Component, Show } from "solid-js";
-import { type VaultItem, View } from "@/core/types.ts";
+import { View } from "@/core/types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 import { MoreVerticalIcon } from "@/icons/svg/index.ts";
 import { openItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";

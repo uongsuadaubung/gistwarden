@@ -1,5 +1,5 @@
 import { err, ok, Result, ResultAsync } from "neverthrow";
-import type { Fido2Credential } from "@/core/types.ts";
+import type { Fido2Credential } from "@/features/passkey/fido2-schemas.ts";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeParseUrl } from "@/core/domain-utils.ts";
 import {

@@ -41,19 +41,19 @@ import {
   STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
 } from "@/core/constants.ts";
 import {
-  clearLocal,
   clearSession,
   configureSessionAccessLevel,
-  getAllSettings,
+  getExtensionSettings,
   getLocalItem,
   getSessionItem,
   hasSessionStorage,
   removeLocalItem,
   removeSessionItem,
+  resetAccountSettings,
   setLocalItem,
   setSessionItem,
-  SettingsSchema,
 } from "@/core/storage.ts";
+import { ExtensionSettingsSchema } from "@/core/storage-schemas.ts";
 import { syncLockStateBadge } from "@/extension/background-badge.ts";
 import {
   setupAlarmsListener,
@@ -65,16 +65,15 @@ import { getBaseDomain, getDomainFromItem } from "@/core/domain-utils.ts";
 import { filterMatchingDomainItems } from "@/features/vault/vault-domain-matching.ts";
 import { decryptData, encryptData, getSessionKey } from "@/core/crypto.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
+import { isLoginItem, VaultItemType } from "@/features/vault/vault-types.ts";
 import {
-  EncryptedPayloadSchema,
-  isLoginItem,
   type LoginVaultItem,
   type VaultItem,
-  VaultItemType,
   VaultListSchema,
-} from "@/core/types.ts";
+} from "@/features/vault/vault-schemas.ts";
+import { EncryptedPayloadSchema } from "@/features/sync/sync-schemas.ts";
 import { getAssetUrl } from "@/core/runtime.ts";
-import { setStore } from "@/core/store.ts";
+import { setAccountStore } from "@/core/store.ts";
 
 const PendingFido2RequestSchema = z.object({
   type: z.enum(["create", "get"]),
@@ -584,7 +583,7 @@ onExtensionMessage(
         const token = message.token || "";
         validateToken(token).then((res) => {
           if (res.isOk()) {
-            setStore({ githubToken: token, githubConfigured: true });
+            setAccountStore({ githubToken: token, githubConfigured: true });
             sendResponse({
               success: true,
               username: res.value.username,
@@ -605,7 +604,10 @@ onExtensionMessage(
           const clientId = message.content || "";
           const oauthRes = await launchGithubOauthFlow(clientId);
           if (oauthRes.isOk()) {
-            setStore({ githubToken: oauthRes.value, githubConfigured: true });
+            setAccountStore({
+              githubToken: oauthRes.value,
+              githubConfigured: true,
+            });
             await setSessionItem(
               SESSION_KEY_PENDING_GITHUB_TOKEN,
               oauthRes.value,
@@ -751,16 +753,16 @@ async function initSession() {
     : null;
 
   if (!sessionInitialized) {
-    const settingsRes = await getAllSettings();
+    const settingsRes = await getExtensionSettings();
     const settings = settingsRes.isOk()
       ? settingsRes.value
-      : SettingsSchema.parse({});
+      : ExtensionSettingsSchema.parse({});
     const action = settings.vaultTimeoutAction || "lock";
     if (action === "logout") {
       console.debug(
         "[Background] Trình duyệt khởi động lại và vaultTimeoutAction là logout. Đang đăng xuất...",
       );
-      await clearLocal();
+      await resetAccountSettings();
       await clearSession();
     }
     await setSessionItem(SESSION_KEY_SESSION_INITIALIZED, true);

@@ -1,6 +1,7 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { store } from "@/core/store.ts";
-import { VaultItemType, View } from "@/core/types.ts";
+import { accountStore } from "@/core/store.ts";
+import { View } from "@/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { requestReprompt, showToast } from "@/core/ui-service.ts";
 import { ChevronRightIcon, DownloadIcon } from "@/icons/svg/index.ts";
@@ -29,7 +30,7 @@ export const ExportAccounts: Component = () => {
     let mimeType = "";
 
     if (type === "json") {
-      const exportItems = store.vaultItems.map((item) => {
+      const exportItems = accountStore.vaultItems.map((item) => {
         const base = {
           id: item.id,
           type: item.type,
@@ -141,13 +142,13 @@ export const ExportAccounts: Component = () => {
       }.json`;
       mimeType = "application/json";
     } else if (type === "browser") {
-      fileContent = exportToBrowserCsv(store.vaultItems);
+      fileContent = exportToBrowserCsv(accountStore.vaultItems);
       fileName = `${APP_NAME.toLowerCase()}_browser_export_${
         new Date().toISOString().slice(0, 10)
       }.csv`;
       mimeType = "text/csv";
     } else {
-      fileContent = exportToBitwardenCsv(store.vaultItems);
+      fileContent = exportToBitwardenCsv(accountStore.vaultItems);
       fileName = `${APP_NAME.toLowerCase()}_bitwarden_export_${
         new Date().toISOString().slice(0, 10)
       }.csv`;

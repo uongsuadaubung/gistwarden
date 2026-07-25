@@ -364,6 +364,9 @@ export default {
   settings_theme_light: "Light",
   settings_vault_options_label: "Vault Options",
   settings_vault_options_sub: "Sync, import and export data",
+  settings_enable_animations_label: "Page Animations",
+  settings_enable_animations_sub:
+    "Enable smooth slide animations when navigating pages",
   settings_autofill_options_label: "Autofill & Auto-submit",
   settings_autofill_options_sub:
     "Configure autofill suggestions and auto-submit",

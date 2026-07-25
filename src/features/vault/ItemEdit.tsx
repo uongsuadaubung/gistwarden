@@ -1,7 +1,8 @@
 import { type Component, createSignal, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
-import { store } from "@/core/store.ts";
-import { VaultItemType, View } from "@/core/types.ts";
+import { accountStore, uiStore } from "@/core/store.ts";
+import { View } from "@/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { saveItem } from "@/features/vault/vault-service.ts";
 import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
@@ -32,7 +33,7 @@ import { getHostname, safeParseUrl } from "@/core/domain-utils.ts";
 import { safeDecodeQr } from "@/core/totp-utils.ts";
 
 export const ItemEdit: Component = () => {
-  const isEdit = () => !!store.selectedItem?.id;
+  const isEdit = () => !!uiStore.selectedItem?.id;
 
   const [formState, setFormState] = createStore<ItemEditFormState>(
     getInitialFormState(),
@@ -50,7 +51,7 @@ export const ItemEdit: Component = () => {
   const [error, setError] = createSignal("");
 
   onMount(async () => {
-    const item = store.selectedItem;
+    const item = uiStore.selectedItem;
     setFormState(getInitialFormState(item));
 
     if (!item?.id) {
@@ -116,11 +117,11 @@ export const ItemEdit: Component = () => {
   };
 
   const handleDelete = async () => {
-    if (!store.selectedItem?.id) return;
+    if (!uiStore.selectedItem?.id) return;
     setError("");
-    const success = await deleteVaultItemWithConfirm(store.selectedItem);
-    if (!success && store.toastType === "error") {
-      setError(store.toastMessage);
+    const success = await deleteVaultItemWithConfirm(uiStore.selectedItem);
+    if (!success && uiStore.toastType === "error") {
+      setError(uiStore.toastMessage);
     }
   };
 
@@ -150,7 +151,7 @@ export const ItemEdit: Component = () => {
     setError("");
 
     setGlobalLoading(true);
-    const itemData = mapFormStateToVaultItem(formState, store.selectedItem);
+    const itemData = mapFormStateToVaultItem(formState, uiStore.selectedItem);
     const res = await saveItem(itemData);
     setGlobalLoading(false);
     if (res.isOk()) {
@@ -160,8 +161,8 @@ export const ItemEdit: Component = () => {
       // If was editing, return to detail view, else go back to vault
       if (isEdit()) {
         // Update selectedItem locally so the detail view shows updated content immediately
-        const savedItem = store.vaultItems.find((v) =>
-          v.id === store.selectedItem?.id
+        const savedItem = accountStore.vaultItems.find((v) =>
+          v.id === uiStore.selectedItem?.id
         );
         if (savedItem) {
           selectItem(savedItem);
@@ -299,7 +300,7 @@ export const ItemEdit: Component = () => {
               type="submit"
               variant="primary"
             >
-              {store.selectedItem?.id ? t("btn_save") : t("btn_create")}
+              {uiStore.selectedItem?.id ? t("btn_save") : t("btn_create")}
             </Button>
             <Button
               type="button"

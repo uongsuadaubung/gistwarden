@@ -1,4 +1,4 @@
-import { type VaultItem } from "@/core/types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 
 /**
  * Chuyển đổi chuỗi ISO Date thành timestamp (milisecond).

@@ -6,8 +6,8 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import { store } from "@/core/store.ts";
-import { VaultItemType } from "@/core/types.ts";
+import { accountStore, uiStore } from "@/core/store.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
 import { lock, logout } from "@/features/auth/auth-service.ts";
 import { syncVault } from "@/features/sync/sync-service.ts";
 import { confirm, setGlobalLoading } from "@/core/ui-service.ts";
@@ -51,7 +51,7 @@ export const Header: Component<HeaderProps> = (props) => {
   });
 
   const initials = () => {
-    const login = store.cachedGithubUser?.login;
+    const login = accountStore.cachedGithubUser?.login;
     if (!login) return "ME";
     if (login.length >= 2) {
       return login.slice(0, 2).toUpperCase();
@@ -87,14 +87,14 @@ export const Header: Component<HeaderProps> = (props) => {
   const handleOpenGistClick = (e: MouseEvent) => {
     e.stopPropagation();
     setShowProfileMenu(false);
-    if (store.gistId) {
-      window.open(`https://gist.github.com/${store.gistId}`, "_blank");
+    if (accountStore.gistId) {
+      window.open(`https://gist.github.com/${accountStore.gistId}`, "_blank");
     }
   };
 
   const handleSyncClick = async (e: MouseEvent) => {
     e.stopPropagation();
-    if (store.syncing) return;
+    if (uiStore.syncing) return;
     setGlobalLoading(true, t("vault_syncing"));
     await syncVault();
     setGlobalLoading(false);
@@ -181,7 +181,7 @@ export const Header: Component<HeaderProps> = (props) => {
         <div class="profile-menu-container">
           <div
             class={`profile-avatar-btn ${
-              store.cachedGithubUser?.avatar_url && !imgFailed()
+              accountStore.cachedGithubUser?.avatar_url && !imgFailed()
                 ? "has-image"
                 : ""
             }`}
@@ -189,14 +189,14 @@ export const Header: Component<HeaderProps> = (props) => {
               e.stopPropagation();
               setShowProfileMenu(!showProfileMenu());
             }}
-            title={store.cachedGithubUser?.login || "Profile"}
+            title={accountStore.cachedGithubUser?.login || "Profile"}
           >
             <Show
-              when={store.cachedGithubUser?.avatar_url && !imgFailed()}
+              when={accountStore.cachedGithubUser?.avatar_url && !imgFailed()}
               fallback={initials()}
             >
               <img
-                src={store.cachedGithubUser?.avatar_url}
+                src={accountStore.cachedGithubUser?.avatar_url}
                 alt="Avatar"
                 class="profile-avatar-img"
                 onError={() => setImgFailed(true)}
@@ -205,14 +205,14 @@ export const Header: Component<HeaderProps> = (props) => {
           </div>
           <Show when={showProfileMenu()}>
             <div class="profile-dropdown" onClick={(e) => e.stopPropagation()}>
-              <Show when={store.cachedGithubUser}>
+              <Show when={accountStore.cachedGithubUser}>
                 <div class="profile-info">
                   <span
                     class="profile-username cursor-pointer"
                     onClick={handleOpenGistClick}
                     title={t("settings_open_gist_title")}
                   >
-                    @{store.cachedGithubUser?.login}
+                    @{accountStore.cachedGithubUser?.login}
                   </span>
                 </div>
                 <div class="dropdown-divider" />
@@ -224,7 +224,7 @@ export const Header: Component<HeaderProps> = (props) => {
                 type="button"
                 onClick={handleSyncClick}
               >
-                <SyncIcon class={store.syncing ? "spinning" : ""} />
+                <SyncIcon class={uiStore.syncing ? "spinning" : ""} />
                 <span>{t("vault_btn_sync")}</span>
               </button>
 

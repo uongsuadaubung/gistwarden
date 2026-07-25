@@ -1,10 +1,10 @@
 import { onIdleStateChanged } from "@/core/idle.ts";
 import {
-  clearLocal,
   clearUnlockedSessionState,
-  getAllSettings,
-  SettingsSchema,
+  getExtensionSettings,
+  resetAccountSettings,
 } from "@/core/storage.ts";
+import { ExtensionSettingsSchema } from "@/core/storage-schemas.ts";
 import { broadcastMessage } from "@/core/messaging.ts";
 import { MSG_VAULT_LOCKED, MSG_VAULT_LOGGED_OUT } from "@/core/constants.ts";
 import { updateExtensionBadge } from "@/extension/background-badge.ts";
@@ -15,10 +15,10 @@ export function setupIdleListener(): () => void {
       console.debug(
         `[Background Idle] System locked. Checking vault timeout setting...`,
       );
-      const settingsRes = await getAllSettings();
+      const settingsRes = await getExtensionSettings();
       const settings = settingsRes.isOk()
         ? settingsRes.value
-        : SettingsSchema.parse({});
+        : ExtensionSettingsSchema.parse({});
 
       if (settings.vaultTimeout === "onSystemLock") {
         console.debug(
@@ -37,7 +37,7 @@ export function setupIdleListener(): () => void {
         }
 
         if (action === "logout") {
-          await clearLocal();
+          await resetAccountSettings();
           broadcastMessage({ type: MSG_VAULT_LOGGED_OUT });
         } else {
           broadcastMessage({ type: MSG_VAULT_LOCKED });

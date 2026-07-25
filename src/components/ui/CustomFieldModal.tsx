@@ -3,7 +3,8 @@ import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
 import Select from "@/components/ui/Select.tsx";
-import { CustomFieldType, type VaultField } from "@/core/types.ts";
+import { CustomFieldType } from "@/features/vault/vault-types.ts";
+import type { VaultField } from "@/features/vault/vault-schemas.ts";
 
 interface CustomFieldModalProps {
   isOpen: boolean;

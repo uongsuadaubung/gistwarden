@@ -1,5 +1,5 @@
 import { POPOUT_HEIGHT, POPUP_WIDTH } from "@/core/constants.ts";
-import { store } from "@/core/store.ts";
+import { uiStore } from "@/core/store.ts";
 import { getAssetUrl } from "@/core/runtime.ts";
 
 export const isPopout = (): boolean => {
@@ -29,8 +29,8 @@ export const handlePopout = () => {
       }
 
       let url = "popup.html?mode=tab";
-      if (store.selectedItem) {
-        url += `&itemId=${store.selectedItem.id}`;
+      if (uiStore.selectedItem) {
+        url += `&itemId=${uiStore.selectedItem.id}`;
       }
 
       chrome.windows.create({

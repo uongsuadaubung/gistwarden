@@ -5,13 +5,16 @@ import {
   setDerivedKey,
   verifyMasterPassword,
 } from "@/core/crypto.ts";
-import { getGithubToken, setSessionItem } from "@/core/storage.ts";
-import { updateSettings } from "@/core/storage.ts";
+import {
+  getGithubToken,
+  setSessionItem,
+  updateAccountSettings,
+} from "@/core/storage.ts";
 import {
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
 } from "@/core/constants.ts";
-import { setStore, store } from "@/core/store.ts";
+import { accountStore, setAccountStore } from "@/core/store.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 import { err, ok, Result } from "neverthrow";
 import { type TranslationKey } from "@/core/i18n.ts";
@@ -42,7 +45,7 @@ export async function changeMasterPassword(
 
   // 3. Đồng bộ lên Gist (API mạng)
   const uploadRes = await syncVaultToGist(
-    store.vaultItems,
+    accountStore.vaultItems,
     newKey,
     newSaltBase64,
   );
@@ -62,7 +65,7 @@ export async function changeMasterPassword(
   await setSessionItem(SESSION_KEY_VERIFICATION_IV, vIv);
   await setSessionItem(SESSION_KEY_VERIFICATION_CIPHERTEXT, vCiphertext);
 
-  // 5. Re-encrypt GitHub token with the new key and save to settings
+  // 5. Re-encrypt GitHub token with the new key and save to account settings
   const githubToken = await getGithubToken();
   if (githubToken) {
     const encryptTokenResult = await encryptData(githubToken, newKey);
@@ -71,7 +74,7 @@ export async function changeMasterPassword(
     }
     const { iv, ciphertext } = encryptTokenResult.value;
 
-    await updateSettings({
+    await updateAccountSettings({
       githubTokenEncrypted: ciphertext,
       githubTokenIv: iv,
       salt: newSaltBase64,
@@ -81,7 +84,7 @@ export async function changeMasterPassword(
       pinUnlockSalt: "",
     });
   } else {
-    await updateSettings({
+    await updateAccountSettings({
       salt: newSaltBase64,
       pinUnlockEnabled: false,
       pinUnlockValue: "",
@@ -90,8 +93,12 @@ export async function changeMasterPassword(
     });
   }
 
-  setStore({
+  setAccountStore({
     salt: newSaltBase64,
+    pinUnlockEnabled: false,
+    pinUnlockValue: "",
+    pinUnlockIv: "",
+    pinUnlockSalt: "",
   });
 
   return ok();

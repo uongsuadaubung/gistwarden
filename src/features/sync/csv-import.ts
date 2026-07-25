@@ -1,9 +1,9 @@
+import { VaultItemType } from "@/features/vault/vault-types.ts";
 import {
   type VaultField,
   type VaultItem,
-  VaultItemType,
   VaultListSchema,
-} from "@/core/types.ts";
+} from "@/features/vault/vault-schemas.ts";
 import { APP_NAME } from "@/core/constants.ts";
 import { parseCSV } from "@/core/csv-parser.ts";
 import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";

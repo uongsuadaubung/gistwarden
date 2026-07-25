@@ -1,12 +1,18 @@
 import { type Component, Match, Show, Switch } from "solid-js";
+import { View } from "@/core/types.ts";
 import {
-  type CardVaultItem,
-  type IdentityVaultItem,
-  type SshKeyVaultItem,
-  type VaultItem,
+  isCardItem,
+  isIdentityItem,
+  isLoginItem,
+  isSshKeyItem,
   VaultItemType,
-  View,
-} from "@/core/types.ts";
+} from "@/features/vault/vault-types.ts";
+import type {
+  CardVaultItem,
+  IdentityVaultItem,
+  SshKeyVaultItem,
+  VaultItem,
+} from "@/features/vault/vault-schemas.ts";
 import {
   ExternalLinkIcon,
   GlobeIcon,
@@ -20,12 +26,6 @@ import CardBrandIcon from "@/components/ui/CardBrandIcon.tsx";
 import { getDomainFromItem } from "@/core/domain-utils.ts";
 import Favicon from "@/components/ui/Favicon.tsx";
 import { Checkbox } from "@/components/ui/Checkbox.tsx";
-import {
-  isCardItem,
-  isIdentityItem,
-  isLoginItem,
-  isSshKeyItem,
-} from "@/core/types.ts";
 import { VaultItemCopyMenu } from "@/features/vault/components/VaultItemCopyMenu.tsx";
 import { VaultItemOptionsMenu } from "@/features/vault/components/VaultItemOptionsMenu.tsx";
 

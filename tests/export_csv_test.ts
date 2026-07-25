@@ -4,7 +4,8 @@ import {
   exportToBrowserCsv,
 } from "@/features/sync/csv-export.ts";
 import { parseCSV } from "@/core/csv-parser.ts";
-import { type VaultItem, VaultItemType } from "@/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 
 Deno.test("Export CSV - Browser CSV format", () => {
   const items: VaultItem[] = [

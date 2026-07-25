@@ -1,5 +1,6 @@
-import { setStore, store } from "@/core/store.ts";
-import { type VaultItem, View } from "@/core/types.ts";
+import { setUiStore } from "@/core/store.ts";
+import { View } from "@/core/types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 import { requestReprompt } from "@/core/ui-service.ts";
 import { removeSessionItem, setSessionItem } from "@/core/storage.ts";
 import {
@@ -7,76 +8,43 @@ import {
   SESSION_KEY_LAST_VIEW,
   STORE_KEY_SELECTED_ITEM,
 } from "@/core/constants.ts";
+import { getPathView, getViewPath } from "@/core/router.ts";
 
-export const viewDepths: Record<View, number> = {
-  [View.Login]: 0,
-  [View.Vault]: 1,
-  [View.Generator]: 2,
-  [View.Settings]: 3,
-  [View.ItemDetail]: 2,
-  [View.ItemEdit]: 3,
-  [View.Appearance]: 4,
-  [View.About]: 4,
-  [View.Troubleshooting]: 5,
-  [View.Language]: 5,
-  [View.VaultOptions]: 4,
-  [View.Theme]: 5,
-  [View.Fido2Prompt]: 5,
-  [View.Welcome]: 0,
-  [View.AccountSecurity]: 4,
-  [View.ChangeMasterPassword]: 5,
-  [View.ImportAccounts]: 5,
-  [View.ExportAccounts]: 5,
-  [View.AutofillOptions]: 4,
-  [View.PasswordHistory]: 3,
-};
+export { pathDepths as viewDepths } from "@/core/router.ts";
 
-let transitionToggle = false;
+type NavigatorFn = (to: string, options?: { replace?: boolean }) => void;
+let activeNavigator: NavigatorFn | null = null;
 
-export function navigate(newView: View) {
-  const oldView = store.view;
-  const oldDepth = viewDepths[oldView] ?? 0;
-  const newDepth = viewDepths[newView] ?? 0;
-  let direction: "forward" | "backward" | "none" = "none";
-  if (newDepth > oldDepth) {
-    direction = "forward";
-  } else if (newDepth < oldDepth) {
-    direction = "backward";
+export function setActiveNavigator(navigator: NavigatorFn): void {
+  activeNavigator = navigator;
+}
+
+export function navigatePath(newPath: string): void {
+  const targetView = getPathView(newPath);
+  setUiStore("view", targetView);
+
+  if (activeNavigator) {
+    activeNavigator(newPath);
   }
 
-  // Toggle class suffix to force animation re-trigger
-  transitionToggle = !transitionToggle;
-  const suffix = transitionToggle ? "a" : "b";
-  const transitionClass = direction === "none"
-    ? ""
-    : `slide-${direction}-${suffix}`;
-
-  setStore({
-    view: newView,
-    transitionClass,
-  });
-
-  // Save navigation state
   const skipViews = [View.Login, View.Welcome, View.Fido2Prompt];
-  if (!skipViews.includes(newView)) {
-    setSessionItem(SESSION_KEY_LAST_VIEW, newView);
-    if (newView !== View.ItemDetail && newView !== View.ItemEdit) {
+  if (!skipViews.includes(targetView)) {
+    setSessionItem(SESSION_KEY_LAST_VIEW, targetView);
+    if (targetView !== View.ItemDetail && targetView !== View.ItemEdit) {
       removeSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID);
     }
   }
 }
 
-export function selectItem(item: VaultItem | null) {
-  setStore(STORE_KEY_SELECTED_ITEM, item);
-  if (item) {
-    transitionToggle = !transitionToggle;
-    const suffix = transitionToggle ? "a" : "b";
-    setStore({
-      view: View.ItemDetail,
-      transitionClass: `slide-forward-${suffix}`,
-    });
+export function navigate(newView: View): void {
+  const targetPath = getViewPath(newView);
+  navigatePath(targetPath);
+}
 
-    // Save navigation state
+export function selectItem(item: VaultItem | null): void {
+  setUiStore(STORE_KEY_SELECTED_ITEM, item);
+  if (item) {
+    navigatePath("/vault/detail");
     setSessionItem(SESSION_KEY_LAST_VIEW, View.ItemDetail);
     setSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID, item.id);
   } else {
@@ -87,20 +55,15 @@ export function selectItem(item: VaultItem | null) {
 export async function openItem(
   item: VaultItem,
   targetView: View = View.ItemDetail,
-) {
+): Promise<void> {
   if (item.reprompt === 1) {
     const authorized = await requestReprompt();
     if (!authorized) return;
   }
-  setStore(STORE_KEY_SELECTED_ITEM, item);
-  transitionToggle = !transitionToggle;
-  const suffix = transitionToggle ? "a" : "b";
-  setStore({
-    view: targetView,
-    transitionClass: `slide-forward-${suffix}`,
-  });
+  setUiStore(STORE_KEY_SELECTED_ITEM, item);
+  const targetPath = getViewPath(targetView);
+  navigatePath(targetPath);
 
-  // Save navigation state
   const skipViews = [View.Login, View.Welcome, View.Fido2Prompt];
   if (!skipViews.includes(targetView)) {
     setSessionItem(SESSION_KEY_LAST_VIEW, targetView);

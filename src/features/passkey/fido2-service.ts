@@ -1,11 +1,11 @@
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
-import {
-  type Fido2Credential,
-  type LoginVaultItem,
-  type VaultItem,
-  VaultItemType,
-} from "@/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
+import type {
+  LoginVaultItem,
+  VaultItem,
+} from "@/features/vault/vault-schemas.ts";
+import type { Fido2Credential } from "@/features/passkey/fido2-schemas.ts";
 import { saveItem } from "@/features/vault/vault-service.ts";
 import {
   generatePasskeyAssertResponse,
@@ -16,7 +16,7 @@ import {
   MSG_RESOLVE_FIDO2_REQUEST,
 } from "@/core/constants.ts";
 import { getBaseDomain, safeParseUrl } from "@/core/domain-utils.ts";
-import { store } from "@/core/store.ts";
+import { accountStore } from "@/core/store.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
 
 export interface Fido2Request {
@@ -215,7 +215,7 @@ export async function assertFido2Passkey(
     counter: nextCounter,
   };
 
-  const originalItem = store.vaultItems.find((v) =>
+  const originalItem = accountStore.vaultItems.find((v) =>
     v.id === selected.vaultItemId
   );
   if (

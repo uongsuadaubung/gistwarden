@@ -1,5 +1,5 @@
 import { type Component, Show } from "solid-js";
-import { store } from "@/core/store.ts";
+import { settingsStore } from "@/core/store.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { ThemeMode, View } from "@/core/types.ts";
@@ -30,7 +30,7 @@ export const Theme: Component = () => {
               <MoonIcon width="20" height="20" />
               <span class="font-sz-14">{t("settings_theme_dark")}</span>
             </div>
-            <Show when={store.theme === ThemeMode.Dark}>
+            <Show when={settingsStore.theme === ThemeMode.Dark}>
               <svg
                 class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"
@@ -57,7 +57,7 @@ export const Theme: Component = () => {
               <SunIcon width="20" height="20" />
               <span class="font-sz-14">{t("settings_theme_light")}</span>
             </div>
-            <Show when={store.theme === ThemeMode.Light}>
+            <Show when={settingsStore.theme === ThemeMode.Light}>
               <svg
                 class="check-icon lang-option-check"
                 xmlns="http://www.w3.org/2000/svg"

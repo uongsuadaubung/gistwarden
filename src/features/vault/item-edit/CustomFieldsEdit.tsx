@@ -1,5 +1,6 @@
 import { type Component, createSignal, For, Show } from "solid-js";
-import { CustomFieldType, type VaultField } from "@/core/types.ts";
+import { CustomFieldType } from "@/features/vault/vault-types.ts";
+import type { VaultField } from "@/features/vault/vault-schemas.ts";
 import { DragIcon, EditIcon, PlusIcon, TrashIcon } from "@/icons/svg/index.ts";
 import { t } from "@/core/i18n.ts";
 import CustomFieldModal from "@/components/ui/CustomFieldModal.tsx";

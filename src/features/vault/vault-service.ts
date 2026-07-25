@@ -1,12 +1,12 @@
-import { updateSettings } from "@/core/storage.ts";
+import { updateAccountSettings } from "@/core/storage.ts";
 import { getSessionKey } from "@/core/crypto.ts";
-import { setStore, store } from "@/core/store.ts";
+import { accountStore, setAccountStore } from "@/core/store.ts";
 import { reconcile } from "solid-js/store";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
 import {
   type VaultItem,
   VaultItemSchema,
-  VaultItemType,
-} from "@/core/types.ts";
+} from "@/features/vault/vault-schemas.ts";
 import { SyncResponseSchema } from "@/features/sync/sync-utils.ts";
 import { sendMessageToBackground } from "@/core/messaging.ts";
 
@@ -20,7 +20,7 @@ export async function saveItem(
   item: Partial<VaultItem>,
 ): Promise<Result<void, TranslationKey>> {
   const key = await getSessionKey();
-  if (!key || !store.salt) {
+  if (!key || !accountStore.salt) {
     return err("login_title_locked");
   }
 
@@ -29,7 +29,7 @@ export async function saveItem(
 
   if (item.id) {
     // Edit
-    const mappedItems = store.vaultItems.map((v) => {
+    const mappedItems = accountStore.vaultItems.map((v) => {
       if (v.id !== item.id) return v;
 
       const targetType = item.type !== undefined
@@ -178,16 +178,16 @@ export async function saveItem(
       return err("edit_error_save_failed");
     }
 
-    updatedList = [...store.vaultItems, parseResult.data];
+    updatedList = [...accountStore.vaultItems, parseResult.data];
   }
 
-  const uploadRes = await syncVaultToGist(updatedList, key, store.salt);
+  const uploadRes = await syncVaultToGist(updatedList, key, accountStore.salt);
   if (uploadRes.isErr()) {
     return err(uploadRes.error);
   }
   const validatedList = uploadRes.value;
 
-  setStore(
+  setAccountStore(
     STORE_KEY_VAULT_ITEMS,
     reconcile(validatedList),
   );
@@ -207,20 +207,20 @@ export async function deleteVaultItems(
     return ok();
   }
   const key = await getSessionKey();
-  if (!key || !store.salt) {
+  if (!key || !accountStore.salt) {
     return err("login_title_locked");
   }
 
   const idSet = new Set(ids);
-  const filtered = store.vaultItems.filter((v) => !idSet.has(v.id));
-  const uploadRes = await syncVaultToGist(filtered, key, store.salt);
+  const filtered = accountStore.vaultItems.filter((v) => !idSet.has(v.id));
+  const uploadRes = await syncVaultToGist(filtered, key, accountStore.salt);
 
   if (uploadRes.isErr()) {
     return err(uploadRes.error);
   }
   const validatedList = uploadRes.value;
 
-  setStore(
+  setAccountStore(
     STORE_KEY_VAULT_ITEMS,
     reconcile(validatedList),
   );
@@ -228,7 +228,7 @@ export async function deleteVaultItems(
 }
 
 export async function clearVault(): Promise<Result<void, TranslationKey>> {
-  const gistId = store.gistId;
+  const gistId = accountStore.gistId;
   if (gistId) {
     const sendResult = await sendMessageToBackground({
       type: MSG_DELETE_GIST,
@@ -249,13 +249,16 @@ export async function clearVault(): Promise<Result<void, TranslationKey>> {
     }
   }
 
-  // Reset local settings
-  const updateSettingsRes = await updateSettings({ gistId: "", lastSync: 0 });
+  // Reset local account settings
+  const updateSettingsRes = await updateAccountSettings({
+    gistId: "",
+    lastSync: 0,
+  });
   if (updateSettingsRes.isErr()) {
     return err(updateSettingsRes.error);
   }
 
-  setStore({
+  setAccountStore({
     gistId: "",
     vaultItems: [],
     lastSync: 0,

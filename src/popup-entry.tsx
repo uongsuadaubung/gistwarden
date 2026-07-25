@@ -1,21 +1,30 @@
 import { render } from "solid-js/web";
 import {
   type Component,
-  type JSX,
+  createEffect,
   Match,
   onMount,
   Show,
   Switch,
 } from "solid-js";
-import { store } from "@/core/store.ts";
+import {
+  HashRouter,
+  MemoryRouter,
+  Route,
+  type RouteSectionProps,
+  useLocation,
+  useNavigate,
+} from "@solidjs/router";
+import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
+import { getViewPath } from "@/core/router.ts";
 import {
   init,
   lock,
   logout,
   reloadVaultItems,
 } from "@/features/auth/auth-service.ts";
-import { navigate } from "@/core/navigation.ts";
+import { navigate, setActiveNavigator } from "@/core/navigation.ts";
 import {
   GeneratorIcon,
   SettingsIcon,
@@ -30,6 +39,7 @@ import {
 } from "@/core/constants.ts";
 import { notifyBackground, onExtensionMessage } from "@/core/messaging.ts";
 import { isRecord } from "@/core/storage.ts";
+import { RouteTransition } from "@/components/ui/RouteTransition.tsx";
 
 // Import Views
 import Login from "@/features/auth/Login.tsx";
@@ -56,15 +66,129 @@ import ConfirmModal from "@/components/ui/ConfirmModal.tsx";
 import RepromptModal from "@/components/ui/RepromptModal.tsx";
 import { t } from "@/core/i18n.ts";
 
-const TransitionView: Component<{ when: boolean; children: JSX.Element }> = (
-  props,
-) => {
+const RouterSyncHandler: Component = () => {
+  const nav = useNavigate();
+  const location = useLocation();
+
+  onMount(() => {
+    setActiveNavigator((to, options) => {
+      nav(to, options);
+    });
+  });
+
+  createEffect(() => {
+    const targetPath = getViewPath(uiStore.view);
+    if (location.pathname !== targetPath) {
+      nav(targetPath, { replace: true });
+    }
+  });
+
+  return null;
+};
+
+const MainLayout: Component<RouteSectionProps> = (props) => {
   return (
-    <Show when={props.when}>
-      <div class={`${store.transitionClass} h-100 w-100`}>
-        {props.children}
+    <>
+      <RouterSyncHandler />
+      <div class="app-root-wrapper">
+        <Switch>
+          {/* FIDO2/Passkey Prompt Window */}
+          <Match when={uiStore.view === View.Fido2Prompt}>
+            <Fido2Prompt />
+          </Match>
+
+          {/* Regular vault locking/login */}
+          <Match when={accountStore.isLocked}>
+            <Switch>
+              <Match when={uiStore.view === View.Welcome}>
+                <Welcome />
+              </Match>
+              <Match when={true}>
+                <Login />
+              </Match>
+            </Switch>
+          </Match>
+
+          {/* Main Application Shell when unlocked */}
+          <Match when={true}>
+            <div class="app-container">
+              <div class="flex-1 overflow-hidden pos-relative">
+                <RouteTransition>
+                  {props.children}
+                </RouteTransition>
+              </div>
+
+              {/* Bottom Nav Bar */}
+              <Show
+                when={[
+                  View.Vault,
+                  View.Generator,
+                  View.Settings,
+                ].includes(uiStore.view)}
+              >
+                <nav class="app-nav">
+                  <div
+                    class={`nav-item ${
+                      uiStore.view === View.Vault ? "active" : ""
+                    }`}
+                    onClick={() => navigate(View.Vault)}
+                  >
+                    <VaultIcon />
+                    <span>{t("nav_vault")}</span>
+                  </div>
+                  <div
+                    class={`nav-item ${
+                      uiStore.view === View.Generator ? "active" : ""
+                    }`}
+                    onClick={() => navigate(View.Generator)}
+                  >
+                    <GeneratorIcon />
+                    <span>{t("nav_generator")}</span>
+                  </div>
+                  <div
+                    class={`nav-item ${
+                      uiStore.view === View.Settings ||
+                        uiStore.view === View.VaultOptions
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() => navigate(View.Settings)}
+                  >
+                    <SettingsIcon />
+                    <span>{t("nav_settings")}</span>
+                  </div>
+                </nav>
+              </Show>
+            </div>
+          </Match>
+        </Switch>
+
+        {/* Reusable Toast Notification */}
+        <Show when={uiStore.toastMessage}>
+          <div class={`toast-notification ${uiStore.toastType}`}>
+            {uiStore.toastMessage}
+          </div>
+        </Show>
+
+        {/* Reusable Confirmation Modal */}
+        <ConfirmModal />
+
+        {/* Master Password Reprompt Modal */}
+        <RepromptModal />
+
+        {/* Global Loading Overlay */}
+        <Show when={uiStore.globalLoading}>
+          <div class="global-loading-overlay">
+            <div class="global-loading-content">
+              <SyncIcon class="spinning" />
+              <div class="global-loading-text">
+                {uiStore.globalLoadingText || t("dialog_loading")}
+              </div>
+            </div>
+          </div>
+        </Show>
       </div>
-    </Show>
+    </>
   );
 };
 
@@ -77,7 +201,6 @@ const App: Component = () => {
     }
     await init();
 
-    // Listen for background lock events
     onExtensionMessage((message) => {
       if (!isRecord(message)) return;
       if (message.type === MSG_VAULT_LOCKED) {
@@ -98,7 +221,6 @@ const App: Component = () => {
       }
     });
 
-    // Reset inactivity timeout on user interaction
     const resetTimeout = () => {
       notifyBackground({ type: MSG_USER_ACTIVITY });
     };
@@ -108,9 +230,39 @@ const App: Component = () => {
     window.addEventListener("keydown", resetTimeout);
   });
 
+  const isWebProtocol = typeof window !== "undefined" &&
+    window.location.protocol.startsWith("http");
+
+  const appRoutes = (
+    <>
+      <Route path="/" component={Vault} />
+      <Route path="/vault" component={Vault} />
+      <Route path="/vault/detail" component={ItemDetail} />
+      <Route path="/vault/edit" component={ItemEdit} />
+      <Route path="/generator" component={Generator} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/settings/language" component={Language} />
+      <Route path="/settings/theme" component={Theme} />
+      <Route path="/settings/appearance" component={Appearance} />
+      <Route path="/settings/about" component={About} />
+      <Route path="/settings/troubleshooting" component={Troubleshooting} />
+      <Route path="/vault-options" component={VaultOptions} />
+      <Route path="/import" component={ImportAccounts} />
+      <Route path="/export" component={ExportAccounts} />
+      <Route path="/settings/security" component={AccountSecurity} />
+      <Route
+        path="/settings/change-password"
+        component={ChangeMasterPassword}
+      />
+      <Route path="/settings/autofill" component={AutofillOptions} />
+      <Route path="/generator/history" component={PasswordHistory} />
+      <Route path="*" component={Vault} />
+    </>
+  );
+
   return (
     <Show
-      when={store.isLoaded}
+      when={accountStore.isLoaded && settingsStore.isLoaded}
       fallback={
         <div class="loading-screen">
           <div class="text-center">
@@ -120,152 +272,12 @@ const App: Component = () => {
         </div>
       }
     >
-      <div class="app-root-wrapper">
-        <Switch>
-          {/* FIDO2/Passkey Prompt Window */}
-          <Match when={store.view === View.Fido2Prompt}>
-            <Fido2Prompt />
-          </Match>
-
-          {/* Regular vault locking/login */}
-          <Match when={store.isLocked}>
-            <Switch>
-              <Match when={store.view === View.Welcome}>
-                <Welcome />
-              </Match>
-              <Match when={true}>
-                <Login />
-              </Match>
-            </Switch>
-          </Match>
-
-          {/* Main Application Shell when unlocked */}
-          <Match when={true}>
-            <div class="app-container">
-              <div class="flex-1 overflow-hidden pos-relative">
-                <TransitionView when={store.view === View.Vault}>
-                  <Vault />
-                </TransitionView>
-                <TransitionView when={store.view === View.ItemDetail}>
-                  <ItemDetail />
-                </TransitionView>
-                <TransitionView when={store.view === View.ItemEdit}>
-                  <ItemEdit />
-                </TransitionView>
-                <TransitionView when={store.view === View.Generator}>
-                  <Generator />
-                </TransitionView>
-                <TransitionView when={store.view === View.Settings}>
-                  <Settings />
-                </TransitionView>
-                <TransitionView when={store.view === View.VaultOptions}>
-                  <VaultOptions />
-                </TransitionView>
-                <TransitionView when={store.view === View.ImportAccounts}>
-                  <ImportAccounts />
-                </TransitionView>
-                <TransitionView when={store.view === View.ExportAccounts}>
-                  <ExportAccounts />
-                </TransitionView>
-                <TransitionView when={store.view === View.Language}>
-                  <Language />
-                </TransitionView>
-                <TransitionView when={store.view === View.Theme}>
-                  <Theme />
-                </TransitionView>
-                <TransitionView when={store.view === View.Appearance}>
-                  <Appearance />
-                </TransitionView>
-                <TransitionView when={store.view === View.About}>
-                  <About />
-                </TransitionView>
-                <TransitionView when={store.view === View.Troubleshooting}>
-                  <Troubleshooting />
-                </TransitionView>
-                <TransitionView when={store.view === View.AccountSecurity}>
-                  <AccountSecurity />
-                </TransitionView>
-                <TransitionView when={store.view === View.ChangeMasterPassword}>
-                  <ChangeMasterPassword />
-                </TransitionView>
-                <TransitionView when={store.view === View.AutofillOptions}>
-                  <AutofillOptions />
-                </TransitionView>
-                <TransitionView when={store.view === View.PasswordHistory}>
-                  <PasswordHistory />
-                </TransitionView>
-              </div>
-
-              {/* Bottom Nav Bar (hidden when viewing/editing details) */}
-              <Show
-                when={[
-                  View.Vault,
-                  View.Generator,
-                  View.Settings,
-                ].includes(store.view)}
-              >
-                <nav class="app-nav">
-                  <div
-                    class={`nav-item ${
-                      store.view === View.Vault ? "active" : ""
-                    }`}
-                    onClick={() => navigate(View.Vault)}
-                  >
-                    <VaultIcon />
-                    <span>{t("nav_vault")}</span>
-                  </div>
-                  <div
-                    class={`nav-item ${
-                      store.view === View.Generator ? "active" : ""
-                    }`}
-                    onClick={() => navigate(View.Generator)}
-                  >
-                    <GeneratorIcon />
-                    <span>{t("nav_generator")}</span>
-                  </div>
-                  <div
-                    class={`nav-item ${
-                      store.view === View.Settings ||
-                        store.view === View.VaultOptions
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() => navigate(View.Settings)}
-                  >
-                    <SettingsIcon />
-                    <span>{t("nav_settings")}</span>
-                  </div>
-                </nav>
-              </Show>
-            </div>
-          </Match>
-        </Switch>
-
-        {/* Reusable Toast Notification */}
-        <Show when={store.toastMessage}>
-          <div class={`toast-notification ${store.toastType}`}>
-            {store.toastMessage}
-          </div>
-        </Show>
-
-        {/* Reusable Confirmation Modal */}
-        <ConfirmModal />
-
-        {/* Master Password Reprompt Modal */}
-        <RepromptModal />
-
-        {/* Global Loading Overlay */}
-        <Show when={store.globalLoading}>
-          <div class="global-loading-overlay">
-            <div class="global-loading-content">
-              <SyncIcon class="spinning" />
-              <div class="global-loading-text">
-                {store.globalLoadingText || t("dialog_loading")}
-              </div>
-            </div>
-          </div>
-        </Show>
-      </div>
+      <Show
+        when={isWebProtocol}
+        fallback={<MemoryRouter root={MainLayout}>{appRoutes}</MemoryRouter>}
+      >
+        <HashRouter root={MainLayout}>{appRoutes}</HashRouter>
+      </Show>
     </Show>
   );
 };

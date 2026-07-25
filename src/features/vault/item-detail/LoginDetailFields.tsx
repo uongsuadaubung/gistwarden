@@ -6,10 +6,10 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import { type LoginVaultItem } from "@/core/types.ts";
+import type { LoginVaultItem } from "@/features/vault/vault-schemas.ts";
 import { t } from "@/core/i18n.ts";
 import { generateTotpSafe } from "@/core/totp-utils.ts";
-import { store } from "@/core/store.ts";
+import { settingsStore } from "@/core/store.ts";
 import {
   CopyIcon,
   ExternalLinkIcon,
@@ -38,7 +38,7 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
 
   const updateTotp = () => {
     const rawSecret = props.item.login.totp || "";
-    const epoch = Math.floor((Date.now() + store.timeOffset) / 1000);
+    const epoch = Math.floor((Date.now() + settingsStore.timeOffset) / 1000);
     const remaining = 30 - (epoch % 30);
     setTotpRemaining(remaining);
 
@@ -47,7 +47,7 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
       return;
     }
 
-    const generateRes = generateTotpSafe(rawSecret, store.timeOffset);
+    const generateRes = generateTotpSafe(rawSecret, settingsStore.timeOffset);
 
     if (generateRes.isOk()) {
       const rawCode = generateRes.value;

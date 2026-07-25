@@ -52,7 +52,11 @@ export const SESSION_KEY_SHOW_FILTER_PANEL = "showFilterPanel";
 export const SESSION_KEY_SELECTED_FILTER_TYPE = "selectedFilterType";
 
 // Browser Local Storage Keys
-export const STORAGE_KEY = `${APP_NAME.toLowerCase()}_settings`;
+export const STORAGE_KEY_EXTENSION_SETTINGS =
+  `${APP_NAME.toLowerCase()}_extension_settings`;
+export const STORAGE_KEY_ACCOUNT_SETTINGS =
+  `${APP_NAME.toLowerCase()}_account_settings`;
+export const STORAGE_KEY = STORAGE_KEY_EXTENSION_SETTINGS; // Backward compatibility fallback
 export const LOCAL_STORAGE_KEY_THEME = `${APP_NAME.toLowerCase()}_theme`;
 export const STORAGE_KEY_PASSWORD_HISTORY =
   `${APP_NAME.toLowerCase()}_password_history`;
@@ -76,6 +80,7 @@ export const STORE_KEY_CONFIRM_MODAL = "confirmModal";
 export const STORE_KEY_REPROMPT_MODAL = "repromptModal";
 export const STORE_KEY_LANGUAGE = "language";
 export const STORE_KEY_TIME_OFFSET = "timeOffset";
+export const STORE_KEY_ENABLE_PAGE_ANIMATIONS = "enablePageAnimations";
 
 // Alarm Names
 export const ALARM_NAME_VAULT_TIMEOUT = "vaultTimeout";

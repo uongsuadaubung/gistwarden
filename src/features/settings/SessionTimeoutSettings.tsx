@@ -6,7 +6,7 @@ import {
   VaultTimeoutActionSchema,
   type VaultTimeoutValue,
   VaultTimeoutValueSchema,
-} from "@/core/types.ts";
+} from "@/core/storage-schemas.ts";
 
 interface SessionTimeoutSettingsProps {
   timeout: VaultTimeoutValue;

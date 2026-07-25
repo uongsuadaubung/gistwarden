@@ -1,14 +1,14 @@
-import { setStore, store } from "@/core/store.ts";
+import { setSettingsStore, setUiStore, uiStore } from "@/core/store.ts";
 import { err, ok, Result } from "neverthrow";
 import { z } from "zod";
-import { type ConfirmType, type ToastType } from "@/core/types.ts";
+import { type ConfirmType, type ToastType } from "@/core/storage-schemas.ts";
 import {
   setLanguage,
   SupportLanguage,
   t,
   type TranslationKey,
 } from "@/core/i18n.ts";
-import { setLocalItem, updateSettings } from "@/core/storage.ts";
+import { setLocalItem, updateExtensionSettings } from "@/core/storage.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { fetchText } from "@/core/fetch-utils.ts";
 import { writeClipboardText } from "@/core/clipboard-utils.ts";
@@ -18,10 +18,7 @@ import {
   STORE_KEY_CONFIRM_MODAL,
   STORE_KEY_GLOBAL_LOADING,
   STORE_KEY_GLOBAL_LOADING_TEXT,
-  STORE_KEY_LANGUAGE,
   STORE_KEY_REPROMPT_MODAL,
-  STORE_KEY_THEME,
-  STORE_KEY_TIME_OFFSET,
   STORE_KEY_TOAST_MESSAGE,
   STORE_KEY_TOAST_TYPE,
 } from "@/core/constants.ts";
@@ -32,12 +29,12 @@ export function showToast(message: string, type: ToastType = "success") {
   if (toastTimeoutId) {
     clearTimeout(toastTimeoutId);
   }
-  setStore({
+  setUiStore({
     [STORE_KEY_TOAST_MESSAGE]: message,
     [STORE_KEY_TOAST_TYPE]: type,
   });
   toastTimeoutId = setTimeout(() => {
-    setStore(STORE_KEY_TOAST_MESSAGE, "");
+    setUiStore(STORE_KEY_TOAST_MESSAGE, "");
   }, 2000);
 }
 
@@ -57,7 +54,7 @@ export async function copyToClipboardWithMessage(
 }
 
 export function setGlobalLoading(val: boolean, text = "") {
-  setStore({
+  setUiStore({
     [STORE_KEY_GLOBAL_LOADING]: val,
     [STORE_KEY_GLOBAL_LOADING_TEXT]: text,
   });
@@ -69,7 +66,7 @@ export function confirm(
   type: ConfirmType = "info",
 ): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    setStore(STORE_KEY_CONFIRM_MODAL, {
+    setUiStore(STORE_KEY_CONFIRM_MODAL, {
       isOpen: true,
       title,
       message,
@@ -80,11 +77,11 @@ export function confirm(
 }
 
 export function resolveConfirm(result: boolean) {
-  const modal = store.confirmModal;
+  const modal = uiStore.confirmModal;
   if (modal.resolve) {
     modal.resolve(result);
   }
-  setStore(STORE_KEY_CONFIRM_MODAL, {
+  setUiStore(STORE_KEY_CONFIRM_MODAL, {
     isOpen: false,
     title: "",
     message: "",
@@ -95,7 +92,7 @@ export function resolveConfirm(result: boolean) {
 
 export function requestReprompt(): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    setStore(STORE_KEY_REPROMPT_MODAL, {
+    setUiStore(STORE_KEY_REPROMPT_MODAL, {
       isOpen: true,
       resolve,
     });
@@ -103,24 +100,24 @@ export function requestReprompt(): Promise<boolean> {
 }
 
 export function resolveReprompt(success: boolean) {
-  const modal = store.repromptModal;
+  const modal = uiStore.repromptModal;
   if (modal.resolve) {
     modal.resolve(success);
   }
-  setStore(STORE_KEY_REPROMPT_MODAL, {
+  setUiStore(STORE_KEY_REPROMPT_MODAL, {
     isOpen: false,
     resolve: null,
   });
 }
 
 export async function updateLanguage(lang: "en" | "vi") {
-  setStore(STORE_KEY_LANGUAGE, lang);
+  setSettingsStore("language", lang);
   setLanguage(lang === "vi" ? SupportLanguage.Vi : SupportLanguage.En);
-  await updateSettings({ language: lang });
+  await updateExtensionSettings({ language: lang });
 }
 
 export async function updateTheme(newTheme: "dark" | "light") {
-  setStore(STORE_KEY_THEME, newTheme);
+  setSettingsStore("theme", newTheme);
   if (newTheme === "light") {
     document.body.classList.add("light-theme");
   } else {
@@ -151,8 +148,8 @@ export async function syncTimeOffset(): Promise<Result<void, TranslationKey>> {
     const localTime = Date.now();
     const offset = serverTime - localTime;
     console.log(`[Store] Time sync successful. Offset: ${offset}ms`);
-    setStore(STORE_KEY_TIME_OFFSET, offset);
-    const updateRes = await updateSettings({ timeOffset: offset });
+    setSettingsStore("timeOffset", offset);
+    const updateRes = await updateExtensionSettings({ timeOffset: offset });
     if (updateRes.isErr()) {
       return err("storage_error");
     }

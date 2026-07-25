@@ -1,5 +1,5 @@
 import { setLanguage, t } from "@/core/i18n.ts";
-import { getAllSettings, getSessionItem } from "@/core/storage.ts";
+import { getExtensionSettings, getSessionItem } from "@/core/storage.ts";
 import { SESSION_KEY_DERIVED_KEY } from "@/core/constants.ts";
 
 export async function updateExtensionBadge(
@@ -7,7 +7,7 @@ export async function updateExtensionBadge(
 ): Promise<void> {
   if (typeof chrome === "undefined" || !chrome.action) return;
 
-  const settingsRes = await getAllSettings();
+  const settingsRes = await getExtensionSettings();
   if (settingsRes.isOk() && settingsRes.value.language) {
     setLanguage(settingsRes.value.language);
   }

@@ -3,7 +3,7 @@ import { t } from "@/core/i18n.ts";
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
 import { GithubIcon } from "@/icons/svg/index.ts";
-import { type LoginMethod } from "@/core/types.ts";
+import { type LoginMethod } from "@/core/storage-schemas.ts";
 
 export interface GithubSetupFormProps {
   onSaveToken: (token: string) => void;

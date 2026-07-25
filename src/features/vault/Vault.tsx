@@ -6,7 +6,7 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import { store } from "@/core/store.ts";
+import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { deleteVaultItems, saveItem } from "@/features/vault/vault-service.ts";
 import {
@@ -26,7 +26,9 @@ import {
   SESSION_KEY_SHOW_FILTER_PANEL,
   SESSION_KEY_VAULT_SEARCH_QUERY,
 } from "@/core/constants.ts";
-import { type VaultItem, VaultItemType, View } from "@/core/types.ts";
+import { View } from "@/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 import { generateTotpSafe } from "@/core/totp-utils.ts";
 import { z } from "zod";
 import {
@@ -235,7 +237,7 @@ export const Vault: Component = () => {
 
   const matchingItems = () => {
     return filterMatchingDomainItems(
-      store.vaultItems,
+      accountStore.vaultItems,
       currentTabDomain(),
       selectedFilterType(),
     );
@@ -243,7 +245,7 @@ export const Vault: Component = () => {
 
   const allItems = () => {
     return filterVaultItemsByQuery(
-      store.vaultItems,
+      accountStore.vaultItems,
       search(),
       selectedFilterType(),
     );
@@ -288,7 +290,10 @@ export const Vault: Component = () => {
       : "";
     if (!rawSecret.trim()) return;
 
-    const generateTotpResult = generateTotpSafe(rawSecret, store.timeOffset);
+    const generateTotpResult = generateTotpSafe(
+      rawSecret,
+      settingsStore.timeOffset,
+    );
 
     if (generateTotpResult.isOk()) {
       await copyToClipboardWithMessage(
@@ -582,9 +587,9 @@ export const Vault: Component = () => {
         </div>
 
         {/* Sync Error */}
-        <Show when={store.syncError}>
+        <Show when={uiStore.syncError}>
           <div class="alert alert-danger alert-compact">
-            {store.syncError}
+            {uiStore.syncError}
           </div>
         </Show>
 

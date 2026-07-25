@@ -1,7 +1,7 @@
 import { type Component, createSignal, onMount, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import { APP_NAME } from "@/core/constants.ts";
-import { store } from "@/core/store.ts";
+import { accountStore, settingsStore } from "@/core/store.ts";
 import { init } from "@/features/auth/auth-service.ts";
 import { updateLanguage } from "@/core/ui-service.ts";
 import Button from "@/components/ui/Button.tsx";
@@ -47,15 +47,15 @@ export const Guide: Component = () => {
   };
 
   const handleOpenGist = () => {
-    if (store.gistId) {
-      window.open(`https://gist.github.com/${store.gistId}`, "_blank");
+    if (accountStore.gistId) {
+      window.open(`https://gist.github.com/${accountStore.gistId}`, "_blank");
     } else {
       window.open("https://gist.github.com/", "_blank");
     }
   };
 
   return (
-    <Show when={store.isLoaded}>
+    <Show when={accountStore.isLoaded && settingsStore.isLoaded}>
       <div class="guide-wrapper">
         {/* Top Navigation Bar */}
         <header class="guide-header">
@@ -76,7 +76,7 @@ export const Guide: Component = () => {
             <div class="lang-selector">
               <span>🌐</span>
               <Select
-                value={store.language}
+                value={settingsStore.language}
                 onChange={(e) => {
                   const val = e.currentTarget.value;
                   if (val === "en" || val === "vi") {
@@ -89,150 +89,125 @@ export const Guide: Component = () => {
 
             <Button
               variant="secondary"
-              onClick={() =>
-                window.open(
-                  "https://github.com/uongsuadaubung/gistwarden",
-                  "_blank",
-                )}
+              onClick={handleOpenGist}
             >
-              {t("guide_homepage_btn")}
-            </Button>
-
-            <Button variant="secondary" onClick={() => window.close()}>
-              {t("guide_close_page")}
+              🚀 {t("settings_open_gist_title")}
             </Button>
           </div>
         </header>
 
-        {/* Main Grid Layout */}
-        <div class="guide-container">
-          {/* Sidebar Navigation */}
-          <aside class="guide-sidebar">
-            <nav class="tabs-nav">
-              <button
-                class={`nav-tab ${
-                  activeTab() === GuideTab.General ? "active" : ""
-                }`}
-                onClick={() => setActiveTab(GuideTab.General)}
-              >
-                <span class="tab-icon">📖</span>
-                <span class="tab-label">{t("guide_tab_general")}</span>
-              </button>
+        {/* Main Body */}
+        <div class="guide-body">
+          {/* Sidebar */}
+          <nav class="guide-sidebar">
+            <div class="sidebar-title">{t("settings_header")}</div>
+            <ul class="nav-list">
+              <li>
+                <a
+                  class={`nav-link ${
+                    activeTab() === GuideTab.General ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(GuideTab.General)}
+                >
+                  📌 {t("guide_tab_general")}
+                </a>
+              </li>
+              <li>
+                <a
+                  class={`nav-link ${
+                    activeTab() === GuideTab.Gist ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(GuideTab.Gist)}
+                >
+                  🐙 {t("guide_tab_gist")}
+                </a>
+              </li>
+              <li>
+                <a
+                  class={`nav-link ${
+                    activeTab() === GuideTab.Security ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(GuideTab.Security)}
+                >
+                  🛡️ {t("guide_tab_security")}
+                </a>
+              </li>
+              <li>
+                <a
+                  class={`nav-link ${
+                    activeTab() === GuideTab.Passkey ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(GuideTab.Passkey)}
+                >
+                  🔑 {t("guide_tab_passkey")}
+                </a>
+              </li>
+              <li>
+                <a
+                  class={`nav-link ${
+                    activeTab() === GuideTab.Totp ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(GuideTab.Totp)}
+                >
+                  ⏱️ {t("guide_tab_totp")}
+                </a>
+              </li>
+              <li>
+                <a
+                  class={`nav-link ${
+                    activeTab() === GuideTab.ImportExport ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(GuideTab.ImportExport)}
+                >
+                  📦 {t("guide_tab_import_export")}
+                </a>
+              </li>
+              <li>
+                <a
+                  class={`nav-link ${
+                    activeTab() === GuideTab.Faq ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(GuideTab.Faq)}
+                >
+                  ❓ {t("guide_tab_faq")}
+                </a>
+              </li>
+              <li>
+                <a
+                  class={`nav-link ${
+                    activeTab() === GuideTab.Privacy ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(GuideTab.Privacy)}
+                >
+                  🔒 {t("guide_tab_privacy")}
+                </a>
+              </li>
+            </ul>
+          </nav>
 
-              <button
-                class={`nav-tab ${
-                  activeTab() === GuideTab.Gist ? "active" : ""
-                }`}
-                onClick={() => setActiveTab(GuideTab.Gist)}
-              >
-                <span class="tab-icon">☁️</span>
-                <span class="tab-label">{t("guide_tab_gist")}</span>
-              </button>
-
-              <button
-                class={`nav-tab ${
-                  activeTab() === GuideTab.Security ? "active" : ""
-                }`}
-                onClick={() => setActiveTab(GuideTab.Security)}
-              >
-                <span class="tab-icon">🛡️</span>
-                <span class="tab-label">{t("guide_tab_security")}</span>
-              </button>
-
-              <button
-                class={`nav-tab ${
-                  activeTab() === GuideTab.Passkey ? "active" : ""
-                }`}
-                onClick={() => setActiveTab(GuideTab.Passkey)}
-              >
-                <span class="tab-icon">⚡</span>
-                <span class="tab-label">{t("guide_tab_passkey")}</span>
-              </button>
-
-              <button
-                class={`nav-tab ${
-                  activeTab() === GuideTab.Totp ? "active" : ""
-                }`}
-                onClick={() => setActiveTab(GuideTab.Totp)}
-              >
-                <span class="tab-icon">⏱️</span>
-                <span class="tab-label">{t("guide_tab_totp")}</span>
-              </button>
-
-              <button
-                class={`nav-tab ${
-                  activeTab() === GuideTab.ImportExport ? "active" : ""
-                }`}
-                onClick={() => setActiveTab(GuideTab.ImportExport)}
-              >
-                <span class="tab-icon">🔄</span>
-                <span class="tab-label">{t("guide_tab_import_export")}</span>
-              </button>
-
-              <button
-                class={`nav-tab ${
-                  activeTab() === GuideTab.Faq ? "active" : ""
-                }`}
-                onClick={() => setActiveTab(GuideTab.Faq)}
-              >
-                <span class="tab-icon">💡</span>
-                <span class="tab-label">{t("guide_tab_faq")}</span>
-              </button>
-
-              <button
-                class={`nav-tab ${
-                  activeTab() === GuideTab.Privacy ? "active" : ""
-                }`}
-                onClick={() => setActiveTab(GuideTab.Privacy)}
-              >
-                <span class="tab-icon">🔒</span>
-                <span class="tab-label">{t("guide_tab_privacy")}</span>
-              </button>
-            </nav>
-
-            {/* Quick Action Card */}
-            <div class="quick-action-card">
-              <h3>GitHub Gist</h3>
-              <p>{t("guide_quick_action_desc")}</p>
-              <button
-                onClick={handleOpenGist}
-                class="game-btn w-100"
-              >
-                ☁️ {t("guide_open_github_btn")}
-              </button>
-            </div>
-          </aside>
-
-          {/* Main Content Area */}
-          <main class="guide-main-content">
+          {/* Main Content Pane */}
+          <main class="guide-content">
             <Show when={activeTab() === GuideTab.General}>
               <GeneralTab />
             </Show>
-
             <Show when={activeTab() === GuideTab.Gist}>
               <GistTab />
             </Show>
-
             <Show when={activeTab() === GuideTab.Security}>
               <SecurityTab />
             </Show>
-
             <Show when={activeTab() === GuideTab.Passkey}>
               <PasskeyTab />
             </Show>
-
             <Show when={activeTab() === GuideTab.Totp}>
               <TotpTab />
             </Show>
-
             <Show when={activeTab() === GuideTab.ImportExport}>
               <ImportExportTab />
             </Show>
-
             <Show when={activeTab() === GuideTab.Faq}>
               <FaqTab />
             </Show>
-
             <Show when={activeTab() === GuideTab.Privacy}>
               <PrivacyTab />
             </Show>

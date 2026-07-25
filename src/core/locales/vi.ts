@@ -367,6 +367,9 @@ export default {
   settings_theme_light: "Sáng",
   settings_vault_options_label: "Tùy chọn két sắt",
   settings_vault_options_sub: "Đồng bộ, nhập và xuất dữ liệu",
+  settings_enable_animations_label: "Hiệu ứng chuyển trang",
+  settings_enable_animations_sub:
+    "Bật hiệu ứng trượt mượt mà khi chuyển giữa các trang",
   settings_autofill_options_label: "Gợi ý & Tự động điền",
   settings_autofill_options_sub: "Cấu hình gợi ý điền và tự động đăng nhập",
   autofill_options_title: "Tùy chọn tự động điền",

@@ -1,5 +1,5 @@
 import { reconcile } from "solid-js/store";
-import { setStore, store } from "@/core/store.ts";
+import { accountStore, setAccountStore, setUiStore } from "@/core/store.ts";
 import { setSessionItem } from "@/core/storage.ts";
 import {
   SESSION_KEY_ENCRYPTED_VAULT,
@@ -8,29 +8,29 @@ import {
   STORE_KEY_VAULT_ITEMS,
 } from "@/core/constants.ts";
 import { decryptData, getSessionKey } from "@/core/crypto.ts";
-import { VaultListSchema } from "@/core/types.ts";
+import { VaultListSchema } from "@/features/vault/vault-schemas.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result } from "neverthrow";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { fetchGistContent } from "@/features/sync/github-api.ts";
 
 export async function syncVault(): Promise<Result<void, TranslationKey>> {
-  setStore(STORE_KEY_SYNCING, true);
-  setStore(STORE_KEY_SYNC_ERROR, "");
+  setUiStore(STORE_KEY_SYNCING, true);
+  setUiStore(STORE_KEY_SYNC_ERROR, "");
 
   const key = await getSessionKey();
-  if (!key || !store.salt) {
+  if (!key || !accountStore.salt) {
     const errorKey = "login_title_locked";
-    setStore(STORE_KEY_SYNCING, false);
-    setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
+    setUiStore(STORE_KEY_SYNCING, false);
+    setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
 
   const fetchRes = await fetchGistContent();
   if (fetchRes.isErr()) {
     const errorKey = fetchRes.error;
-    setStore(STORE_KEY_SYNCING, false);
-    setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
+    setUiStore(STORE_KEY_SYNCING, false);
+    setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
 
@@ -41,8 +41,8 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
 
   if (setSessionRes.isErr()) {
     const errorKey = setSessionRes.error;
-    setStore(STORE_KEY_SYNCING, false);
-    setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
+    setUiStore(STORE_KEY_SYNCING, false);
+    setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
 
@@ -54,8 +54,8 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
 
   if (decryptRes.isErr()) {
     const errorKey = decryptRes.error;
-    setStore(STORE_KEY_SYNCING, false);
-    setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
+    setUiStore(STORE_KEY_SYNCING, false);
+    setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
   const decrypted = decryptRes.value;
@@ -63,8 +63,8 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
   const parseDecryptedRes = safeJsonParse(decrypted);
   if (parseDecryptedRes.isErr()) {
     const errorKey = "sync_error_corrupted_payload";
-    setStore(STORE_KEY_SYNCING, false);
-    setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
+    setUiStore(STORE_KEY_SYNCING, false);
+    setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
   const decryptedJson = parseDecryptedRes.value;
@@ -72,13 +72,13 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
   const parseVaultRes = VaultListSchema.safeParse(decryptedJson);
   if (!parseVaultRes.success) {
     const errorKey = "sync_error_invalid_format";
-    setStore(STORE_KEY_SYNCING, false);
-    setStore(STORE_KEY_SYNC_ERROR, t(errorKey));
+    setUiStore(STORE_KEY_SYNCING, false);
+    setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
   const items = parseVaultRes.data;
 
-  setStore(STORE_KEY_VAULT_ITEMS, reconcile(items));
-  setStore(STORE_KEY_SYNCING, false);
+  setAccountStore(STORE_KEY_VAULT_ITEMS, reconcile(items));
+  setUiStore(STORE_KEY_SYNCING, false);
   return ok();
 }

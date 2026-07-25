@@ -1,10 +1,16 @@
-import { setStore, store } from "@/core/store.ts";
 import {
-  getAllSettings,
+  accountStore,
+  setAccountStore,
+  setSettingsStore,
+  setUiStore,
+  uiStore,
+} from "@/core/store.ts";
+import {
+  getAccountSettings,
   getGithubToken,
   setSessionItem,
   setSessionUnlocked,
-  updateSettings,
+  updateExtensionSettings,
 } from "@/core/storage.ts";
 import {
   clearDerivedKey,
@@ -13,14 +19,17 @@ import {
   setDerivedKey,
 } from "@/core/crypto.ts";
 import { notifyBackground, sendMessageToBackground } from "@/core/messaging.ts";
+import { View } from "@/core/types.ts";
 import {
   DownloadFromGistResponseSchema,
-  GistPayloadSchema,
-  VaultListSchema,
   type VaultTimeoutAction,
   type VaultTimeoutValue,
-  View,
-} from "@/core/types.ts";
+} from "@/core/storage-schemas.ts";
+import { GistPayloadSchema } from "@/features/sync/sync-schemas.ts";
+import {
+  type VaultItem,
+  VaultListSchema,
+} from "@/features/vault/vault-schemas.ts";
 import { type TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result } from "neverthrow";
 import { safeJsonParse } from "@/core/json-utils.ts";
@@ -36,7 +45,11 @@ export async function updateSessionTimeout(
   timeout: VaultTimeoutValue,
   action: VaultTimeoutAction,
 ): Promise<void> {
-  await updateSettings({
+  setSettingsStore({
+    vaultTimeout: timeout,
+    vaultTimeoutAction: action,
+  });
+  await updateExtensionSettings({
     vaultTimeout: timeout,
     vaultTimeoutAction: action,
   });
@@ -46,11 +59,11 @@ export async function updateSessionTimeout(
 export async function unlockWithKey(
   key: CryptoKey,
 ): Promise<Result<void, TranslationKey>> {
-  const settingsRes = await getAllSettings();
-  if (settingsRes.isErr()) return err(settingsRes.error);
-  const settings = settingsRes.value;
-  const githubConfigured = !!settings.githubTokenEncrypted ||
-    !!store.githubToken;
+  const accSettingsRes = await getAccountSettings();
+  if (accSettingsRes.isErr()) return err(accSettingsRes.error);
+  const accSettings = accSettingsRes.value;
+  const githubConfigured = !!accSettings.githubTokenEncrypted ||
+    !!accountStore.githubToken;
   if (!githubConfigured) {
     clearDerivedKey();
     return err("login_error_invalid_token");
@@ -62,10 +75,10 @@ export async function unlockWithKey(
   await setDerivedKey(key);
 
   // Decrypt GitHub Token check
-  if (settings.githubTokenEncrypted && settings.githubTokenIv) {
+  if (accSettings.githubTokenEncrypted && accSettings.githubTokenIv) {
     const decryptRes = await decryptData(
-      settings.githubTokenEncrypted,
-      settings.githubTokenIv,
+      accSettings.githubTokenEncrypted,
+      accSettings.githubTokenIv,
       key,
     );
     if (decryptRes.isErr()) {
@@ -138,13 +151,13 @@ export async function unlockWithKey(
 
   const params = new URLSearchParams(window.location.search);
   const itemId = params.get("itemId");
-  let targetView = store.view === View.Fido2Prompt
+  let targetView = uiStore.view === View.Fido2Prompt
     ? View.Fido2Prompt
     : View.Vault;
   let selectedItem = undefined;
 
-  if (itemId && store.view !== View.Fido2Prompt) {
-    const foundItem = items.find((i) => i.id === itemId);
+  if (itemId && uiStore.view !== View.Fido2Prompt) {
+    const foundItem = items.find((i: VaultItem) => i.id === itemId);
     if (foundItem) {
       selectedItem = foundItem;
       targetView = View.ItemDetail;
@@ -180,13 +193,15 @@ export async function unlockWithKey(
   if (setVaultRes.isErr()) return err(setVaultRes.error);
 
   const finalToken = await getGithubToken();
-  setStore({
+  setAccountStore({
     vaultItems: items,
     githubToken: finalToken,
     githubConfigured: true,
     isLocked: false,
+  });
+  setUiStore({
     view: targetView,
-    selectedItem,
+    selectedItem: selectedItem || null,
   });
   notifyBackground({ type: MSG_USER_ACTIVITY });
 

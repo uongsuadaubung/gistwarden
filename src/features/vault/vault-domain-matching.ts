@@ -1,5 +1,6 @@
 import { getBaseDomain, getHostname } from "@/core/domain-utils.ts";
-import { type VaultItem, VaultItemType } from "@/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 
 export function isMatchingDomain(item: VaultItem, domain: string): boolean {
   if (!domain) return false;

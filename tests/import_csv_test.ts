@@ -4,7 +4,8 @@ import {
   parseAndValidateBitwardenCsv,
   parseAndValidateBrowserCsv,
 } from "@/features/sync/csv-import.ts";
-import { type VaultItem, VaultItemType } from "@/core/types.ts";
+import { VaultItemType } from "@/features/vault/vault-types.ts";
+import type { VaultItem } from "@/features/vault/vault-schemas.ts";
 
 Deno.test("CSV Parser - RFC 4180 parsing", () => {
   // 1. Simple parsing

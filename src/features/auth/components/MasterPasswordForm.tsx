@@ -2,7 +2,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
-import { store } from "@/core/store.ts";
+import { accountStore, settingsStore } from "@/core/store.ts";
 
 export interface MasterPasswordFormProps {
   onUnlock: (password: string) => void;
@@ -45,8 +45,9 @@ export const MasterPasswordForm: Component<MasterPasswordFormProps> = (
       </Button>
 
       <Show
-        when={store.pinUnlockEnabled &&
-          !(store.requireMasterPasswordOnRestart && !store.sessionUnlocked)}
+        when={accountStore.pinUnlockEnabled &&
+          !(settingsStore.requireMasterPasswordOnRestart &&
+            !accountStore.sessionUnlocked)}
       >
         <Button
           type="button"

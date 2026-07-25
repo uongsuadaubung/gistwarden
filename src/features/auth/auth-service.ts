@@ -1,22 +1,29 @@
 import { z } from "zod";
 import { reconcile } from "solid-js/store";
-import { setStore, store } from "@/core/store.ts";
+import {
+  accountStore,
+  setAccountStore,
+  setSettingsStore,
+  settingsStore,
+  setUiStore,
+  uiStore,
+} from "@/core/store.ts";
 import { clearAlarm } from "@/core/alarms.ts";
 import {
-  type AppSettings,
-  clearLocal,
-  clearSession,
   clearUnlockedSessionState,
-  getAllSettings,
+  getAccountSettings,
   getGithubToken,
   getLocalItem,
   getSessionItem,
   getSessionItems,
   hasSessionStorage,
   isSessionUnlocked,
+  loadAllStores,
+  resetAccountSettings,
   setSessionItem,
   setSessionUnlocked,
-  updateSettings,
+  updateAccountSettings,
+  updateExtensionSettings,
 } from "@/core/storage.ts";
 import {
   clearDerivedKey,
@@ -28,13 +35,13 @@ import {
   setDerivedKey,
 } from "@/core/crypto.ts";
 import { notifyBackground, sendMessageToBackground } from "@/core/messaging.ts";
+import { View } from "@/core/types.ts";
+import { DownloadFromGistResponseSchema } from "@/core/storage-schemas.ts";
+import { GistPayloadSchema } from "@/features/sync/sync-schemas.ts";
 import {
-  DownloadFromGistResponseSchema,
-  GistPayloadSchema,
   type VaultItem,
   VaultListSchema,
-  View,
-} from "@/core/types.ts";
+} from "@/features/vault/vault-schemas.ts";
 import {
   setLanguage,
   SupportLanguage,
@@ -57,7 +64,6 @@ import {
   SESSION_KEY_SESSION_INITIALIZED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
-  STORE_KEY_IS_LOADED,
   STORE_KEY_IS_LOCKED,
   STORE_KEY_SALT,
   STORE_KEY_VAULT_ITEMS,
@@ -65,7 +71,7 @@ import {
 } from "@/core/constants.ts";
 
 async function handleBrowserRestartCleanup(
-  settings: AppSettings,
+  vaultTimeoutAction: string,
 ): Promise<void> {
   if (!hasSessionStorage()) {
     return;
@@ -77,13 +83,11 @@ async function handleBrowserRestartCleanup(
     ? sessionInitRes.value
     : null;
   if (!sessionInitialized) {
-    const action = settings.vaultTimeoutAction || "lock";
-    if (action === "logout") {
+    if (vaultTimeoutAction === "logout") {
       console.debug(
         `[Store] Phát hiện khởi động lại trình duyệt và hành động là logout. Đang đăng xuất...`,
       );
-      await clearLocal();
-      await clearSession();
+      await resetAccountSettings();
     }
     await setSessionItem(SESSION_KEY_SESSION_INITIALIZED, true);
   }
@@ -177,8 +181,8 @@ async function loadAndDecryptVault(
 ): Promise<void> {
   const handleInitError = (errVal: TranslationKey) => {
     console.error("[Store] Decryption on load failed:", errVal);
-    setStore(STORE_KEY_IS_LOCKED, true);
-    if (!isFido2Prompt) setStore(STORE_KEY_VIEW, View.Login);
+    setAccountStore(STORE_KEY_IS_LOCKED, true);
+    if (!isFido2Prompt) setUiStore(STORE_KEY_VIEW, View.Login);
   };
 
   const contentRes = await fetchEncryptedVaultContent();
@@ -189,10 +193,8 @@ async function loadAndDecryptVault(
 
   const content = contentRes.value;
   if (!content) {
-    setStore({
-      isLocked: false,
-      view: isFido2Prompt ? View.Fido2Prompt : View.Vault,
-    });
+    setAccountStore("isLocked", false);
+    setUiStore("view", isFido2Prompt ? View.Fido2Prompt : View.Vault);
     notifyBackground({ type: MSG_USER_ACTIVITY });
     return;
   }
@@ -210,11 +212,13 @@ async function loadAndDecryptVault(
     params,
   );
 
-  setStore({
+  setAccountStore({
     vaultItems: items,
     isLocked: false,
+  });
+  setUiStore({
     view: targetView,
-    selectedItem,
+    selectedItem: selectedItem || null,
   });
   notifyBackground({ type: MSG_USER_ACTIVITY });
 }
@@ -224,73 +228,53 @@ function applyInitialView(
   welcomeAccepted: boolean,
   isFido2Prompt: boolean,
 ): void {
-  setStore(STORE_KEY_IS_LOCKED, true);
+  setAccountStore(STORE_KEY_IS_LOCKED, true);
   if (!isFido2Prompt) {
     if (!githubConfigured && !welcomeAccepted) {
-      setStore(STORE_KEY_VIEW, View.Welcome);
+      setUiStore(STORE_KEY_VIEW, View.Welcome);
     } else {
-      setStore(STORE_KEY_VIEW, View.Login);
+      setUiStore(STORE_KEY_VIEW, View.Login);
     }
   }
 }
 
 export async function init() {
-  console.log(`[Store] Initializing ${APP_NAME} Store...`);
+  console.log(`[Store] Initializing ${APP_NAME} Stores...`);
 
-  const settingsRes = await getAllSettings();
-  if (settingsRes.isErr()) {
-    return;
-  }
-  const settings = settingsRes.value;
-  await handleBrowserRestartCleanup(settings);
+  await loadAllStores();
+  await handleBrowserRestartCleanup(settingsStore.vaultTimeoutAction);
 
   const key = await getSessionKey();
   const sessionUnlockedVal = await isSessionUnlocked();
   const currentTheme = await loadAndApplyTheme();
 
-  const decryptedToken = await getGithubToken();
-  const githubConfigured = !!settings.githubTokenEncrypted ||
-    !!decryptedToken || !!store.githubToken;
+  setSettingsStore({ theme: currentTheme });
 
-  setStore({
+  const decryptedToken = await getGithubToken();
+  const githubConfigured = !!accountStore.gistId ||
+    !!decryptedToken || !!accountStore.githubToken;
+
+  setAccountStore({
     githubToken: decryptedToken,
     githubConfigured,
-    gistId: settings.gistId,
-    salt: settings.salt,
-    cachedGithubUser: settings.cachedGithubUser,
-    lastSync: settings.lastSync,
-    language: settings.language,
-    theme: currentTheme,
-    welcomeAccepted: settings.welcomeAccepted,
-    pinUnlockEnabled: settings.pinUnlockEnabled,
-    pinUnlockValue: settings.pinUnlockValue,
-    pinUnlockIv: settings.pinUnlockIv,
-    pinUnlockSalt: settings.pinUnlockSalt,
-    requireMasterPasswordOnRestart: settings.requireMasterPasswordOnRestart,
-    vaultTimeout: settings.vaultTimeout,
-    vaultTimeoutAction: settings.vaultTimeoutAction,
     sessionUnlocked: sessionUnlockedVal,
-    timeOffset: settings.timeOffset || 0,
-    autoSubmitOnAutofill: settings.autoSubmitOnAutofill ?? true,
-    showAutofillSuggestionsOnFocus: settings.showAutofillSuggestionsOnFocus ??
-      true,
   });
 
   setLanguage(
-    settings.language === "vi" ? SupportLanguage.Vi : SupportLanguage.En,
+    settingsStore.language === "vi" ? SupportLanguage.Vi : SupportLanguage.En,
   );
 
   const params = new URLSearchParams(window.location.search);
   const isFido2Prompt = params.get("mode") === "fido2-prompt";
 
   if (isFido2Prompt) {
-    setStore(STORE_KEY_VIEW, View.Fido2Prompt);
+    setUiStore(STORE_KEY_VIEW, View.Fido2Prompt);
   }
 
-  if (decryptedToken && key && settings.salt) {
+  if (decryptedToken && key && accountStore.salt) {
     await loadAndDecryptVault(key, isFido2Prompt, params);
   } else {
-    if (settings.gistId && settings.salt) {
+    if (accountStore.gistId && accountStore.salt) {
       const publicRes = await fetchGistContent();
       if (publicRes.isOk() && publicRes.value.rawContent) {
         const content = publicRes.value.rawContent;
@@ -303,13 +287,15 @@ export async function init() {
           if (payloadResult.success) {
             const payload = payloadResult.data;
             if (
-              payload.salt && settings.salt && payload.salt !== settings.salt
+              payload.salt && accountStore.salt &&
+              payload.salt !== accountStore.salt
             ) {
               console.warn(
                 "[Store] Salt mismatch detected during init prefetch (Master Password changed on another device). Auto logging out...",
               );
               await logout();
-              setStore(STORE_KEY_IS_LOADED, true);
+              setAccountStore("isLoaded", true);
+              setSettingsStore("isLoaded", true);
               return;
             }
             await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, content);
@@ -317,10 +303,15 @@ export async function init() {
         }
       }
     }
-    applyInitialView(githubConfigured, settings.welcomeAccepted, isFido2Prompt);
+    applyInitialView(
+      githubConfigured,
+      settingsStore.welcomeAccepted,
+      isFido2Prompt,
+    );
   }
 
-  setStore(STORE_KEY_IS_LOADED, true);
+  setAccountStore("isLoaded", true);
+  setSettingsStore("isLoaded", true);
 }
 
 async function setupUnlockedSession(
@@ -350,16 +341,18 @@ async function setupUnlockedSession(
 
   const finalToken = await getGithubToken();
   const finalView = targetView ||
-    (store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault);
+    (uiStore.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault);
 
-  setStore({
+  setAccountStore({
     vaultItems: items,
     githubToken: finalToken,
     githubConfigured: true,
     isLocked: false,
-    view: finalView,
-    selectedItem,
     sessionUnlocked: true,
+  });
+  setUiStore({
+    view: finalView,
+    selectedItem: selectedItem || null,
   });
   notifyBackground({ type: MSG_USER_ACTIVITY });
   return ok();
@@ -412,8 +405,8 @@ async function initializeNewVault(
 ): Promise<Result<void, TranslationKey>> {
   const rawSalt = generateSalt();
   const saltBase64 = rawSalt.toBase64();
-  await updateSettings({ salt: saltBase64 });
-  setStore(STORE_KEY_SALT, saltBase64);
+  await updateAccountSettings({ salt: saltBase64 });
+  setAccountStore(STORE_KEY_SALT, saltBase64);
 
   const keyRes = await getOrDeriveKey(password, saltBase64);
   if (keyRes.isErr()) {
@@ -430,7 +423,7 @@ async function initializeNewVault(
       return err(encryptRes.error);
     }
     const { iv, ciphertext } = encryptRes.value;
-    await updateSettings({
+    await updateAccountSettings({
       githubTokenEncrypted: ciphertext,
       githubTokenIv: iv,
     });
@@ -488,13 +481,13 @@ async function decryptGistVault(
 
   const params = new URLSearchParams(window.location.search);
   const itemId = params.get("itemId");
-  let targetView = store.view === View.Fido2Prompt
+  let targetView = uiStore.view === View.Fido2Prompt
     ? View.Fido2Prompt
     : View.Vault;
   let selectedItem = undefined;
 
-  if (itemId && store.view !== View.Fido2Prompt) {
-    const foundItem = items.find((i) => i.id === itemId);
+  if (itemId && uiStore.view !== View.Fido2Prompt) {
+    const foundItem = items.find((i: VaultItem) => i.id === itemId);
     if (foundItem) {
       selectedItem = foundItem;
       targetView = View.ItemDetail;
@@ -507,18 +500,18 @@ async function decryptGistVault(
 export async function unlock(
   password: string,
 ): Promise<Result<void, TranslationKey>> {
-  const settingsRes = await getAllSettings();
-  if (settingsRes.isErr()) return err(settingsRes.error);
-  const settings = settingsRes.value;
+  const accSettingsRes = await getAccountSettings();
+  if (accSettingsRes.isErr()) return err(accSettingsRes.error);
+  const accSettings = accSettingsRes.value;
   const currentToken = await getGithubToken();
-  const githubConfigured = !!settings.githubTokenEncrypted ||
-    !!currentToken || !!store.githubToken;
+  const githubConfigured = !!accSettings.githubTokenEncrypted ||
+    !!currentToken || !!accountStore.githubToken;
   if (!githubConfigured) {
     clearDerivedKey();
     return err("login_error_invalid_token");
   }
 
-  let saltBase64 = settings.salt;
+  let saltBase64 = accSettings.salt || accountStore.salt;
   let key: CryptoKey | null = null;
   clearDerivedKey();
 
@@ -530,10 +523,10 @@ export async function unlock(
       return err(keyRes.error);
     }
     key = keyRes.value;
-    if (settings.githubTokenEncrypted && settings.githubTokenIv) {
+    if (accSettings.githubTokenEncrypted && accSettings.githubTokenIv) {
       const decryptRes = await decryptData(
-        settings.githubTokenEncrypted,
-        settings.githubTokenIv,
+        accSettings.githubTokenEncrypted,
+        accSettings.githubTokenIv,
         key,
       );
       if (decryptRes.isErr()) {
@@ -553,13 +546,13 @@ export async function unlock(
   const { content: existingGistContent, salt: extractedSalt } = gistRes.value;
   if (extractedSalt && !saltBase64) {
     saltBase64 = extractedSalt;
-    await updateSettings({ salt: saltBase64 });
-    setStore(STORE_KEY_SALT, saltBase64);
+    await updateAccountSettings({ salt: saltBase64 });
+    setAccountStore(STORE_KEY_SALT, saltBase64);
   }
 
   // C. Nếu chưa có salt (két sắt mới), tạo két sắt mới
   if (!saltBase64) {
-    const tokenToEncrypt = store.githubToken || "";
+    const tokenToEncrypt = accountStore.githubToken || "";
     return await initializeNewVault(password, tokenToEncrypt);
   }
 
@@ -576,14 +569,15 @@ export async function unlock(
   // E. Onboarding token mã hóa
   const activeToken = await getGithubToken();
   if (
-    activeToken && (!settings.githubTokenEncrypted || !settings.githubTokenIv)
+    activeToken &&
+    (!accSettings.githubTokenEncrypted || !accSettings.githubTokenIv)
   ) {
     const encryptRes = await encryptData(activeToken, key);
     if (encryptRes.isErr()) {
       clearDerivedKey();
       return err(encryptRes.error);
     }
-    await updateSettings({
+    await updateAccountSettings({
       githubTokenEncrypted: encryptRes.value.ciphertext,
       githubTokenIv: encryptRes.value.iv,
     });
@@ -617,11 +611,14 @@ export async function lock() {
 
   await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
 
-  setStore({
+  setAccountStore({
     vaultItems: [],
     githubToken: "",
     isLocked: true,
-    view: store.view === View.Fido2Prompt ? View.Fido2Prompt : View.Login,
+  });
+  setUiStore({
+    view: uiStore.view === View.Fido2Prompt ? View.Fido2Prompt : View.Login,
+    selectedItem: null,
   });
 }
 
@@ -630,43 +627,31 @@ export async function logout() {
 
   await clearUnlockedSessionState();
 
-  await clearLocal();
+  await resetAccountSettings();
 
   await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
 
-  setStore({
-    githubToken: "",
-    githubConfigured: false,
-    gistId: "",
-    salt: "",
-    cachedGithubUser: null,
-    lastSync: 0,
+  setAccountStore({
     vaultItems: [],
+    githubToken: "",
     isLocked: true,
-    view: View.Login,
-    welcomeAccepted: false,
-    pinUnlockEnabled: false,
-    pinUnlockValue: "",
-    pinUnlockIv: "",
-    pinUnlockSalt: "",
-    requireMasterPasswordOnRestart: true,
-    vaultTimeout: "onRestart",
-    vaultTimeoutAction: "lock",
     sessionUnlocked: false,
+  });
+  setUiStore({
+    view: View.Login,
+    selectedItem: null,
   });
 }
 
 export async function acceptWelcome() {
-  await updateSettings({ welcomeAccepted: true });
-  setStore({
-    welcomeAccepted: true,
-    view: View.Login,
-  });
+  await updateExtensionSettings({ welcomeAccepted: true });
+  setSettingsStore("welcomeAccepted", true);
+  setUiStore("view", View.Login);
 }
 
 export async function reloadVaultItems(): Promise<void> {
   const key = await getSessionKey();
-  if (!key || !store.salt || store.isLocked) return;
+  if (!key || !accountStore.salt || accountStore.isLocked) return;
 
   const contentRes = await fetchEncryptedVaultContent();
   if (contentRes.isErr() || !contentRes.value) return;
@@ -675,5 +660,5 @@ export async function reloadVaultItems(): Promise<void> {
   if (decryptVaultRes.isErr()) return;
 
   const { items } = decryptVaultRes.value;
-  setStore(STORE_KEY_VAULT_ITEMS, reconcile(items));
+  setAccountStore(STORE_KEY_VAULT_ITEMS, reconcile(items));
 }

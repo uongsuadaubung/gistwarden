@@ -1,58 +1,35 @@
-import { z } from "zod";
 import {
   SESSION_KEY_SESSION_UNLOCKED,
   SESSION_KEYS_ON_LOCK,
-  STORAGE_KEY,
+  STORAGE_KEY_ACCOUNT_SETTINGS,
+  STORAGE_KEY_EXTENSION_SETTINGS,
   STORAGE_KEY_PASSWORD_HISTORY,
 } from "@/core/constants.ts";
 
 import {
   type GeneratedPasswordHistoryItem,
   GeneratedPasswordHistoryListSchema,
-  SupportLanguage,
-  SupportLanguageSchema,
-  VaultTimeoutActionSchema,
-  VaultTimeoutValueSchema,
-} from "@/core/types.ts";
+} from "@/features/sync/sync-schemas.ts";
 
 import type { TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result, ResultAsync } from "neverthrow";
 import { clearDerivedKey, decryptData, getSessionKey } from "@/core/crypto.ts";
-import { setStore, store } from "@/core/store.ts";
+import {
+  accountStore,
+  initialAccountState,
+  initialExtensionSettings,
+  resetAccountStore,
+  resetUiStore,
+  setAccountStore,
+  setSettingsStore,
+} from "@/core/store.ts";
 
-export const GithubUserSchema = z.object({
-  login: z.string(),
-  avatar_url: z.string(),
-});
-
-export type GithubUser = z.infer<typeof GithubUserSchema>;
-
-export const SettingsSchema = z.object({
-  githubTokenEncrypted: z.string().default(""),
-  githubTokenIv: z.string().default(""),
-  gistId: z.string().default(""),
-  salt: z.string().default(""),
-  lastSync: z.number().default(0),
-  lastSyncedHash: z.string().default(""),
-  cachedGithubUser: GithubUserSchema.nullable().default(null),
-  language: SupportLanguageSchema.default(SupportLanguage.En),
-  welcomeAccepted: z.boolean().default(false),
-  // PIN settings
-  pinUnlockEnabled: z.boolean().default(false),
-  pinUnlockValue: z.string().default(""),
-  pinUnlockIv: z.string().default(""),
-  pinUnlockSalt: z.string().default(""),
-  requireMasterPasswordOnRestart: z.boolean().default(true),
-  // Session timeout settings
-  vaultTimeout: VaultTimeoutValueSchema.default("onSystemLock"),
-  vaultTimeoutAction: VaultTimeoutActionSchema.default("lock"),
-  timeOffset: z.number().default(0),
-  // Autofill settings
-  autoSubmitOnAutofill: z.boolean().default(true),
-  showAutofillSuggestionsOnFocus: z.boolean().default(true),
-});
-
-export type AppSettings = z.infer<typeof SettingsSchema>;
+import {
+  type AccountSettings,
+  AccountSettingsSchema,
+  type ExtensionSettings,
+  ExtensionSettingsSchema,
+} from "@/core/storage-schemas.ts";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -73,38 +50,128 @@ export function hasStorageOnChanged(): boolean {
     !!chrome.storage.onChanged;
 }
 
-export async function getAllSettings(): Promise<
-  Result<AppSettings, TranslationKey>
+// ----------------------------------------------------
+// Extension Settings (Persistent across logout)
+// ----------------------------------------------------
+export async function getExtensionSettings(): Promise<
+  Result<ExtensionSettings, TranslationKey>
 > {
-  const rawRes = await getLocalItem(STORAGE_KEY);
+  const rawRes = await getLocalItem(STORAGE_KEY_EXTENSION_SETTINGS);
   if (rawRes.isErr()) {
     return err(rawRes.error);
   }
   const raw = rawRes.value || {};
-  const parsed = SettingsSchema.safeParse(raw);
+  const parsed = ExtensionSettingsSchema.safeParse(raw);
   if (!parsed.success) {
     return err("storage_error");
   }
   return ok(parsed.data);
 }
 
-export async function updateSettings(
-  patch: Partial<AppSettings>,
+export async function updateExtensionSettings(
+  patch: Partial<ExtensionSettings>,
 ): Promise<Result<void, TranslationKey>> {
-  setStore(patch);
+  setSettingsStore(patch);
   if (!hasLocalStorage()) {
     return err("storage_error");
   }
-  const currentRes = await getAllSettings();
-  if (currentRes.isErr()) {
-    return err("storage_error");
-  }
-  const current = currentRes.value;
+  const currentRes = await getExtensionSettings();
+  const current = currentRes.isOk()
+    ? currentRes.value
+    : ExtensionSettingsSchema.parse(initialExtensionSettings);
   const next = { ...current, ...patch };
-  const safeNext = SettingsSchema.parse(next);
-  return await setLocalItem(STORAGE_KEY, safeNext);
+  const safeNext = ExtensionSettingsSchema.parse(next);
+  return await setLocalItem(STORAGE_KEY_EXTENSION_SETTINGS, safeNext);
 }
 
+// ----------------------------------------------------
+// Account Settings (Wiped on logout)
+// ----------------------------------------------------
+export async function getAccountSettings(): Promise<
+  Result<AccountSettings, TranslationKey>
+> {
+  const rawRes = await getLocalItem(STORAGE_KEY_ACCOUNT_SETTINGS);
+  if (rawRes.isErr()) {
+    return err(rawRes.error);
+  }
+  const raw = rawRes.value || {};
+  const parsed = AccountSettingsSchema.safeParse(raw);
+  if (!parsed.success) {
+    return err("storage_error");
+  }
+  return ok(parsed.data);
+}
+
+export async function updateAccountSettings(
+  patch: Partial<AccountSettings>,
+): Promise<Result<void, TranslationKey>> {
+  if (!hasLocalStorage()) {
+    return err("storage_error");
+  }
+  const currentRes = await getAccountSettings();
+  const current = currentRes.isOk()
+    ? currentRes.value
+    : AccountSettingsSchema.parse({});
+  const next = { ...current, ...patch };
+  const safeNext = AccountSettingsSchema.parse(next);
+  return await setLocalItem(STORAGE_KEY_ACCOUNT_SETTINGS, safeNext);
+}
+
+// Reset account store and storage (Logout)
+export async function resetAccountSettings(): Promise<
+  Result<void, TranslationKey>
+> {
+  resetAccountStore();
+  resetUiStore();
+  if (!hasLocalStorage()) {
+    return err("storage_error");
+  }
+  await removeLocalItem(STORAGE_KEY_ACCOUNT_SETTINGS);
+  await clearSession();
+  return ok();
+}
+
+// Helper function to load all settings into SolidJS stores
+export async function loadAllStores(): Promise<void> {
+  const extRes = await getExtensionSettings();
+  if (extRes.isOk()) {
+    setSettingsStore({
+      ...extRes.value,
+      isLoaded: true,
+    });
+  } else {
+    setSettingsStore({
+      ...initialExtensionSettings,
+      isLoaded: true,
+    });
+  }
+
+  const accRes = await getAccountSettings();
+  if (accRes.isOk()) {
+    const acc = accRes.value;
+    setAccountStore({
+      gistId: acc.gistId,
+      salt: acc.salt,
+      lastSync: acc.lastSync,
+      cachedGithubUser: acc.cachedGithubUser,
+      pinUnlockEnabled: acc.pinUnlockEnabled,
+      pinUnlockValue: acc.pinUnlockValue,
+      pinUnlockIv: acc.pinUnlockIv,
+      pinUnlockSalt: acc.pinUnlockSalt,
+      githubConfigured: !!acc.gistId && !!acc.salt,
+      isLoaded: true,
+    });
+  } else {
+    setAccountStore({
+      ...initialAccountState,
+      isLoaded: true,
+    });
+  }
+}
+
+// ----------------------------------------------------
+// Session Storage & Crypto Helpers
+// ----------------------------------------------------
 export async function getSessionItem(
   key: string,
 ): Promise<Result<unknown, TranslationKey>> {
@@ -205,15 +272,15 @@ export async function clearUnlockedSessionState(): Promise<
 }
 
 export async function getGithubToken(): Promise<string> {
-  const settingsRes = await getAllSettings();
-  if (settingsRes.isOk()) {
-    const settings = settingsRes.value;
-    if (settings.githubTokenEncrypted && settings.githubTokenIv) {
+  const accRes = await getAccountSettings();
+  if (accRes.isOk()) {
+    const acc = accRes.value;
+    if (acc.githubTokenEncrypted && acc.githubTokenIv) {
       const key = await getSessionKey();
       if (key) {
         const decryptRes = await decryptData(
-          settings.githubTokenEncrypted,
-          settings.githubTokenIv,
+          acc.githubTokenEncrypted,
+          acc.githubTokenIv,
           key,
         );
         if (decryptRes.isOk()) {
@@ -222,7 +289,7 @@ export async function getGithubToken(): Promise<string> {
       }
     }
   }
-  return store.githubToken || "";
+  return accountStore.githubToken || "";
 }
 
 export async function isSessionUnlocked(): Promise<boolean> {

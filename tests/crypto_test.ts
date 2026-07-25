@@ -26,8 +26,8 @@ import {
   p1363ToDer,
 } from "@/features/passkey/passkey-crypto.ts";
 import { parseTotpSecret } from "@/core/totp-utils.ts";
-import { Fido2CredentialSchema } from "@/core/types.ts";
-import { ImportItemSchema } from "@/core/types.ts";
+import { Fido2CredentialSchema } from "@/features/passkey/fido2-schemas.ts";
+import { ImportItemSchema } from "@/features/sync/sync-schemas.ts";
 
 Deno.test("Crypto - Key derivation, Encryption and Decryption", async () => {
   const password = "SuperSecretPassword123";

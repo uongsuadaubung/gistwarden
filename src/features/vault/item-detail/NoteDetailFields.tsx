@@ -1,5 +1,5 @@
 import { type Component } from "solid-js";
-import { type SecureNoteVaultItem } from "@/core/types.ts";
+import type { SecureNoteVaultItem } from "@/features/vault/vault-schemas.ts";
 import { t } from "@/core/i18n.ts";
 
 interface NoteDetailFieldsProps {

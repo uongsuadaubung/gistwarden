@@ -1,13 +1,15 @@
 import { t } from "@/core/i18n.ts";
+import { View } from "@/core/types.ts";
+import {
+  CustomFieldType,
+  VaultItemType,
+} from "@/features/vault/vault-types.ts";
 import {
   type BaseVaultItem,
-  CustomFieldType,
   CustomFieldTypeSchema,
   type VaultField,
   type VaultItem,
-  VaultItemType,
-  View,
-} from "@/core/types.ts";
+} from "@/features/vault/vault-schemas.ts";
 import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import { deleteItem } from "@/features/vault/vault-service.ts";
 import { navigate } from "@/core/navigation.ts";

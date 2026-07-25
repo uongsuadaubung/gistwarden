@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { decryptData, encryptData } from "@/core/crypto.ts";
-import { type VaultItem, VaultListSchema } from "@/core/types.ts";
+import {
+  type VaultItem,
+  VaultListSchema,
+} from "@/features/vault/vault-schemas.ts";
 
-import { setSessionItem, updateSettings } from "@/core/storage.ts";
+import { setSessionItem, updateAccountSettings } from "@/core/storage.ts";
 import {
   MSG_UPLOAD_TO_GIST,
   SESSION_KEY_ENCRYPTED_VAULT,
@@ -13,7 +16,7 @@ import { showToast } from "@/core/ui-service.ts";
 import { err, ok, Result } from "neverthrow";
 import { mergeVaultItems } from "@/features/sync/sync-merge.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
-import { store } from "@/core/store.ts";
+import { accountStore, setAccountStore } from "@/core/store.ts";
 import { fetchGistContent } from "@/features/sync/github-api.ts";
 
 export const SyncResponseSchema = z.object({
@@ -55,7 +58,7 @@ async function fetchAndMergeRemoteVault(
   const merged = mergeVaultItems(
     localItems,
     remoteVaultParse.data,
-    store.lastSync || 0,
+    accountStore.lastSync || 0,
   );
   return ok(merged);
 }
@@ -138,7 +141,9 @@ export async function syncVaultToGist(
     return err(setRes.error);
   }
 
-  await updateSettings({ lastSync: Date.now() });
+  const now = Date.now();
+  setAccountStore("lastSync", now);
+  await updateAccountSettings({ lastSync: now });
 
   return ok(finalItemsToSave);
 }

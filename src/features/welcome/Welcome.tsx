@@ -1,5 +1,5 @@
 import { type Component, createSignal, Match, Switch } from "solid-js";
-import { store } from "@/core/store.ts";
+import { settingsStore } from "@/core/store.ts";
 import { acceptWelcome } from "@/features/auth/auth-service.ts";
 import { updateLanguage } from "@/core/ui-service.ts";
 import Button from "@/components/ui/Button.tsx";
@@ -80,7 +80,7 @@ export const Welcome: Component = () => {
             <button
               type="button"
               class={`lang-toggle-btn ${
-                store.language === "en" ? "active" : ""
+                settingsStore.language === "en" ? "active" : ""
               }`}
               onClick={() => updateLanguage("en")}
             >
@@ -90,7 +90,7 @@ export const Welcome: Component = () => {
             <button
               type="button"
               class={`lang-toggle-btn ${
-                store.language === "vi" ? "active" : ""
+                settingsStore.language === "vi" ? "active" : ""
               }`}
               onClick={() => updateLanguage("vi")}
             >
