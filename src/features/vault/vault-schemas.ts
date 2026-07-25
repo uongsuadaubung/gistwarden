@@ -125,14 +125,29 @@ export const SshKeyVaultItemSchema = BaseVaultItemSchema.extend({
 });
 export type SshKeyVaultItem = z.infer<typeof SshKeyVaultItemSchema>;
 
-export const VaultItemSchema = z.discriminatedUnion("type", [
+const BaseVaultItemUnionSchema = z.discriminatedUnion("type", [
   LoginVaultItemSchema,
   SecureNoteVaultItemSchema,
   CardVaultItemSchema,
   IdentityVaultItemSchema,
   SshKeyVaultItemSchema,
 ]);
-export type VaultItem = z.infer<typeof VaultItemSchema>;
+
+function isObjectRecord(val: unknown): val is Record<string, unknown> {
+  return typeof val === "object" && val !== null;
+}
+
+export const VaultItemSchema = z.preprocess((val) => {
+  if (isObjectRecord(val) && "type" in val) {
+    const numType = Number(val.type);
+    if (!Number.isNaN(numType)) {
+      return { ...val, type: numType };
+    }
+  }
+  return val;
+}, BaseVaultItemUnionSchema);
+
+export type VaultItem = z.infer<typeof BaseVaultItemUnionSchema>;
 
 export const VaultListSchema = z.array(VaultItemSchema);
 export type VaultList = z.infer<typeof VaultListSchema>;

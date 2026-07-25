@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { VaultItemType } from "@/features/vault/vault-types.ts";
+import {
+  isCardItem,
+  isIdentityItem,
+  isLoginItem,
+  isSshKeyItem,
+  VaultItemType,
+} from "@/features/vault/vault-types.ts";
 import type {
   CardVaultItem,
   IdentityVaultItem,
@@ -107,7 +113,7 @@ export function getInitialFormState(
 
   const state: ItemEditFormState = {
     ...defaults,
-    itemType: item.type ?? VaultItemType.Login,
+    itemType: item.type,
     name: item.name ?? "",
     notes: item.notes ?? "",
     favorite: item.favorite ?? false,
@@ -115,7 +121,7 @@ export function getInitialFormState(
     fields: item.fields ? JSON.parse(JSON.stringify(item.fields)) : [],
   };
 
-  if (item.type === VaultItemType.Login) {
+  if (isLoginItem(item)) {
     const login = item.login;
     state.username = login.username ?? "";
     state.password = login.password ?? "";
@@ -124,7 +130,7 @@ export function getInitialFormState(
       : [{ uri: "", match: null }];
     state.totpSecret = login.totp ?? "";
     state.fidoCredentials = login.fido2Credentials ?? [];
-  } else if (item.type === VaultItemType.Card) {
+  } else if (isCardItem(item)) {
     const card = item.card;
     state.cardholderName = card.cardholderName ?? "";
     state.cardNumber = card.number ?? "";
@@ -132,12 +138,12 @@ export function getInitialFormState(
     state.cardExpMonth = card.expMonth ?? "1";
     state.cardExpYear = card.expYear ?? currentYear;
     state.cardCode = card.code ?? "";
-  } else if (item.type === VaultItemType.SshKey) {
+  } else if (isSshKeyItem(item)) {
     const ssh = item.sshKey;
     state.sshPrivateKey = ssh.privateKey ?? "";
     state.sshPublicKey = ssh.publicKey ?? "";
     state.sshFingerprint = ssh.keyFingerprint ?? "";
-  } else if (item.type === VaultItemType.Identity) {
+  } else if (isIdentityItem(item)) {
     const id = item.identity;
     state.identityTitle = id.title ?? "";
     state.firstName = id.firstName ?? "";
@@ -210,7 +216,7 @@ export function mapFormStateToVaultItem(
   }
 
   if (validatedForm.itemType === VaultItemType.Login) {
-    const originalLogin = selectedItem?.type === VaultItemType.Login
+    const originalLogin = selectedItem && isLoginItem(selectedItem)
       ? selectedItem.login
       : null;
 

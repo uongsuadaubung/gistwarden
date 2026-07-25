@@ -4,43 +4,48 @@ import {
   type VaultItem,
   VaultListSchema,
 } from "@/features/vault/vault-schemas.ts";
-
 import { setSessionItem, updateAccountSettings } from "@/core/storage.ts";
-import {
-  MSG_UPLOAD_TO_GIST,
-  SESSION_KEY_ENCRYPTED_VAULT,
-} from "@/core/constants.ts";
-import { sendMessageToBackground } from "@/core/messaging.ts";
+import { SESSION_KEY_ENCRYPTED_VAULT } from "@/core/constants.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";
 import { showToast } from "@/core/ui-service.ts";
 import { err, ok, Result } from "neverthrow";
 import { mergeVaultItems } from "@/features/sync/sync-merge.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { accountStore, setAccountStore } from "@/core/store.ts";
-import { fetchGistContent } from "@/features/sync/github-api.ts";
+import { getSyncProvider } from "@/features/sync/sync-provider-registry.ts";
+import { EncryptedPayloadSchema } from "@/features/sync/sync-schemas.ts";
 
 export const SyncResponseSchema = z.object({
   success: z.boolean(),
-  error: z.string().optional(),
+  error: z.custom<TranslationKey>().optional(),
 });
 
 async function fetchAndMergeRemoteVault(
   localItems: VaultItem[],
   key: CryptoKey,
 ): Promise<Result<VaultItem[], TranslationKey>> {
-  const fetchRes = await fetchGistContent();
-  if (fetchRes.isErr()) {
+  const downloadRes = await getSyncProvider().download();
+  if (downloadRes.isErr()) {
+    return ok(localItems);
+  }
+  const rawContent = downloadRes.value;
+  if (!rawContent) {
     return ok(localItems);
   }
 
-  const { ciphertext, iv } = fetchRes.value;
+  const parseJsonRes = safeJsonParse(rawContent || "{}");
+  const payloadParse = EncryptedPayloadSchema.safeParse(
+    parseJsonRes.isOk() ? parseJsonRes.value : {},
+  );
+  const payload = payloadParse.success ? payloadParse.data : {};
+
+  const { ciphertext, iv } = payload;
   if (!ciphertext || !iv) {
     return ok(localItems);
   }
 
   const decryptRes = await decryptData(ciphertext, iv, key);
 
-  // Early return ngay nếu giải mã thất bại (Master Password trên Gist đã bị máy khác đổi!)
   if (decryptRes.isErr()) {
     return err("sync_error_remote_password_changed");
   }
@@ -74,7 +79,7 @@ export async function syncVaultToGist(
   }
   const validatedList = parsedResult.data;
 
-  // Pre-download check & merge dữ liệu với early return
+  // Hòa nhập 2 chiều trước khi lưu để bảo toàn dữ liệu từ các thiết bị khác
   const mergeResult = await fetchAndMergeRemoteVault(validatedList, key);
   if (mergeResult.isErr()) {
     return err(mergeResult.error);
@@ -113,25 +118,13 @@ export async function syncVaultToGist(
     );
   }
 
-  const sendResult = await sendMessageToBackground({
-    type: MSG_UPLOAD_TO_GIST,
-    content: payload,
-  });
-  if (sendResult.isErr()) {
-    return err("storage_error");
-  }
-  const parseResResult = SyncResponseSchema.safeParse(sendResult.value);
-  if (!parseResResult.success) {
-    return err("storage_error");
-  }
-  const res = parseResResult.data;
-
-  if (!res.success) {
+  const uploadRes = await getSyncProvider().upload(payload);
+  if (uploadRes.isErr()) {
     if (
-      res.error === "github_error_gist_size_limit" ||
-      res.error === "github_error_rate_limit"
+      uploadRes.error === "github_error_gist_size_limit" ||
+      uploadRes.error === "github_error_rate_limit"
     ) {
-      return err(res.error);
+      return err(uploadRes.error);
     }
     return err("storage_error");
   }

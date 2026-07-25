@@ -218,7 +218,8 @@ export async function downloadFromGist(): Promise<
     }
   }
 
-  const dataRes = await githubRequest(`/gists/${gistId}`);
+  const cacheBuster = `_t=${Date.now()}`;
+  const dataRes = await githubRequest(`/gists/${gistId}?${cacheBuster}`);
   if (dataRes.isErr()) {
     return err(dataRes.error);
   }
@@ -234,7 +235,11 @@ export async function downloadFromGist(): Promise<
   if (file.content) {
     content = file.content;
   } else {
-    const fetchRes = await fetchText(file.raw_url, { cache: "no-store" });
+    const rawUrl = file.raw_url.includes("?")
+      ? `${file.raw_url}&${cacheBuster}`
+      : `${file.raw_url}?${cacheBuster}`;
+
+    const fetchRes = await fetchText(rawUrl, { cache: "no-store" });
     if (fetchRes.isErr()) {
       return err(fetchRes.error);
     }
@@ -256,7 +261,10 @@ async function downloadFromGistPublic(
 ): Promise<Result<string, TranslationKey>> {
   if (!gistId) return err("github_error_missing_gist_id");
 
-  const res = await fetchText(`${GITHUB_API_BASE}/gists/${gistId}`, {
+  const cacheBuster = `_t=${Date.now()}`;
+  const apiUrl = `${GITHUB_API_BASE}/gists/${gistId}?${cacheBuster}`;
+
+  const res = await fetchText(apiUrl, {
     cache: "no-store",
     headers: {
       "Accept": "application/vnd.github.v3+json",
@@ -285,7 +293,11 @@ async function downloadFromGistPublic(
     return ok(file.content);
   }
 
-  const rawFetchRes = await fetchText(file.raw_url, { cache: "no-store" });
+  const rawUrl = file.raw_url.includes("?")
+    ? `${file.raw_url}&${cacheBuster}`
+    : `${file.raw_url}?${cacheBuster}`;
+
+  const rawFetchRes = await fetchText(rawUrl, { cache: "no-store" });
   if (rawFetchRes.isErr()) {
     return err(rawFetchRes.error);
   }

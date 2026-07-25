@@ -10,7 +10,7 @@ import {
 } from "solid-js";
 import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
 import { setupGithub } from "@/features/sync/github-auth.ts";
-import { fetchGistContent } from "@/features/sync/github-api.ts";
+import { getSyncProvider } from "@/features/sync/sync-provider-registry.ts";
 
 import { logout, unlock } from "@/features/auth/auth-service.ts";
 
@@ -61,10 +61,10 @@ export const Login: Component = () => {
     if (isConfigured && !hasSalt && mode === "masterPassword") {
       setGistStatus("checking");
       (async () => {
-        const res = await fetchGistContent();
-        if (res.isOk() && res.value.rawContent) {
+        const res = await getSyncProvider().download();
+        if (res.isOk() && res.value) {
           setGistStatus("exists");
-        } else if (res.isOk() && !res.value.rawContent) {
+        } else if (res.isOk() && !res.value) {
           setGistStatus("new");
         } else {
           setGistStatus("exists");

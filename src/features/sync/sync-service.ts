@@ -12,7 +12,10 @@ import { VaultListSchema } from "@/features/vault/vault-schemas.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result } from "neverthrow";
 import { safeJsonParse } from "@/core/json-utils.ts";
-import { fetchGistContent } from "@/features/sync/github-api.ts";
+import { getSyncProvider } from "@/features/sync/sync-provider-registry.ts";
+import { EncryptedPayloadSchema } from "@/features/sync/sync-schemas.ts";
+import { mergeVaultItems } from "@/features/sync/sync-merge.ts";
+import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 
 export async function syncVault(): Promise<Result<void, TranslationKey>> {
   setUiStore(STORE_KEY_SYNCING, true);
@@ -26,17 +29,18 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     return err(errorKey);
   }
 
-  const fetchRes = await fetchGistContent();
-  if (fetchRes.isErr()) {
-    const errorKey = fetchRes.error;
+  const downloadRes = await getSyncProvider().download();
+  if (downloadRes.isErr()) {
+    const errorKey = downloadRes.error;
     setUiStore(STORE_KEY_SYNCING, false);
     setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
+  const rawContent = downloadRes.value;
 
   const setSessionRes = await setSessionItem(
     SESSION_KEY_ENCRYPTED_VAULT,
-    fetchRes.value.rawContent,
+    rawContent,
   );
 
   if (setSessionRes.isErr()) {
@@ -46,9 +50,15 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     return err(errorKey);
   }
 
+  const parseJsonRes = safeJsonParse(rawContent || "{}");
+  const payloadParse = EncryptedPayloadSchema.safeParse(
+    parseJsonRes.isOk() ? parseJsonRes.value : {},
+  );
+  const payload = payloadParse.success ? payloadParse.data : {};
+
   const decryptRes = await decryptData(
-    fetchRes.value.ciphertext || "",
-    fetchRes.value.iv || "",
+    payload.ciphertext || "",
+    payload.iv || "",
     key,
   );
 
@@ -67,18 +77,30 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
-  const decryptedJson = parseDecryptedRes.value;
-
-  const parseVaultRes = VaultListSchema.safeParse(decryptedJson);
+  const parseVaultRes = VaultListSchema.safeParse(parseDecryptedRes.value);
   if (!parseVaultRes.success) {
     const errorKey = "sync_error_invalid_format";
     setUiStore(STORE_KEY_SYNCING, false);
     setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
     return err(errorKey);
   }
-  const items = parseVaultRes.data;
 
-  setAccountStore(STORE_KEY_VAULT_ITEMS, reconcile(items));
+  const remoteItems = parseVaultRes.data;
+  const mergedItems = mergeVaultItems(
+    accountStore.vaultItems,
+    remoteItems,
+    accountStore.lastSync || 0,
+  );
+
+  const uploadRes = await syncVaultToGist(mergedItems, key, accountStore.salt);
+  if (uploadRes.isErr()) {
+    const errorKey = uploadRes.error;
+    setUiStore(STORE_KEY_SYNCING, false);
+    setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
+    return err(errorKey);
+  }
+
+  setAccountStore(STORE_KEY_VAULT_ITEMS, reconcile(uploadRes.value));
   setUiStore(STORE_KEY_SYNCING, false);
   return ok();
 }

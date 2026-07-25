@@ -50,7 +50,7 @@ import {
 import { err, ok, Result } from "neverthrow";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
-import { fetchGistContent } from "@/features/sync/github-api.ts";
+import { getSyncProvider } from "@/features/sync/sync-provider-registry.ts";
 
 import {
   ALARM_NAME_VAULT_TIMEOUT,
@@ -114,13 +114,13 @@ async function fetchEncryptedVaultContent(): Promise<
     return ok(cachedVal);
   }
 
-  const fetchRes = await fetchGistContent();
-  if (fetchRes.isOk() && fetchRes.value.rawContent) {
+  const downloadRes = await getSyncProvider().download();
+  if (downloadRes.isOk() && downloadRes.value) {
     await setSessionItem(
       SESSION_KEY_ENCRYPTED_VAULT,
-      fetchRes.value.rawContent,
+      downloadRes.value,
     );
-    return ok(fetchRes.value.rawContent);
+    return ok(downloadRes.value);
   }
 
   return ok(null);
@@ -275,9 +275,9 @@ export async function init() {
     await loadAndDecryptVault(key, isFido2Prompt, params);
   } else {
     if (accountStore.gistId && accountStore.salt) {
-      const publicRes = await fetchGistContent();
-      if (publicRes.isOk() && publicRes.value.rawContent) {
-        const content = publicRes.value.rawContent;
+      const publicRes = await getSyncProvider().download();
+      if (publicRes.isOk() && publicRes.value) {
+        const content = publicRes.value;
         const payloadJsonRes = safeJsonParse(content);
         if (payloadJsonRes.isOk()) {
           const payloadResult = GistPayloadSchema.safeParse(

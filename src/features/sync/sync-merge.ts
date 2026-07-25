@@ -70,8 +70,12 @@ export function mergeVaultItems(
 
       if (!remoteItem) {
         const localCreationTime = parseTimestamp(localItem.creationDate);
-
-        if (lastSyncTimestamp === 0 || localCreationTime > lastSyncTimestamp) {
+        const localRevTime = parseTimestamp(localItem.revisionDate);
+        if (
+          lastSyncTimestamp === 0 ||
+          localCreationTime > lastSyncTimestamp ||
+          localRevTime > lastSyncTimestamp
+        ) {
           itemMap.set(localItem.id, localItem);
         }
       }
