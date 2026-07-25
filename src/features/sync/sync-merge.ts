@@ -25,35 +25,55 @@ export function mergeVaultItems(
   lastSyncTimestamp: number,
 ): VaultItem[] {
   const itemMap = new Map<string, VaultItem>();
+  const localMap = new Map<string, VaultItem>();
 
-  // 1. Đưa toàn bộ remote items vào Map
-  for (const remoteItem of remoteItems) {
-    itemMap.set(remoteItem.id, remoteItem);
+  for (const localItem of localItems) {
+    localMap.set(localItem.id, localItem);
   }
 
-  // 2. Duyệt qua local items để hợp nhất
-  for (const localItem of localItems) {
-    const remoteItem = itemMap.get(localItem.id);
+  // 1. Xử lý Remote items: So sánh với Local items hoặc kiểm tra xem có phải mới được thêm/sửa trên Remote
+  for (const remoteItem of remoteItems) {
+    const localItem = localMap.get(remoteItem.id);
 
-    if (remoteItem) {
+    if (localItem) {
       // TRƯỜNG HỢP A: Tồn tại cả 2 bên (Xử lý Chỉnh sửa - Modification)
       const localRevTime = parseTimestamp(localItem.revisionDate);
       const remoteRevTime = parseTimestamp(remoteItem.revisionDate);
 
-      // Bản ghi nào được sửa đổi sau cùng (revisionDate lớn hơn hoặc bằng) sẽ được giữ lại
       if (localRevTime >= remoteRevTime) {
         itemMap.set(localItem.id, localItem);
+      } else {
+        itemMap.set(remoteItem.id, remoteItem);
       }
     } else {
-      // TRƯỜNG HỢP B: Chỉ có ở Local (Có thể là THÊM MỚI hoặc BỊ XÓA TRÊN REMOTE)
-      const localCreationTime = parseTimestamp(localItem.creationDate);
+      // TRƯỜNG HỢP B: Chỉ có ở Remote (Không có ở Local)
+      // Nếu chưa từng sync (lastSyncTimestamp === 0), giữ lại item từ Remote.
+      // Nếu đã từng sync, chỉ giữ nếu item được tạo hoặc sửa đổi trên Remote SAU lần sync cuối.
+      // Ngược lại (tạo & sửa TRƯỚC lần sync cuối), nghĩa là item này vừa bị XÓA TRÊN LOCAL ➔ Bỏ qua (Xóa).
+      const remoteCreationTime = parseTimestamp(remoteItem.creationDate);
+      const remoteRevTime = parseTimestamp(remoteItem.revisionDate);
 
-      // Nếu item được tạo SAU lần đồng bộ cuối (hoặc nếu chưa từng sync - lastSyncTimestamp === 0)
-      // -> Đây là item mới được tạo ở Local ➔ Giữ lại.
-      // Ngược lại, nếu item đã tồn tại TRƯỚC lần sync cuối nhưng giờ Remote không có
-      // -> Item đã bị xóa trên Remote ➔ Bỏ qua (Xóa).
-      if (lastSyncTimestamp === 0 || localCreationTime > lastSyncTimestamp) {
-        itemMap.set(localItem.id, localItem);
+      if (
+        lastSyncTimestamp === 0 ||
+        remoteCreationTime > lastSyncTimestamp ||
+        remoteRevTime > lastSyncTimestamp
+      ) {
+        itemMap.set(remoteItem.id, remoteItem);
+      }
+    }
+  }
+
+  // 2. Xử lý Local items chưa có trong Remote (Thêm mới ở Local hoặc bị xóa ở Remote)
+  for (const localItem of localItems) {
+    if (!itemMap.has(localItem.id)) {
+      const remoteItem = remoteItems.find((r) => r.id === localItem.id);
+
+      if (!remoteItem) {
+        const localCreationTime = parseTimestamp(localItem.creationDate);
+
+        if (lastSyncTimestamp === 0 || localCreationTime > lastSyncTimestamp) {
+          itemMap.set(localItem.id, localItem);
+        }
       }
     }
   }

@@ -286,3 +286,21 @@ Deno.test("Vault Merge - Mixed collection of all 5 Vault item types", () => {
   assertEquals(itemMap.get("id-ssh")?.name, "New Remote SSH Key");
   assertEquals(itemMap.has("id-identity"), false);
 });
+
+Deno.test("Vault Merge - Item deleted on local is dropped even if present on remote", () => {
+  const lastSyncTime = new Date("2026-07-24T12:00:00.000Z").getTime();
+  const remoteItem = createMockLogin(
+    "item-deleted-locally",
+    "Old Login",
+    "2026-07-24T10:00:00.000Z",
+    "2026-07-24T10:00:00.000Z",
+  );
+
+  // Local deleted this item, so localItems is empty
+  const merged = mergeVaultItems([], [remoteItem], lastSyncTime);
+  assertEquals(
+    merged.length,
+    0,
+    "Item deleted on local must NOT be restored from remote",
+  );
+});
