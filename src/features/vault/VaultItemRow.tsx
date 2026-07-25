@@ -1,4 +1,4 @@
-import { type Component, Show } from "solid-js";
+import { type Component, Match, Show, Switch } from "solid-js";
 import {
   type CardVaultItem,
   type IdentityVaultItem,
@@ -8,12 +8,9 @@ import {
   View,
 } from "@/core/types.ts";
 import {
-  CopyIcon,
   ExternalLinkIcon,
   GlobeIcon,
-  HeartFilledIcon,
   KeyIcon,
-  MoreVerticalIcon,
   NoteIcon,
 } from "@/icons/svg/index.ts";
 import { openItem } from "@/core/navigation.ts";
@@ -29,6 +26,8 @@ import {
   isLoginItem,
   isSshKeyItem,
 } from "@/core/types.ts";
+import { VaultItemCopyMenu } from "@/features/vault/components/VaultItemCopyMenu.tsx";
+import { VaultItemOptionsMenu } from "@/features/vault/components/VaultItemOptionsMenu.tsx";
 
 interface VaultItemRowProps {
   item: VaultItem;
@@ -46,6 +45,9 @@ interface VaultItemRowProps {
   isSelectMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (itemId: string, e: MouseEvent) => void;
+  onSelectFromMenu?: (itemId: string, e: MouseEvent) => void;
+  contextMenuPos?: { x: number; y: number } | null;
+  onContextMenuRow?: (itemId: string, e: MouseEvent) => void;
 }
 
 const getCardSub = (item: CardVaultItem): string => {
@@ -96,6 +98,14 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
         props.isSelected ? "selected" : ""
       }`}
       onClick={handleRowClick}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        if (props.onContextMenuRow) {
+          props.onContextMenuRow(props.item.id, e);
+        } else {
+          props.onToggleOptionsMenu(props.item.id, e);
+        }
+      }}
     >
       {/* Selection Checkbox */}
       <Show when={props.isSelectMode}>
@@ -133,48 +143,27 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
 
       {/* Info Container */}
       <div class="item-info">
-        <Show
-          when={Number(props.item.type) === VaultItemType.SecureNote}
-          fallback={
-            <>
-              <div class="item-name d-flex align-center gap-6">
-                {props.item.name}
-                <Show when={props.item.favorite}>
-                  <HeartFilledIcon class="favorite-heart-icon" />
-                </Show>
-              </div>
-              <div class="item-sub">
-                <Show when={isCardItem(props.item) ? props.item : null}>
-                  {(cardItem) => getCardSub(cardItem())}
-                </Show>
-                <Show when={isIdentityItem(props.item) ? props.item : null}>
-                  {(identityItem) => getIdentitySub(identityItem())}
-                </Show>
-                <Show when={isSshKeyItem(props.item) ? props.item : null}>
-                  {(sshItem) => getSshKeySub(sshItem())}
-                </Show>
-                <Show when={isLoginItem(props.item) ? props.item : null}>
-                  {(loginItem) => (
-                    <>
-                      <Show
-                        when={loginItem().login.fido2Credentials &&
-                          loginItem().login.fido2Credentials!.length > 0}
-                      >
-                        <span class="passkey-badge">PASSKEY</span>
-                      </Show>
-                      {loginItem().login.username || t("vault_no_username")}
-                    </>
-                  )}
-                </Show>
-              </div>
-            </>
-          }
-        >
-          <div class="item-name d-flex align-center gap-6">
-            {props.item.name}
-            <Show when={props.item.favorite}>
-              <HeartFilledIcon class="favorite-heart-icon" />
-            </Show>
+        <div class="item-name d-flex align-center gap-6">
+          {props.item.name}
+        </div>
+
+        <Show when={Number(props.item.type) !== VaultItemType.SecureNote}>
+          <div class="item-sub">
+            <Switch>
+              <Match when={isLoginItem(props.item) ? props.item : null}>
+                {(loginItem) =>
+                  loginItem().login.username || t("vault_no_username")}
+              </Match>
+              <Match when={isCardItem(props.item) ? props.item : null}>
+                {(cardItem) => getCardSub(cardItem())}
+              </Match>
+              <Match when={isIdentityItem(props.item) ? props.item : null}>
+                {(identityItem) => getIdentitySub(identityItem())}
+              </Match>
+              <Match when={isSshKeyItem(props.item) ? props.item : null}>
+                {(sshItem) => getSshKeySub(sshItem())}
+              </Match>
+            </Switch>
           </div>
         </Show>
       </div>
@@ -217,218 +206,26 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
             )}
           </Show>
 
-          {/* Copy Options Toggle */}
-          <button
-            class="action-btn"
-            title={props.item.type === VaultItemType.SecureNote
-              ? t("vault_copy_notes")
-              : t("vault_copy_options")}
-            onClick={(e) => {
-              if (props.item.type === VaultItemType.SecureNote) {
-                props.onCopyText(
-                  props.item.notes || "",
-                  t("edit_type_note"),
-                  e,
-                );
-              } else {
-                props.onToggleMenu(props.item.id, e);
-              }
-            }}
-          >
-            <CopyIcon />
-          </button>
+          {/* Copy Options Action (Button + Overlay) */}
+          <VaultItemCopyMenu
+            item={props.item}
+            activeMenuId={props.activeMenuId}
+            onToggleMenu={props.onToggleMenu}
+            onCopyText={props.onCopyText}
+            onCopyTotpDirect={props.onCopyTotpDirect}
+          />
 
-          {/* Item Options Toggle */}
-          <button
-            class="action-btn"
-            onClick={(e) => props.onToggleOptionsMenu(props.item.id, e)}
-            title={t("vault_menu_more")}
-          >
-            <MoreVerticalIcon />
-          </button>
-
-          {/* Copy Options Menu Overlay */}
-          <Show when={props.activeMenuId === props.item.id}>
-            <div class="copy-dropdown" onClick={(e) => e.stopPropagation()}>
-              {/* Login Item Copy Actions */}
-              <Show when={isLoginItem(props.item) ? props.item : null}>
-                {(loginItem) => (
-                  <>
-                    <Show when={loginItem().login.username}>
-                      <div
-                        class="dropdown-item"
-                        onClick={(e) =>
-                          props.onCopyText(
-                            loginItem().login.username || "",
-                            "username",
-                            e,
-                          )}
-                      >
-                        {t("detail_copy_username")}
-                      </div>
-                    </Show>
-                    <Show when={loginItem().login.password}>
-                      <div
-                        class="dropdown-item"
-                        onClick={(e) =>
-                          props.onCopyText(
-                            loginItem().login.password || "",
-                            "password",
-                            e,
-                          )}
-                      >
-                        {t("detail_copy_password")}
-                      </div>
-                    </Show>
-                    <Show when={loginItem().login.totp}>
-                      <div
-                        class="dropdown-item"
-                        onClick={(e) => props.onCopyTotpDirect(props.item, e)}
-                      >
-                        {t("detail_copy_totp")}
-                      </div>
-                    </Show>
-                  </>
-                )}
-              </Show>
-
-              {/* Secure Note Copy Action */}
-              <Show
-                when={Number(props.item.type) === VaultItemType.SecureNote &&
-                  props.item.notes}
-              >
-                <div
-                  class="dropdown-item"
-                  onClick={(e) =>
-                    props.onCopyText(
-                      props.item.notes || "",
-                      "notes",
-                      e,
-                    )}
-                >
-                  {t("vault_copy_notes")}
-                </div>
-              </Show>
-
-              {/* Card Item Copy Actions */}
-              <Show when={isCardItem(props.item) ? props.item : null}>
-                {(cardItem) => (
-                  <>
-                    <Show when={cardItem().card.number}>
-                      <div
-                        class="dropdown-item"
-                        onClick={(e) =>
-                          props.onCopyText(
-                            cardItem().card.number || "",
-                            t("detail_copy_card_number"),
-                            e,
-                          )}
-                      >
-                        {t("detail_copy_card_number")}
-                      </div>
-                    </Show>
-                    <Show when={cardItem().card.code}>
-                      <div
-                        class="dropdown-item"
-                        onClick={(e) =>
-                          props.onCopyText(
-                            cardItem().card.code || "",
-                            t("detail_copy_card_code"),
-                            e,
-                          )}
-                      >
-                        {t("detail_copy_card_code")}
-                      </div>
-                    </Show>
-                  </>
-                )}
-              </Show>
-
-              {/* SSH Key Item Copy Actions */}
-              <Show
-                when={isSshKeyItem(props.item) ? props.item : null}
-              >
-                {(sshItem) => (
-                  <>
-                    <Show when={sshItem().sshKey.privateKey}>
-                      <div
-                        class="dropdown-item"
-                        onClick={(e) =>
-                          props.onCopyText(
-                            sshItem().sshKey.privateKey || "",
-                            t("detail_copy_ssh_private_key"),
-                            e,
-                          )}
-                      >
-                        {t("detail_copy_ssh_private_key")}
-                      </div>
-                    </Show>
-                    <Show when={sshItem().sshKey.publicKey}>
-                      <div
-                        class="dropdown-item"
-                        onClick={(e) =>
-                          props.onCopyText(
-                            sshItem().sshKey.publicKey || "",
-                            t("detail_copy_ssh_public_key"),
-                            e,
-                          )}
-                      >
-                        {t("detail_copy_ssh_public_key")}
-                      </div>
-                    </Show>
-                    <Show when={sshItem().sshKey.keyFingerprint}>
-                      <div
-                        class="dropdown-item"
-                        onClick={(e) =>
-                          props.onCopyText(
-                            sshItem().sshKey.keyFingerprint || "",
-                            t("detail_copy_ssh_fingerprint"),
-                            e,
-                          )}
-                      >
-                        {t("detail_copy_ssh_fingerprint")}
-                      </div>
-                    </Show>
-                  </>
-                )}
-              </Show>
-            </div>
-          </Show>
-
-          {/* Options Dropdown overlay */}
-          <Show when={props.activeOptionsMenuId === props.item.id}>
-            <div class="options-dropdown" onClick={(e) => e.stopPropagation()}>
-              <div
-                class="dropdown-item"
-                onClick={(e) => props.onFavoriteItem(props.item, e)}
-              >
-                {props.item.favorite
-                  ? t("vault_menu_unfavorite")
-                  : t("vault_menu_favorites")}
-              </div>
-              <div
-                class="dropdown-item"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openItem(props.item, View.ItemEdit);
-                }}
-              >
-                {t("btn_edit")}
-              </div>
-              <div
-                class="dropdown-item"
-                onClick={(e) => props.onCloneItem(props.item, e)}
-              >
-                {t("btn_clone")}
-              </div>
-              <div
-                class="dropdown-item text-danger"
-                onClick={(e) => props.onDeleteItem(props.item, e)}
-              >
-                {t("btn_delete")}
-              </div>
-            </div>
-          </Show>
+          {/* Item Options Action (Button + Overlay) */}
+          <VaultItemOptionsMenu
+            item={props.item}
+            activeOptionsMenuId={props.activeOptionsMenuId}
+            contextMenuPos={props.contextMenuPos}
+            onToggleOptionsMenu={props.onToggleOptionsMenu}
+            onSelectFromMenu={props.onSelectFromMenu}
+            onFavoriteItem={props.onFavoriteItem}
+            onCloneItem={props.onCloneItem}
+            onDeleteItem={props.onDeleteItem}
+          />
         </div>
       </Show>
     </div>

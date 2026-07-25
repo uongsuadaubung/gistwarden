@@ -165,6 +165,7 @@ export default {
   vault_copy_options: "Lựa chọn sao chép",
   vault_menu_unfavorite: "Bỏ yêu thích",
   vault_menu_more: "Tùy chọn khác",
+  vault_menu_select: "Chọn",
   vault_importing: "Đang nhập dữ liệu...",
   btn_clone: "Nhân bản",
   vault_item_clone_suffix: "Bản sao",

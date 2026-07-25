@@ -80,6 +80,12 @@ export const Vault: Component = () => {
   };
   const [activeMenuId, setActiveMenuId] = createSignal("");
   const [activeOptionsMenuId, setActiveOptionsMenuId] = createSignal("");
+  const [contextMenuPos, setContextMenuPos] = createSignal<
+    {
+      x: number;
+      y: number;
+    } | null
+  >(null);
   const [currentTabDomain, setCurrentTabDomain] = createSignal("");
 
   const [showFilterPanel, setShowFilterPanel] = createSignal(
@@ -202,6 +208,7 @@ export const Vault: Component = () => {
       }
       setActiveMenuId("");
       setActiveOptionsMenuId("");
+      setContextMenuPos(null);
       setShowTypeDropdown(false);
     };
     document.addEventListener("click", handleGlobalClick);
@@ -309,9 +316,34 @@ export const Vault: Component = () => {
     setActiveMenuId(""); // Close copy dropdown
     if (activeOptionsMenuId() === itemId) {
       setActiveOptionsMenuId("");
+      setContextMenuPos(null);
     } else {
+      setContextMenuPos(null);
       setActiveOptionsMenuId(itemId);
     }
+  };
+
+  const handleContextMenuRow = (itemId: string, e: MouseEvent) => {
+    e.stopPropagation();
+    setActiveMenuId(""); // Close copy dropdown
+    if (activeOptionsMenuId() === itemId) {
+      setActiveOptionsMenuId("");
+      setContextMenuPos(null);
+    } else {
+      setContextMenuPos({ x: e.clientX, y: e.clientY });
+      setActiveOptionsMenuId(itemId);
+    }
+  };
+
+  const handleSelectFromMenu = (itemId: string, e: MouseEvent) => {
+    e.stopPropagation();
+    if (!isSelectMode()) {
+      setIsSelectMode(true);
+    }
+    const current = new Set(selectedItemIds());
+    current.add(itemId);
+    setSelectedItemIds(current);
+    setActiveOptionsMenuId("");
   };
 
   const handleFavoriteItem = async (item: VaultItem, e: MouseEvent) => {
@@ -586,6 +618,11 @@ export const Vault: Component = () => {
                   isSelectMode={isSelectMode()}
                   isSelected={selectedItemIds().has(item.id)}
                   onToggleSelect={toggleSelectItem}
+                  onSelectFromMenu={handleSelectFromMenu}
+                  contextMenuPos={activeOptionsMenuId() === item.id
+                    ? contextMenuPos()
+                    : null}
+                  onContextMenuRow={handleContextMenuRow}
                 />
               )}
             </For>
@@ -618,6 +655,11 @@ export const Vault: Component = () => {
                   isSelectMode={isSelectMode()}
                   isSelected={selectedItemIds().has(item.id)}
                   onToggleSelect={toggleSelectItem}
+                  onSelectFromMenu={handleSelectFromMenu}
+                  contextMenuPos={activeOptionsMenuId() === item.id
+                    ? contextMenuPos()
+                    : null}
+                  onContextMenuRow={handleContextMenuRow}
                 />
               )}
             </For>
@@ -650,6 +692,11 @@ export const Vault: Component = () => {
                   isSelectMode={isSelectMode()}
                   isSelected={selectedItemIds().has(item.id)}
                   onToggleSelect={toggleSelectItem}
+                  onSelectFromMenu={handleSelectFromMenu}
+                  contextMenuPos={activeOptionsMenuId() === item.id
+                    ? contextMenuPos()
+                    : null}
+                  onContextMenuRow={handleContextMenuRow}
                 />
               )}
             </For>
@@ -682,6 +729,11 @@ export const Vault: Component = () => {
                   isSelectMode={isSelectMode()}
                   isSelected={selectedItemIds().has(item.id)}
                   onToggleSelect={toggleSelectItem}
+                  onSelectFromMenu={handleSelectFromMenu}
+                  contextMenuPos={activeOptionsMenuId() === item.id
+                    ? contextMenuPos()
+                    : null}
+                  onContextMenuRow={handleContextMenuRow}
                 />
               )}
             </For>
@@ -730,6 +782,11 @@ export const Vault: Component = () => {
                   isSelectMode={isSelectMode()}
                   isSelected={selectedItemIds().has(item.id)}
                   onToggleSelect={toggleSelectItem}
+                  onSelectFromMenu={handleSelectFromMenu}
+                  contextMenuPos={activeOptionsMenuId() === item.id
+                    ? contextMenuPos()
+                    : null}
+                  onContextMenuRow={handleContextMenuRow}
                 />
               )}
             </For>

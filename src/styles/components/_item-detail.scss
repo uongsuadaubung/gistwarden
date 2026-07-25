@@ -393,6 +393,14 @@
   padding: 4px 0;
   width: max-content; /* Dynamic width matching the longest text option */
 
+  &.fixed-pos {
+    position: fixed;
+    left: var(--menu-x);
+    top: var(--menu-y);
+    right: auto;
+    z-index: 9999;
+  }
+
   .dropdown-item {
     padding: 8px 12px;
     font-size: 12px;

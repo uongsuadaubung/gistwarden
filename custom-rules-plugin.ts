@@ -122,12 +122,17 @@ const customRulesPlugin: LintPlugin = {
               node.name.name === "style"
             ) {
               const val = node.value;
-              const isInline = val && (
+              const exp = val && val.type === "JSXExpressionContainer"
+                ? val.expression
+                : null;
+              const isPropStyle = exp && exp.type === "MemberExpression";
+              const isInline = val && !isPropStyle && (
                 val.type === "Literal" ||
                 val.type === "StringLiteral" ||
-                (val.type === "JSXExpressionContainer" &&
-                  val.expression &&
-                  val.expression.type === "ObjectExpression")
+                (exp && (
+                  exp.type === "ObjectExpression" ||
+                  exp.type === "ConditionalExpression"
+                ))
               );
               if (isInline) {
                 context.report({

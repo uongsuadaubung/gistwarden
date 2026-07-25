@@ -158,6 +158,7 @@ const LangSchema = z.object({
   vault_copy_options: z.string(),
   vault_menu_unfavorite: z.string(),
   vault_menu_more: z.string(),
+  vault_menu_select: z.string(),
   vault_importing: z.string(),
   btn_clone: z.string(),
   vault_item_clone_suffix: z.string(),

@@ -162,6 +162,7 @@ export default {
   vault_copy_options: "Copy Options",
   vault_menu_unfavorite: "Remove from Favorites",
   vault_menu_more: "More options",
+  vault_menu_select: "Select",
   vault_importing: "Importing vault data...",
   btn_clone: "Clone",
   vault_item_clone_suffix: "Copy",
