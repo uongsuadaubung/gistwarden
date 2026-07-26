@@ -336,8 +336,7 @@ export interface SetupUnlockedSessionOptions {
 
 async function setupUnlockedSession(
   key: CryptoKey,
-  items: VaultItem[],
-  trash: TrashVaultItem[] = [],
+  vaultPayload: { items: VaultItem[]; trash?: TrashVaultItem[] },
   options?: SetupUnlockedSessionOptions,
 ): Promise<Result<void, TranslationKey>> {
   await setDerivedKey(key);
@@ -366,8 +365,8 @@ async function setupUnlockedSession(
     (uiStore.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault);
 
   setAccountStore({
-    vaultItems: items,
-    trashItems: trash,
+    vaultItems: vaultPayload.items,
+    trashItems: vaultPayload.trash || [],
     githubToken: finalToken,
     githubConfigured: true,
     isLocked: false,
@@ -458,7 +457,7 @@ async function initializeNewVault(
     return err(uploadRes.error);
   }
 
-  return await setupUnlockedSession(key, []);
+  return await setupUnlockedSession(key, { items: [], trash: [] });
 }
 
 async function decryptGistVault(
@@ -624,7 +623,7 @@ export async function unlock(
       clearDerivedKey();
       return err(uploadRes.error);
     }
-    return await setupUnlockedSession(key, [], []);
+    return await setupUnlockedSession(key, { items: [], trash: [] });
   }
 
   const decryptVaultRes = await decryptGistVault(existingGistContent, key);
@@ -635,10 +634,11 @@ export async function unlock(
 
   const { items, trash, targetView, selectedItem } = decryptVaultRes.value;
   await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, existingGistContent);
-  return await setupUnlockedSession(key, items, trash, {
-    targetView,
-    selectedItem,
-  });
+  return await setupUnlockedSession(
+    key,
+    { items, trash },
+    { targetView, selectedItem },
+  );
 }
 
 export async function lock() {
