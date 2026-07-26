@@ -1,18 +1,25 @@
 import { z } from "zod";
 import { decryptData, encryptData } from "@/core/crypto.ts";
 import {
+  type TrashVaultItem,
   type VaultItem,
   VaultListSchema,
+  VaultPayloadSchema,
 } from "@/features/vault/vault-schemas.ts";
 import { setSessionItem, updateAccountSettings } from "@/core/storage.ts";
-import { SESSION_KEY_ENCRYPTED_VAULT } from "@/core/constants.ts";
+import { DownloadFromGistResponseSchema } from "@/core/storage-schemas.ts";
+import {
+  MSG_DOWNLOAD_FROM_GIST,
+  MSG_UPLOAD_TO_GIST,
+  SESSION_KEY_ENCRYPTED_VAULT,
+} from "@/core/constants.ts";
+import { sendMessageToBackground } from "@/core/messaging.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";
 import { showToast } from "@/core/ui-service.ts";
 import { err, ok, Result } from "neverthrow";
-import { mergeVaultItems } from "@/features/sync/sync-merge.ts";
+import { mergeVaultPayload } from "@/features/sync/sync-merge.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { accountStore, setAccountStore } from "@/core/store.ts";
-import { getSyncProvider } from "@/features/sync/sync-provider-registry.ts";
 import { EncryptedPayloadSchema } from "@/features/sync/sync-schemas.ts";
 
 export const SyncResponseSchema = z.object({
@@ -22,15 +29,26 @@ export const SyncResponseSchema = z.object({
 
 async function fetchAndMergeRemoteVault(
   localItems: VaultItem[],
+  localTrash: TrashVaultItem[],
   key: CryptoKey,
-): Promise<Result<VaultItem[], TranslationKey>> {
-  const downloadRes = await getSyncProvider().download();
-  if (downloadRes.isErr()) {
-    return ok(localItems);
+): Promise<
+  Result<{ items: VaultItem[]; trash: TrashVaultItem[] }, TranslationKey>
+> {
+  const sendResult = await sendMessageToBackground({
+    type: MSG_DOWNLOAD_FROM_GIST,
+  });
+  if (sendResult.isErr()) {
+    return err(sendResult.error);
   }
-  const rawContent = downloadRes.value;
+  const parseRes = DownloadFromGistResponseSchema.safeParse(sendResult.value);
+  if (!parseRes.success || !parseRes.data.success) {
+    const errorKey: TranslationKey =
+      (parseRes.success && parseRes.data.error) || "vault_sync_error";
+    return err(errorKey);
+  }
+  const rawContent = parseRes.data.content || "";
   if (!rawContent) {
-    return ok(localItems);
+    return ok({ items: localItems, trash: localTrash });
   }
 
   const parseJsonRes = safeJsonParse(rawContent || "{}");
@@ -41,7 +59,7 @@ async function fetchAndMergeRemoteVault(
 
   const { ciphertext, iv } = payload;
   if (!ciphertext || !iv) {
-    return ok(localItems);
+    return ok({ items: localItems, trash: localTrash });
   }
 
   const decryptRes = await decryptData(ciphertext, iv, key);
@@ -52,17 +70,31 @@ async function fetchAndMergeRemoteVault(
 
   const parseVaultRes = safeJsonParse(decryptRes.value);
   if (parseVaultRes.isErr()) {
-    return ok(localItems);
+    return err("sync_error_corrupted_payload");
   }
 
-  const remoteVaultParse = VaultListSchema.safeParse(parseVaultRes.value);
-  if (!remoteVaultParse.success) {
-    return ok(localItems);
+  let remoteItems: VaultItem[] = [];
+  let remoteTrash: TrashVaultItem[] = [];
+
+  const rawVal = parseVaultRes.value;
+  if (Array.isArray(rawVal)) {
+    const remoteVaultParse = VaultListSchema.safeParse(rawVal);
+    if (!remoteVaultParse.success) {
+      return err("sync_error_invalid_format");
+    }
+    remoteItems = remoteVaultParse.data;
+  } else {
+    const remoteVaultParse = VaultPayloadSchema.safeParse(rawVal);
+    if (!remoteVaultParse.success) {
+      return err("sync_error_invalid_format");
+    }
+    remoteItems = remoteVaultParse.data.items;
+    remoteTrash = remoteVaultParse.data.trash || [];
   }
 
-  const merged = mergeVaultItems(
-    localItems,
-    remoteVaultParse.data,
+  const merged = mergeVaultPayload(
+    { items: localItems, trash: localTrash },
+    { items: remoteItems, trash: remoteTrash },
     accountStore.lastSync || 0,
   );
   return ok(merged);
@@ -72,6 +104,7 @@ export async function syncVaultToGist(
   items: VaultItem[],
   key: CryptoKey,
   salt: string,
+  trashItems: TrashVaultItem[] = accountStore.trashItems || [],
 ): Promise<Result<VaultItem[], TranslationKey>> {
   const parsedResult = VaultListSchema.safeParse(items);
   if (!parsedResult.success) {
@@ -80,14 +113,23 @@ export async function syncVaultToGist(
   const validatedList = parsedResult.data;
 
   // Hòa nhập 2 chiều trước khi lưu để bảo toàn dữ liệu từ các thiết bị khác
-  const mergeResult = await fetchAndMergeRemoteVault(validatedList, key);
+  const mergeResult = await fetchAndMergeRemoteVault(
+    validatedList,
+    trashItems,
+    key,
+  );
   if (mergeResult.isErr()) {
     return err(mergeResult.error);
   }
-  const finalItemsToSave = mergeResult.value;
+  const finalPayloadToSave = mergeResult.value;
+
+  const payloadObject = {
+    items: finalPayloadToSave.items,
+    trash: finalPayloadToSave.trash,
+  };
 
   const encryptRes = await encryptData(
-    JSON.stringify(finalItemsToSave),
+    JSON.stringify(payloadObject),
     key,
   );
 
@@ -118,15 +160,18 @@ export async function syncVaultToGist(
     );
   }
 
-  const uploadRes = await getSyncProvider().upload(payload);
-  if (uploadRes.isErr()) {
-    if (
-      uploadRes.error === "github_error_gist_size_limit" ||
-      uploadRes.error === "github_error_rate_limit"
-    ) {
-      return err(uploadRes.error);
-    }
-    return err("storage_error");
+  const sendResult = await sendMessageToBackground({
+    type: MSG_UPLOAD_TO_GIST,
+    content: payload,
+  });
+  if (sendResult.isErr()) {
+    return err(sendResult.error);
+  }
+  const uploadParse = SyncResponseSchema.safeParse(sendResult.value);
+  if (!uploadParse.success || !uploadParse.data.success) {
+    const errorKey: TranslationKey =
+      (uploadParse.success && uploadParse.data.error) || "storage_error";
+    return err(errorKey);
   }
 
   const setRes = await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, payload);
@@ -135,8 +180,11 @@ export async function syncVaultToGist(
   }
 
   const now = Date.now();
-  setAccountStore("lastSync", now);
+  setAccountStore({
+    trashItems: finalPayloadToSave.trash,
+    lastSync: now,
+  });
   await updateAccountSettings({ lastSync: now });
 
-  return ok(finalItemsToSave);
+  return ok(finalPayloadToSave.items);
 }

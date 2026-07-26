@@ -1,5 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { mergeVaultItems } from "@/features/sync/sync-merge.ts";
+import {
+  mergeVaultItems,
+  mergeVaultPayload,
+} from "@/features/sync/sync-merge.ts";
 import { VaultItemType } from "@/features/vault/vault-types.ts";
 import type {
   CardVaultItem,
@@ -303,4 +306,41 @@ Deno.test("Vault Merge - Item deleted on local is dropped even if present on rem
     0,
     "Item deleted on local must NOT be restored from remote",
   );
+});
+
+Deno.test("Vault Merge - Trash array handles deleted items across devices", () => {
+  const item1 = createMockLogin(
+    "item-1",
+    "Active Login",
+    "2026-07-24T10:00:00.000Z",
+    "2026-07-24T10:00:00.000Z",
+  );
+  const item2 = createMockLogin(
+    "item-2",
+    "Deleted Login",
+    "2026-07-24T10:00:00.000Z",
+    "2026-07-24T10:00:00.000Z",
+  );
+
+  const localPayload = {
+    items: [item1],
+    trash: [
+      {
+        item: item2,
+        deletedDate: "2026-07-24T11:00:00.000Z",
+      },
+    ],
+  };
+
+  const remotePayload = {
+    items: [item1, item2],
+    trash: [],
+  };
+
+  const merged = mergeVaultPayload(localPayload, remotePayload, 0);
+
+  assertEquals(merged.items.length, 1);
+  assertEquals(merged.items[0].id, "item-1");
+  assertEquals(merged.trash.length, 1);
+  assertEquals(merged.trash[0].item.id, "item-2");
 });

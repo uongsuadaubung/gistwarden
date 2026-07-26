@@ -1,8 +1,8 @@
 import type {
   ISyncProvider,
   SyncProviderId,
-} from "@/features/sync/sync-provider-types.ts";
-import { GithubGistProvider } from "@/features/sync/github-gist-provider.ts";
+} from "@/providers/sync-provider-types.ts";
+import { GithubGistProvider } from "@/providers/github-gist-provider.ts";
 
 const registry = new Map<SyncProviderId, ISyncProvider>();
 

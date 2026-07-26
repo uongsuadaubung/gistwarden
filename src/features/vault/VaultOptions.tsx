@@ -157,6 +157,25 @@ export const VaultOptions: Component = () => {
             <ChevronRightIcon />
           </div>
 
+          {/* Trash */}
+          <div
+            class="setting-row"
+            onClick={() => navigate(View.Trash)}
+          >
+            <div class="setting-row-left">
+              <TrashIcon />
+              <div>
+                <div class="setting-label">
+                  {t("trash_title")} ({(accountStore.trashItems || []).length})
+                </div>
+                <div class="setting-sub">
+                  {t("vault_options_trash_sub")}
+                </div>
+              </div>
+            </div>
+            <ChevronRightIcon />
+          </div>
+
           {/* Clear Vault */}
           <div class="setting-row" onClick={handleClearVault}>
             <div class="setting-row-left">

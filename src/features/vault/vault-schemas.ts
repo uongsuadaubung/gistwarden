@@ -151,3 +151,15 @@ export type VaultItem = z.infer<typeof BaseVaultItemUnionSchema>;
 
 export const VaultListSchema = z.array(VaultItemSchema);
 export type VaultList = z.infer<typeof VaultListSchema>;
+
+export const TrashVaultItemSchema = z.object({
+  item: VaultItemSchema,
+  deletedDate: z.string(),
+});
+export type TrashVaultItem = z.infer<typeof TrashVaultItemSchema>;
+
+export const VaultPayloadSchema = z.object({
+  items: z.array(VaultItemSchema).default([]),
+  trash: z.array(TrashVaultItemSchema).optional().default([]),
+});
+export type VaultPayload = z.infer<typeof VaultPayloadSchema>;

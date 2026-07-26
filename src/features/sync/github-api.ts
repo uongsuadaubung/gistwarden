@@ -4,21 +4,13 @@ import {
   getGithubToken,
   updateAccountSettings,
 } from "@/core/storage.ts";
-import {
-  DownloadFromGistResponseSchema,
-  GithubUserSchema,
-} from "@/core/storage-schemas.ts";
-import {
-  EncryptedPayloadSchema,
-  type GistContentPayload,
-} from "@/features/sync/sync-schemas.ts";
-import { APP_NAME, MSG_DOWNLOAD_FROM_GIST } from "@/core/constants.ts";
+import { GithubUserSchema } from "@/core/storage-schemas.ts";
+import { APP_NAME } from "@/core/constants.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { fetchText } from "@/core/fetch-utils.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { accountStore } from "@/core/store.ts";
-import { sendMessageToBackground } from "@/core/messaging.ts";
 
 const GITHUB_API_BASE = "https://api.github.com";
 
@@ -200,108 +192,62 @@ export async function downloadFromGist(): Promise<
   Result<string, TranslationKey>
 > {
   const settingsRes = await getAccountSettings();
-  if (settingsRes.isErr()) return err(settingsRes.error);
-  let gistId = settingsRes.value.gistId;
+  let gistId = (settingsRes.isOk() && settingsRes.value.gistId) ||
+    accountStore.gistId;
 
+  // 1. Nếu đã có gistId -> Tải trực tiếp qua Raw Gist CDN URL (Không tiêu tốn Rate Limit)
+  if (gistId) {
+    const publicRes = await downloadFromGistPublic(gistId);
+    if (publicRes.isOk()) {
+      await updateAccountSettings({ lastSync: Date.now() });
+      return ok(publicRes.value);
+    }
+  }
+
+  // 2. Nếu chưa có gistId -> Dùng API để tìm Gist ID trên GitHub
+  const findRes = await findGistId();
+  if (findRes.isErr()) {
+    return err(findRes.error);
+  }
+  gistId = findRes.value;
   if (!gistId) {
-    const findRes = await findGistId();
-    if (findRes.isErr()) {
-      return err(findRes.error);
-    }
-    gistId = findRes.value;
-    if (!gistId) {
-      return err("github_error_gist_not_found");
-    }
-    const updateSettingsRes = await updateAccountSettings({ gistId });
-    if (updateSettingsRes.isErr()) {
-      return err(updateSettingsRes.error);
-    }
+    return err("github_error_gist_not_found");
   }
 
-  const cacheBuster = `_t=${Date.now()}`;
-  const dataRes = await githubRequest(`/gists/${gistId}?${cacheBuster}`);
-  if (dataRes.isErr()) {
-    return err(dataRes.error);
-  }
-  const parsed = GistSchema.safeParse(dataRes.value);
-  if (!parsed.success) {
-    return err("github_error_gist_parse_failed");
-  }
-  const gist = parsed.data;
-  const file = gist.files[GIST_FILE_NAME];
-  if (!file) return err("github_error_gist_file_missing");
-
-  let content = "";
-  if (file.content) {
-    content = file.content;
-  } else {
-    const rawUrl = file.raw_url.includes("?")
-      ? `${file.raw_url}&${cacheBuster}`
-      : `${file.raw_url}?${cacheBuster}`;
-
-    const fetchRes = await fetchText(rawUrl, { cache: "no-store" });
-    if (fetchRes.isErr()) {
-      return err(fetchRes.error);
-    }
-    content = fetchRes.value;
-  }
-
-  const updateSettingsRes = await updateAccountSettings({
-    lastSync: Date.now(),
-  });
+  const updateSettingsRes = await updateAccountSettings({ gistId });
   if (updateSettingsRes.isErr()) {
     return err(updateSettingsRes.error);
   }
 
-  return ok(content);
+  const downloadRes = await downloadFromGistPublic(gistId);
+  if (downloadRes.isOk()) {
+    await updateAccountSettings({ lastSync: Date.now() });
+  }
+  return downloadRes;
 }
 
+/**
+ * Tải trực tiếp dữ liệu từ Raw Gist CDN URL không qua GitHub REST API.
+ * Giúp tối ưu tốc độ và không tiêu tốn giới hạn Rate Limit 60 lượt/giờ.
+ */
 async function downloadFromGistPublic(
   gistId: string,
 ): Promise<Result<string, TranslationKey>> {
   if (!gistId) return err("github_error_missing_gist_id");
 
   const cacheBuster = `_t=${Date.now()}`;
-  const apiUrl = `${GITHUB_API_BASE}/gists/${gistId}?${cacheBuster}`;
+  const rawCdnUrl =
+    `https://gist.githubusercontent.com/raw/${gistId}/${GIST_FILE_NAME}?${cacheBuster}`;
+  const rawRes = await fetchText(rawCdnUrl, { cache: "no-store" });
 
-  const res = await fetchText(apiUrl, {
-    cache: "no-store",
-    headers: {
-      "Accept": "application/vnd.github.v3+json",
-    },
-  });
-
-  if (res.isErr()) {
-    return err(res.error);
+  if (rawRes.isErr()) {
+    return err(rawRes.error);
+  }
+  if (!rawRes.value.trim()) {
+    return err("github_error_gist_file_missing");
   }
 
-  const parseRes = safeJsonParse(res.value);
-  if (parseRes.isErr()) {
-    return err("github_error_gist_parse_failed");
-  }
-
-  const parsed = GistSchema.safeParse(parseRes.value);
-  if (!parsed.success) {
-    return err("github_error_gist_parse_failed");
-  }
-
-  const gist = parsed.data;
-  const file = gist.files[GIST_FILE_NAME];
-  if (!file) return err("github_error_gist_file_missing");
-
-  if (file.content) {
-    return ok(file.content);
-  }
-
-  const rawUrl = file.raw_url.includes("?")
-    ? `${file.raw_url}&${cacheBuster}`
-    : `${file.raw_url}?${cacheBuster}`;
-
-  const rawFetchRes = await fetchText(rawUrl, { cache: "no-store" });
-  if (rawFetchRes.isErr()) {
-    return err(rawFetchRes.error);
-  }
-  return ok(rawFetchRes.value);
+  return ok(rawRes.value);
 }
 
 export async function deleteGist(
@@ -314,50 +260,4 @@ export async function deleteGist(
     return err(reqRes.error);
   }
   return ok();
-}
-
-/**
- * Tải và Parse sẵn dữ liệu Gist thông minh (Smart Parsed Gist Fetcher).
- * Tự động phân tích JSON và validate EncryptedPayloadSchema bằng Zod.
- */
-export async function fetchGistContent(): Promise<
-  Result<GistContentPayload, TranslationKey>
-> {
-  let rawContent = "";
-
-  if (accountStore.gistId) {
-    const publicRes = await downloadFromGistPublic(accountStore.gistId);
-    if (publicRes.isErr()) {
-      return err(publicRes.error);
-    }
-    rawContent = publicRes.value;
-  } else {
-    const sendResult = await sendMessageToBackground({
-      type: MSG_DOWNLOAD_FROM_GIST,
-    });
-    if (sendResult.isErr()) {
-      return err(sendResult.error);
-    }
-
-    const parseRes = DownloadFromGistResponseSchema.safeParse(sendResult.value);
-    if (!parseRes.success || !parseRes.data.success) {
-      const errorKey: TranslationKey =
-        (parseRes.success && parseRes.data.error) || "vault_sync_error";
-      return err(errorKey);
-    }
-    rawContent = parseRes.data.content || "";
-  }
-
-  const parseJsonRes = safeJsonParse(rawContent || "{}");
-  const payloadParse = EncryptedPayloadSchema.safeParse(
-    parseJsonRes.isOk() ? parseJsonRes.value : {},
-  );
-  const payload = payloadParse.success ? payloadParse.data : {};
-
-  return ok({
-    ciphertext: payload.ciphertext,
-    iv: payload.iv,
-    salt: payload.salt,
-    rawContent,
-  });
 }

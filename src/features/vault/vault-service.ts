@@ -4,6 +4,7 @@ import { accountStore, setAccountStore } from "@/core/store.ts";
 import { reconcile } from "solid-js/store";
 import { VaultItemType } from "@/features/vault/vault-types.ts";
 import {
+  type TrashVaultItem,
   type VaultItem,
   VaultItemSchema,
 } from "@/features/vault/vault-schemas.ts";
@@ -212,8 +213,27 @@ export async function deleteVaultItems(
   }
 
   const idSet = new Set(ids);
-  const filtered = accountStore.vaultItems.filter((v) => !idSet.has(v.id));
-  const uploadRes = await syncVaultToGist(filtered, key, accountStore.salt);
+  const itemsToMoveToTrash = accountStore.vaultItems.filter((v) =>
+    idSet.has(v.id)
+  );
+  const remainingItems = accountStore.vaultItems.filter((v) =>
+    !idSet.has(v.id)
+  );
+
+  const deletedDate = new Date().toISOString();
+  const addedTrash: TrashVaultItem[] = itemsToMoveToTrash.map((item) => ({
+    item,
+    deletedDate,
+  }));
+
+  const combinedTrash = [...(accountStore.trashItems || []), ...addedTrash];
+
+  const uploadRes = await syncVaultToGist(
+    remainingItems,
+    key,
+    accountStore.salt,
+    combinedTrash,
+  );
 
   if (uploadRes.isErr()) {
     return err(uploadRes.error);
@@ -224,6 +244,95 @@ export async function deleteVaultItems(
     STORE_KEY_VAULT_ITEMS,
     reconcile(validatedList),
   );
+  return ok();
+}
+
+export async function restoreVaultItem(
+  id: string,
+): Promise<Result<void, TranslationKey>> {
+  const key = await getSessionKey();
+  if (!key || !accountStore.salt) {
+    return err("login_title_locked");
+  }
+
+  const trashEntry = (accountStore.trashItems || []).find(
+    (t) => t.item.id === id,
+  );
+  if (!trashEntry) {
+    return ok();
+  }
+
+  const remainingTrash = (accountStore.trashItems || []).filter(
+    (t) => t.item.id !== id,
+  );
+  const restoredItem: VaultItem = {
+    ...trashEntry.item,
+    revisionDate: new Date().toISOString(),
+  };
+
+  const updatedItems = [...accountStore.vaultItems, restoredItem];
+
+  const uploadRes = await syncVaultToGist(
+    updatedItems,
+    key,
+    accountStore.salt,
+    remainingTrash,
+  );
+
+  if (uploadRes.isErr()) {
+    return err(uploadRes.error);
+  }
+
+  setAccountStore(
+    STORE_KEY_VAULT_ITEMS,
+    reconcile(uploadRes.value),
+  );
+  return ok();
+}
+
+export async function purgeTrashItem(
+  id: string,
+): Promise<Result<void, TranslationKey>> {
+  const key = await getSessionKey();
+  if (!key || !accountStore.salt) {
+    return err("login_title_locked");
+  }
+
+  const remainingTrash = (accountStore.trashItems || []).filter(
+    (t) => t.item.id !== id,
+  );
+
+  const uploadRes = await syncVaultToGist(
+    accountStore.vaultItems,
+    key,
+    accountStore.salt,
+    remainingTrash,
+  );
+
+  if (uploadRes.isErr()) {
+    return err(uploadRes.error);
+  }
+
+  return ok();
+}
+
+export async function purgeAllTrash(): Promise<Result<void, TranslationKey>> {
+  const key = await getSessionKey();
+  if (!key || !accountStore.salt) {
+    return err("login_title_locked");
+  }
+
+  const uploadRes = await syncVaultToGist(
+    accountStore.vaultItems,
+    key,
+    accountStore.salt,
+    [],
+  );
+
+  if (uploadRes.isErr()) {
+    return err(uploadRes.error);
+  }
+
   return ok();
 }
 

@@ -67,7 +67,6 @@ export type ItemEditFormState = z.infer<typeof ItemEditFormSchema>;
 export function getInitialFormState(
   item?: VaultItem | null,
 ): ItemEditFormState {
-  const currentYear = String(new Date().getFullYear());
   const defaults: ItemEditFormState = {
     itemType: VaultItemType.Login,
     name: "",
@@ -82,9 +81,9 @@ export function getInitialFormState(
     fidoCredentials: [],
     cardholderName: "",
     cardNumber: "",
-    cardBrand: "Visa",
-    cardExpMonth: "1",
-    cardExpYear: currentYear,
+    cardBrand: "",
+    cardExpMonth: "",
+    cardExpYear: "",
     cardCode: "",
     sshPrivateKey: "",
     sshPublicKey: "",
@@ -134,9 +133,9 @@ export function getInitialFormState(
     const card = item.card;
     state.cardholderName = card.cardholderName ?? "";
     state.cardNumber = card.number ?? "";
-    state.cardBrand = card.brand ?? "Visa";
-    state.cardExpMonth = card.expMonth ?? "1";
-    state.cardExpYear = card.expYear ?? currentYear;
+    state.cardBrand = card.brand ?? "";
+    state.cardExpMonth = card.expMonth ?? "";
+    state.cardExpYear = card.expYear ?? "";
     state.cardCode = card.code ?? "";
   } else if (isSshKeyItem(item)) {
     const ssh = item.sshKey;
@@ -321,10 +320,10 @@ export function createDefaultVaultItem(type: VaultItemType): VaultItem {
         type: VaultItemType.Card,
         card: {
           cardholderName: "",
-          brand: "Visa",
+          brand: "",
           number: "",
-          expMonth: "1",
-          expYear: String(new Date().getFullYear()),
+          expMonth: "",
+          expYear: "",
           code: "",
         },
       };

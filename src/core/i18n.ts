@@ -47,6 +47,17 @@ const LangSchema = z.object({
   sync_error_remote_password_changed: z.string(),
   sync_error_invalid_format: z.string(),
 
+  // Trash View
+  trash_title: z.string(),
+  trash_empty: z.string(),
+  trash_restore: z.string(),
+  trash_purge: z.string(),
+  trash_purge_all: z.string(),
+  trash_confirm_purge_all: z.string(),
+  trash_confirm_purge_all_msg: z.string(),
+  trash_deleted_date: z.string(),
+  vault_options_trash_sub: z.string(),
+
   sync_error_invalid_response: z.string(),
   tab_error_get_current: z.string(),
   tab_error_send_message: z.string(),

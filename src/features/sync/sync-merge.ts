@@ -1,4 +1,8 @@
-import type { VaultItem } from "@/features/vault/vault-schemas.ts";
+import type {
+  TrashVaultItem,
+  VaultItem,
+  VaultPayload,
+} from "@/features/vault/vault-schemas.ts";
 
 /**
  * Chuyển đổi chuỗi ISO Date thành timestamp (milisecond).
@@ -83,4 +87,59 @@ export function mergeVaultItems(
   }
 
   return Array.from(itemMap.values());
+}
+
+/**
+ * Hợp nhất (Merge) 2 Vault Payload bao gồm danh sách items và mảng trash[].
+ */
+export function mergeVaultPayload(
+  localPayload: Partial<VaultPayload>,
+  remotePayload: Partial<VaultPayload>,
+  lastSyncTimestamp: number,
+): { items: VaultItem[]; trash: TrashVaultItem[] } {
+  const localTrash = localPayload.trash || [];
+  const remoteTrash = remotePayload.trash || [];
+
+  // 1. Hợp nhất Trash: Giữ lại bản ghi có deletedDate mới hơn cho mỗi ID
+  const trashMap = new Map<string, TrashVaultItem>();
+  for (const tItem of [...localTrash, ...remoteTrash]) {
+    const existing = trashMap.get(tItem.item.id);
+    if (!existing) {
+      trashMap.set(tItem.item.id, tItem);
+    } else {
+      const existingDelTime = parseTimestamp(existing.deletedDate);
+      const newDelTime = parseTimestamp(tItem.deletedDate);
+      if (newDelTime >= existingDelTime) {
+        trashMap.set(tItem.item.id, tItem);
+      }
+    }
+  }
+
+  // 2. Hợp nhất Items ứng cử viên
+  const candidateItems = mergeVaultItems(
+    localPayload.items || [],
+    remotePayload.items || [],
+    lastSyncTimestamp,
+  );
+
+  // 3. Lọc bỏ Item đã nằm trong Trash nếu deletedDate >= revisionDate
+  const finalItems: VaultItem[] = [];
+  for (const item of candidateItems) {
+    const trashEntry = trashMap.get(item.id);
+    if (trashEntry) {
+      const delTime = parseTimestamp(trashEntry.deletedDate);
+      const revTime = parseTimestamp(item.revisionDate);
+      if (delTime >= revTime) {
+        continue;
+      } else {
+        trashMap.delete(item.id);
+      }
+    }
+    finalItems.push(item);
+  }
+
+  return {
+    items: finalItems,
+    trash: Array.from(trashMap.values()),
+  };
 }

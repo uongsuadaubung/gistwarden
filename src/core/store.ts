@@ -8,7 +8,10 @@ import {
   type VaultTimeoutAction,
   type VaultTimeoutValue,
 } from "@/core/storage-schemas.ts";
-import type { VaultItem } from "@/features/vault/vault-schemas.ts";
+import type {
+  TrashVaultItem,
+  VaultItem,
+} from "@/features/vault/vault-schemas.ts";
 
 export interface ExtensionSettingsStore {
   language: "en" | "vi";
@@ -36,6 +39,7 @@ export interface AccountStore {
   isLocked: boolean;
   sessionUnlocked: boolean;
   vaultItems: VaultItem[];
+  trashItems: TrashVaultItem[];
 
   // PIN settings
   pinUnlockEnabled: boolean;
@@ -99,6 +103,7 @@ export const initialAccountState: Omit<AccountStore, "isLoaded"> = {
   isLocked: true,
   sessionUnlocked: false,
   vaultItems: [],
+  trashItems: [],
   pinUnlockEnabled: false,
   pinUnlockValue: "",
   pinUnlockIv: "",

@@ -27,8 +27,10 @@ import {
 } from "@/core/storage-schemas.ts";
 import { GistPayloadSchema } from "@/features/sync/sync-schemas.ts";
 import {
+  type TrashVaultItem,
   type VaultItem,
   VaultListSchema,
+  VaultPayloadSchema,
 } from "@/features/vault/vault-schemas.ts";
 import { type TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result } from "neverthrow";
@@ -142,12 +144,27 @@ export async function unlockWithKey(
     clearDerivedKey();
     return err(itemsJsonResult.error);
   }
-  const itemsResult = VaultListSchema.safeParse(itemsJsonResult.value);
-  if (!itemsResult.success) {
-    clearDerivedKey();
-    return err("storage_error");
+
+  let items: VaultItem[] = [];
+  let trash: TrashVaultItem[] = [];
+
+  const rawVal = itemsJsonResult.value;
+  if (Array.isArray(rawVal)) {
+    const itemsResult = VaultListSchema.safeParse(rawVal);
+    if (!itemsResult.success) {
+      clearDerivedKey();
+      return err("storage_error");
+    }
+    items = itemsResult.data;
+  } else {
+    const payloadResult = VaultPayloadSchema.safeParse(rawVal);
+    if (!payloadResult.success) {
+      clearDerivedKey();
+      return err("storage_error");
+    }
+    items = payloadResult.data.items;
+    trash = payloadResult.data.trash || [];
   }
-  const items = itemsResult.data;
 
   const params = new URLSearchParams(window.location.search);
   const itemId = params.get("itemId");
@@ -195,6 +212,7 @@ export async function unlockWithKey(
   const finalToken = await getGithubToken();
   setAccountStore({
     vaultItems: items,
+    trashItems: trash,
     githubToken: finalToken,
     githubConfigured: true,
     isLocked: false,

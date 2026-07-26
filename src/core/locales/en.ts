@@ -42,6 +42,18 @@ export default {
     "Master password has been changed on another device. Please log in again.",
   sync_error_invalid_format: "Vault data format is invalid.",
 
+  // Trash View
+  trash_title: "Trash",
+  trash_empty: "Trash is empty",
+  trash_restore: "Restore",
+  trash_purge: "Delete permanently",
+  trash_purge_all: "Empty Trash",
+  trash_confirm_purge_all: "Empty Trash Confirmation",
+  trash_confirm_purge_all_msg:
+    "Are you sure you want to permanently delete all items in the trash? This action cannot be undone.",
+  trash_deleted_date: "Deleted",
+  vault_options_trash_sub: "View and restore deleted items",
+
   sync_error_invalid_response: "Invalid response received from sync process.",
   tab_error_get_current: "Failed to query current browser tab.",
   tab_error_send_message: "Failed to send message to browser tab.",

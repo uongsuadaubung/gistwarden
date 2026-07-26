@@ -1,10 +1,6 @@
 import { z } from "zod";
-import {
-  deleteGist,
-  downloadFromGist,
-  uploadToGist,
-  validateToken,
-} from "@/features/sync/github-api.ts";
+import { validateToken } from "@/features/sync/github-api.ts";
+import { getSyncProvider } from "@/providers/sync-provider-registry.ts";
 import { launchGithubOauthFlow } from "@/features/sync/github-auth.ts";
 import {
   broadcastMessage,
@@ -70,6 +66,7 @@ import {
   type LoginVaultItem,
   type VaultItem,
   VaultListSchema,
+  VaultPayloadSchema,
 } from "@/features/vault/vault-schemas.ts";
 import { EncryptedPayloadSchema } from "@/features/sync/sync-schemas.ts";
 import { getAssetUrl } from "@/core/runtime.ts";
@@ -134,10 +131,19 @@ async function getDecryptedVaultItems(): Promise<
   const parseItemsRes = safeJsonParse(decryptRes.value);
   if (parseItemsRes.isErr()) return { items: [], key, salt: salt || "" };
 
-  const validateRes = VaultListSchema.safeParse(parseItemsRes.value);
-  if (!validateRes.success) return { items: [], key, salt: salt || "" };
+  let items: VaultItem[] = [];
+  const rawVal = parseItemsRes.value;
+  if (Array.isArray(rawVal)) {
+    const validateRes = VaultListSchema.safeParse(rawVal);
+    if (!validateRes.success) return { items: [], key, salt: salt || "" };
+    items = validateRes.data;
+  } else {
+    const validateRes = VaultPayloadSchema.safeParse(rawVal);
+    if (!validateRes.success) return { items: [], key, salt: salt || "" };
+    items = validateRes.data.items;
+  }
 
-  return { items: validateRes.data, key, salt: salt || "" };
+  return { items, key, salt: salt || "" };
 }
 
 async function handleSubmittedCredentials(
@@ -310,7 +316,7 @@ async function batchSavePayloads(
   if (setRes.isErr()) return false;
 
   vaultData.items = updatedItems;
-  const uploadRes = await uploadToGist(payloadObj);
+  const uploadRes = await getSyncProvider().upload(payloadObj);
   broadcastMessage({ type: MSG_VAULT_ITEMS_UPDATED });
   return uploadRes.isOk();
 }
@@ -546,7 +552,7 @@ onExtensionMessage(
       }
 
       case MSG_UPLOAD_TO_GIST:
-        uploadToGist(message.content || "").then((res) => {
+        getSyncProvider().upload(message.content || "").then((res) => {
           sendResponse({
             success: res.isOk(),
             error: res.isErr() ? res.error : undefined,
@@ -555,7 +561,7 @@ onExtensionMessage(
         return true; // Keep channel open
 
       case MSG_DELETE_GIST:
-        deleteGist(message.content || "").then((res) => {
+        getSyncProvider().delete(message.content || "").then((res) => {
           sendResponse({
             success: res.isOk(),
             error: res.isErr() ? res.error : undefined,
@@ -564,7 +570,7 @@ onExtensionMessage(
         return true;
 
       case MSG_DOWNLOAD_FROM_GIST:
-        downloadFromGist().then((res) => {
+        getSyncProvider().download().then((res) => {
           if (res.isOk()) {
             sendResponse({
               success: true,

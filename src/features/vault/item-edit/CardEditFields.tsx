@@ -20,6 +20,7 @@ const BRAND_OPTIONS = [
 ];
 
 const EXP_MONTH_OPTIONS = [
+  { value: "", label: "-- Select --" },
   { value: "1", label: "01 - January" },
   { value: "2", label: "02 - February" },
   { value: "3", label: "03 - March" },

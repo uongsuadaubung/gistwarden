@@ -19,6 +19,7 @@ export enum View {
   ExportAccounts = "ExportAccounts",
   AutofillOptions = "AutofillOptions",
   PasswordHistory = "PasswordHistory",
+  Trash = "Trash",
 }
 
 export enum SupportLanguage {

@@ -39,8 +39,10 @@ import { View } from "@/core/types.ts";
 import { DownloadFromGistResponseSchema } from "@/core/storage-schemas.ts";
 import { GistPayloadSchema } from "@/features/sync/sync-schemas.ts";
 import {
+  type TrashVaultItem,
   type VaultItem,
   VaultListSchema,
+  VaultPayloadSchema,
 } from "@/features/vault/vault-schemas.ts";
 import {
   setLanguage,
@@ -50,7 +52,6 @@ import {
 import { err, ok, Result } from "neverthrow";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
-import { getSyncProvider } from "@/features/sync/sync-provider-registry.ts";
 
 import {
   ALARM_NAME_VAULT_TIMEOUT,
@@ -114,13 +115,18 @@ async function fetchEncryptedVaultContent(): Promise<
     return ok(cachedVal);
   }
 
-  const downloadRes = await getSyncProvider().download();
-  if (downloadRes.isOk() && downloadRes.value) {
-    await setSessionItem(
-      SESSION_KEY_ENCRYPTED_VAULT,
-      downloadRes.value,
+  const sendResult = await sendMessageToBackground({
+    type: MSG_DOWNLOAD_FROM_GIST,
+  });
+  if (sendResult.isOk()) {
+    const parseRes = DownloadFromGistResponseSchema.safeParse(
+      sendResult.value,
     );
-    return ok(downloadRes.value);
+    if (parseRes.success && parseRes.data.success && parseRes.data.content) {
+      const content = parseRes.data.content;
+      await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, content);
+      return ok(content);
+    }
   }
 
   return ok(null);
@@ -205,7 +211,7 @@ async function loadAndDecryptVault(
     return;
   }
 
-  const { items } = decryptVaultRes.value;
+  const { items, trash } = decryptVaultRes.value;
   const { targetView, selectedItem } = await resolveSavedViewAndItem(
     items,
     isFido2Prompt,
@@ -214,6 +220,7 @@ async function loadAndDecryptVault(
 
   setAccountStore({
     vaultItems: items,
+    trashItems: trash,
     isLocked: false,
   });
   setUiStore({
@@ -275,30 +282,39 @@ export async function init() {
     await loadAndDecryptVault(key, isFido2Prompt, params);
   } else {
     if (accountStore.gistId && accountStore.salt) {
-      const publicRes = await getSyncProvider().download();
-      if (publicRes.isOk() && publicRes.value) {
-        const content = publicRes.value;
-        const payloadJsonRes = safeJsonParse(content);
-        if (payloadJsonRes.isOk()) {
-          const payloadResult = GistPayloadSchema.safeParse(
-            payloadJsonRes.value,
-          );
+      const sendResult = await sendMessageToBackground({
+        type: MSG_DOWNLOAD_FROM_GIST,
+      });
+      if (sendResult.isOk()) {
+        const parseRes = DownloadFromGistResponseSchema.safeParse(
+          sendResult.value,
+        );
+        if (
+          parseRes.success && parseRes.data.success && parseRes.data.content
+        ) {
+          const content = parseRes.data.content;
+          const payloadJsonRes = safeJsonParse(content);
+          if (payloadJsonRes.isOk()) {
+            const payloadResult = GistPayloadSchema.safeParse(
+              payloadJsonRes.value,
+            );
 
-          if (payloadResult.success) {
-            const payload = payloadResult.data;
-            if (
-              payload.salt && accountStore.salt &&
-              payload.salt !== accountStore.salt
-            ) {
-              console.warn(
-                "[Store] Salt mismatch detected during init prefetch (Master Password changed on another device). Auto logging out...",
-              );
-              await logout();
-              setAccountStore("isLoaded", true);
-              setSettingsStore("isLoaded", true);
-              return;
+            if (payloadResult.success) {
+              const payload = payloadResult.data;
+              if (
+                payload.salt && accountStore.salt &&
+                payload.salt !== accountStore.salt
+              ) {
+                console.warn(
+                  "[Store] Salt mismatch detected during init prefetch (Master Password changed on another device). Auto logging out...",
+                );
+                await logout();
+                setAccountStore("isLoaded", true);
+                setSettingsStore("isLoaded", true);
+                return;
+              }
+              await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, content);
             }
-            await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, content);
           }
         }
       }
@@ -444,6 +460,7 @@ async function decryptGistVault(
 ): Promise<
   Result<{
     items: VaultItem[];
+    trash: TrashVaultItem[];
     targetView: View;
     selectedItem?: VaultItem;
   }, TranslationKey>
@@ -473,11 +490,21 @@ async function decryptGistVault(
   if (itemsJsonRes.isErr()) {
     return err(itemsJsonRes.error);
   }
-  const itemsResult = VaultListSchema.safeParse(itemsJsonRes.value);
-  if (!itemsResult.success) {
-    return err("storage_error");
+
+  let items: VaultItem[] = [];
+  let trash: TrashVaultItem[] = [];
+
+  const rawVal = itemsJsonRes.value;
+  if (Array.isArray(rawVal)) {
+    const itemsResult = VaultListSchema.safeParse(rawVal);
+    if (!itemsResult.success) return err("storage_error");
+    items = itemsResult.data;
+  } else {
+    const payloadResult = VaultPayloadSchema.safeParse(rawVal);
+    if (!payloadResult.success) return err("storage_error");
+    items = payloadResult.data.items;
+    trash = payloadResult.data.trash || [];
   }
-  const items = itemsResult.data;
 
   const params = new URLSearchParams(window.location.search);
   const itemId = params.get("itemId");
@@ -494,7 +521,7 @@ async function decryptGistVault(
     }
   }
 
-  return ok({ items, targetView, selectedItem });
+  return ok({ items, trash, targetView, selectedItem });
 }
 
 export async function unlock(

@@ -22,6 +22,7 @@ const pathToViewMap = new Map<string, View>([
   ["/settings/change-password", View.ChangeMasterPassword],
   ["/settings/autofill", View.AutofillOptions],
   ["/generator/history", View.PasswordHistory],
+  ["/vault/trash", View.Trash],
 ]);
 
 const viewToPathMap = new Map<View, string>([
@@ -45,6 +46,7 @@ const viewToPathMap = new Map<View, string>([
   [View.ChangeMasterPassword, "/settings/change-password"],
   [View.AutofillOptions, "/settings/autofill"],
   [View.PasswordHistory, "/generator/history"],
+  [View.Trash, "/vault/trash"],
 ]);
 
 export const pathDepths = new Map<string, number>([
@@ -68,6 +70,7 @@ export const pathDepths = new Map<string, number>([
   ["/import", 5],
   ["/export", 5],
   ["/fido2-prompt", 5],
+  ["/vault/trash", 5],
 ]);
 
 export function getViewPath(view: View): string {

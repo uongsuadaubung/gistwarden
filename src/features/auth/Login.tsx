@@ -10,7 +10,9 @@ import {
 } from "solid-js";
 import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
 import { setupGithub } from "@/features/sync/github-auth.ts";
-import { getSyncProvider } from "@/features/sync/sync-provider-registry.ts";
+import { DownloadFromGistResponseSchema } from "@/core/storage-schemas.ts";
+import { MSG_DOWNLOAD_FROM_GIST } from "@/core/constants.ts";
+import { sendMessageToBackground } from "@/core/messaging.ts";
 
 import { logout, unlock } from "@/features/auth/auth-service.ts";
 
@@ -37,8 +39,6 @@ import {
 } from "@/core/constants.ts";
 import { type LoginViewMode } from "@/core/storage-schemas.ts";
 
-import { sendMessageToBackground } from "@/core/messaging.ts";
-
 const OauthResponseSchema = z.object({
   success: z.boolean().catch(false),
   token: z.string().optional(),
@@ -61,11 +61,24 @@ export const Login: Component = () => {
     if (isConfigured && !hasSalt && mode === "masterPassword") {
       setGistStatus("checking");
       (async () => {
-        const res = await getSyncProvider().download();
-        if (res.isOk() && res.value) {
-          setGistStatus("exists");
-        } else if (res.isOk() && !res.value) {
-          setGistStatus("new");
+        const sendResult = await sendMessageToBackground({
+          type: MSG_DOWNLOAD_FROM_GIST,
+        });
+        if (sendResult.isOk()) {
+          const parseRes = DownloadFromGistResponseSchema.safeParse(
+            sendResult.value,
+          );
+          if (
+            parseRes.success && parseRes.data.success && parseRes.data.content
+          ) {
+            setGistStatus("exists");
+          } else if (
+            parseRes.success && parseRes.data.success && !parseRes.data.content
+          ) {
+            setGistStatus("new");
+          } else {
+            setGistStatus("exists");
+          }
         } else {
           setGistStatus("exists");
         }

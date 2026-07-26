@@ -46,6 +46,18 @@ export default {
     "Mật khẩu chính đã bị thay đổi từ thiết bị khác. Vui lòng đăng nhập lại.",
   sync_error_invalid_format: "Định dạng dữ liệu két mật khẩu không hợp lệ.",
 
+  // Trash View
+  trash_title: "Thùng rác",
+  trash_empty: "Thùng rác trống",
+  trash_restore: "Khôi phục",
+  trash_purge: "Xóa vĩnh viễn",
+  trash_purge_all: "Dọn sạch thùng rác",
+  trash_confirm_purge_all: "Xóa toàn bộ thùng rác",
+  trash_confirm_purge_all_msg:
+    "Bạn có chắc chắn muốn xóa vĩnh viễn tất cả các mục trong thùng rác không? Hành động này không thể hoàn tác.",
+  trash_deleted_date: "Đã xóa",
+  vault_options_trash_sub: "Xem và khôi phục các mục đã xóa",
+
   sync_error_invalid_response: "Phản hồi từ tiến trình đồng bộ không hợp lệ.",
   tab_error_get_current: "Không thể lấy thông tin thẻ trình duyệt hiện tại.",
   tab_error_send_message: "Không thể gửi dữ liệu tới thẻ trình duyệt.",
