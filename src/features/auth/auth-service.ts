@@ -67,7 +67,6 @@ import {
   SESSION_KEY_VERIFICATION_IV,
   STORE_KEY_IS_LOCKED,
   STORE_KEY_SALT,
-  STORE_KEY_VAULT_ITEMS,
   STORE_KEY_VIEW,
 } from "@/core/constants.ts";
 
@@ -330,11 +329,16 @@ export async function init() {
   setSettingsStore("isLoaded", true);
 }
 
+export interface SetupUnlockedSessionOptions {
+  targetView?: View;
+  selectedItem?: VaultItem;
+}
+
 async function setupUnlockedSession(
   key: CryptoKey,
   items: VaultItem[],
-  targetView?: View,
-  selectedItem?: VaultItem,
+  trash: TrashVaultItem[] = [],
+  options?: SetupUnlockedSessionOptions,
 ): Promise<Result<void, TranslationKey>> {
   await setDerivedKey(key);
   const verificationStr = "verification_token";
@@ -356,11 +360,14 @@ async function setupUnlockedSession(
   await setSessionUnlocked(true);
 
   const finalToken = await getGithubToken();
+  const targetView = options?.targetView;
+  const selectedItem = options?.selectedItem;
   const finalView = targetView ||
     (uiStore.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault);
 
   setAccountStore({
     vaultItems: items,
+    trashItems: trash,
     githubToken: finalToken,
     githubConfigured: true,
     isLocked: false,
@@ -617,7 +624,7 @@ export async function unlock(
       clearDerivedKey();
       return err(uploadRes.error);
     }
-    return await setupUnlockedSession(key, []);
+    return await setupUnlockedSession(key, [], []);
   }
 
   const decryptVaultRes = await decryptGistVault(existingGistContent, key);
@@ -626,9 +633,12 @@ export async function unlock(
     return err(decryptVaultRes.error);
   }
 
-  const { items, targetView, selectedItem } = decryptVaultRes.value;
+  const { items, trash, targetView, selectedItem } = decryptVaultRes.value;
   await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, existingGistContent);
-  return await setupUnlockedSession(key, items, targetView, selectedItem);
+  return await setupUnlockedSession(key, items, trash, {
+    targetView,
+    selectedItem,
+  });
 }
 
 export async function lock() {
@@ -640,6 +650,7 @@ export async function lock() {
 
   setAccountStore({
     vaultItems: [],
+    trashItems: [],
     githubToken: "",
     isLocked: true,
   });
@@ -660,6 +671,7 @@ export async function logout() {
 
   setAccountStore({
     vaultItems: [],
+    trashItems: [],
     githubToken: "",
     isLocked: true,
     sessionUnlocked: false,
@@ -686,6 +698,7 @@ export async function reloadVaultItems(): Promise<void> {
   const decryptVaultRes = await decryptGistVault(contentRes.value, key);
   if (decryptVaultRes.isErr()) return;
 
-  const { items } = decryptVaultRes.value;
-  setAccountStore(STORE_KEY_VAULT_ITEMS, reconcile(items));
+  const { items, trash } = decryptVaultRes.value;
+  setAccountStore("vaultItems", reconcile(items));
+  setAccountStore("trashItems", reconcile(trash));
 }
