@@ -38,31 +38,20 @@ function isRegisteredRoute(
     isRecord(val) &&
     "schema" in val &&
     isRecord(val.schema) &&
-    "safeParse" in val.schema &&
     typeof val.schema.safeParse === "function" &&
-    "handler" in val &&
     typeof val.handler === "function"
-  );
-}
-
-function isZodSchema(val: unknown): val is z.ZodTypeAny {
-  return (
-    isRecord(val) &&
-    "safeParse" in val &&
-    typeof val.safeParse === "function"
   );
 }
 
 function isRouteContract(
   val: unknown,
 ): val is RouteContract<string, z.ZodTypeAny, z.ZodTypeAny> {
-  return (
-    isRecord(val) &&
-    "type" in val &&
-    typeof val.type === "string" &&
-    "payloadSchema" in val &&
-    "responseSchema" in val
-  );
+  return isRecord(val) && typeof val.type === "string" &&
+    "payloadSchema" in val;
+}
+
+function isZodSchema(val: unknown): val is z.ZodTypeAny {
+  return isRecord(val) && typeof val.safeParse === "function";
 }
 
 function isHandlerFn(

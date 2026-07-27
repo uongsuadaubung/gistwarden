@@ -18,20 +18,7 @@ import {
   resolveFido2RequestRoute,
 } from "@/features/passkey/fido2-schemas.ts";
 import { sendBackgroundMessage } from "@/core/messaging.ts";
-import { getBaseDomain, safeParseUrl } from "@/core/domain-utils.ts";
-
-const getDomainFromUrl = (urlStr: string): string => {
-  const parseResult = safeParseUrl(urlStr);
-  return parseResult.map((u) => u.hostname.toLowerCase()).unwrapOr(
-    urlStr.toLowerCase(),
-  );
-};
-
-const isDomainMatch = (domainA: string, domainB: string): boolean => {
-  const baseA = getBaseDomain(domainA);
-  const baseB = getBaseDomain(domainB);
-  return !!baseA && baseA === baseB;
-};
+import { getBaseDomain } from "@/core/domain-utils.ts";
 
 export interface Fido2Request {
   success: boolean;
@@ -85,16 +72,16 @@ export function findMatchingFido2Credentials(
 ): MatchingPasskey[] {
   const list: MatchingPasskey[] = [];
   const targetRpId = rpId?.trim().toLowerCase() || "";
-  const targetHost = getDomainFromUrl(rpId);
+  const targetBase = getBaseDomain(rpId);
 
   vaultItems.forEach((item) => {
     if (item.type !== VaultItemType.Login) return;
     if (item.login.fido2Credentials) {
       item.login.fido2Credentials.forEach((cred: Fido2Credential) => {
         const credRpId = cred.rpId?.trim().toLowerCase() || "";
-        const credHost = getDomainFromUrl(cred.rpId || "");
+        const credBase = getBaseDomain(cred.rpId || "");
         const isMatch = credRpId === targetRpId ||
-          (!!credHost && !!targetHost && isDomainMatch(credHost, targetHost));
+          (Boolean(credBase) && credBase === targetBase);
 
         if (isMatch) {
           list.push({
