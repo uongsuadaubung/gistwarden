@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sessionManager } from "@/core/session-manager.ts";
 import { reconcile } from "solid-js/store";
 import {
   accountStore,
@@ -8,9 +9,7 @@ import {
   setUiStore,
   uiStore,
 } from "@/core/store.ts";
-import { clearAlarm } from "@/core/alarms.ts";
 import {
-  clearUnlockedSessionState,
   getAccountSettings,
   getGithubToken,
   getLocalItem,
@@ -54,7 +53,6 @@ import { safeJsonParse } from "@/core/json-utils.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 
 import {
-  ALARM_NAME_VAULT_TIMEOUT,
   APP_NAME,
   LOCAL_STORAGE_KEY_THEME,
   MSG_DOWNLOAD_FROM_GIST,
@@ -642,44 +640,11 @@ export async function unlock(
 }
 
 export async function lock() {
-  clearDerivedKey();
-
-  await clearUnlockedSessionState();
-
-  await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
-
-  setAccountStore({
-    vaultItems: [],
-    trashItems: [],
-    githubToken: "",
-    isLocked: true,
-  });
-  setUiStore({
-    view: uiStore.view === View.Fido2Prompt ? View.Fido2Prompt : View.Login,
-    selectedItem: null,
-  });
+  await sessionManager.lockSession();
 }
 
 export async function logout() {
-  clearDerivedKey();
-
-  await clearUnlockedSessionState();
-
-  await resetAccountSettings();
-
-  await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
-
-  setAccountStore({
-    vaultItems: [],
-    trashItems: [],
-    githubToken: "",
-    isLocked: true,
-    sessionUnlocked: false,
-  });
-  setUiStore({
-    view: View.Login,
-    selectedItem: null,
-  });
+  await sessionManager.logoutSession();
 }
 
 export async function acceptWelcome() {

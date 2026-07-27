@@ -1,24 +1,17 @@
-import {
-  accountStore,
-  setAccountStore,
-  setSettingsStore,
-} from "@/core/store.ts";
+import { setAccountStore, setSettingsStore } from "@/core/store.ts";
 import {
   updateAccountSettings,
   updateExtensionSettings,
 } from "@/core/storage.ts";
 import {
   arrayBufferToBase64,
-  base64ToArrayBuffer,
-  decryptData,
   deriveKey,
   encryptData,
   generateSalt,
   getSessionKey,
-  importAesGcmKey,
 } from "@/core/crypto.ts";
 
-import { unlockWithKey } from "@/features/auth/session-service.ts";
+import { sessionManager } from "@/core/session-manager.ts";
 import { err, ok, type Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 
@@ -71,51 +64,7 @@ export async function setPinUnlock(
 export async function unlockWithPin(
   pin: string,
 ): Promise<Result<void, TranslationKey>> {
-  if (
-    !accountStore.pinUnlockValue ||
-    !accountStore.pinUnlockIv ||
-    !accountStore.pinUnlockSalt
-  ) {
-    return err("login_error_wrong_pin");
-  }
-
-  const saltBufferRes = base64ToArrayBuffer(accountStore.pinUnlockSalt);
-  if (saltBufferRes.isErr()) {
-    return err("login_error_wrong_pin");
-  }
-  const pinKeyRes = await deriveKey(pin, new Uint8Array(saltBufferRes.value));
-  if (pinKeyRes.isErr()) {
-    return err("login_error_wrong_pin");
-  }
-  const pinKey = pinKeyRes.value;
-  const decryptRes = await decryptData(
-    accountStore.pinUnlockValue,
-    accountStore.pinUnlockIv,
-    pinKey,
-  );
-  if (decryptRes.isErr()) {
-    return err("login_error_wrong_pin");
-  }
-
-  const bufferRes = base64ToArrayBuffer(decryptRes.value);
-  if (bufferRes.isErr()) {
-    return err("login_error_wrong_pin");
-  }
-  const importRes = await importAesGcmKey(
-    bufferRes.value,
-    "login_error_wrong_pin",
-  );
-
-  if (importRes.isErr()) {
-    return err(importRes.error);
-  }
-
-  const res = await unlockWithKey(importRes.value);
-  if (res.isErr()) {
-    return err(res.error);
-  }
-
-  return ok();
+  return await sessionManager.unlockWithPin(pin);
 }
 
 export async function disablePinUnlock(): Promise<void> {

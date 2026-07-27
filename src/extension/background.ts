@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pendingNotificationManager } from "@/extension/pending-notification-manager.ts";
 import { validateToken } from "@/features/sync/github-api.ts";
 import { getSyncProvider } from "@/providers/sync-provider-registry.ts";
 import { launchGithubOauthFlow } from "@/features/sync/github-auth.ts";
@@ -85,17 +86,6 @@ const SubmittedCredentialsSchema = z.object({
   username: z.string(),
   password: z.string(),
 });
-
-let pendingFido2Callback: ((response: unknown) => void) | null = null;
-const pendingTabNotifications = new Map<
-  number,
-  { payload: unknown; timestamp: number }
->();
-let lastGlobalPendingNotification: {
-  payload: unknown;
-  timestamp: number;
-  domain: string;
-} | null = null;
 
 async function getDecryptedVaultItems(): Promise<
   {
@@ -204,21 +194,21 @@ async function handleSubmittedCredentials(
   }
 
   // Save pending notification for this tab (survives page navigation)
-  pendingTabNotifications.set(tabId, {
+  pendingNotificationManager.setTabNotification(tabId, {
     payload: notificationPayload,
     timestamp: Date.now(),
   });
-  lastGlobalPendingNotification = {
+  pendingNotificationManager.setGlobalNotification({
     payload: notificationPayload,
     timestamp: Date.now(),
     domain,
-  };
+  });
 
   // For AJAX/SPA forms or slow network (where page doesn't navigate within 300ms),
   // send notification to current tab. If user does not interact on Page A and page navigates later,
   // Page B will still receive the prompt cleanly.
   setTimeout(() => {
-    const currentPending = pendingTabNotifications.get(tabId);
+    const currentPending = pendingNotificationManager.getTabNotification(tabId);
     if (currentPending && currentPending.payload === notificationPayload) {
       sendMessageToTab(tabId, {
         type: MSG_SHOW_NOTIFICATION_BAR,
@@ -341,8 +331,7 @@ async function processPendingUnapprovedCredentials(): Promise<void> {
 
   // Immediately remove key from storage to prevent duplicate processing
   await removeLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS);
-  pendingTabNotifications.clear();
-  lastGlobalPendingNotification = null;
+  pendingNotificationManager.clearAll();
 
   const vaultData = await getDecryptedVaultItems();
   if (!vaultData) {
@@ -507,19 +496,23 @@ onExtensionMessage(
 
       case MSG_CHECK_PENDING_NOTIFICATION: {
         if (sender.tab && sender.tab.id !== undefined) {
-          const pending = pendingTabNotifications.get(sender.tab.id);
+          const pending = pendingNotificationManager.getTabNotification(
+            sender.tab.id,
+          );
           if (pending && Date.now() - pending.timestamp < 120000) {
             sendResponse({ success: true, payload: pending.payload });
-            pendingTabNotifications.delete(sender.tab.id);
+            pendingNotificationManager.deleteTabNotification(sender.tab.id);
             return false;
           }
         }
+        const globalPending = pendingNotificationManager
+          .getGlobalNotification();
         if (
-          lastGlobalPendingNotification &&
-          Date.now() - lastGlobalPendingNotification.timestamp < 120000
+          globalPending &&
+          Date.now() - globalPending.timestamp < 120000
         ) {
-          const payload = lastGlobalPendingNotification.payload;
-          lastGlobalPendingNotification = null;
+          const payload = globalPending.payload;
+          pendingNotificationManager.setGlobalNotification(null);
           sendResponse({ success: true, payload });
           return false;
         }
@@ -537,9 +530,9 @@ onExtensionMessage(
 
       case MSG_SAVE_CREDENTIAL_ACTION: {
         if (sender.tab && sender.tab.id !== undefined) {
-          pendingTabNotifications.delete(sender.tab.id);
+          pendingNotificationManager.deleteTabNotification(sender.tab.id);
         }
-        lastGlobalPendingNotification = null;
+        pendingNotificationManager.setGlobalNotification(null);
 
         if (message.choice === "confirm") {
           handleSaveCredentialAction(message.payload).then((ok) => {
@@ -649,7 +642,7 @@ onExtensionMessage(
         setSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST, requestData);
 
         // Save callback in memory
-        pendingFido2Callback = sendResponse;
+        pendingNotificationManager.setFido2Callback(sendResponse);
 
         // Open a popup window for verification
         chrome.windows.create({
@@ -687,12 +680,12 @@ onExtensionMessage(
       case MSG_RESOLVE_FIDO2_REQUEST:
         removeSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST);
 
-        if (pendingFido2Callback) {
-          pendingFido2Callback({
+        if (
+          pendingNotificationManager.resolveFido2Callback({
             success: true,
             result: message.result,
-          });
-          pendingFido2Callback = null;
+          })
+        ) {
           sendResponse({ success: true });
         } else {
           sendResponse({
@@ -705,12 +698,12 @@ onExtensionMessage(
       case MSG_REJECT_FIDO2_REQUEST:
         removeSessionItem(SESSION_KEY_PENDING_FIDO2_REQUEST);
 
-        if (pendingFido2Callback) {
-          pendingFido2Callback({
+        if (
+          pendingNotificationManager.resolveFido2Callback({
             success: false,
             error: message.error || "User cancelled",
-          });
-          pendingFido2Callback = null;
+          })
+        ) {
           sendResponse({ success: true });
         } else {
           sendResponse({

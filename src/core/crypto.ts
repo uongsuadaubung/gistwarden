@@ -1,17 +1,12 @@
 import { argon2id } from "hash-wasm";
+import { getAccountSettings, getSessionItem } from "@/core/storage.ts";
 import {
-  getAccountSettings,
-  getSessionItem,
-  removeSessionItem,
-  setSessionItem,
-} from "@/core/storage.ts";
-import {
-  SESSION_KEY_DERIVED_KEY,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
 } from "@/core/constants.ts";
 import { err, ok, Result, ResultAsync } from "neverthrow";
 import { type TranslationKey } from "@/core/i18n.ts";
+import { sessionManager } from "@/core/session-manager.ts";
 export const ARGON2_ITERATIONS = 3;
 export const ARGON2_MEMORY = 65536; // 64MB
 
@@ -115,21 +110,12 @@ export function base64ToArrayBuffer(
   )();
 }
 
-let derivedCryptoKey: CryptoKey | null = null;
-
 export function clearDerivedKey(): void {
-  derivedCryptoKey = null;
+  sessionManager.clearKey();
 }
 
 export async function setDerivedKey(key: CryptoKey | null): Promise<void> {
-  derivedCryptoKey = key;
-  if (key) {
-    const raw = await crypto.subtle.exportKey("raw", key);
-    const base64 = arrayBufferToBase64(raw);
-    await setSessionItem(SESSION_KEY_DERIVED_KEY, base64);
-  } else {
-    await removeSessionItem(SESSION_KEY_DERIVED_KEY);
-  }
+  await sessionManager.setKey(key);
 }
 
 export async function getOrDeriveKey(
@@ -145,46 +131,13 @@ export async function getOrDeriveKey(
     return err(deriveRes.error);
   }
   const key = deriveRes.value;
-  derivedCryptoKey = key;
-
-  // Export raw bytes and save as Base64 to Session Storage
-  const raw = await crypto.subtle.exportKey("raw", key);
-  const base64 = arrayBufferToBase64(raw);
-  await setSessionItem(SESSION_KEY_DERIVED_KEY, base64);
+  await sessionManager.setKey(key);
 
   return ok(key);
 }
 
 export async function getSessionKey(): Promise<CryptoKey | null> {
-  if (derivedCryptoKey) return derivedCryptoKey;
-
-  const base64Res = await getSessionItem(SESSION_KEY_DERIVED_KEY);
-  const base64 = base64Res.isOk() ? base64Res.value : null;
-  if (typeof base64 === "string" && base64) {
-    const bufferRes = base64ToArrayBuffer(base64);
-    if (bufferRes.isErr()) return null;
-    const buffer = bufferRes.value;
-    const importRes = await ResultAsync.fromPromise(
-      crypto.subtle.importKey(
-        "raw",
-        buffer,
-        { name: "AES-GCM", length: 256 },
-        true, // extractable
-        ["encrypt", "decrypt"],
-      ),
-      (e) => e,
-    );
-    if (importRes.isErr()) {
-      console.error(
-        "[Crypto] Failed to import key from session storage:",
-        importRes.error,
-      );
-      return null;
-    }
-    derivedCryptoKey = importRes.value;
-    return derivedCryptoKey;
-  }
-  return null;
+  return await sessionManager.getSessionKey();
 }
 
 export async function verifyMasterPassword(password: string): Promise<boolean> {

@@ -13,19 +13,36 @@ import { getPathView, getViewPath } from "@/core/router.ts";
 export { pathDepths as viewDepths } from "@/core/router.ts";
 
 type NavigatorFn = (to: string, options?: { replace?: boolean }) => void;
-let activeNavigator: NavigatorFn | null = null;
+
+export class NavigationManager {
+  private activeNavigator: NavigatorFn | null = null;
+
+  public setNavigator(navigator: NavigatorFn): void {
+    this.activeNavigator = navigator;
+  }
+
+  public getNavigator(): NavigatorFn | null {
+    return this.activeNavigator;
+  }
+
+  public navigate(newPath: string): void {
+    if (this.activeNavigator) {
+      this.activeNavigator(newPath);
+    }
+  }
+}
+
+export const navigationManager = new NavigationManager();
 
 export function setActiveNavigator(navigator: NavigatorFn): void {
-  activeNavigator = navigator;
+  navigationManager.setNavigator(navigator);
 }
 
 export function navigatePath(newPath: string): void {
   const targetView = getPathView(newPath);
   setUiStore("view", targetView);
 
-  if (activeNavigator) {
-    activeNavigator(newPath);
-  }
+  navigationManager.navigate(newPath);
 
   const skipViews = [View.Login, View.Welcome, View.Fido2Prompt];
   if (!skipViews.includes(targetView)) {
