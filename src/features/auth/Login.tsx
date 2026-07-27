@@ -10,9 +10,7 @@ import {
 } from "solid-js";
 import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
 import { setupGithub } from "@/features/sync/github-auth.ts";
-import { DownloadFromGistResponseSchema } from "@/core/storage-schemas.ts";
-import { MSG_DOWNLOAD_FROM_GIST } from "@/core/constants.ts";
-import { sendMessageToBackground } from "@/core/messaging.ts";
+import { sendBackgroundMessage } from "@/core/messaging.ts";
 
 import { logout, unlock } from "@/features/auth/auth-service.ts";
 
@@ -31,19 +29,15 @@ import { t, type TranslationKey } from "@/core/i18n.ts";
 import { getSessionItem, removeSessionItem } from "@/core/storage.ts";
 import { z } from "zod";
 import {
+  downloadFromGistRoute,
+  startGithubOauthRoute,
+} from "@/features/sync/sync-schemas.ts";
+import {
   APP_NAME,
-  MSG_START_GITHUB_OAUTH,
   OAUTH_CLIENT_ID,
-  OAUTH_WORKER_URL,
   SESSION_KEY_PENDING_GITHUB_TOKEN,
 } from "@/core/constants.ts";
 import { type LoginViewMode } from "@/core/storage-schemas.ts";
-
-const OauthResponseSchema = z.object({
-  success: z.boolean().catch(false),
-  token: z.string().optional(),
-  error: z.custom<TranslationKey>().optional(),
-});
 
 export const Login: Component = () => {
   const [error, setError] = createSignal("");
@@ -61,26 +55,16 @@ export const Login: Component = () => {
     if (isConfigured && !hasSalt && mode === "masterPassword") {
       setGistStatus("checking");
       (async () => {
-        const sendResult = await sendMessageToBackground({
-          type: MSG_DOWNLOAD_FROM_GIST,
-        });
-        if (sendResult.isOk()) {
-          const parseRes = DownloadFromGistResponseSchema.safeParse(
-            sendResult.value,
-          );
-          if (
-            parseRes.success && parseRes.data.success && parseRes.data.content
-          ) {
-            setGistStatus("exists");
-          } else if (
-            parseRes.success && parseRes.data.success && !parseRes.data.content
-          ) {
-            setGistStatus("new");
-          } else {
-            setGistStatus("exists");
-          }
-        } else {
+        const sendResult = await sendBackgroundMessage(
+          downloadFromGistRoute,
+        );
+        if (
+          sendResult.isOk() && sendResult.value.success &&
+          sendResult.value.content
+        ) {
           setGistStatus("exists");
+        } else {
+          setGistStatus("new");
         }
       })();
     } else {
@@ -154,27 +138,21 @@ export const Login: Component = () => {
       setGlobalLoading(false);
     };
 
-    const sendResult = await sendMessageToBackground({
-      type: MSG_START_GITHUB_OAUTH,
-      content: OAUTH_CLIENT_ID,
-      token: OAUTH_WORKER_URL,
-    });
+    const sendResult = await sendBackgroundMessage(
+      startGithubOauthRoute,
+      { content: OAUTH_CLIENT_ID },
+    );
     if (sendResult.isErr()) {
       handleOauthError(sendResult.error);
       return;
     }
-    const parsed = OauthResponseSchema.safeParse(sendResult.value);
-
-    if (!parsed.success || !parsed.data.success || !parsed.data.token) {
-      const errorMsg = (parsed.success && parsed.data.error)
-        ? parsed.data.error
-        : "login_error_oauth_no_token";
-      handleOauthError(errorMsg);
+    if (!sendResult.value.success) {
+      handleOauthError(sendResult.value.error || "messaging_error_send_failed");
       return;
     }
 
     // Setup GitHub with the obtained token
-    const setupRes = await setupGithub(parsed.data.token);
+    const setupRes = await setupGithub(sendResult.value.token);
     if (setupRes.isErr()) {
       handleOauthError(setupRes.error);
       return;

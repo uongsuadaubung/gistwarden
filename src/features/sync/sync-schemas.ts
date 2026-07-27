@@ -1,4 +1,13 @@
 import { z } from "zod";
+import type { TranslationKey } from "@/core/i18n.ts";
+import { defineRoute } from "@/core/messaging.ts";
+import {
+  MSG_DELETE_GIST,
+  MSG_DOWNLOAD_FROM_GIST,
+  MSG_START_GITHUB_OAUTH,
+  MSG_UPLOAD_TO_GIST,
+  MSG_VALIDATE_TOKEN,
+} from "@/core/constants.ts";
 import { VaultItemType } from "@/features/vault/vault-types.ts";
 import { VaultFieldSchema } from "@/features/vault/vault-schemas.ts";
 import { Fido2CredentialSchema } from "@/features/passkey/fido2-schemas.ts";
@@ -158,3 +167,123 @@ export const GistContentPayloadSchema = EncryptedPayloadSchema.extend({
   rawContent: z.string(),
 });
 export type GistContentPayload = z.infer<typeof GistContentPayloadSchema>;
+
+// --- Sync Extension Message & Response Schemas ---
+export const SimpleSuccessResponseSchema = z.object({
+  success: z.literal(true),
+});
+export type SimpleSuccessResponse = z.infer<typeof SimpleSuccessResponseSchema>;
+
+export const SyncActionResponseSchema = z.discriminatedUnion("success", [
+  z.object({
+    success: z.literal(true),
+  }),
+  z.object({
+    success: z.literal(false),
+    error: z.custom<TranslationKey>().optional(),
+  }),
+]);
+export type SyncActionResponse = z.infer<typeof SyncActionResponseSchema>;
+
+export const DownloadGistResponseSchema = z.discriminatedUnion("success", [
+  z.object({
+    success: z.literal(true),
+    content: z.string(),
+  }),
+  z.object({
+    success: z.literal(false),
+    error: z.custom<TranslationKey>().optional(),
+  }),
+]);
+export type DownloadGistResponse = z.infer<typeof DownloadGistResponseSchema>;
+
+export const ValidateTokenResponseSchema = z.discriminatedUnion("success", [
+  z.object({
+    success: z.literal(true),
+    username: z.string(),
+    avatarUrl: z.string(),
+  }),
+  z.object({
+    success: z.literal(false),
+    error: z.custom<TranslationKey>().optional(),
+  }),
+]);
+export type ValidateTokenResponse = z.infer<typeof ValidateTokenResponseSchema>;
+
+export const StartGithubOauthResponseSchema = z.discriminatedUnion("success", [
+  z.object({
+    success: z.literal(true),
+    token: z.string(),
+  }),
+  z.object({
+    success: z.literal(false),
+    error: z.custom<TranslationKey>().optional(),
+  }),
+]);
+export type StartGithubOauthResponse = z.infer<
+  typeof StartGithubOauthResponseSchema
+>;
+
+export const UploadToGistMsgSchema = z.object({
+  type: z.literal(MSG_UPLOAD_TO_GIST),
+  content: z.string().optional(),
+});
+export type UploadToGistMsg = z.infer<typeof UploadToGistMsgSchema>;
+
+export const DeleteGistMsgSchema = z.object({
+  type: z.literal(MSG_DELETE_GIST),
+  content: z.string().optional(),
+});
+export type DeleteGistMsg = z.infer<typeof DeleteGistMsgSchema>;
+
+export const DownloadFromGistMsgSchema = z.object({
+  type: z.literal(MSG_DOWNLOAD_FROM_GIST),
+});
+export type DownloadFromGistMsg = z.infer<typeof DownloadFromGistMsgSchema>;
+
+export const ValidateTokenMsgSchema = z.object({
+  type: z.literal(MSG_VALIDATE_TOKEN),
+  token: z.string().optional(),
+});
+export type ValidateTokenMsg = z.infer<typeof ValidateTokenMsgSchema>;
+
+export const StartGithubOauthMsgSchema = z.object({
+  type: z.literal(MSG_START_GITHUB_OAUTH),
+  content: z.string().optional(),
+});
+export type StartGithubOauthMsg = z.infer<typeof StartGithubOauthMsgSchema>;
+
+export const uploadToGistRoute = defineRoute({
+  type: MSG_UPLOAD_TO_GIST,
+  payloadSchema: UploadToGistMsgSchema,
+  responseSchema: SyncActionResponseSchema,
+  internalOnly: true,
+});
+
+export const deleteGistRoute = defineRoute({
+  type: MSG_DELETE_GIST,
+  payloadSchema: DeleteGistMsgSchema,
+  responseSchema: SyncActionResponseSchema,
+  internalOnly: true,
+});
+
+export const downloadFromGistRoute = defineRoute({
+  type: MSG_DOWNLOAD_FROM_GIST,
+  payloadSchema: DownloadFromGistMsgSchema,
+  responseSchema: DownloadGistResponseSchema,
+  internalOnly: true,
+});
+
+export const validateTokenRoute = defineRoute({
+  type: MSG_VALIDATE_TOKEN,
+  payloadSchema: ValidateTokenMsgSchema,
+  responseSchema: ValidateTokenResponseSchema,
+  internalOnly: true,
+});
+
+export const startGithubOauthRoute = defineRoute({
+  type: MSG_START_GITHUB_OAUTH,
+  payloadSchema: StartGithubOauthMsgSchema,
+  responseSchema: StartGithubOauthResponseSchema,
+  internalOnly: true,
+});

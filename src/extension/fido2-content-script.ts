@@ -1,5 +1,9 @@
 import { APP_NAME } from "@/core/constants.ts";
-import { sendMessageToBackground } from "@/core/messaging.ts";
+import {
+  fido2CredentialCreationRoute,
+  fido2CredentialGetRoute,
+} from "@/features/passkey/fido2-schemas.ts";
+import { sendBackgroundMessage } from "@/core/messaging.ts";
 import { z } from "zod";
 
 const Fido2ResponseSchema = z.object({
@@ -30,9 +34,18 @@ window.addEventListener("message", async (event) => {
   }
 
   const { requestId, type, data } = event.data;
+  if (
+    type !== fido2CredentialCreationRoute.type &&
+    type !== fido2CredentialGetRoute.type
+  ) {
+    return;
+  }
 
   // Send request to background script
-  const sendResult = await sendMessageToBackground({ type, data });
+  const sendResult = type === fido2CredentialCreationRoute.type
+    ? await sendBackgroundMessage(fido2CredentialCreationRoute, { data })
+    : await sendBackgroundMessage(fido2CredentialGetRoute, { data });
+
   if (sendResult.isOk()) {
     const response = sendResult.value;
 

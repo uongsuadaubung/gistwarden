@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { decryptData, encryptData } from "@/core/crypto.ts";
 import {
   type TrashVaultItem,
@@ -7,25 +6,19 @@ import {
   VaultPayloadSchema,
 } from "@/features/vault/vault-schemas.ts";
 import { setSessionItem, updateAccountSettings } from "@/core/storage.ts";
-import { DownloadFromGistResponseSchema } from "@/core/storage-schemas.ts";
 import {
-  MSG_DOWNLOAD_FROM_GIST,
-  MSG_UPLOAD_TO_GIST,
-  SESSION_KEY_ENCRYPTED_VAULT,
-} from "@/core/constants.ts";
-import { sendMessageToBackground } from "@/core/messaging.ts";
+  downloadFromGistRoute,
+  EncryptedPayloadSchema,
+  uploadToGistRoute,
+} from "@/features/sync/sync-schemas.ts";
+import { SESSION_KEY_ENCRYPTED_VAULT } from "@/core/constants.ts";
+import { sendBackgroundMessage } from "@/core/messaging.ts";
 import { t, type TranslationKey } from "@/core/i18n.ts";
 import { showToast } from "@/core/ui-service.ts";
 import { err, ok, Result } from "neverthrow";
 import { mergeVaultPayload } from "@/features/sync/sync-merge.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { accountStore, setAccountStore } from "@/core/store.ts";
-import { EncryptedPayloadSchema } from "@/features/sync/sync-schemas.ts";
-
-export const SyncResponseSchema = z.object({
-  success: z.boolean(),
-  error: z.custom<TranslationKey>().optional(),
-});
 
 async function fetchAndMergeRemoteVault(
   localItems: VaultItem[],
@@ -34,19 +27,14 @@ async function fetchAndMergeRemoteVault(
 ): Promise<
   Result<{ items: VaultItem[]; trash: TrashVaultItem[] }, TranslationKey>
 > {
-  const sendResult = await sendMessageToBackground({
-    type: MSG_DOWNLOAD_FROM_GIST,
-  });
+  const sendResult = await sendBackgroundMessage(downloadFromGistRoute);
   if (sendResult.isErr()) {
     return err(sendResult.error);
   }
-  const parseRes = DownloadFromGistResponseSchema.safeParse(sendResult.value);
-  if (!parseRes.success || !parseRes.data.success) {
-    const errorKey: TranslationKey =
-      (parseRes.success && parseRes.data.error) || "vault_sync_error";
-    return err(errorKey);
+  if (!sendResult.value.success) {
+    return err(sendResult.value.error || "messaging_error_send_failed");
   }
-  const rawContent = parseRes.data.content || "";
+  const rawContent = sendResult.value.content || "";
   if (!rawContent) {
     return ok({ items: localItems, trash: localTrash });
   }
@@ -160,18 +148,14 @@ export async function syncVaultToGist(
     );
   }
 
-  const sendResult = await sendMessageToBackground({
-    type: MSG_UPLOAD_TO_GIST,
+  const sendResult = await sendBackgroundMessage(uploadToGistRoute, {
     content: payload,
   });
   if (sendResult.isErr()) {
     return err(sendResult.error);
   }
-  const uploadParse = SyncResponseSchema.safeParse(sendResult.value);
-  if (!uploadParse.success || !uploadParse.data.success) {
-    const errorKey: TranslationKey =
-      (uploadParse.success && uploadParse.data.error) || "storage_error";
-    return err(errorKey);
+  if (!sendResult.value.success) {
+    return err(sendResult.value.error || "messaging_error_send_failed");
   }
 
   const setRes = await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, payload);

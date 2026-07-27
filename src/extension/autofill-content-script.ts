@@ -1,7 +1,5 @@
 import {
   MSG_AUTOFILL_CREDENTIALS,
-  MSG_CHECK_AUTOFILL_SUGGESTION,
-  MSG_CHECK_PENDING_NOTIFICATION,
   MSG_CREDENTIALS_SUBMITTED,
   MSG_SHOW_NOTIFICATION_BAR,
   STORAGE_KEY,
@@ -19,11 +17,15 @@ import { generateTotpSafe } from "@/core/totp-utils.ts";
 import { writeClipboardText } from "@/core/clipboard-utils.ts";
 import { getLocalItem, isRecord } from "@/core/storage.ts";
 import {
-  NotificationPayloadSchema,
   notifyBackground,
   onExtensionMessage,
-  sendMessageToBackground,
+  sendBackgroundMessage,
 } from "@/core/messaging.ts";
+import {
+  checkAutofillSuggestionRoute,
+  checkPendingNotificationRoute,
+  NotificationPayloadSchema,
+} from "@/features/vault/vault-schemas.ts";
 
 // Listen for messages from background script
 onExtensionMessage((message, _sender, sendResponse) => {
@@ -77,66 +79,58 @@ setupAutofillFocusMonitoring(async () => {
   }
   if (!showSuggestions) return;
 
-  const msgRes = await sendMessageToBackground({
-    type: MSG_CHECK_AUTOFILL_SUGGESTION,
-    domain: currentDomain,
+  const msgRes = await sendBackgroundMessage(
+    checkAutofillSuggestionRoute,
+    { domain: currentDomain },
+  );
+
+  if (msgRes.isErr() || !msgRes.value.success) return;
+  const payloadData = msgRes.value.payload;
+
+  showNotificationBar({
+    ...payloadData,
+    onFill: async (selectedAcc) => {
+      isProgrammaticAutofilling = true;
+      const u = selectedAcc?.username || payloadData.username;
+      const p = selectedAcc?.password || payloadData.password;
+      const tSecret = selectedAcc?.totp || payloadData.totp;
+
+      const res = await getLocalItem(STORAGE_KEY);
+      let autoSubmit = true;
+      const rawLocal = res.isOk() ? res.value : null;
+      if (
+        isRecord(rawLocal) &&
+        typeof rawLocal.autoSubmitOnAutofill === "boolean"
+      ) {
+        autoSubmit = rawLocal.autoSubmitOnAutofill;
+      }
+      performAutofill(u, p, autoSubmit);
+
+      if (tSecret) {
+        const totpRes = generateTotpSafe(tSecret);
+        if (totpRes.isOk()) {
+          writeClipboardText(totpRes.value);
+        }
+      }
+
+      setTimeout(() => {
+        isProgrammaticAutofilling = false;
+      }, 500);
+    },
+    onDismiss: () => {
+      autofillDismissedForTab = true;
+    },
   });
-
-  if (!msgRes.isOk()) return;
-  const response = msgRes.value;
-
-  if (isRecord(response) && response.success && response.payload) {
-    const parseRes = NotificationPayloadSchema.safeParse(response.payload);
-    if (parseRes.success && parseRes.data.actionType === "autofill") {
-      const payloadData = parseRes.data;
-      showNotificationBar({
-        ...payloadData,
-        onFill: async (selectedAcc) => {
-          isProgrammaticAutofilling = true;
-          const u = selectedAcc?.username || payloadData.username;
-          const p = selectedAcc?.password || payloadData.password;
-          const tSecret = selectedAcc?.totp || payloadData.totp;
-
-          const res = await getLocalItem(STORAGE_KEY);
-          let autoSubmit = true;
-          const rawLocal = res.isOk() ? res.value : null;
-          if (
-            isRecord(rawLocal) &&
-            typeof rawLocal.autoSubmitOnAutofill === "boolean"
-          ) {
-            autoSubmit = rawLocal.autoSubmitOnAutofill;
-          }
-          performAutofill(u, p, autoSubmit);
-
-          if (tSecret) {
-            const totpRes = generateTotpSafe(tSecret);
-            if (totpRes.isOk()) {
-              writeClipboardText(totpRes.value);
-            }
-          }
-
-          setTimeout(() => {
-            isProgrammaticAutofilling = false;
-          }, 500);
-        },
-        onDismiss: () => {
-          autofillDismissedForTab = true;
-        },
-      });
-    }
-  }
 });
 
 // Check if there is a pending notification bar for this tab upon page load
 const checkPendingNotification = async () => {
-  const msgRes = await sendMessageToBackground({
-    type: MSG_CHECK_PENDING_NOTIFICATION,
-    content: currentDomain,
-  });
-  if (!msgRes.isOk()) return;
-  const response = msgRes.value;
-  if (isRecord(response) && response.success && response.payload) {
-    const parseRes = NotificationPayloadSchema.safeParse(response.payload);
+  const msgRes = await sendBackgroundMessage(
+    checkPendingNotificationRoute,
+    { content: currentDomain },
+  );
+  if (msgRes.isOk() && msgRes.value.success) {
+    const parseRes = NotificationPayloadSchema.safeParse(msgRes.value.payload);
     if (parseRes.success) {
       showNotificationBar(parseRes.data);
     }

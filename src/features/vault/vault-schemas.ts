@@ -1,9 +1,19 @@
 import { z } from "zod";
+import { defineRoute } from "@/core/messaging.ts";
+import {
+  MSG_CHECK_AUTOFILL_SUGGESTION,
+  MSG_CHECK_PENDING_NOTIFICATION,
+  MSG_CREDENTIALS_SUBMITTED,
+  MSG_SAVE_CREDENTIAL_ACTION,
+  MSG_USER_ACTIVITY,
+} from "@/core/constants.ts";
 import {
   CustomFieldType,
   VaultItemType,
 } from "@/features/vault/vault-types.ts";
 import { Fido2CredentialSchema } from "@/features/passkey/fido2-schemas.ts";
+
+const SimpleSuccessResponseSchema = z.object({ success: z.boolean() });
 
 export enum UriMatchMode {
   Domain = 0,
@@ -163,3 +173,189 @@ export const VaultPayloadSchema = z.object({
   trash: z.array(TrashVaultItemSchema).optional().default([]),
 });
 export type VaultPayload = z.infer<typeof VaultPayloadSchema>;
+
+// --- Notification & Autofill Messaging Schemas ---
+export const AddCredentialPayloadSchema = z.object({
+  actionType: z.literal("add"),
+  domain: z.string(),
+  username: z.string(),
+  password: z.string().optional(),
+  onDismiss: z.custom<() => void>().optional(),
+});
+export type AddCredentialPayload = z.infer<typeof AddCredentialPayloadSchema>;
+
+export const UpdateCredentialPayloadSchema = z.object({
+  actionType: z.literal("update"),
+  domain: z.string(),
+  username: z.string(),
+  password: z.string().optional(),
+  itemId: z.string(),
+  onDismiss: z.custom<() => void>().optional(),
+});
+export type UpdateCredentialPayload = z.infer<
+  typeof UpdateCredentialPayloadSchema
+>;
+
+export type SaveCredentialPayload =
+  | AddCredentialPayload
+  | UpdateCredentialPayload;
+
+export const AccountItemSchema = z.object({
+  itemId: z.string(),
+  name: z.string().optional(),
+  username: z.string(),
+  password: z.string().optional(),
+  totp: z.string().optional(),
+});
+export type AutofillMatchingAccount = z.infer<typeof AccountItemSchema>;
+
+export const AutofillSuggestionPayloadSchema = z.object({
+  actionType: z.literal("autofill"),
+  domain: z.string(),
+  username: z.string(),
+  password: z.string().optional(),
+  itemId: z.string().optional(),
+  totp: z.string().optional(),
+  accounts: z.array(AccountItemSchema).optional(),
+  onFill: z.custom<(selectedAcc?: AutofillMatchingAccount) => void>()
+    .optional(),
+  onDismiss: z.custom<() => void>().optional(),
+});
+export type AutofillSuggestionPayload = z.infer<
+  typeof AutofillSuggestionPayloadSchema
+>;
+
+export const NotificationPayloadSchema = z.discriminatedUnion("actionType", [
+  AddCredentialPayloadSchema,
+  UpdateCredentialPayloadSchema,
+  AutofillSuggestionPayloadSchema,
+]);
+export type NotificationPayload = z.infer<typeof NotificationPayloadSchema>;
+
+export const AddActionPayloadSchema = z.object({
+  actionType: z.literal("add"),
+  domain: z.string(),
+  username: z.string(),
+  password: z.string(),
+});
+export const UpdateActionPayloadSchema = z.object({
+  actionType: z.literal("update"),
+  domain: z.string(),
+  username: z.string(),
+  password: z.string(),
+  itemId: z.string(),
+});
+export const SaveActionPayloadSchema = z.discriminatedUnion("actionType", [
+  AddActionPayloadSchema,
+  UpdateActionPayloadSchema,
+]);
+export type SaveActionPayload = z.infer<typeof SaveActionPayloadSchema>;
+
+export const CheckAutofillSuggestionMsgSchema = z.object({
+  type: z.literal(MSG_CHECK_AUTOFILL_SUGGESTION),
+  domain: z.string().optional(),
+});
+export type CheckAutofillSuggestionMsg = z.infer<
+  typeof CheckAutofillSuggestionMsgSchema
+>;
+
+export const CheckAutofillSuggestionResponseSchema = z.discriminatedUnion(
+  "success",
+  [
+    z.object({
+      success: z.literal(true),
+      payload: AutofillSuggestionPayloadSchema,
+    }),
+    z.object({
+      success: z.literal(false),
+      reason: z.enum(["invalid_domain", "locked", "no_matches"]),
+    }),
+  ],
+);
+export type CheckAutofillSuggestionResponse = z.infer<
+  typeof CheckAutofillSuggestionResponseSchema
+>;
+
+export const CheckPendingNotificationMsgSchema = z.object({
+  type: z.literal(MSG_CHECK_PENDING_NOTIFICATION),
+  content: z.string().optional(),
+});
+export type CheckPendingNotificationMsg = z.infer<
+  typeof CheckPendingNotificationMsgSchema
+>;
+
+export const CheckPendingNotificationResponseSchema = z.discriminatedUnion(
+  "success",
+  [
+    z.object({
+      success: z.literal(true),
+      payload: z.unknown(),
+    }),
+    z.object({
+      success: z.literal(false),
+    }),
+  ],
+);
+export type CheckPendingNotificationResponse = z.infer<
+  typeof CheckPendingNotificationResponseSchema
+>;
+
+export const CredentialsSubmittedMsgSchema = z.object({
+  type: z.literal(MSG_CREDENTIALS_SUBMITTED),
+  credentials: z.unknown().optional(),
+});
+export type CredentialsSubmittedMsg = z.infer<
+  typeof CredentialsSubmittedMsgSchema
+>;
+
+export const SaveCredentialActionMsgSchema = z.object({
+  type: z.literal(MSG_SAVE_CREDENTIAL_ACTION),
+  choice: z.string().optional(),
+  payload: z.unknown().optional(),
+});
+export type SaveCredentialActionMsg = z.infer<
+  typeof SaveCredentialActionMsgSchema
+>;
+
+export const SaveCredentialActionResponseSchema = z.object({
+  success: z.boolean(),
+});
+export type SaveCredentialActionResponse = z.infer<
+  typeof SaveCredentialActionResponseSchema
+>;
+
+export const UserActivityMsgSchema = z.object({
+  type: z.literal(MSG_USER_ACTIVITY),
+});
+export type UserActivityMsg = z.infer<typeof UserActivityMsgSchema>;
+
+export const userActivityRoute = defineRoute({
+  type: MSG_USER_ACTIVITY,
+  payloadSchema: UserActivityMsgSchema,
+  responseSchema: SimpleSuccessResponseSchema,
+  internalOnly: true,
+});
+
+export const checkAutofillSuggestionRoute = defineRoute({
+  type: MSG_CHECK_AUTOFILL_SUGGESTION,
+  payloadSchema: CheckAutofillSuggestionMsgSchema,
+  responseSchema: CheckAutofillSuggestionResponseSchema,
+});
+
+export const checkPendingNotificationRoute = defineRoute({
+  type: MSG_CHECK_PENDING_NOTIFICATION,
+  payloadSchema: CheckPendingNotificationMsgSchema,
+  responseSchema: CheckPendingNotificationResponseSchema,
+});
+
+export const credentialsSubmittedRoute = defineRoute({
+  type: MSG_CREDENTIALS_SUBMITTED,
+  payloadSchema: CredentialsSubmittedMsgSchema,
+  responseSchema: SimpleSuccessResponseSchema,
+});
+
+export const saveCredentialActionRoute = defineRoute({
+  type: MSG_SAVE_CREDENTIAL_ACTION,
+  payloadSchema: SaveCredentialActionMsgSchema,
+  responseSchema: SaveCredentialActionResponseSchema,
+});

@@ -1,9 +1,8 @@
 import { encryptData, getSessionKey } from "@/core/crypto.ts";
 import { updateAccountSettings } from "@/core/storage.ts";
 import { setAccountStore } from "@/core/store.ts";
-import { ValidateTokenResponseSchema } from "@/core/storage-schemas.ts";
-import { MSG_VALIDATE_TOKEN } from "@/core/constants.ts";
-import { sendMessageToBackground } from "@/core/messaging.ts";
+import { validateTokenRoute } from "@/features/sync/sync-schemas.ts";
+import { sendBackgroundMessage } from "@/core/messaging.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeParseUrl } from "@/core/domain-utils.ts";
@@ -11,56 +10,50 @@ import { safeParseUrl } from "@/core/domain-utils.ts";
 export async function setupGithub(
   token: string,
 ): Promise<Result<void, TranslationKey>> {
-  const sendResult = await sendMessageToBackground({
-    type: MSG_VALIDATE_TOKEN,
+  const sendResult = await sendBackgroundMessage(validateTokenRoute, {
     token,
   });
   if (sendResult.isErr()) {
     return err(sendResult.error);
   }
-  const parsed = ValidateTokenResponseSchema.safeParse(sendResult.value);
-  if (!parsed.success) {
-    return err("login_error_invalid_token");
+  if (!sendResult.value.success) {
+    return err(sendResult.value.error || "messaging_error_send_failed");
   }
-  const res = parsed.data;
+  const res = sendResult.value;
 
-  if (res.success) {
-    const key = await getSessionKey();
-    if (key) {
-      const encryptRes = await encryptData(token, key);
-      if (encryptRes.isErr()) {
-        return err(encryptRes.error);
-      }
-      const { iv, ciphertext } = encryptRes.value;
-      await updateAccountSettings({
-        githubTokenEncrypted: ciphertext,
-        githubTokenIv: iv,
-        cachedGithubUser: {
-          login: res.username || "",
-          avatar_url: res.avatarUrl || "",
-        },
-      });
-    } else {
-      await updateAccountSettings({
-        cachedGithubUser: {
-          login: res.username || "",
-          avatar_url: res.avatarUrl || "",
-        },
-      });
+  const key = await getSessionKey();
+  if (key) {
+    const encryptRes = await encryptData(token, key);
+    if (encryptRes.isErr()) {
+      return err(encryptRes.error);
     }
-
-    setAccountStore({
-      githubToken: token,
-      githubConfigured: true,
+    const { iv, ciphertext } = encryptRes.value;
+    await updateAccountSettings({
+      githubTokenEncrypted: ciphertext,
+      githubTokenIv: iv,
       cachedGithubUser: {
         login: res.username || "",
         avatar_url: res.avatarUrl || "",
       },
     });
-    return ok();
   } else {
-    return err("login_error_invalid_token");
+    await updateAccountSettings({
+      cachedGithubUser: {
+        login: res.username || "",
+        avatar_url: res.avatarUrl || "",
+      },
+    });
   }
+
+  setAccountStore({
+    githubToken: token,
+    githubConfigured: true,
+    cachedGithubUser: {
+      login: res.username || "",
+      avatar_url: res.avatarUrl || "",
+    },
+  });
+  return ok();
 }
 
 /**

@@ -18,6 +18,7 @@ import {
   hasSessionStorage,
   isSessionUnlocked,
   loadAllStores,
+  removeSessionItem,
   resetAccountSettings,
   setSessionItem,
   setSessionUnlocked,
@@ -25,18 +26,24 @@ import {
   updateExtensionSettings,
 } from "@/core/storage.ts";
 import {
+  base64ToArrayBuffer,
   clearDerivedKey,
   decryptData,
+  deriveKey,
   encryptData,
   generateSalt,
   getOrDeriveKey,
   getSessionKey,
+  importAesGcmKey,
   setDerivedKey,
 } from "@/core/crypto.ts";
-import { notifyBackground, sendMessageToBackground } from "@/core/messaging.ts";
+import { notifyBackground, sendBackgroundMessage } from "@/core/messaging.ts";
 import { View } from "@/core/types.ts";
-import { DownloadFromGistResponseSchema } from "@/core/storage-schemas.ts";
-import { GistPayloadSchema } from "@/features/sync/sync-schemas.ts";
+import { clearAlarm } from "@/core/alarms.ts";
+import {
+  downloadFromGistRoute,
+  GistPayloadSchema,
+} from "@/features/sync/sync-schemas.ts";
 import {
   type TrashVaultItem,
   type VaultItem,
@@ -53,9 +60,9 @@ import { safeJsonParse } from "@/core/json-utils.ts";
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 
 import {
+  ALARM_NAME_VAULT_TIMEOUT,
   APP_NAME,
   LOCAL_STORAGE_KEY_THEME,
-  MSG_DOWNLOAD_FROM_GIST,
   MSG_USER_ACTIVITY,
   SESSION_KEY_ENCRYPTED_VAULT,
   SESSION_KEY_LAST_SELECTED_ITEM_ID,
@@ -63,6 +70,7 @@ import {
   SESSION_KEY_SESSION_INITIALIZED,
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
+  SESSION_KEYS_ON_LOCK,
   STORE_KEY_IS_LOCKED,
   STORE_KEY_SALT,
   STORE_KEY_VIEW,
@@ -112,18 +120,13 @@ async function fetchEncryptedVaultContent(): Promise<
     return ok(cachedVal);
   }
 
-  const sendResult = await sendMessageToBackground({
-    type: MSG_DOWNLOAD_FROM_GIST,
-  });
-  if (sendResult.isOk()) {
-    const parseRes = DownloadFromGistResponseSchema.safeParse(
-      sendResult.value,
-    );
-    if (parseRes.success && parseRes.data.success && parseRes.data.content) {
-      const content = parseRes.data.content;
-      await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, content);
-      return ok(content);
-    }
+  const sendResult = await sendBackgroundMessage(downloadFromGistRoute);
+  if (
+    sendResult.isOk() && sendResult.value.success && sendResult.value.content
+  ) {
+    const content = sendResult.value.content;
+    await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, content);
+    return ok(content);
   }
 
   return ok(null);
@@ -279,39 +282,35 @@ export async function init() {
     await loadAndDecryptVault(key, isFido2Prompt, params);
   } else {
     if (accountStore.gistId && accountStore.salt) {
-      const sendResult = await sendMessageToBackground({
-        type: MSG_DOWNLOAD_FROM_GIST,
-      });
-      if (sendResult.isOk()) {
-        const parseRes = DownloadFromGistResponseSchema.safeParse(
-          sendResult.value,
-        );
-        if (
-          parseRes.success && parseRes.data.success && parseRes.data.content
-        ) {
-          const content = parseRes.data.content;
-          const payloadJsonRes = safeJsonParse(content);
-          if (payloadJsonRes.isOk()) {
-            const payloadResult = GistPayloadSchema.safeParse(
-              payloadJsonRes.value,
-            );
+      const sendResult = await sendBackgroundMessage(
+        downloadFromGistRoute,
+      );
+      if (
+        sendResult.isOk() && sendResult.value.success &&
+        sendResult.value.content
+      ) {
+        const content = sendResult.value.content;
+        const payloadJsonRes = safeJsonParse(content);
+        if (payloadJsonRes.isOk()) {
+          const payloadResult = GistPayloadSchema.safeParse(
+            payloadJsonRes.value,
+          );
 
-            if (payloadResult.success) {
-              const payload = payloadResult.data;
-              if (
-                payload.salt && accountStore.salt &&
-                payload.salt !== accountStore.salt
-              ) {
-                console.warn(
-                  "[Store] Salt mismatch detected during init prefetch (Master Password changed on another device). Auto logging out...",
-                );
-                await logout();
-                setAccountStore("isLoaded", true);
-                setSettingsStore("isLoaded", true);
-                return;
-              }
-              await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, content);
+          if (payloadResult.success) {
+            const payload = payloadResult.data;
+            if (
+              payload.salt && accountStore.salt &&
+              payload.salt !== accountStore.salt
+            ) {
+              console.warn(
+                "[Store] Salt mismatch detected during init prefetch (Master Password changed on another device). Auto logging out...",
+              );
+              await logout();
+              setAccountStore("isLoaded", true);
+              setSettingsStore("isLoaded", true);
+              return;
             }
+            await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, content);
           }
         }
       }
@@ -388,21 +387,16 @@ async function resolveGistContent(): Promise<
   if (typeof cachedVal === "string" && cachedVal) {
     content = cachedVal;
   } else {
-    const sendResult = await sendMessageToBackground({
-      type: MSG_DOWNLOAD_FROM_GIST,
-    });
+    const sendResult = await sendBackgroundMessage(
+      downloadFromGistRoute,
+    );
     if (sendResult.isErr()) {
       return err(sendResult.error);
     }
-    const downloadResResult = DownloadFromGistResponseSchema.safeParse(
-      sendResult.value,
-    );
-    if (!downloadResResult.success) {
-      return err("storage_error");
+    if (!sendResult.value.success) {
+      return err(sendResult.value.error || "messaging_error_send_failed");
     }
-    if (downloadResResult.data.success && downloadResResult.data.content) {
-      content = downloadResResult.data.content;
-    }
+    content = sendResult.value.content || "";
   }
 
   let salt: string | undefined;
@@ -639,12 +633,164 @@ export async function unlock(
   );
 }
 
-export async function lock() {
-  await sessionManager.lockSession();
+export async function unlockVaultWithKey(
+  key: CryptoKey,
+): Promise<Result<void, TranslationKey>> {
+  const accSettingsRes = await getAccountSettings();
+  if (accSettingsRes.isErr()) return err(accSettingsRes.error);
+  const accSettings = accSettingsRes.value;
+  const currentToken = await getGithubToken();
+  const githubConfigured = !!accSettings.githubTokenEncrypted ||
+    !!currentToken || !!accountStore.githubToken;
+  if (!githubConfigured) {
+    sessionManager.clearKey();
+    return err("login_error_invalid_token");
+  }
+
+  await sessionManager.setKey(key);
+
+  const gistRes = await resolveGistContent();
+  if (gistRes.isErr()) {
+    sessionManager.clearKey();
+    return err(gistRes.error);
+  }
+  const { content: existingGistContent } = gistRes.value;
+  if (!existingGistContent) {
+    sessionManager.clearKey();
+    return err("github_error_gist_not_found");
+  }
+
+  const decryptVaultRes = await decryptGistVault(existingGistContent, key);
+  if (decryptVaultRes.isErr()) {
+    sessionManager.clearKey();
+    return err(decryptVaultRes.error);
+  }
+
+  const { items, trash, targetView, selectedItem } = decryptVaultRes.value;
+  await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, existingGistContent);
+  return await setupUnlockedSession(
+    key,
+    { items, trash },
+    { targetView, selectedItem },
+  );
 }
 
-export async function logout() {
-  await sessionManager.logoutSession();
+export async function unlockVaultWithMasterPassword(
+  password: string,
+): Promise<Result<void, TranslationKey>> {
+  const accSettingsRes = await getAccountSettings();
+  if (accSettingsRes.isErr()) return err(accSettingsRes.error);
+  const accSettings = accSettingsRes.value;
+  const currentToken = await getGithubToken();
+  const githubConfigured = !!accSettings.githubTokenEncrypted ||
+    !!currentToken || !!accountStore.githubToken;
+  if (!githubConfigured) {
+    sessionManager.clearKey();
+    return err("login_error_invalid_token");
+  }
+
+  const saltBase64 = accSettings.salt || accountStore.salt;
+  if (!saltBase64) {
+    sessionManager.clearKey();
+    return err("login_error_wrong_mp");
+  }
+
+  const keyRes = await getOrDeriveKey(password, saltBase64);
+  if (keyRes.isErr()) {
+    sessionManager.clearKey();
+    return err(keyRes.error);
+  }
+  return await unlockVaultWithKey(keyRes.value);
+}
+
+export async function unlockVaultWithPin(
+  pin: string,
+): Promise<Result<void, TranslationKey>> {
+  if (
+    !accountStore.pinUnlockValue ||
+    !accountStore.pinUnlockIv ||
+    !accountStore.pinUnlockSalt
+  ) {
+    return err("login_error_wrong_pin");
+  }
+
+  const saltBufferRes = base64ToArrayBuffer(accountStore.pinUnlockSalt);
+  if (saltBufferRes.isErr()) {
+    return err("login_error_wrong_pin");
+  }
+  const pinKeyRes = await deriveKey(pin, new Uint8Array(saltBufferRes.value));
+  if (pinKeyRes.isErr()) {
+    return err("login_error_wrong_pin");
+  }
+  const pinKey = pinKeyRes.value;
+  const decryptRes = await decryptData(
+    accountStore.pinUnlockValue,
+    accountStore.pinUnlockIv,
+    pinKey,
+  );
+  if (decryptRes.isErr()) {
+    return err("login_error_wrong_pin");
+  }
+
+  const bufferRes = base64ToArrayBuffer(decryptRes.value);
+  if (bufferRes.isErr()) {
+    return err("login_error_wrong_pin");
+  }
+  const importRes = await importAesGcmKey(
+    bufferRes.value,
+    "login_error_wrong_pin",
+  );
+
+  if (importRes.isErr()) {
+    return err(importRes.error);
+  }
+
+  return await unlockVaultWithKey(importRes.value);
+}
+
+export async function lockVaultSession(): Promise<void> {
+  sessionManager.clearKey();
+  await removeSessionItem([...SESSION_KEYS_ON_LOCK]);
+  await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
+
+  setAccountStore({
+    vaultItems: [],
+    trashItems: [],
+    githubToken: "",
+    isLocked: true,
+    sessionUnlocked: false,
+  });
+  setUiStore({
+    view: uiStore.view === View.Fido2Prompt ? View.Fido2Prompt : View.Login,
+    selectedItem: null,
+  });
+}
+
+export async function logoutVaultSession(): Promise<void> {
+  sessionManager.clearKey();
+  await removeSessionItem([...SESSION_KEYS_ON_LOCK]);
+  await resetAccountSettings();
+  await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
+
+  setAccountStore({
+    vaultItems: [],
+    trashItems: [],
+    githubToken: "",
+    isLocked: true,
+    sessionUnlocked: false,
+  });
+  setUiStore({
+    view: View.Login,
+    selectedItem: null,
+  });
+}
+
+export async function lock(): Promise<void> {
+  await lockVaultSession();
+}
+
+export async function logout(): Promise<void> {
+  await logoutVaultSession();
 }
 
 export async function acceptWelcome() {

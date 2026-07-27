@@ -14,13 +14,9 @@ import { accountStore, settingsStore } from "@/core/store.ts";
 import { unlock } from "@/features/auth/auth-service.ts";
 import { unlockWithPin } from "@/features/auth/pin-service.ts";
 import { setGlobalLoading } from "@/core/ui-service.ts";
-import {
-  APP_NAME,
-  MSG_FIDO2_HEARTBEAT,
-  MSG_GET_PENDING_FIDO2_REQUEST,
-} from "@/core/constants.ts";
-import { notifyBackground, sendMessageToBackground } from "@/core/messaging.ts";
-import { GetPendingFido2RequestResponseSchema } from "@/features/passkey/fido2-schemas.ts";
+import { APP_NAME, MSG_FIDO2_HEARTBEAT } from "@/core/constants.ts";
+import { getPendingFido2RequestRoute } from "@/features/passkey/fido2-schemas.ts";
+import { notifyBackground, sendBackgroundMessage } from "@/core/messaging.ts";
 import type { LoginVaultItem } from "@/features/vault/vault-schemas.ts";
 import {
   assertFido2Passkey,
@@ -160,25 +156,17 @@ export const Fido2Prompt: Component = () => {
   };
 
   const loadPendingRequest = async () => {
-    const sendResult = await sendMessageToBackground({
-      type: MSG_GET_PENDING_FIDO2_REQUEST,
-    });
-    if (sendResult.isErr()) {
-      setError(t("fido2_error_load_failed"));
-      return;
-    }
-
-    const parsed = GetPendingFido2RequestResponseSchema.safeParse(
-      sendResult.value,
+    const sendResult = await sendBackgroundMessage(
+      getPendingFido2RequestRoute,
     );
-    if (!parsed.success) {
+    if (sendResult.isErr() || !sendResult.value.success) {
       setError(t("fido2_error_load_failed"));
       return;
     }
 
-    const res = parsed.data;
+    const res = sendResult.value;
 
-    if (res && res.success && res.type && res.options && res.origin) {
+    if (res && res.type && res.options && res.origin) {
       setPendingReq({
         success: res.success,
         type: res.type,

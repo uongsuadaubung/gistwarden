@@ -12,12 +12,12 @@ import {
   generatePasskeyAssertResponse,
   generatePasskeyRegisterResponse,
 } from "@/features/passkey/passkey-crypto.ts";
-import {
-  MSG_REJECT_FIDO2_REQUEST,
-  MSG_RESOLVE_FIDO2_REQUEST,
-} from "@/core/constants.ts";
 import { accountStore } from "@/core/store.ts";
-import { sendMessageToBackground } from "@/core/messaging.ts";
+import {
+  rejectFido2RequestRoute,
+  resolveFido2RequestRoute,
+} from "@/features/passkey/fido2-schemas.ts";
+import { sendBackgroundMessage } from "@/core/messaging.ts";
 import { getBaseDomain, safeParseUrl } from "@/core/domain-utils.ts";
 
 const getDomainFromUrl = (urlStr: string): string => {
@@ -184,8 +184,7 @@ export async function registerFido2Passkey(
     return err("fido2_error_save_failed");
   }
 
-  await sendMessageToBackground({
-    type: MSG_RESOLVE_FIDO2_REQUEST,
+  await sendBackgroundMessage(resolveFido2RequestRoute, {
     result,
   });
 
@@ -246,8 +245,7 @@ export async function assertFido2Passkey(
 
   const { result } = assertRes.value;
 
-  await sendMessageToBackground({
-    type: MSG_RESOLVE_FIDO2_REQUEST,
+  await sendBackgroundMessage(resolveFido2RequestRoute, {
     result,
   });
 
@@ -255,8 +253,7 @@ export async function assertFido2Passkey(
 }
 
 export async function rejectFido2Request(): Promise<void> {
-  await sendMessageToBackground({
-    type: MSG_REJECT_FIDO2_REQUEST,
+  await sendBackgroundMessage(rejectFido2RequestRoute, {
     error: "NotAllowedError: User cancelled the request",
   });
 }

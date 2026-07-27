@@ -2,15 +2,15 @@ import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import { MSG_SAVE_CREDENTIAL_ACTION } from "@/core/constants.ts";
 
+import { notifyBackground } from "@/core/messaging.ts";
 import {
   type AddCredentialPayload,
   type AutofillMatchingAccount,
   type AutofillSuggestionPayload,
   type NotificationPayload,
-  notifyBackground,
   type SaveCredentialPayload,
   type UpdateCredentialPayload,
-} from "@/core/messaging.ts";
+} from "@/features/vault/vault-schemas.ts";
 
 export type {
   AddCredentialPayload,

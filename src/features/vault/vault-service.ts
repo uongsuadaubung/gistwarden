@@ -1,20 +1,28 @@
-import { updateAccountSettings } from "@/core/storage.ts";
-import { getSessionKey } from "@/core/crypto.ts";
+import { setSessionItem, updateAccountSettings } from "@/core/storage.ts";
+import { encryptData, getSessionKey } from "@/core/crypto.ts";
 import { accountStore, setAccountStore } from "@/core/store.ts";
 import { reconcile } from "solid-js/store";
-import { VaultItemType } from "@/features/vault/vault-types.ts";
+import { isLoginItem, VaultItemType } from "@/features/vault/vault-types.ts";
 import {
+  type LoginVaultItem,
+  type SaveActionPayload,
   type TrashVaultItem,
   type VaultItem,
   VaultItemSchema,
 } from "@/features/vault/vault-schemas.ts";
-import { SyncResponseSchema } from "@/features/sync/sync-utils.ts";
-import { sendMessageToBackground } from "@/core/messaging.ts";
+import { broadcastMessage, sendBackgroundMessage } from "@/core/messaging.ts";
 
 import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
-import { MSG_DELETE_GIST, STORE_KEY_VAULT_ITEMS } from "@/core/constants.ts";
+import { deleteGistRoute } from "@/features/sync/sync-schemas.ts";
+import {
+  MSG_VAULT_ITEMS_UPDATED,
+  SESSION_KEY_ENCRYPTED_VAULT,
+  STORE_KEY_VAULT_ITEMS,
+} from "@/core/constants.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
+import { getBaseDomain, getDomainFromItem } from "@/core/domain-utils.ts";
+import { getSyncProvider } from "@/providers/sync-provider-registry.ts";
 import { z } from "zod";
 
 export async function saveItem(
@@ -339,22 +347,14 @@ export async function purgeAllTrash(): Promise<Result<void, TranslationKey>> {
 export async function clearVault(): Promise<Result<void, TranslationKey>> {
   const gistId = accountStore.gistId;
   if (gistId) {
-    const sendResult = await sendMessageToBackground({
-      type: MSG_DELETE_GIST,
+    const sendResult = await sendBackgroundMessage(deleteGistRoute, {
       content: gistId,
     });
     if (sendResult.isErr()) {
       return err(sendResult.error);
     }
-
-    const parseRes = SyncResponseSchema.safeParse(sendResult.value);
-    if (!parseRes.success) {
-      return err("settings_clear_vault_fail");
-    }
-    const res = parseRes.data;
-
-    if (!res.success) {
-      return err("settings_clear_vault_fail");
+    if (!sendResult.value.success) {
+      return err(sendResult.value.error || "messaging_error_send_failed");
     }
   }
 
@@ -373,4 +373,95 @@ export async function clearVault(): Promise<Result<void, TranslationKey>> {
     lastSync: 0,
   });
   return ok();
+}
+
+export async function batchSavePayloads(
+  vaultData: { items: VaultItem[]; key: CryptoKey; salt: string },
+  payloads: SaveActionPayload[],
+): Promise<boolean> {
+  if (payloads.length === 0) return true;
+
+  const updatedItems = [...vaultData.items];
+  const nowStr = new Date().toISOString();
+  let hasRealChanges = false;
+
+  for (const payload of payloads) {
+    const payloadDomain = getBaseDomain(payload.domain || "");
+    const payloadUser = payload.username.toLowerCase().trim();
+
+    const existingIdx = updatedItems.findIndex((item) => {
+      if (!isLoginItem(item)) return false;
+      if (payload.actionType === "update" && item.id === payload.itemId) {
+        return true;
+      }
+      const itemDomain = getDomainFromItem(item);
+      if (!itemDomain) return false;
+      const matchDomain = getBaseDomain(itemDomain) === payloadDomain;
+      const matchUser =
+        (item.login.username || "").toLowerCase().trim() === payloadUser;
+      return matchDomain && matchUser;
+    });
+
+    if (existingIdx !== -1) {
+      const existingItem = updatedItems[existingIdx];
+      if (isLoginItem(existingItem)) {
+        if (existingItem.login.password === payload.password) {
+          continue;
+        }
+        const updatedLoginItem: LoginVaultItem = {
+          ...existingItem,
+          login: {
+            ...existingItem.login,
+            password: payload.password,
+          },
+          revisionDate: nowStr,
+        };
+        updatedItems[existingIdx] = updatedLoginItem;
+        hasRealChanges = true;
+      }
+    } else {
+      const newItem: LoginVaultItem = {
+        id: crypto.randomUUID(),
+        type: VaultItemType.Login,
+        name: payload.domain || "New Login",
+        login: {
+          username: payload.username,
+          password: payload.password,
+          uris: payload.domain ? [{ uri: `https://${payload.domain}` }] : [],
+        },
+        notes: "",
+        favorite: false,
+        reprompt: 0,
+        fields: [],
+        creationDate: nowStr,
+        revisionDate: nowStr,
+      };
+      updatedItems.push(newItem);
+      hasRealChanges = true;
+    }
+  }
+
+  if (!hasRealChanges) {
+    return true;
+  }
+
+  const encryptRes = await encryptData(
+    JSON.stringify(updatedItems),
+    vaultData.key,
+  );
+  if (encryptRes.isErr()) return false;
+
+  const payloadObj = JSON.stringify({
+    salt: vaultData.salt,
+    iv: encryptRes.value.iv,
+    ciphertext: encryptRes.value.ciphertext,
+  });
+
+  const setRes = await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, payloadObj);
+  if (setRes.isErr()) return false;
+
+  vaultData.items = updatedItems;
+  const uploadRes = await getSyncProvider().upload(payloadObj);
+  broadcastMessage({ type: MSG_VAULT_ITEMS_UPDATED });
+  return uploadRes.isOk();
 }

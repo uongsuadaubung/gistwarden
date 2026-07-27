@@ -11,7 +11,7 @@ import {
   getSessionKey,
 } from "@/core/crypto.ts";
 
-import { sessionManager } from "@/core/session-manager.ts";
+import { unlockVaultWithPin } from "@/features/auth/auth-service.ts";
 import { err, ok, type Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 
@@ -64,7 +64,7 @@ export async function setPinUnlock(
 export async function unlockWithPin(
   pin: string,
 ): Promise<Result<void, TranslationKey>> {
-  return await sessionManager.unlockWithPin(pin);
+  return await unlockVaultWithPin(pin);
 }
 
 export async function disablePinUnlock(): Promise<void> {

@@ -5,6 +5,7 @@ import type {
   VaultTimeoutValue,
 } from "@/core/storage-schemas.ts";
 import { sessionManager } from "@/core/session-manager.ts";
+import { unlockVaultWithKey } from "@/features/auth/auth-service.ts";
 
 export async function updateSessionTimeout(
   timeout: VaultTimeoutValue,
@@ -16,5 +17,5 @@ export async function updateSessionTimeout(
 export async function unlockWithKey(
   key: CryptoKey,
 ): Promise<Result<void, TranslationKey>> {
-  return await sessionManager.unlockWithKey(key);
+  return await unlockVaultWithKey(key);
 }

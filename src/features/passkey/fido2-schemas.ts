@@ -1,5 +1,15 @@
 import { z } from "zod";
-import type { TranslationKey } from "@/core/i18n.ts";
+import { defineRoute } from "@/core/messaging.ts";
+import {
+  MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
+  MSG_FIDO2_CREDENTIAL_GET_REQUEST,
+  MSG_FIDO2_HEARTBEAT,
+  MSG_GET_PENDING_FIDO2_REQUEST,
+  MSG_REJECT_FIDO2_REQUEST,
+  MSG_RESOLVE_FIDO2_REQUEST,
+} from "@/core/constants.ts";
+
+const SimpleSuccessResponseSchema = z.object({ success: z.boolean() });
 
 export const Fido2CredentialSchema = z.object({
   credentialId: z.string(),
@@ -51,8 +61,131 @@ export const GetPendingFido2RequestResponseSchema = z.object({
     })).optional(),
   }).optional(),
   origin: z.string().optional(),
-  error: z.custom<TranslationKey>().optional(),
+  error: z.string().optional(),
 });
 export type GetPendingFido2RequestResponse = z.infer<
   typeof GetPendingFido2RequestResponseSchema
 >;
+
+export const GetPendingFido2ResponseSchema = z.discriminatedUnion("success", [
+  z.object({
+    success: z.literal(true),
+    type: z.enum(["create", "get"]),
+    options: z.unknown(),
+    origin: z.string(),
+  }),
+  z.object({
+    success: z.literal(false),
+    error: z.string(),
+  }),
+]);
+export type GetPendingFido2Response = z.infer<
+  typeof GetPendingFido2ResponseSchema
+>;
+
+export const Fido2ActionResponseSchema = z.discriminatedUnion("success", [
+  z.object({
+    success: z.literal(true),
+  }),
+  z.object({
+    success: z.literal(false),
+    error: z.string(),
+  }),
+]);
+export type Fido2ActionResponse = z.infer<typeof Fido2ActionResponseSchema>;
+
+export const Fido2PromptResponseSchema = z.discriminatedUnion("success", [
+  z.object({
+    success: z.literal(true),
+    result: z.unknown().optional(),
+  }),
+  z.object({
+    success: z.literal(false),
+    error: z.string(),
+  }),
+]);
+export type Fido2PromptResponse = z.infer<typeof Fido2PromptResponseSchema>;
+
+export const Fido2CredentialCreationRequestMsgSchema = z.object({
+  type: z.literal(MSG_FIDO2_CREDENTIAL_CREATION_REQUEST),
+  data: z.unknown().optional(),
+});
+export type Fido2CredentialCreationRequestMsg = z.infer<
+  typeof Fido2CredentialCreationRequestMsgSchema
+>;
+
+export const Fido2CredentialGetRequestMsgSchema = z.object({
+  type: z.literal(MSG_FIDO2_CREDENTIAL_GET_REQUEST),
+  data: z.unknown().optional(),
+});
+export type Fido2CredentialGetRequestMsg = z.infer<
+  typeof Fido2CredentialGetRequestMsgSchema
+>;
+
+export const GetPendingFido2RequestMsgSchema = z.object({
+  type: z.literal(MSG_GET_PENDING_FIDO2_REQUEST),
+});
+export type GetPendingFido2RequestMsg = z.infer<
+  typeof GetPendingFido2RequestMsgSchema
+>;
+
+export const ResolveFido2RequestMsgSchema = z.object({
+  type: z.literal(MSG_RESOLVE_FIDO2_REQUEST),
+  result: z.unknown().optional(),
+});
+export type ResolveFido2RequestMsg = z.infer<
+  typeof ResolveFido2RequestMsgSchema
+>;
+
+export const RejectFido2RequestMsgSchema = z.object({
+  type: z.literal(MSG_REJECT_FIDO2_REQUEST),
+  error: z.string().optional(),
+});
+export type RejectFido2RequestMsg = z.infer<
+  typeof RejectFido2RequestMsgSchema
+>;
+
+export const Fido2HeartbeatMsgSchema = z.object({
+  type: z.literal(MSG_FIDO2_HEARTBEAT),
+});
+export type Fido2HeartbeatMsg = z.infer<typeof Fido2HeartbeatMsgSchema>;
+
+export const fido2CredentialCreationRoute = defineRoute({
+  type: MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
+  payloadSchema: Fido2CredentialCreationRequestMsgSchema,
+  responseSchema: Fido2PromptResponseSchema,
+});
+
+export const fido2CredentialGetRoute = defineRoute({
+  type: MSG_FIDO2_CREDENTIAL_GET_REQUEST,
+  payloadSchema: Fido2CredentialGetRequestMsgSchema,
+  responseSchema: Fido2PromptResponseSchema,
+});
+
+export const getPendingFido2RequestRoute = defineRoute({
+  type: MSG_GET_PENDING_FIDO2_REQUEST,
+  payloadSchema: GetPendingFido2RequestMsgSchema,
+  responseSchema: GetPendingFido2RequestResponseSchema,
+  internalOnly: true,
+});
+
+export const resolveFido2RequestRoute = defineRoute({
+  type: MSG_RESOLVE_FIDO2_REQUEST,
+  payloadSchema: ResolveFido2RequestMsgSchema,
+  responseSchema: Fido2ActionResponseSchema,
+  internalOnly: true,
+});
+
+export const rejectFido2RequestRoute = defineRoute({
+  type: MSG_REJECT_FIDO2_REQUEST,
+  payloadSchema: RejectFido2RequestMsgSchema,
+  responseSchema: Fido2ActionResponseSchema,
+  internalOnly: true,
+});
+
+export const fido2HeartbeatRoute = defineRoute({
+  type: MSG_FIDO2_HEARTBEAT,
+  payloadSchema: Fido2HeartbeatMsgSchema,
+  responseSchema: SimpleSuccessResponseSchema,
+  internalOnly: true,
+});

@@ -1,201 +1,33 @@
 import { z } from "zod";
 import { err, ok, Result, ResultAsync } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
-import {
-  MSG_CHECK_AUTOFILL_SUGGESTION,
-  MSG_CHECK_PENDING_NOTIFICATION,
-  MSG_CREDENTIALS_SUBMITTED,
-  MSG_DELETE_GIST,
-  MSG_DOWNLOAD_FROM_GIST,
-  MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
-  MSG_FIDO2_CREDENTIAL_GET_REQUEST,
-  MSG_FIDO2_HEARTBEAT,
-  MSG_GET_PENDING_FIDO2_REQUEST,
-  MSG_REJECT_FIDO2_REQUEST,
-  MSG_RESOLVE_FIDO2_REQUEST,
-  MSG_SAVE_CREDENTIAL_ACTION,
-  MSG_START_GITHUB_OAUTH,
-  MSG_UPLOAD_TO_GIST,
-  MSG_USER_ACTIVITY,
-  MSG_VALIDATE_TOKEN,
-} from "@/core/constants.ts";
 
-// --- Notification Payload Schemas & Types ---
-export const AddCredentialPayloadSchema = z.object({
-  actionType: z.literal("add"),
-  domain: z.string(),
-  username: z.string(),
-  password: z.string().optional(),
-  onDismiss: z.custom<() => void>().optional(),
-});
-export type AddCredentialPayload = z.infer<typeof AddCredentialPayloadSchema>;
+export interface RouteContract<
+  TType extends string,
+  TPayloadSchema extends z.ZodTypeAny,
+  TResponseSchema extends z.ZodTypeAny,
+> {
+  type: TType;
+  payloadSchema: TPayloadSchema;
+  responseSchema: TResponseSchema;
+  internalOnly?: boolean;
+}
 
-export const UpdateCredentialPayloadSchema = z.object({
-  actionType: z.literal("update"),
-  domain: z.string(),
-  username: z.string(),
-  password: z.string().optional(),
-  itemId: z.string(),
-  onDismiss: z.custom<() => void>().optional(),
-});
-export type UpdateCredentialPayload = z.infer<
-  typeof UpdateCredentialPayloadSchema
->;
-
-export type SaveCredentialPayload =
-  | AddCredentialPayload
-  | UpdateCredentialPayload;
-
-export const AccountItemSchema = z.object({
-  itemId: z.string(),
-  name: z.string().optional(),
-  username: z.string(),
-  password: z.string().optional(),
-  totp: z.string().optional(),
-});
-export type AutofillMatchingAccount = z.infer<typeof AccountItemSchema>;
-
-export const AutofillSuggestionPayloadSchema = z.object({
-  actionType: z.literal("autofill"),
-  domain: z.string(),
-  username: z.string(),
-  password: z.string().optional(),
-  itemId: z.string().optional(),
-  totp: z.string().optional(),
-  accounts: z.array(AccountItemSchema).optional(),
-  onFill: z.custom<(selectedAcc?: AutofillMatchingAccount) => void>()
-    .optional(),
-  onDismiss: z.custom<() => void>().optional(),
-});
-export type AutofillSuggestionPayload = z.infer<
-  typeof AutofillSuggestionPayloadSchema
->;
-
-export const NotificationPayloadSchema = z.discriminatedUnion("actionType", [
-  AddCredentialPayloadSchema,
-  UpdateCredentialPayloadSchema,
-  AutofillSuggestionPayloadSchema,
-]);
-export type NotificationPayload = z.infer<typeof NotificationPayloadSchema>;
-
-// --- Save Action Payload Schemas & Types ---
-export const AddActionPayloadSchema = z.object({
-  actionType: z.literal("add"),
-  domain: z.string(),
-  username: z.string(),
-  password: z.string(),
-});
-export const UpdateActionPayloadSchema = z.object({
-  actionType: z.literal("update"),
-  domain: z.string(),
-  username: z.string(),
-  password: z.string(),
-  itemId: z.string(),
-});
-export const SaveActionPayloadSchema = z.discriminatedUnion("actionType", [
-  AddActionPayloadSchema,
-  UpdateActionPayloadSchema,
-]);
-export type SaveActionPayload = z.infer<typeof SaveActionPayloadSchema>;
-
-// --- Extension Message Schemas & Types ---
-export const CheckAutofillSuggestionMsgSchema = z.object({
-  type: z.literal(MSG_CHECK_AUTOFILL_SUGGESTION),
-  domain: z.string().optional(),
-});
-
-export const CheckPendingNotificationMsgSchema = z.object({
-  type: z.literal(MSG_CHECK_PENDING_NOTIFICATION),
-  content: z.string().optional(),
-});
-
-export const CredentialsSubmittedMsgSchema = z.object({
-  type: z.literal(MSG_CREDENTIALS_SUBMITTED),
-  credentials: z.unknown().optional(),
-});
-
-export const SaveCredentialActionMsgSchema = z.object({
-  type: z.literal(MSG_SAVE_CREDENTIAL_ACTION),
-  choice: z.string().optional(),
-  payload: z.unknown().optional(),
-});
-
-export const UploadToGistMsgSchema = z.object({
-  type: z.literal(MSG_UPLOAD_TO_GIST),
-  content: z.string().optional(),
-});
-
-export const DeleteGistMsgSchema = z.object({
-  type: z.literal(MSG_DELETE_GIST),
-  content: z.string().optional(),
-});
-
-export const DownloadFromGistMsgSchema = z.object({
-  type: z.literal(MSG_DOWNLOAD_FROM_GIST),
-});
-
-export const ValidateTokenMsgSchema = z.object({
-  type: z.literal(MSG_VALIDATE_TOKEN),
-  token: z.string().optional(),
-});
-
-export const StartGithubOauthMsgSchema = z.object({
-  type: z.literal(MSG_START_GITHUB_OAUTH),
-  content: z.string().optional(),
-});
-
-export const Fido2CredentialCreationRequestMsgSchema = z.object({
-  type: z.literal(MSG_FIDO2_CREDENTIAL_CREATION_REQUEST),
-  data: z.unknown().optional(),
-});
-
-export const Fido2CredentialGetRequestMsgSchema = z.object({
-  type: z.literal(MSG_FIDO2_CREDENTIAL_GET_REQUEST),
-  data: z.unknown().optional(),
-});
-
-export const GetPendingFido2RequestMsgSchema = z.object({
-  type: z.literal(MSG_GET_PENDING_FIDO2_REQUEST),
-});
-
-export const ResolveFido2RequestMsgSchema = z.object({
-  type: z.literal(MSG_RESOLVE_FIDO2_REQUEST),
-  result: z.unknown().optional(),
-});
-
-export const RejectFido2RequestMsgSchema = z.object({
-  type: z.literal(MSG_REJECT_FIDO2_REQUEST),
-  error: z.string().optional(),
-});
-
-export const Fido2HeartbeatMsgSchema = z.object({
-  type: z.literal(MSG_FIDO2_HEARTBEAT),
-});
-
-export const UserActivityMsgSchema = z.object({
-  type: z.literal(MSG_USER_ACTIVITY),
-});
-
-export const ChromeMessageSchema = z.discriminatedUnion("type", [
-  CheckAutofillSuggestionMsgSchema,
-  CheckPendingNotificationMsgSchema,
-  CredentialsSubmittedMsgSchema,
-  SaveCredentialActionMsgSchema,
-  UploadToGistMsgSchema,
-  DeleteGistMsgSchema,
-  DownloadFromGistMsgSchema,
-  ValidateTokenMsgSchema,
-  StartGithubOauthMsgSchema,
-  Fido2CredentialCreationRequestMsgSchema,
-  Fido2CredentialGetRequestMsgSchema,
-  GetPendingFido2RequestMsgSchema,
-  ResolveFido2RequestMsgSchema,
-  RejectFido2RequestMsgSchema,
-  Fido2HeartbeatMsgSchema,
-  UserActivityMsgSchema,
-]);
-
-export type ChromeMessage = z.infer<typeof ChromeMessageSchema>;
+/**
+ * Define a type-safe IPC route contract in a single place.
+ */
+export function defineRoute<
+  TType extends string,
+  TPayloadSchema extends z.ZodTypeAny,
+  TResponseSchema extends z.ZodTypeAny,
+>(config: {
+  type: TType;
+  payloadSchema: TPayloadSchema;
+  responseSchema: TResponseSchema;
+  internalOnly?: boolean;
+}): RouteContract<TType, TPayloadSchema, TResponseSchema> {
+  return config;
+}
 
 export type ExtensionMessageHandler = (
   message: unknown,
@@ -225,12 +57,16 @@ export function onExtensionMessage(
 }
 
 /**
- * Send a message to the background script and wait for a response.
- * Handles API availability checks and wraps chrome.runtime.lastError.
+ * Send a strongly-typed message to the background script using a RouteContract.
  */
-export async function sendMessageToBackground(
-  message: unknown,
-): Promise<Result<unknown, TranslationKey>> {
+export async function sendBackgroundMessage<
+  TType extends string,
+  TPayloadSchema extends z.ZodTypeAny,
+  TResponseSchema extends z.ZodTypeAny,
+>(
+  route: RouteContract<TType, TPayloadSchema, TResponseSchema>,
+  payload?: Omit<z.infer<TPayloadSchema>, "type">,
+): Promise<Result<z.infer<TResponseSchema>, TranslationKey>> {
   if (
     typeof chrome === "undefined" || !chrome.runtime ||
     !chrome.runtime.sendMessage
@@ -238,17 +74,27 @@ export async function sendMessageToBackground(
     return err("messaging_error_send_failed");
   }
 
+  const message = { type: route.type, ...(payload || {}) };
   const sendRes = await ResultAsync.fromPromise(
     chrome.runtime.sendMessage(message),
     (): TranslationKey => "messaging_error_send_failed",
   );
   if (sendRes.isErr()) return err(sendRes.error);
-  return ok(sendRes.value);
+
+  const parseRes = route.responseSchema.safeParse(sendRes.value);
+  if (!parseRes.success) {
+    console.warn(
+      `[Messaging] Schema validation failed for response of route ${route.type}:`,
+      parseRes.error,
+    );
+    return err("messaging_error_send_failed");
+  }
+
+  return ok(parseRes.data);
 }
 
 /**
  * Send a message to the background script in a fire-and-forget manner.
- * Use this for signals that do not require a response (e.g., MSG_USER_ACTIVITY).
  */
 export async function notifyBackground(
   message: unknown,
@@ -269,24 +115,10 @@ export async function notifyBackground(
 }
 
 /**
- * Broadcast a message from the background script to all other parts of the extension.
- * This is effectively the same API as notifyBackground, but named differently
- * to express the intent of the caller (background broadcasting state changes).
+ * Broadcast a runtime message to all internal extension views (e.g. Popup, Options).
  */
 export async function broadcastMessage(
   message: unknown,
 ): Promise<Result<void, TranslationKey>> {
-  if (
-    typeof chrome === "undefined" || !chrome.runtime ||
-    !chrome.runtime.sendMessage
-  ) {
-    return err("messaging_error_send_failed");
-  }
-
-  const sendRes = await ResultAsync.fromPromise(
-    chrome.runtime.sendMessage(message),
-    (): TranslationKey => "messaging_error_send_failed",
-  );
-  if (sendRes.isErr()) return err(sendRes.error);
-  return ok(undefined);
+  return await notifyBackground(message);
 }
