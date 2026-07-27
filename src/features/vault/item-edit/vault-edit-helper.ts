@@ -22,7 +22,7 @@ import { Fido2CredentialSchema } from "@/features/passkey/fido2-schemas.ts";
 import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
 
 export const ItemEditFormSchema = z.object({
-  itemType: z.enum(VaultItemType),
+  itemType: z.nativeEnum(VaultItemType),
   name: z.string(),
   notes: z.string(),
   favorite: z.boolean(),

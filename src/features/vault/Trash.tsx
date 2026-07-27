@@ -115,11 +115,10 @@ export const Trash: Component = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleString();
-    } catch {
-      return dateStr;
-    }
+    const timestamp = Date.parse(dateStr);
+    return Number.isNaN(timestamp)
+      ? dateStr
+      : new Date(timestamp).toLocaleString();
   };
 
   return (

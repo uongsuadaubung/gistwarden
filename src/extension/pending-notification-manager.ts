@@ -38,13 +38,19 @@ export class PendingNotificationManager {
   private lastGlobalPendingNotification: GlobalPendingNotification | null =
     null;
 
+  public async clearFido2Result(): Promise<void> {
+    this.pendingFido2Callback = null;
+    if (
+      typeof chrome !== "undefined" && chrome.storage && chrome.storage.session
+    ) {
+      await chrome.storage.session.remove(STORAGE_KEY_FIDO2_RESULT);
+    }
+  }
+
   public setFido2Callback(
     callback: ((response: unknown) => void) | null,
   ): void {
     this.pendingFido2Callback = callback;
-    if (callback) {
-      this.checkAndFlushFido2Result();
-    }
   }
 
   public resolveFido2Callback(response: unknown): boolean {
@@ -53,8 +59,15 @@ export class PendingNotificationManager {
       this.pendingFido2Callback(response);
       this.pendingFido2Callback = null;
       resolved = true;
+      if (
+        typeof chrome !== "undefined" && chrome.storage &&
+        chrome.storage.session
+      ) {
+        chrome.storage.session.remove(STORAGE_KEY_FIDO2_RESULT);
+      }
+    } else {
+      this.persistFido2Result(response);
     }
-    this.persistFido2Result(response);
     return resolved;
   }
 

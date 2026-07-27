@@ -60,7 +60,7 @@ export type GithubUser = z.infer<typeof GithubUserSchema>;
 export const ExtensionSettingsSchema = z.object({
   language: SupportLanguageSchema.default(SupportLanguage.En),
   welcomeAccepted: z.boolean().default(false),
-  theme: z.enum([ThemeMode.Light, ThemeMode.Dark]).default(ThemeMode.Dark),
+  theme: z.nativeEnum(ThemeMode).default(ThemeMode.Dark),
   requireMasterPasswordOnRestart: z.boolean().default(true),
   vaultTimeout: VaultTimeoutValueSchema.default("onSystemLock"),
   vaultTimeoutAction: VaultTimeoutActionSchema.default("lock"),

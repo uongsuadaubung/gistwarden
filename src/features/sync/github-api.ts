@@ -10,7 +10,6 @@ import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { fetchText } from "@/core/fetch-utils.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
-import { accountStore } from "@/core/store.ts";
 
 const GITHUB_API_BASE = "https://api.github.com";
 
@@ -192,8 +191,7 @@ export async function downloadFromGist(): Promise<
   Result<string, TranslationKey>
 > {
   const settingsRes = await getAccountSettings();
-  let gistId = (settingsRes.isOk() && settingsRes.value.gistId) ||
-    accountStore.gistId;
+  let gistId = settingsRes.isOk() ? settingsRes.value.gistId : "";
 
   // 1. Nếu đã có gistId -> Tải trực tiếp qua Raw Gist CDN URL (Không tiêu tốn Rate Limit)
   if (gistId) {

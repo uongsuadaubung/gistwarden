@@ -1,8 +1,5 @@
-import { reconcile } from "solid-js/store";
-import { accountStore, setAccountStore } from "@/core/store.ts";
-import { getSessionKey } from "@/core/crypto.ts";
+import { accountStore } from "@/core/store.ts";
 import { APP_NAME } from "@/core/constants.ts";
-import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 import { parseAndValidateImportJson } from "@/features/sync/json-import.ts";
 import {
   parseAndValidateBitwardenCsv,
@@ -10,6 +7,7 @@ import {
 } from "@/features/sync/csv-import.ts";
 import { type TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result } from "neverthrow";
+import { persistAndReconcileVault } from "@/features/vault/vault-service.ts";
 
 export async function importJsonData(
   jsonString: string,
@@ -23,28 +21,13 @@ export async function importJsonData(
   }
   const importVal = importRes.value;
 
-  const key = await getSessionKey();
-  if (!key || !accountStore.salt) {
-    return err("login_title_locked");
+  console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
+  const res = await persistAndReconcileVault(importVal.combinedItems);
+  if (res.isErr()) {
+    return err(res.error);
   }
 
-  console.log(`[${APP_NAME} Import] Dang tai len Gist...`);
-  const uploadRes = await syncVaultToGist(
-    importVal.combinedItems,
-    key,
-    accountStore.salt,
-  );
-
-  if (uploadRes.isErr()) {
-    return err(uploadRes.error);
-  }
-  const validatedList = uploadRes.value;
-
-  setAccountStore(
-    "vaultItems",
-    reconcile(validatedList),
-  );
-  console.log(`[${APP_NAME} Import] Import HOAN TAT thanh cong!`);
+  console.log(`[${APP_NAME} Import] Import HOÀN TẤT thành công!`);
   return ok(importVal.importedCount);
 }
 
@@ -61,27 +44,12 @@ export async function importCsvData(
   }
   const importVal = importRes.value;
 
-  const key = await getSessionKey();
-  if (!key || !accountStore.salt) {
-    return err("login_title_locked");
-  }
-
   console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
-  const uploadRes = await syncVaultToGist(
-    importVal.combinedItems,
-    key,
-    accountStore.salt,
-  );
-
-  if (uploadRes.isErr()) {
-    return err(uploadRes.error);
+  const res = await persistAndReconcileVault(importVal.combinedItems);
+  if (res.isErr()) {
+    return err(res.error);
   }
-  const validatedList = uploadRes.value;
 
-  setAccountStore(
-    "vaultItems",
-    reconcile(validatedList),
-  );
   console.log(`[${APP_NAME} Import] Import CSV HOÀN TẤT thành công!`);
   return ok(importVal.importedCount);
 }

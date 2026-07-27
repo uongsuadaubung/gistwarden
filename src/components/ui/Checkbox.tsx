@@ -1,4 +1,4 @@
-import { type Component, type JSX, Show } from "solid-js";
+import { type Component, Show } from "solid-js";
 
 interface CheckboxProps {
   id: string;
@@ -8,7 +8,6 @@ interface CheckboxProps {
   description?: string;
   class?: string;
   disabled?: boolean;
-  style?: JSX.CSSProperties;
 }
 
 export const Checkbox: Component<CheckboxProps> = (props) => {
@@ -24,7 +23,6 @@ export const Checkbox: Component<CheckboxProps> = (props) => {
   return (
     <div
       class={`checkbox-container ${props.class || ""}`}
-      style={props.style}
     >
       <div class="checkbox-row">
         <input

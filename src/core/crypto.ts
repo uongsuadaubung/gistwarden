@@ -6,7 +6,10 @@ import {
 } from "@/core/constants.ts";
 import { err, ok, Result, ResultAsync } from "neverthrow";
 import { type TranslationKey } from "@/core/i18n.ts";
-import { sessionManager } from "@/core/session-manager.ts";
+import {
+  persistSessionKey,
+  restoreSessionKeyFromStorage,
+} from "@/core/session-usecases.ts";
 export const ARGON2_ITERATIONS = 3;
 export const ARGON2_MEMORY = 65536; // 64MB
 
@@ -110,12 +113,12 @@ export function base64ToArrayBuffer(
   )();
 }
 
-export function clearDerivedKey(): void {
-  sessionManager.clearKey();
+export async function clearDerivedKey(): Promise<void> {
+  await persistSessionKey(null);
 }
 
 export async function setDerivedKey(key: CryptoKey | null): Promise<void> {
-  await sessionManager.setKey(key);
+  await persistSessionKey(key);
 }
 
 export async function getOrDeriveKey(
@@ -131,13 +134,13 @@ export async function getOrDeriveKey(
     return err(deriveRes.error);
   }
   const key = deriveRes.value;
-  await sessionManager.setKey(key);
+  await persistSessionKey(key);
 
   return ok(key);
 }
 
 export async function getSessionKey(): Promise<CryptoKey | null> {
-  return await sessionManager.getSessionKey();
+  return await restoreSessionKeyFromStorage();
 }
 
 export async function verifyMasterPassword(password: string): Promise<boolean> {

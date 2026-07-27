@@ -4,7 +4,7 @@ import type { SimpleSuccessResponse } from "@/features/sync/sync-schemas.ts";
 import { userActivityRoute } from "@/features/vault/vault-schemas.ts";
 import { updateTimeoutAlarm } from "@/extension/background-alarms.ts";
 import { syncLockStateBadge } from "@/extension/background-badge.ts";
-import { processPendingUnapprovedCredentials } from "@/extension/handlers/autofill-handlers.ts";
+import { processPendingUnapprovedCredentialsUseCase } from "@/features/vault/autofill-usecase.ts";
 
 export function handleFido2Heartbeat(): SimpleSuccessResponse {
   console.debug("[Background] Heartbeat received");
@@ -15,7 +15,7 @@ export async function handleUserActivity(): Promise<SimpleSuccessResponse> {
   await Promise.all([
     updateTimeoutAlarm(),
     syncLockStateBadge(),
-    processPendingUnapprovedCredentials(),
+    processPendingUnapprovedCredentialsUseCase(),
   ]);
   return { success: true };
 }

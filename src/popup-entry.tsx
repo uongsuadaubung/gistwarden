@@ -18,8 +18,8 @@ import {
 import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { getViewPath } from "@/core/router.ts";
+import { init } from "@/core/app-init.ts";
 import {
-  init,
   lock,
   logout,
   reloadVaultItems,

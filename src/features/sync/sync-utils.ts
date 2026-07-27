@@ -13,8 +13,7 @@ import {
 } from "@/features/sync/sync-schemas.ts";
 import { SESSION_KEY_ENCRYPTED_VAULT } from "@/core/constants.ts";
 import { sendBackgroundMessage } from "@/core/messaging.ts";
-import { t, type TranslationKey } from "@/core/i18n.ts";
-import { showToast } from "@/core/ui-service.ts";
+import { type TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result } from "neverthrow";
 import { mergeVaultPayload } from "@/features/sync/sync-merge.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
@@ -142,10 +141,7 @@ export async function syncVaultToGist(
 
   if (payloadBytes > WARN_GIST_BYTES) {
     const sizeMB = (payloadBytes / (1024 * 1024)).toFixed(1);
-    showToast(
-      t("github_warning_gist_size_near_limit", { sizeMB }),
-      "info",
-    );
+    console.warn(`[Sync] Vault Gist size near limit: ${sizeMB} MB`);
   }
 
   const sendResult = await sendBackgroundMessage(uploadToGistRoute, {

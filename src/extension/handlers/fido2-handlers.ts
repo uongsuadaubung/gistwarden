@@ -43,6 +43,8 @@ async function handleFido2CredentialRequestInternal(
     return { success: false, error: "No sender tab" };
   }
 
+  await pendingNotificationManager.clearFido2Result();
+
   const requestData = {
     type: reqType,
     options: data,

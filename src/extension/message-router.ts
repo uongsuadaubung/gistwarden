@@ -195,16 +195,11 @@ export class MessageRouter {
           typeof rawMessage.type === "string" &&
           this.hasRoute(rawMessage.type)
         ) {
-          this.handleMessage(rawMessage, sender)
-            .then((res) => {
-              if (res.handled) {
-                sendResponse(res.response);
-              }
-            })
-            .catch((err) => {
-              console.error("[MessageRouter] Unhandled listener error:", err);
-              sendResponse({ success: false, error: "Internal server error" });
-            });
+          void this.handleMessage(rawMessage, sender).then((res) => {
+            if (res.handled) {
+              sendResponse(res.response);
+            }
+          });
           return true;
         }
         return false;
@@ -255,21 +250,10 @@ export class MessageRouter {
       };
     }
 
-    try {
-      const response = await route.handler(rawMessage, {
-        sender,
-        isExtensionSender,
-      });
-      return { handled: true, response };
-    } catch (err) {
-      console.error(
-        `[MessageRouter] Error executing handler for ${rawMessage.type}:`,
-        err,
-      );
-      return {
-        handled: true,
-        response: { success: false, error: "Handler execution failed" },
-      };
-    }
+    const response = await route.handler(rawMessage, {
+      sender,
+      isExtensionSender,
+    });
+    return { handled: true, response };
   }
 }
