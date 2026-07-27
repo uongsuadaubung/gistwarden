@@ -1,5 +1,5 @@
 import { type Component, createSignal, Show } from "solid-js";
-import { accountStore } from "@/core/store.ts";
+import { accountStore, setUiStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { syncVault } from "@/features/sync/sync-service.ts";
@@ -21,7 +21,11 @@ import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { handlePopout, isPopout } from "@/core/popout-utils.ts";
 import { setSessionItem } from "@/core/storage.ts";
-import { SESSION_KEY_LAST_VIEW } from "@/core/constants.ts";
+import {
+  SESSION_KEY_LAST_VIEW,
+  STORE_KEY_SYNC_ERROR,
+  STORE_KEY_SYNCING,
+} from "@/core/constants.ts";
 
 export const VaultOptions: Component = () => {
   const [error, setError] = createSignal("");
@@ -31,14 +35,19 @@ export const VaultOptions: Component = () => {
   };
 
   const handleSync = async () => {
+    setUiStore(STORE_KEY_SYNCING, true);
+    setUiStore(STORE_KEY_SYNC_ERROR, "");
     setGlobalLoading(true, t("vault_syncing"));
     const res = await syncVault();
     setGlobalLoading(false);
     if (res.isOk()) {
       showToast(t("vault_sync_success"), "success");
     } else {
-      setError(res.error || t("vault_sync_error"));
+      const errorKey = res.error || "vault_sync_error";
+      setUiStore(STORE_KEY_SYNC_ERROR, t(errorKey));
+      setError(t(errorKey));
     }
+    setUiStore(STORE_KEY_SYNCING, false);
   };
 
   const handleClearVault = async () => {

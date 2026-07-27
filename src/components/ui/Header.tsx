@@ -6,7 +6,8 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import { accountStore, uiStore } from "@/core/store.ts";
+import { accountStore, setUiStore, uiStore } from "@/core/store.ts";
+import { STORE_KEY_SYNC_ERROR, STORE_KEY_SYNCING } from "@/core/constants.ts";
 import { VaultItemType } from "@/features/vault/vault-types.ts";
 import { lock, logout } from "@/features/auth/auth-service.ts";
 import { syncVault } from "@/features/sync/sync-service.ts";
@@ -95,9 +96,15 @@ export const Header: Component<HeaderProps> = (props) => {
   const handleSyncClick = async (e: MouseEvent) => {
     e.stopPropagation();
     if (uiStore.syncing) return;
+    setUiStore(STORE_KEY_SYNCING, true);
+    setUiStore(STORE_KEY_SYNC_ERROR, "");
     setGlobalLoading(true, t("vault_syncing"));
-    await syncVault();
+    const res = await syncVault();
     setGlobalLoading(false);
+    if (res.isErr()) {
+      setUiStore(STORE_KEY_SYNC_ERROR, t(res.error));
+    }
+    setUiStore(STORE_KEY_SYNCING, false);
   };
 
   const handleLockClick = (e: MouseEvent) => {

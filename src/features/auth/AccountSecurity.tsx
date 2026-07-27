@@ -7,7 +7,7 @@ import {
 } from "@/core/storage-schemas.ts";
 import { navigate } from "@/core/navigation.ts";
 import { disablePinUnlock, setPinUnlock } from "@/features/auth/pin-service.ts";
-import { updateSessionTimeout } from "@/features/auth/session-service.ts";
+import { updateSessionTimeout } from "@/features/auth/auth-service.ts";
 import { confirm, setGlobalLoading, showToast } from "@/core/ui-service.ts";
 import { updateExtensionSettings } from "@/core/storage.ts";
 import { ChevronRightIcon, KeyIcon } from "@/icons/svg/index.ts";

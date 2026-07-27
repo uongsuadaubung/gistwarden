@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { sessionManager } from "@/core/session-manager.ts";
+import type {
+  VaultTimeoutAction,
+  VaultTimeoutValue,
+} from "@/core/storage-schemas.ts";
 import { reconcile } from "solid-js/store";
 import {
   accountStore,
@@ -812,4 +816,11 @@ export async function reloadVaultItems(): Promise<void> {
   const { items, trash } = decryptVaultRes.value;
   setAccountStore("vaultItems", reconcile(items));
   setAccountStore("trashItems", reconcile(trash));
+}
+
+export async function updateSessionTimeout(
+  timeout: VaultTimeoutValue,
+  action: VaultTimeoutAction,
+): Promise<void> {
+  await sessionManager.updateSessionTimeout(timeout, action);
 }
