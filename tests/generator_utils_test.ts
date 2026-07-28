@@ -6,7 +6,7 @@ import {
   generatePassphrase,
   generatePassword,
   getRandomBoundedInt,
-} from "../src/core/generator-utils.ts";
+} from "@gistwarden/domain";
 
 Deno.test("generator-utils: generatePassword respects length", () => {
   const pwd = generatePassword({

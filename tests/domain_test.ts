@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { getBaseDomain, getHostname } from "@/core/domain-utils.ts";
+import { getBaseDomain, getHostname } from "@gistwarden/domain";
 
 Deno.test("Domain Utils - getHostname", () => {
   assertEquals(

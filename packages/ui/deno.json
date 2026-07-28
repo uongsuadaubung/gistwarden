@@ -1,0 +1,53 @@
+{
+  "name": "@gistwarden/ui",
+  "version": "1.0.0",
+  "exports": "./mod.ts",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "npm:solid-js",
+    "lib": ["dom", "dom.iterable", "deno.ns"],
+    "strict": true,
+    "types": [
+      "npm:@types/chrome@^0.1.42"
+    ],
+    "verbatimModuleSyntax": true
+  },
+  "imports": {
+    "@gistwarden/domain": "../domain/mod.ts",
+    "@gistwarden/repository": "../repository/mod.ts",
+    "@gistwarden/network": "../network/mod.ts",
+    "@gistwarden/orchestrator": "../orchestrator/mod.ts",
+    "@/core/crypto.ts": "../domain/src/crypto.ts",
+    "@/core/i18n.ts": "../domain/src/i18n.ts",
+    "@/core/totp-utils.ts": "../domain/src/totp-utils.ts",
+    "@/core/session-manager.ts": "../domain/src/session-manager.ts",
+    "@/core/session-signal.ts": "../domain/src/session-signal.ts",
+    "@/core/types.ts": "../domain/src/types.ts",
+    "@/core/constants.ts": "../domain/src/constants.ts",
+    "@/core/generator-utils.ts": "../domain/src/generator-utils.ts",
+    "@/core/domain-utils.ts": "../domain/src/domain-utils.ts",
+    "@/core/cbor-utils.ts": "../domain/src/cbor-utils.ts",
+    "@/core/wordlist.ts": "../domain/src/wordlist.ts",
+    "@/core/csv-parser.ts": "../domain/src/csv-parser.ts",
+    "@/core/json-utils.ts": "../domain/src/json-utils.ts",
+    "@/core/storage.ts": "../repository/src/storage.ts",
+    "@/core/storage-schemas.ts": "../repository/src/storage-schemas.ts",
+    "@/core/fetch-utils.ts": "../network/src/fetch-utils.ts",
+    "@/providers/": "../network/src/",
+    "@/features/sync/github-api.ts": "../network/src/github-api.ts",
+    "@/core/session-usecases.ts": "../orchestrator/src/session-usecases.ts",
+    "@/core/app-init.ts": "../orchestrator/src/app-init.ts",
+    "@/core/messaging.ts": "../orchestrator/src/messaging.ts",
+    "@/core/messaging-contracts.ts": "../orchestrator/src/messaging-contracts.ts",
+    "@/core/alarms.ts": "../orchestrator/src/alarms.ts",
+    "@/core/idle.ts": "../orchestrator/src/idle.ts",
+    "@/extension/pending-notification-manager.ts": "../../apps/extension/src/extension/pending-notification-manager.ts",
+    "@/core/ui-service.ts": "../orchestrator/src/ui-service.ts",
+    "@/": "./src/",
+    "@solidjs/router": "npm:@solidjs/router@^0.16.2",
+    "neverthrow": "npm:neverthrow@^8.2.0",
+    "solid-js": "npm:solid-js@^1.9.14",
+    "solid-js/web": "npm:solid-js@^1.9.14/web",
+    "zod": "npm:zod@^4.4.3"
+  }
+}

@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { z } from "zod";
-import { MessageRouter } from "@/extension/message-router.ts";
-import { defineRoute } from "@/core/messaging.ts";
+import { MessageRouter } from "../apps/extension/src/extension/message-router.ts";
+import { defineRoute } from "@gistwarden/orchestrator";
 
 // Setup global mock for chrome.runtime in test environment
 Object.defineProperty(globalThis, "chrome", {
@@ -22,9 +22,13 @@ Deno.test("MessageRouter - route registration and payload validation", async () 
     domain: z.string().min(1),
   });
 
-  router.register("TEST_MSG", TestMsgSchema, (payload) => {
-    return { success: true, echoedDomain: payload.domain };
-  });
+  router.register(
+    "TEST_MSG",
+    TestMsgSchema,
+    (payload: z.infer<typeof TestMsgSchema>) => {
+      return { success: true, echoedDomain: payload.domain };
+    },
+  );
 
   assertEquals(router.hasRoute("TEST_MSG"), true);
   assertEquals(router.hasRoute("UNKNOWN_MSG"), false);
@@ -69,7 +73,7 @@ Deno.test("MessageRouter - defineRoute contract registration", async () => {
     internalOnly: true,
   });
 
-  router.register(testContractRoute, (payload) => {
+  router.register(testContractRoute, (payload: { query: string }) => {
     return { success: true, count: payload.query.length };
   });
 

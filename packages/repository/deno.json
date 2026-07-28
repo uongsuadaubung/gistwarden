@@ -1,0 +1,15 @@
+{
+  "name": "@gistwarden/repository",
+  "version": "1.0.0",
+  "exports": "./mod.ts",
+  "compilerOptions": {
+    "strict": true,
+    "verbatimModuleSyntax": true
+  },
+  "imports": {
+    "@gistwarden/domain": "../domain/mod.ts",
+    "@/core/store.ts": "../ui/src/core/store.ts",
+    "neverthrow": "npm:neverthrow@^8.2.0",
+    "zod": "npm:zod@^4.4.3"
+  }
+}

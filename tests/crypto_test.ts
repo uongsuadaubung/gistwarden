@@ -5,16 +5,19 @@ import {
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   arrayBufferToBase64,
-  clearDerivedKey,
   decryptData,
   deriveKey,
   encryptData,
   generateSalt,
-  getSessionKey,
   parseSshKey,
+  parseTotpSecret,
+} from "@gistwarden/domain";
+import {
+  clearDerivedKey,
+  getSessionKey,
   setDerivedKey,
-} from "@/core/crypto.ts";
-import { clearUnlockedSessionState } from "@/core/storage.ts";
+} from "@gistwarden/orchestrator";
+import { clearUnlockedSessionState } from "@gistwarden/repository";
 import {
   AAGUID,
   base64UrlToBuffer,
@@ -24,10 +27,9 @@ import {
   generatePasskeyRegisterResponse,
   getRawCredentialId,
   p1363ToDer,
-} from "@/features/passkey/passkey-crypto.ts";
-import { parseTotpSecret } from "@/core/totp-utils.ts";
-import { Fido2CredentialSchema } from "@/features/passkey/fido2-schemas.ts";
-import { ImportItemSchema } from "@/features/sync/sync-schemas.ts";
+} from "../packages/ui/src/features/passkey/passkey-crypto.ts";
+import { Fido2CredentialSchema } from "@gistwarden/domain";
+import { ImportItemSchema } from "@gistwarden/repository";
 
 Deno.test("Crypto - Key derivation, Encryption and Decryption", async () => {
   const password = "SuperSecretPassword123";

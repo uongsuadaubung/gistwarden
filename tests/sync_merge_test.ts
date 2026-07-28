@@ -2,16 +2,16 @@ import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   mergeVaultItems,
   mergeVaultPayload,
-} from "@/features/sync/sync-merge.ts";
-import { VaultItemType } from "@/features/vault/vault-types.ts";
-import type {
-  CardVaultItem,
-  IdentityVaultItem,
-  LoginVaultItem,
-  SecureNoteVaultItem,
-  SshKeyVaultItem,
-  VaultItem,
-} from "@/features/vault/vault-schemas.ts";
+} from "../packages/ui/src/features/sync/sync-merge.ts";
+import {
+  type CardVaultItem,
+  type IdentityVaultItem,
+  type LoginVaultItem,
+  type SecureNoteVaultItem,
+  type SshKeyVaultItem,
+  type VaultItem,
+  VaultItemType,
+} from "@gistwarden/domain";
 
 const createMockLogin = (
   id: string,
@@ -282,7 +282,9 @@ Deno.test("Vault Merge - Mixed collection of all 5 Vault item types", () => {
 
   assertEquals(merged.length, 4); // Login, Note, Card, SSH Key (Identity was dropped)
 
-  const itemMap = new Map(merged.map((i) => [i.id, i]));
+  const itemMap = new Map<string, VaultItem>(
+    merged.map((i: VaultItem) => [i.id, i]),
+  );
   assertEquals(itemMap.get("id-login")?.name, "Login Local Newer");
   assertEquals(itemMap.get("id-note")?.name, "Note Remote Newer");
   assertEquals(itemMap.get("id-card")?.name, "New Local Card");

@@ -3,12 +3,12 @@ import {
   filterMatchingDomainItems,
   isMatchingDomain,
   isSingleUriMatch,
-} from "@/features/vault/vault-domain-matching.ts";
-import { VaultItemType } from "@/features/vault/vault-types.ts";
+} from "../packages/ui/src/features/vault/vault-domain-matching.ts";
 import {
   type LoginVaultItem,
   UriMatchMode,
-} from "@/features/vault/vault-schemas.ts";
+  VaultItemType,
+} from "@gistwarden/domain";
 
 function createMockLoginItem(
   id: string,

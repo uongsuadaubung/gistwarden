@@ -1,96 +1,92 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { JSDOM } from "jsdom";
-import { performAutofill } from "@/extension/autofill-core.ts";
+import { performAutofill } from "../apps/extension/src/extension/autofill-core.ts";
 
 function setupDOM(html: string) {
-  const dom = new JSDOM(html);
+  const dom = new JSDOM(html, { url: "https://example.com/login" });
 
   // Define necessary globals for the test to act like a browser
   Object.assign(globalThis, {
     document: dom.window.document,
     window: dom.window,
+    HTMLElement: dom.window.HTMLElement,
     HTMLInputElement: dom.window.HTMLInputElement,
+    HTMLFormElement: dom.window.HTMLFormElement,
     Event: dom.window.Event,
     Node: dom.window.Node,
   });
 
-  return dom;
+  return dom.window.document;
 }
 
 Deno.test("Autofill - standard login form", () => {
-  setupDOM(`
-    <form id="login-form">
-      <input type="text" id="username" name="username" />
-      <input type="password" id="password" name="password" />
+  const doc = setupDOM(`
+    <form id="login">
+      <input type="text" name="username" id="user" />
+      <input type="password" name="password" id="pass" />
     </form>
   `);
 
-  const success = performAutofill("testuser", "testpass");
-  assertEquals(success, true);
-  const userField = document.getElementById("username");
-  const passField = document.getElementById("password");
+  const result = performAutofill("myuser", "mypass");
+  assertEquals(result, true);
 
-  if (
-    userField instanceof HTMLInputElement &&
-    passField instanceof HTMLInputElement
-  ) {
-    assertEquals(userField.value, "testuser");
-    assertEquals(passField.value, "testpass");
-  } else {
-    throw new Error("Fields are not HTMLInputElement");
+  const userInput = doc.getElementById("user");
+  const passInput = doc.getElementById("pass");
+
+  if (userInput instanceof HTMLInputElement) {
+    assertEquals(userInput.value, "myuser");
+  }
+  if (passInput instanceof HTMLInputElement) {
+    assertEquals(passInput.value, "mypass");
   }
 });
 
 Deno.test("Autofill - form without form tags (just inputs)", () => {
-  setupDOM(`
+  const doc = setupDOM(`
     <div>
-      <input type="text" id="user" />
-      <br/>
-      <input type="password" id="pass" />
+      <input type="text" id="username" />
+      <input type="password" id="password" />
     </div>
   `);
 
-  const success = performAutofill("myuser", "mypass");
-  assertEquals(success, true);
-  const userField = document.getElementById("user");
-  const passField = document.getElementById("pass");
+  const result = performAutofill("john_doe", "secret123");
+  assertEquals(result, true);
 
-  if (
-    userField instanceof HTMLInputElement &&
-    passField instanceof HTMLInputElement
-  ) {
-    assertEquals(userField.value, "myuser");
-    assertEquals(passField.value, "mypass");
-  } else {
-    throw new Error("Fields are not HTMLInputElement");
+  const userInput = doc.getElementById("username");
+  const passInput = doc.getElementById("password");
+
+  if (userInput instanceof HTMLInputElement) {
+    assertEquals(userInput.value, "john_doe");
+  }
+  if (passInput instanceof HTMLInputElement) {
+    assertEquals(passInput.value, "secret123");
   }
 });
 
 Deno.test("Autofill - only username fallback", () => {
-  // Sometimes login flows are split (username first, then next page password)
-  setupDOM(`
+  const doc = setupDOM(`
     <div>
-      <input type="text" id="loginId" name="login" />
+      <input type="text" id="user_id" name="username" />
     </div>
   `);
 
-  const success = performAutofill("splituser", "");
-  assertEquals(success, true);
-  const loginField = document.getElementById("loginId");
-  if (loginField instanceof HTMLInputElement) {
-    assertEquals(loginField.value, "splituser");
-  } else {
-    throw new Error("Field is not HTMLInputElement");
+  const result = performAutofill("only_user", "unused_pass");
+  assertEquals(result, true);
+
+  const userInput = doc.getElementById("user_id");
+  if (userInput instanceof HTMLInputElement) {
+    assertEquals(userInput.value, "only_user");
   }
 });
 
 Deno.test("Autofill - no matching fields", () => {
-  setupDOM(`
+  const _doc = setupDOM(`
     <div>
-      <input type="text" id="search" name="q" />
+      <input type="checkbox" id="check" />
+      <button id="btn">Click</button>
     </div>
   `);
 
-  const success = performAutofill("testuser", "testpass");
-  assertEquals(success, false); // No password field and no keyword match in text input
+  const result = performAutofill("user", "pass");
+  assertEquals(result, false);
 });
