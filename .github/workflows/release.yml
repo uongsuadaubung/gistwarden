@@ -26,9 +26,9 @@ jobs:
 
           deno task bump-version
 
-          if [ -n "$(git status --porcelain src/manifest.json)" ]; then
-            git add src/manifest.json
-            VERSION=$(jq -r '.version' src/manifest.json)
+          if [ -n "$(git status --porcelain apps/extension/src/manifest.json)" ]; then
+            git add apps/extension/src/manifest.json
+            VERSION=$(jq -r '.version' apps/extension/src/manifest.json)
             git commit -m "chore: bump version to $VERSION [skip ci]"
             git push
           else
@@ -39,8 +39,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Read version from src/manifest.json
-          VERSION=$(jq -r '.version' src/manifest.json)
+          # Read version from apps/extension/src/manifest.json
+          VERSION=$(jq -r '.version' apps/extension/src/manifest.json)
           TAG_NAME="v$VERSION"
 
           # Check if the release/tag already exists on GitHub

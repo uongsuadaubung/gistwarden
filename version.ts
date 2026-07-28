@@ -3,12 +3,14 @@ import { join } from "path";
 
 const manifestPath = join(
   import.meta.dirname || ".",
+  "apps",
+  "extension",
   "src",
   "manifest.json",
 );
 
 if (!existsSync(manifestPath)) {
-  console.error("Error: src/manifest.json not found!");
+  console.error("Error: apps/extension/src/manifest.json not found!");
   Deno.exit(1);
 }
 
