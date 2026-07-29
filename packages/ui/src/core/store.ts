@@ -1,12 +1,18 @@
 import { createStore } from "solid-js/store";
-import { ThemeMode, View } from "@gistwarden/domain";
+import { computeHmac, ThemeMode, View } from "@gistwarden/domain";
 import {
   type ConfirmType,
+  DEFAULT_GITHUB_CONFIG,
+  DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG,
+  DEFAULT_PIN_CONFIG,
   getAccountSettings,
   getExtensionSettings,
-  type GithubUser,
+  type GithubConfig,
+  type MasterPasswordSecurityConfig,
+  type PinUnlockConfig,
   type ThemeModeType,
   type ToastType,
+  updateAccountSettings,
   type VaultTimeoutAction,
   type VaultTimeoutValue,
 } from "@gistwarden/repository";
@@ -30,8 +36,6 @@ export interface AccountStore {
   githubToken: string;
   githubConfigured: boolean;
   gistId: string;
-  salt: string;
-  cachedGithubUser: GithubUser | null;
   lastSync: number;
 
   isLoaded: boolean;
@@ -40,11 +44,10 @@ export interface AccountStore {
   vaultItems: VaultItem[];
   trashItems: TrashVaultItem[];
 
-  // PIN settings
-  pinUnlockEnabled: boolean;
-  pinUnlockValue: string;
-  pinUnlockIv: string;
-  pinUnlockSalt: string;
+  // Config groups
+  githubConfig: GithubConfig;
+  pinConfig: PinUnlockConfig;
+  masterPasswordConfig: MasterPasswordSecurityConfig;
 }
 
 export interface UiSessionStore {
@@ -96,17 +99,14 @@ export const initialAccountState: Omit<AccountStore, "isLoaded"> = {
   githubToken: "",
   githubConfigured: false,
   gistId: "",
-  salt: "",
-  cachedGithubUser: null,
   lastSync: 0,
   isLocked: true,
   sessionUnlocked: false,
   vaultItems: [],
   trashItems: [],
-  pinUnlockEnabled: false,
-  pinUnlockValue: "",
-  pinUnlockIv: "",
-  pinUnlockSalt: "",
+  githubConfig: DEFAULT_GITHUB_CONFIG,
+  pinConfig: DEFAULT_PIN_CONFIG,
+  masterPasswordConfig: DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG,
 };
 
 export const initialUiState: UiSessionStore = {
@@ -176,16 +176,52 @@ export async function loadAllStores(): Promise<void> {
   const accRes = await getAccountSettings();
   if (accRes.isOk()) {
     const acc = accRes.value;
+    const githubConfig = acc.githubConfig || DEFAULT_GITHUB_CONFIG;
+    let pinConfig = acc.pinConfig;
+    if (pinConfig.enabled) {
+      const macRes = await computeHmac(
+        String(pinConfig.failedAttempts),
+        pinConfig.salt,
+      );
+      const expectedMac = macRes.isOk() ? macRes.value : "";
+      if (
+        !pinConfig.failedMac ||
+        pinConfig.failedMac !== expectedMac ||
+        pinConfig.failedAttempts >= 3
+      ) {
+        pinConfig = DEFAULT_PIN_CONFIG;
+        await updateAccountSettings({ pinConfig });
+      }
+    }
+
+    let masterPasswordConfig = acc.masterPasswordConfig ||
+      DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG;
+    const secSalt = masterPasswordConfig.salt || "master_password_hmac_secret";
+    if (
+      masterPasswordConfig.failedAttempts > 0 ||
+      masterPasswordConfig.lockoutUntil > 0
+    ) {
+      const macRes = await computeHmac(
+        `${masterPasswordConfig.failedAttempts}:${masterPasswordConfig.lockoutUntil}`,
+        secSalt,
+      );
+      const expectedMac = macRes.isOk() ? macRes.value : "";
+      if (
+        !masterPasswordConfig.failedMac ||
+        masterPasswordConfig.failedMac !== expectedMac
+      ) {
+        masterPasswordConfig = DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG;
+        await updateAccountSettings({ masterPasswordConfig });
+      }
+    }
+
     setAccountStore({
-      gistId: acc.gistId,
-      salt: acc.salt,
+      gistId: githubConfig.gistId,
+      githubConfig,
       lastSync: acc.lastSync,
-      cachedGithubUser: acc.cachedGithubUser,
-      pinUnlockEnabled: acc.pinUnlockEnabled,
-      pinUnlockValue: acc.pinUnlockValue,
-      pinUnlockIv: acc.pinUnlockIv,
-      pinUnlockSalt: acc.pinUnlockSalt,
-      githubConfigured: !!acc.gistId && !!acc.salt,
+      pinConfig,
+      masterPasswordConfig,
+      githubConfigured: !!githubConfig.gistId && !!masterPasswordConfig.salt,
     });
   } else {
     setAccountStore({

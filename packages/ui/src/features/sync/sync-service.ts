@@ -8,14 +8,14 @@ import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
 
 export async function syncVault(): Promise<Result<void, TranslationKey>> {
   const key = await getSessionKey();
-  if (!key || !accountStore.salt) {
+  if (!key || !accountStore.masterPasswordConfig.salt) {
     return err("login_title_locked");
   }
 
   const uploadRes = await syncVaultToGist(
     accountStore.vaultItems,
     key,
-    accountStore.salt,
+    accountStore.masterPasswordConfig.salt,
     accountStore.trashItems || [],
   );
 

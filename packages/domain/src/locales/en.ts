@@ -126,6 +126,10 @@ export default {
   caps_lock_on: "Caps Lock is on",
   login_error_changed_mp_hint:
     "If you recently changed your Master Password on another device, you need to log out and log in again.",
+  login_error_mp_cooldown:
+    "Too many failed Master Password attempts. Please try again later.",
+  login_error_mp_tampered:
+    "Master Password security data has been tampered with. System logged out for protection.",
   login_error_unlock_fail: "Unlock failed",
   login_forgot_password_title: "Forgot Master Password",
   login_forgot_password_msg:
@@ -422,6 +426,12 @@ export default {
   login_unlock_with_mp: "Unlock with Master Password",
   login_pin_placeholder: "Enter your PIN...",
   login_error_wrong_pin: "Incorrect PIN.",
+  login_error_wrong_pin_2_left: "Incorrect PIN. 2 attempts remaining.",
+  login_error_wrong_pin_1_left: "Incorrect PIN. 1 attempt remaining!",
+  login_error_pin_max_attempts_reached:
+    "Incorrect PIN entered 3 times. Account logged out for security.",
+  login_error_pin_tampered:
+    "PIN security data tampered. Account logged out for security.",
   settings_change_mp_title: "Change Master Password",
   settings_change_mp_sub: "Re-encrypt vault with new password",
   settings_lock_sub: "Re-open with Master Password",

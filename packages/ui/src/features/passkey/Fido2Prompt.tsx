@@ -50,7 +50,7 @@ export const Fido2Prompt: Component = () => {
 
   createEffect(() => {
     if (accountStore.isLoaded && settingsStore.isLoaded) {
-      if (accountStore.pinUnlockEnabled) {
+      if (accountStore.pinConfig.enabled) {
         if (settingsStore.requireMasterPasswordOnRestart) {
           setViewMode(accountStore.sessionUnlocked ? "pin" : "masterPassword");
         } else {
@@ -400,7 +400,7 @@ export const Fido2Prompt: Component = () => {
                       />
                     </div>
 
-                    <Show when={accountStore.pinUnlockEnabled}>
+                    <Show when={accountStore.pinConfig.enabled}>
                       <div class="text-center mt-8 mb-12">
                         <a
                           href="#"

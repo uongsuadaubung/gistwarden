@@ -22,6 +22,12 @@ import {
   GeneratedPasswordHistoryListSchema,
 } from "./storage-schemas.ts";
 
+export {
+  DEFAULT_GITHUB_CONFIG,
+  DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG,
+  DEFAULT_PIN_CONFIG,
+} from "./storage-schemas.ts";
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -217,7 +223,10 @@ export async function configureSessionAccessLevel(
     await chrome.storage.session.setAccessLevel({ accessLevel });
     return ok();
   } catch (e) {
-    console.warn("[Storage] Failed to set session storage access level:", e);
+    logger.storage.warn(
+      "[Storage] Failed to set session storage access level:",
+      e,
+    );
     return err("storage_error");
   }
 }
@@ -233,7 +242,8 @@ export async function getGithubToken(): Promise<string> {
   const accRes = await getAccountSettings();
   if (accRes.isOk()) {
     const acc = accRes.value;
-    if (acc.githubTokenEncrypted && acc.githubTokenIv) {
+    const githubConfig = acc.githubConfig;
+    if (githubConfig.githubTokenEncrypted && githubConfig.githubTokenIv) {
       let key = sessionManager.getKey();
       if (!key) {
         const base64Res = await getSessionItem(SESSION_KEY_DERIVED_KEY);
@@ -261,8 +271,8 @@ export async function getGithubToken(): Promise<string> {
       }
       if (key) {
         const decryptRes = await decryptData(
-          acc.githubTokenEncrypted,
-          acc.githubTokenIv,
+          githubConfig.githubTokenEncrypted,
+          githubConfig.githubTokenIv,
           key,
         );
         if (decryptRes.isOk()) {

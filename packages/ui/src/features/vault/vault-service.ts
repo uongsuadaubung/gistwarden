@@ -33,14 +33,14 @@ export async function persistAndReconcileVault(
   trashItems: TrashVaultItem[] = accountStore.trashItems || [],
 ): Promise<Result<VaultItem[], TranslationKey>> {
   const key = await getSessionKey();
-  if (!key || !accountStore.salt) {
+  if (!key || !accountStore.masterPasswordConfig.salt) {
     return err("login_title_locked");
   }
 
   const uploadRes = await syncVaultToGist(
     items,
     key,
-    accountStore.salt,
+    accountStore.masterPasswordConfig.salt,
     trashItems,
   );
 
@@ -173,8 +173,12 @@ export async function clearVault(): Promise<Result<void, TranslationKey>> {
   }
 
   // Reset local account settings
-  const updateSettingsRes = await updateAccountSettings({
+  const updatedGithubConfig = {
+    ...accountStore.githubConfig,
     gistId: "",
+  };
+  const updateSettingsRes = await updateAccountSettings({
+    githubConfig: updatedGithubConfig,
     lastSync: 0,
   });
   if (updateSettingsRes.isErr()) {

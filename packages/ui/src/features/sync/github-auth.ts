@@ -5,7 +5,7 @@ import {
   setSessionItem,
   updateAccountSettings,
 } from "@/core/storage.ts";
-import { setAccountStore } from "@/core/store.ts";
+import { accountStore, setAccountStore } from "@/core/store.ts";
 import { validateTokenRoute } from "@gistwarden/orchestrator";
 import { sendBackgroundMessage } from "@/core/messaging.ts";
 import { err, ok, Result } from "neverthrow";
@@ -26,6 +26,9 @@ export async function setupGithub(
   }
   const res = sendResult.value;
 
+  const username = res.username || "";
+  const avatarUrl = res.avatarUrl || "";
+
   const key = await getSessionKey();
   if (key) {
     const encryptRes = await encryptData(token, key);
@@ -33,32 +36,34 @@ export async function setupGithub(
       return err(encryptRes.error);
     }
     const { iv, ciphertext } = encryptRes.value;
-    await updateAccountSettings({
+    const updatedGithubConfig = {
+      ...accountStore.githubConfig,
       githubTokenEncrypted: ciphertext,
       githubTokenIv: iv,
-      cachedGithubUser: {
-        login: res.username || "",
-        avatar_url: res.avatarUrl || "",
-      },
+      username,
+      avatarUrl,
+    };
+    await updateAccountSettings({
+      githubConfig: updatedGithubConfig,
     });
+    setAccountStore("githubConfig", updatedGithubConfig);
     await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
   } else {
+    const updatedGithubConfig = {
+      ...accountStore.githubConfig,
+      username,
+      avatarUrl,
+    };
     await setSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN, token);
     await updateAccountSettings({
-      cachedGithubUser: {
-        login: res.username || "",
-        avatar_url: res.avatarUrl || "",
-      },
+      githubConfig: updatedGithubConfig,
     });
+    setAccountStore("githubConfig", updatedGithubConfig);
   }
 
   setAccountStore({
     githubToken: token,
     githubConfigured: true,
-    cachedGithubUser: {
-      login: res.username || "",
-      avatar_url: res.avatarUrl || "",
-    },
   });
   return ok();
 }

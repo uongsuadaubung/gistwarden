@@ -1,6 +1,7 @@
 import { deriveKey, encryptData, generateSalt } from "@gistwarden/domain";
 import { setDerivedKey, verifyMasterPassword } from "@gistwarden/orchestrator";
 import {
+  DEFAULT_PIN_CONFIG,
   getGithubToken,
   setSessionItem,
   updateAccountSettings,
@@ -62,39 +63,43 @@ export async function changeMasterPassword(
 
   // 5. Re-encrypt GitHub token with the new key and save to account settings
   const githubToken = await getGithubToken();
+  const updatedMpConfig = {
+    ...accountStore.masterPasswordConfig,
+    salt: newSaltBase64,
+  };
+
   if (githubToken) {
     const encryptTokenResult = await encryptData(githubToken, newKey);
     if (encryptTokenResult.isErr()) {
       return err(encryptTokenResult.error);
     }
     const { iv, ciphertext } = encryptTokenResult.value;
-
-    await updateAccountSettings({
+    const updatedGithubConfig = {
+      ...accountStore.githubConfig,
       githubTokenEncrypted: ciphertext,
       githubTokenIv: iv,
-      salt: newSaltBase64,
-      pinUnlockEnabled: false,
-      pinUnlockValue: "",
-      pinUnlockIv: "",
-      pinUnlockSalt: "",
+    };
+
+    await updateAccountSettings({
+      githubConfig: updatedGithubConfig,
+      masterPasswordConfig: updatedMpConfig,
+      pinConfig: DEFAULT_PIN_CONFIG,
+    });
+    setAccountStore({
+      githubConfig: updatedGithubConfig,
+      masterPasswordConfig: updatedMpConfig,
+      pinConfig: DEFAULT_PIN_CONFIG,
     });
   } else {
     await updateAccountSettings({
-      salt: newSaltBase64,
-      pinUnlockEnabled: false,
-      pinUnlockValue: "",
-      pinUnlockIv: "",
-      pinUnlockSalt: "",
+      masterPasswordConfig: updatedMpConfig,
+      pinConfig: DEFAULT_PIN_CONFIG,
+    });
+    setAccountStore({
+      masterPasswordConfig: updatedMpConfig,
+      pinConfig: DEFAULT_PIN_CONFIG,
     });
   }
-
-  setAccountStore({
-    salt: newSaltBase64,
-    pinUnlockEnabled: false,
-    pinUnlockValue: "",
-    pinUnlockIv: "",
-    pinUnlockSalt: "",
-  });
 
   return ok();
 }

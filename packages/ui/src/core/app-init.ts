@@ -249,10 +249,10 @@ export async function init(): Promise<void> {
     setUiStore(STORE_KEY_VIEW, View.Fido2Prompt);
   }
 
-  if (decryptedToken && key && accountStore.salt) {
+  if (decryptedToken && key && accountStore.masterPasswordConfig.salt) {
     await loadAndDecryptVault(key, isFido2Prompt, params);
   } else {
-    if (accountStore.gistId && accountStore.salt) {
+    if (accountStore.gistId && accountStore.masterPasswordConfig.salt) {
       const sendResult = await sendBackgroundMessage(
         downloadFromGistRoute,
       );
@@ -272,8 +272,8 @@ export async function init(): Promise<void> {
           if (payloadResult.success) {
             const payload = payloadResult.data;
             if (
-              payload.salt && accountStore.salt &&
-              payload.salt !== accountStore.salt
+              payload.salt && accountStore.masterPasswordConfig.salt &&
+              payload.salt !== accountStore.masterPasswordConfig.salt
             ) {
               console.warn(
                 "[Store] Salt mismatch detected during init prefetch (Master Password changed on another device). Auto logging out...",

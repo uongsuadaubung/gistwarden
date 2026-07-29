@@ -18,6 +18,8 @@ import {
   uiStore,
 } from "@/core/store.ts";
 import {
+  DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG,
+  DEFAULT_PIN_CONFIG,
   getAccountSettings,
   getGithubToken,
   getSessionItem,
@@ -30,11 +32,13 @@ import {
 } from "@/core/storage.ts";
 import {
   base64ToArrayBuffer,
+  computeHmac,
   decryptData,
   deriveKey,
   encryptData,
   generateSalt,
   importAesGcmKey,
+  logger,
 } from "@gistwarden/domain";
 import {
   clearDerivedKey,
@@ -73,7 +77,6 @@ import {
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
   SESSION_KEYS_ON_LOCK,
-  STORE_KEY_SALT,
 } from "@/core/constants.ts";
 
 export interface SetupUnlockedSessionOptions {
@@ -172,8 +175,12 @@ export async function createNewVault(
 
   const rawSalt = generateSalt();
   const saltBase64 = rawSalt.toBase64();
-  await updateAccountSettings({ salt: saltBase64 });
-  setAccountStore(STORE_KEY_SALT, saltBase64);
+  const updatedMpConfig = {
+    ...accountStore.masterPasswordConfig,
+    salt: saltBase64,
+  };
+  await updateAccountSettings({ masterPasswordConfig: updatedMpConfig });
+  setAccountStore("masterPasswordConfig", updatedMpConfig);
 
   const keyRes = await getOrDeriveKey(password, saltBase64);
   if (keyRes.isErr()) {
@@ -189,10 +196,15 @@ export async function createNewVault(
       return err(encryptRes.error);
     }
     const { iv, ciphertext } = encryptRes.value;
-    await updateAccountSettings({
+    const updatedGithubConfig = {
+      ...accountStore.githubConfig,
       githubTokenEncrypted: ciphertext,
       githubTokenIv: iv,
+    };
+    await updateAccountSettings({
+      githubConfig: updatedGithubConfig,
     });
+    setAccountStore("githubConfig", updatedGithubConfig);
     await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
   }
 
@@ -320,21 +332,106 @@ export async function decryptGistVault(
   return ok({ items, trash, targetView, selectedItem });
 }
 
-export async function unlock(
-  password: string,
-): Promise<Result<void, TranslationKey>> {
+export async function verifyMasterPasswordSecurity(): Promise<
+  Result<{ attempts: number; salt: string }, TranslationKey>
+> {
   const accSettingsRes = await getAccountSettings();
   if (accSettingsRes.isErr()) return err(accSettingsRes.error);
   const accSettings = accSettingsRes.value;
+  const config = accSettings.masterPasswordConfig ||
+    DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG;
+  const secSalt = config.salt;
+
+  if (secSalt) {
+    if (
+      config.failedAttempts > 0 || config.lockoutUntil > 0 || config.failedMac
+    ) {
+      const macRes = await computeHmac(
+        `${config.failedAttempts}:${config.lockoutUntil}`,
+        secSalt,
+      );
+      const expectedMac = macRes.isOk() ? macRes.value : "";
+      if (!config.failedMac || config.failedMac !== expectedMac) {
+        logger.storage.error(
+          "Master password security data tampered! Logging out.",
+        );
+        await logoutVaultSession();
+        return err("login_error_mp_tampered");
+      }
+    }
+
+    const now = Date.now();
+    if (now < config.lockoutUntil) {
+      return err("login_error_mp_cooldown");
+    }
+  }
+
+  return ok({ attempts: config.failedAttempts, salt: secSalt });
+}
+
+export async function recordMasterPasswordFailure(
+  currentAttempts: number,
+  salt: string,
+): Promise<void> {
+  const nextAttempts = currentAttempts + 1;
+  const penaltySeconds = Math.pow(2, nextAttempts);
+  const lockoutUntil = Date.now() + penaltySeconds * 1000;
+  const secSalt = salt || generateSalt().toBase64();
+  const macRes = await computeHmac(`${nextAttempts}:${lockoutUntil}`, secSalt);
+  const failedMac = macRes.isOk() ? macRes.value : "";
+
+  const updatedConfig = {
+    salt: secSalt,
+    failedAttempts: nextAttempts,
+    lockoutUntil,
+    failedMac,
+  };
+
+  setAccountStore("masterPasswordConfig", updatedConfig);
+  await updateAccountSettings({ masterPasswordConfig: updatedConfig });
+  await new Promise((r) => setTimeout(r, 600));
+}
+
+export async function resetMasterPasswordSecurity(salt: string): Promise<void> {
+  const secSalt = salt || generateSalt().toBase64();
+  const resetMacRes = await computeHmac("0:0", secSalt);
+  const resetMac = resetMacRes.isOk() ? resetMacRes.value : "";
+  const resetConfig = {
+    salt: secSalt,
+    failedAttempts: 0,
+    lockoutUntil: 0,
+    failedMac: resetMac,
+  };
+  setAccountStore("masterPasswordConfig", resetConfig);
+  await updateAccountSettings({ masterPasswordConfig: resetConfig });
+}
+
+export async function unlock(
+  password: string,
+): Promise<Result<void, TranslationKey>> {
+  const secRes = await verifyMasterPasswordSecurity();
+  if (secRes.isErr()) {
+    return err(secRes.error);
+  }
+  const { attempts, salt: secSalt } = secRes.value;
+
+  const accSettingsRes = await getAccountSettings();
+  if (accSettingsRes.isErr()) {
+    await recordMasterPasswordFailure(attempts, secSalt);
+    return err(accSettingsRes.error);
+  }
+  const accSettings = accSettingsRes.value;
+  const githubConfig = accSettings.githubConfig;
   const currentToken = await getGithubToken();
-  const githubConfigured = !!accSettings.githubTokenEncrypted ||
+  const githubConfigured = !!githubConfig.githubTokenEncrypted ||
     !!currentToken || !!accountStore.githubToken;
   if (!githubConfigured) {
     clearDerivedKey();
+    await recordMasterPasswordFailure(attempts, secSalt);
     return err("login_error_invalid_token");
   }
 
-  let saltBase64 = accSettings.salt || accountStore.salt;
+  let saltBase64 = accSettings.masterPasswordConfig.salt;
   let key: CryptoKey | null = null;
   clearDerivedKey();
 
@@ -343,22 +440,25 @@ export async function unlock(
     const keyRes = await getOrDeriveKey(password, saltBase64);
     if (keyRes.isErr()) {
       clearDerivedKey();
+      await recordMasterPasswordFailure(attempts, saltBase64 || secSalt);
       return err(keyRes.error);
     }
     key = keyRes.value;
     if (!key) {
       clearDerivedKey();
+      await recordMasterPasswordFailure(attempts, saltBase64 || secSalt);
       return err("login_error_wrong_mp");
     }
-    if (accSettings.githubTokenEncrypted && accSettings.githubTokenIv) {
+    if (githubConfig.githubTokenEncrypted && githubConfig.githubTokenIv) {
       const decryptRes = await decryptData(
-        accSettings.githubTokenEncrypted,
-        accSettings.githubTokenIv,
+        githubConfig.githubTokenEncrypted,
+        githubConfig.githubTokenIv,
         key,
       );
       if (decryptRes.isErr()) {
-        console.warn("Failed to decrypt githubToken");
+        logger.storage.warn("Failed to decrypt githubToken");
         clearDerivedKey();
+        await recordMasterPasswordFailure(attempts, saltBase64 || secSalt);
         return err(decryptRes.error);
       }
     }
@@ -368,18 +468,24 @@ export async function unlock(
   const gistRes = await resolveGistContent();
   if (gistRes.isErr()) {
     clearDerivedKey();
+    await recordMasterPasswordFailure(attempts, saltBase64 || secSalt);
     return err(gistRes.error);
   }
   const { content: existingGistContent, salt: extractedSalt } = gistRes.value;
   if (extractedSalt && !saltBase64) {
     saltBase64 = extractedSalt;
-    await updateAccountSettings({ salt: saltBase64 });
-    setAccountStore(STORE_KEY_SALT, saltBase64);
+    const updatedMpConfig = {
+      ...accSettings.masterPasswordConfig,
+      salt: saltBase64,
+    };
+    await updateAccountSettings({ masterPasswordConfig: updatedMpConfig });
+    setAccountStore("masterPasswordConfig", updatedMpConfig);
   }
 
   // C. Nếu chưa có salt, trả về lỗi không tìm thấy Gist
   if (!saltBase64) {
     clearDerivedKey();
+    await recordMasterPasswordFailure(attempts, saltBase64 || secSalt);
     return err("github_error_gist_not_found");
   }
 
@@ -388,11 +494,13 @@ export async function unlock(
     const keyRes = await getOrDeriveKey(password, saltBase64);
     if (keyRes.isErr()) {
       clearDerivedKey();
+      await recordMasterPasswordFailure(attempts, saltBase64);
       return err(keyRes.error);
     }
     key = keyRes.value;
   }
   if (!key) {
+    await recordMasterPasswordFailure(attempts, saltBase64);
     return err("settings_error_mp_fail");
   }
 
@@ -400,31 +508,41 @@ export async function unlock(
   const activeToken = await getGithubToken();
   if (
     activeToken &&
-    (!accSettings.githubTokenEncrypted || !accSettings.githubTokenIv)
+    (!githubConfig.githubTokenEncrypted || !githubConfig.githubTokenIv)
   ) {
     const encryptRes = await encryptData(activeToken, key);
     if (encryptRes.isErr()) {
       clearDerivedKey();
+      await recordMasterPasswordFailure(attempts, saltBase64);
       return err(encryptRes.error);
     }
-    await updateAccountSettings({
+    const updatedGithubConfig = {
+      ...githubConfig,
       githubTokenEncrypted: encryptRes.value.ciphertext,
       githubTokenIv: encryptRes.value.iv,
+    };
+    await updateAccountSettings({
+      githubConfig: updatedGithubConfig,
     });
+    setAccountStore("githubConfig", updatedGithubConfig);
     await removeSessionItem(SESSION_KEY_PENDING_GITHUB_TOKEN);
   }
 
   // F. Giải mã két sắt từ Gist
   if (!existingGistContent) {
     clearDerivedKey();
+    await recordMasterPasswordFailure(attempts, saltBase64);
     return err("github_error_gist_not_found");
   }
 
   const decryptVaultRes = await decryptGistVault(existingGistContent, key);
   if (decryptVaultRes.isErr()) {
     clearDerivedKey();
+    await recordMasterPasswordFailure(attempts, saltBase64);
     return err(decryptVaultRes.error);
   }
+
+  await resetMasterPasswordSecurity(saltBase64);
 
   const { items, trash, targetView, selectedItem } = decryptVaultRes.value;
   await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, existingGistContent);
@@ -442,7 +560,7 @@ export async function unlockVaultWithKey(
   if (accSettingsRes.isErr()) return err(accSettingsRes.error);
   const accSettings = accSettingsRes.value;
   const currentToken = await getGithubToken();
-  const githubConfigured = !!accSettings.githubTokenEncrypted ||
+  const githubConfigured = !!accSettings.githubConfig.githubTokenEncrypted ||
     !!currentToken || !!accountStore.githubToken;
   if (!githubConfigured) {
     sessionManager.clearKey();
@@ -480,72 +598,172 @@ export async function unlockVaultWithKey(
 export async function unlockVaultWithMasterPassword(
   password: string,
 ): Promise<Result<void, TranslationKey>> {
+  const secRes = await verifyMasterPasswordSecurity();
+  if (secRes.isErr()) {
+    return err(secRes.error);
+  }
+  const { attempts, salt: secSalt } = secRes.value;
+
   const accSettingsRes = await getAccountSettings();
-  if (accSettingsRes.isErr()) return err(accSettingsRes.error);
+  if (accSettingsRes.isErr()) {
+    await recordMasterPasswordFailure(attempts, secSalt);
+    return err(accSettingsRes.error);
+  }
   const accSettings = accSettingsRes.value;
   const currentToken = await getGithubToken();
-  const githubConfigured = !!accSettings.githubTokenEncrypted ||
+  const githubConfigured = !!accSettings.githubConfig.githubTokenEncrypted ||
     !!currentToken || !!accountStore.githubToken;
   if (!githubConfigured) {
     sessionManager.clearKey();
+    await recordMasterPasswordFailure(attempts, secSalt);
     return err("login_error_invalid_token");
   }
 
-  const saltBase64 = accSettings.salt || accountStore.salt;
+  const saltBase64 = accSettings.masterPasswordConfig.salt;
   if (!saltBase64) {
     sessionManager.clearKey();
+    await recordMasterPasswordFailure(attempts, secSalt);
     return err("login_error_wrong_mp");
   }
 
   const keyRes = await getOrDeriveKey(password, saltBase64);
   if (keyRes.isErr()) {
     sessionManager.clearKey();
+    await recordMasterPasswordFailure(attempts, saltBase64);
     return err(keyRes.error);
   }
-  return await unlockVaultWithKey(keyRes.value);
+
+  const unlockRes = await unlockVaultWithKey(keyRes.value);
+  if (unlockRes.isErr()) {
+    await recordMasterPasswordFailure(attempts, saltBase64);
+    return err(unlockRes.error);
+  }
+
+  await resetMasterPasswordSecurity(saltBase64);
+  return ok();
+}
+
+async function clearPinUnlockState(): Promise<void> {
+  setAccountStore("pinConfig", DEFAULT_PIN_CONFIG);
+  setSettingsStore("requireMasterPasswordOnRestart", true);
+  await updateAccountSettings({ pinConfig: DEFAULT_PIN_CONFIG });
+  await updateExtensionSettings({ requireMasterPasswordOnRestart: true });
+}
+
+async function handlePinFailure(
+  attempts: number,
+): Promise<Result<void, TranslationKey>> {
+  if (attempts >= 3) {
+    await clearPinUnlockState();
+    await logoutVaultSession();
+    return err("login_error_pin_max_attempts_reached");
+  }
+  if (attempts === 1) {
+    return err("login_error_wrong_pin_2_left");
+  }
+  return err("login_error_wrong_pin_1_left");
 }
 
 export async function unlockVaultWithPin(
   pin: string,
 ): Promise<Result<void, TranslationKey>> {
-  if (
-    !accountStore.pinUnlockValue ||
-    !accountStore.pinUnlockIv ||
-    !accountStore.pinUnlockSalt
-  ) {
+  const config = accountStore.pinConfig;
+  if (!config.enabled || !config.value || !config.iv || !config.salt) {
     return err("login_error_wrong_pin");
   }
 
-  const saltBufferRes = base64ToArrayBuffer(accountStore.pinUnlockSalt);
-  if (saltBufferRes.isErr()) {
+  const accSettingsRes = await getAccountSettings();
+  const currentConfig = accSettingsRes.isOk()
+    ? accSettingsRes.value.pinConfig
+    : config;
+
+  if (!currentConfig.enabled || !currentConfig.value || !currentConfig.salt) {
     return err("login_error_wrong_pin");
   }
+
+  // 1. Integrity check: Verify failedMac
+  const expectedMacRes = await computeHmac(
+    String(currentConfig.failedAttempts),
+    currentConfig.salt,
+  );
+  const expectedMac = expectedMacRes.isOk() ? expectedMacRes.value : "";
+
+  if (
+    !currentConfig.failedMac ||
+    currentConfig.failedMac !== expectedMac
+  ) {
+    await clearPinUnlockState();
+    await logoutVaultSession();
+    return err("login_error_pin_tampered");
+  }
+
+  // 2. Lockout check
+  if (currentConfig.failedAttempts >= 3) {
+    await clearPinUnlockState();
+    await logoutVaultSession();
+    return err("login_error_pin_max_attempts_reached");
+  }
+
+  // 3. Eager write: Increment attempts and compute new MAC before testing cryptographic decryption
+  const nextAttempts = currentConfig.failedAttempts + 1;
+  const nextMacRes = await computeHmac(
+    String(nextAttempts),
+    currentConfig.salt,
+  );
+  const nextMac = nextMacRes.isOk() ? nextMacRes.value : "";
+
+  const updatedConfig = {
+    ...currentConfig,
+    failedAttempts: nextAttempts,
+    failedMac: nextMac,
+  };
+
+  setAccountStore("pinConfig", updatedConfig);
+  await updateAccountSettings({ pinConfig: updatedConfig });
+
+  // 4. Test PIN decryption
+  const saltBufferRes = base64ToArrayBuffer(currentConfig.salt);
+  if (saltBufferRes.isErr()) {
+    return await handlePinFailure(nextAttempts);
+  }
+
   const pinKeyRes = await deriveKey(pin, new Uint8Array(saltBufferRes.value));
   if (pinKeyRes.isErr()) {
-    return err("login_error_wrong_pin");
+    return await handlePinFailure(nextAttempts);
   }
-  const pinKey = pinKeyRes.value;
+
   const decryptRes = await decryptData(
-    accountStore.pinUnlockValue,
-    accountStore.pinUnlockIv,
-    pinKey,
+    currentConfig.value,
+    currentConfig.iv,
+    pinKeyRes.value,
   );
   if (decryptRes.isErr()) {
-    return err("login_error_wrong_pin");
+    return await handlePinFailure(nextAttempts);
   }
 
   const bufferRes = base64ToArrayBuffer(decryptRes.value);
   if (bufferRes.isErr()) {
-    return err("login_error_wrong_pin");
+    return await handlePinFailure(nextAttempts);
   }
+
   const importRes = await importAesGcmKey(
     bufferRes.value,
     "login_error_wrong_pin",
   );
-
   if (importRes.isErr()) {
-    return err(importRes.error);
+    return await handlePinFailure(nextAttempts);
   }
+
+  // 5. Success! Reset failedAttempts to 0
+  const resetMacRes = await computeHmac("0", currentConfig.salt);
+  const resetMac = resetMacRes.isOk() ? resetMacRes.value : "";
+  const resetConfig = {
+    ...currentConfig,
+    failedAttempts: 0,
+    failedMac: resetMac,
+  };
+  setAccountStore("pinConfig", resetConfig);
+  await updateAccountSettings({ pinConfig: resetConfig });
 
   return await unlockVaultWithKey(importRes.value);
 }
@@ -596,7 +814,9 @@ export async function acceptWelcome() {
 
 export async function reloadVaultItems(): Promise<void> {
   const key = await getSessionKey();
-  if (!key || !accountStore.salt || accountStore.isLocked) return;
+  if (
+    !key || !accountStore.masterPasswordConfig.salt || accountStore.isLocked
+  ) return;
 
   const contentRes = await fetchEncryptedVaultContent();
   if (contentRes.isErr() || !contentRes.value) return;

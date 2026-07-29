@@ -54,7 +54,7 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
   if (settingsRes.isErr()) {
     return false;
   }
-  const saltBase64 = settingsRes.value.salt;
+  const saltBase64 = settingsRes.value.masterPasswordConfig.salt;
   if (
     typeof ivB64 !== "string" ||
     typeof ciphertextB64 !== "string" ||

@@ -69,17 +69,66 @@ export const ExtensionSettingsSchema = z.object({
 });
 export type ExtensionSettings = z.infer<typeof ExtensionSettingsSchema>;
 
-export const AccountSettingsSchema = z.object({
+export const PinUnlockConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  value: z.string().default(""),
+  iv: z.string().default(""),
+  salt: z.string().default(""),
+  failedAttempts: z.number().default(0),
+  failedMac: z.string().default(""),
+});
+export type PinUnlockConfig = z.infer<typeof PinUnlockConfigSchema>;
+
+export const DEFAULT_PIN_CONFIG: PinUnlockConfig = Object.freeze({
+  enabled: false,
+  value: "",
+  iv: "",
+  salt: "",
+  failedAttempts: 0,
+  failedMac: "",
+});
+
+export const MasterPasswordSecurityConfigSchema = z.object({
+  salt: z.string().default(""),
+  failedAttempts: z.number().default(0),
+  lockoutUntil: z.number().default(0),
+  failedMac: z.string().default(""),
+});
+export type MasterPasswordSecurityConfig = z.infer<
+  typeof MasterPasswordSecurityConfigSchema
+>;
+
+export const DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG:
+  MasterPasswordSecurityConfig = Object.freeze({
+    salt: "",
+    failedAttempts: 0,
+    lockoutUntil: 0,
+    failedMac: "",
+  });
+
+export const GithubConfigSchema = z.object({
+  gistId: z.string().default(""),
   githubTokenEncrypted: z.string().default(""),
   githubTokenIv: z.string().default(""),
-  gistId: z.string().default(""),
-  salt: z.string().default(""),
+  username: z.string().default(""),
+  avatarUrl: z.string().default(""),
+});
+export type GithubConfig = z.infer<typeof GithubConfigSchema>;
+
+export const DEFAULT_GITHUB_CONFIG: GithubConfig = Object.freeze({
+  gistId: "",
+  githubTokenEncrypted: "",
+  githubTokenIv: "",
+  username: "",
+  avatarUrl: "",
+});
+
+export const AccountSettingsSchema = z.object({
+  githubConfig: GithubConfigSchema.default(DEFAULT_GITHUB_CONFIG),
   lastSync: z.number().default(0),
-  lastSyncedHash: z.string().default(""),
-  cachedGithubUser: GithubUserSchema.nullable().default(null),
-  pinUnlockEnabled: z.boolean().default(false),
-  pinUnlockValue: z.string().default(""),
-  pinUnlockIv: z.string().default(""),
-  pinUnlockSalt: z.string().default(""),
+  pinConfig: PinUnlockConfigSchema.default(DEFAULT_PIN_CONFIG),
+  masterPasswordConfig: MasterPasswordSecurityConfigSchema.default(
+    DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG,
+  ),
 });
 export type AccountSettings = z.infer<typeof AccountSettingsSchema>;

@@ -109,6 +109,34 @@ export function base64ToArrayBuffer(
   }
 }
 
+export async function computeHmac(
+  message: string,
+  secretKey: string,
+): Promise<Result<string, TranslationKey>> {
+  try {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(
+      secretKey || "gistwarden_default_hmac_secret",
+    );
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const signature = await crypto.subtle.sign(
+      "HMAC",
+      cryptoKey,
+      encoder.encode(message),
+    );
+    return ok(arrayBufferToBase64(signature));
+  } catch (e) {
+    logger.crypto.error("HMAC computation failed:", e);
+    return err("crypto_error_encrypt_failed");
+  }
+}
+
 export async function hashValue(
   value: string,
   saltBase64: string,
@@ -247,7 +275,7 @@ function parseLegacyRsaPem(base64Str: string): Uint8Array | null {
       return { modulus, publicExponent };
     },
     (e) => {
-      console.error("[parseLegacyRsaPem Error]", e);
+      logger.crypto.error("[parseLegacyRsaPem Error]", e);
       return null;
     },
   )();

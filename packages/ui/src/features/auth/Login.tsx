@@ -49,7 +49,7 @@ export const Login: Component = () => {
 
   createEffect(() => {
     const isConfigured = accountStore.githubConfigured;
-    const hasSalt = accountStore.salt;
+    const hasSalt = accountStore.masterPasswordConfig.salt;
     const mode = viewMode();
 
     if (isConfigured && !hasSalt && mode === "masterPassword") {
@@ -93,7 +93,7 @@ export const Login: Component = () => {
 
   createEffect(() => {
     if (accountStore.isLoaded && settingsStore.isLoaded) {
-      if (accountStore.pinUnlockEnabled) {
+      if (accountStore.pinConfig.enabled) {
         if (settingsStore.requireMasterPasswordOnRestart) {
           setViewMode(accountStore.sessionUnlocked ? "pin" : "masterPassword");
         } else {

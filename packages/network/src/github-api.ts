@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  DEFAULT_GITHUB_CONFIG,
   getAccountSettings,
   getGithubToken,
   GithubUserSchema,
@@ -157,7 +158,7 @@ export async function uploadToGist(
 ): Promise<Result<void, TranslationKey>> {
   const settingsRes = await getAccountSettings();
   if (settingsRes.isErr()) return err(settingsRes.error);
-  let gistId = settingsRes.value.gistId;
+  let gistId = settingsRes.value.githubConfig.gistId;
 
   if (!gistId) {
     const findRes = await findGistId();
@@ -180,8 +181,11 @@ export async function uploadToGist(
     gistId = createRes.value.id;
   }
 
+  const currentGithubConfig = settingsRes.value.githubConfig;
+  const updatedGithubConfig = { ...currentGithubConfig, gistId };
+
   const updateSettingsRes = await updateAccountSettings({
-    gistId,
+    githubConfig: updatedGithubConfig,
     lastSync: Date.now(),
   });
   if (updateSettingsRes.isErr()) {
@@ -272,8 +276,8 @@ export async function downloadFromGist(): Promise<
 > {
   const settingsRes = await getAccountSettings();
   const settings = settingsRes.isOk() ? settingsRes.value : null;
-  let gistId = settings?.gistId || "";
-  const username = settings?.cachedGithubUser?.login || "";
+  let gistId = settings?.githubConfig.gistId || "";
+  const username = settings?.githubConfig.username || "";
 
   // 1. Nếu đã có gistId -> Thử tải qua Raw Gist CDN URL trước (Tốc độ cao, không tốn Rate Limit REST API)
   if (gistId) {
@@ -303,7 +307,14 @@ export async function downloadFromGist(): Promise<
 
   const downloadRes = await getGist(gistId);
   if (downloadRes.isOk()) {
-    await updateAccountSettings({ gistId, lastSync: Date.now() });
+    const updatedGithubConfig = {
+      ...(settings?.githubConfig || DEFAULT_GITHUB_CONFIG),
+      gistId,
+    };
+    await updateAccountSettings({
+      githubConfig: updatedGithubConfig,
+      lastSync: Date.now(),
+    });
   }
   return downloadRes;
 }

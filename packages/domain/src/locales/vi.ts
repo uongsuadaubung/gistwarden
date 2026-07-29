@@ -129,6 +129,10 @@ export default {
   caps_lock_on: "Caps Lock đang bật",
   login_error_changed_mp_hint:
     "Nếu bạn vừa đổi Mật khẩu Master trên một thiết bị khác, bạn cần phải Đăng xuất và đăng nhập lại.",
+  login_error_mp_cooldown:
+    "Nhập sai Mật khẩu Master nhiều lần. Vui lòng thử lại sau.",
+  login_error_mp_tampered:
+    "Dữ liệu bảo vệ Mật khẩu Master bị thay đổi trái phép. Hệ thống đã đăng xuất để bảo vệ tài khoản.",
   login_error_unlock_fail: "Lỗi mở khóa",
   login_forgot_password_title: "Quên mật khẩu Master",
   login_forgot_password_msg:
@@ -424,6 +428,13 @@ export default {
   login_unlock_with_mp: "Mở khóa bằng Mật khẩu Master",
   login_pin_placeholder: "Nhập mã PIN của bạn...",
   login_error_wrong_pin: "Mã PIN không chính xác.",
+  login_error_wrong_pin_2_left: "Mã PIN không chính xác. Bạn còn 2 lần thử.",
+  login_error_wrong_pin_1_left:
+    "Mã PIN không chính xác. Bạn còn 1 lần thử cuối!",
+  login_error_pin_max_attempts_reached:
+    "Đã nhập sai Mã PIN 3 lần. Hệ thống đã đăng xuất để bảo vệ tài khoản.",
+  login_error_pin_tampered:
+    "Dữ liệu mã PIN bị thay đổi trái phép. Hệ thống đã đăng xuất để bảo vệ an toàn.",
   settings_change_mp_title: "Đổi mật khẩu Master",
   settings_change_mp_sub: "Mã hóa lại két sắt bằng mật khẩu mới",
   settings_lock_sub: "Mở lại bằng Mật khẩu Master",

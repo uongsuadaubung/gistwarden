@@ -1,10 +1,11 @@
 import { setAccountStore, setSettingsStore } from "@/core/store.ts";
 import {
+  DEFAULT_PIN_CONFIG,
   updateAccountSettings,
   updateExtensionSettings,
 } from "@/core/storage.ts";
 import { arrayBufferToBase64, deriveKey } from "@/core/crypto.ts";
-import { encryptData, generateSalt } from "@gistwarden/domain";
+import { computeHmac, encryptData, generateSalt } from "@gistwarden/domain";
 import { getSessionKey } from "@gistwarden/orchestrator";
 
 import { unlockVaultWithPin } from "@/features/auth/auth-service.ts";
@@ -36,20 +37,22 @@ export async function setPinUnlock(
   }
   const { iv, ciphertext } = encryptRes.value;
 
-  setAccountStore({
-    pinUnlockEnabled: true,
-    pinUnlockValue: ciphertext,
-    pinUnlockIv: iv,
-    pinUnlockSalt: pinSaltBase64,
-  });
+  const macRes = await computeHmac("0", pinSaltBase64);
+  const failedMac = macRes.isOk() ? macRes.value : "";
+
+  const pinConfig = {
+    enabled: true,
+    value: ciphertext,
+    iv: iv,
+    salt: pinSaltBase64,
+    failedAttempts: 0,
+    failedMac,
+  };
+
+  setAccountStore("pinConfig", pinConfig);
   setSettingsStore("requireMasterPasswordOnRestart", requireRestart);
 
-  await updateAccountSettings({
-    pinUnlockEnabled: true,
-    pinUnlockValue: ciphertext,
-    pinUnlockIv: iv,
-    pinUnlockSalt: pinSaltBase64,
-  });
+  await updateAccountSettings({ pinConfig });
   await updateExtensionSettings({
     requireMasterPasswordOnRestart: requireRestart,
   });
@@ -64,20 +67,10 @@ export async function unlockWithPin(
 }
 
 export async function disablePinUnlock(): Promise<void> {
-  setAccountStore({
-    pinUnlockEnabled: false,
-    pinUnlockValue: "",
-    pinUnlockIv: "",
-    pinUnlockSalt: "",
-  });
+  setAccountStore("pinConfig", DEFAULT_PIN_CONFIG);
   setSettingsStore("requireMasterPasswordOnRestart", true);
 
-  await updateAccountSettings({
-    pinUnlockEnabled: false,
-    pinUnlockValue: "",
-    pinUnlockIv: "",
-    pinUnlockSalt: "",
-  });
+  await updateAccountSettings({ pinConfig: DEFAULT_PIN_CONFIG });
   await updateExtensionSettings({
     requireMasterPasswordOnRestart: true,
   });

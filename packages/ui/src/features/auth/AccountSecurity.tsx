@@ -77,7 +77,7 @@ export const AccountSecurity: Component = () => {
     );
   };
 
-  const isPinEnabled = () => accountStore.pinUnlockEnabled;
+  const isPinEnabled = () => accountStore.pinConfig.enabled;
   const isRequireRestart = () => settingsStore.requireMasterPasswordOnRestart;
   const currentTimeout = () => settingsStore.vaultTimeout;
   const currentTimeoutAction = () => settingsStore.vaultTimeoutAction;

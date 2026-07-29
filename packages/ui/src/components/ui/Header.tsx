@@ -52,7 +52,7 @@ export const Header: Component<HeaderProps> = (props) => {
   });
 
   const initials = () => {
-    const login = accountStore.cachedGithubUser?.login;
+    const login = accountStore.githubConfig.username;
     if (!login) return "ME";
     if (login.length >= 2) {
       return login.slice(0, 2).toUpperCase();
@@ -188,7 +188,7 @@ export const Header: Component<HeaderProps> = (props) => {
         <div class="profile-menu-container">
           <div
             class={`profile-avatar-btn ${
-              accountStore.cachedGithubUser?.avatar_url && !imgFailed()
+              accountStore.githubConfig.avatarUrl && !imgFailed()
                 ? "has-image"
                 : ""
             }`}
@@ -196,14 +196,14 @@ export const Header: Component<HeaderProps> = (props) => {
               e.stopPropagation();
               setShowProfileMenu(!showProfileMenu());
             }}
-            title={accountStore.cachedGithubUser?.login || "Profile"}
+            title={accountStore.githubConfig.username || "Profile"}
           >
             <Show
-              when={accountStore.cachedGithubUser?.avatar_url && !imgFailed()}
+              when={accountStore.githubConfig.avatarUrl && !imgFailed()}
               fallback={initials()}
             >
               <img
-                src={accountStore.cachedGithubUser?.avatar_url}
+                src={accountStore.githubConfig.avatarUrl}
                 alt="Avatar"
                 class="profile-avatar-img"
                 onError={() => setImgFailed(true)}
@@ -212,14 +212,14 @@ export const Header: Component<HeaderProps> = (props) => {
           </div>
           <Show when={showProfileMenu()}>
             <div class="profile-dropdown" onClick={(e) => e.stopPropagation()}>
-              <Show when={accountStore.cachedGithubUser}>
+              <Show when={accountStore.githubConfig.username}>
                 <div class="profile-info">
                   <span
                     class="profile-username cursor-pointer"
                     onClick={handleOpenGistClick}
                     title={t("settings_open_gist_title")}
                   >
-                    @{accountStore.cachedGithubUser?.login}
+                    @{accountStore.githubConfig.username}
                   </span>
                 </div>
                 <div class="dropdown-divider" />

@@ -45,7 +45,7 @@ export const MasterPasswordForm: Component<MasterPasswordFormProps> = (
       </Button>
 
       <Show
-        when={accountStore.pinUnlockEnabled &&
+        when={accountStore.pinConfig.enabled &&
           !(settingsStore.requireMasterPasswordOnRestart &&
             !accountStore.sessionUnlocked)}
       >
