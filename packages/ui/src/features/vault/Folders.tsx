@@ -89,7 +89,7 @@ export const Folders: Component = () => {
               class="d-flex align-items-center gap-4 py-4 px-12"
             >
               <PlusIcon class="icon-inline" />
-              <span>New</span>
+              <span>{t("folder_new_title")}</span>
             </Button>
           }
         />
