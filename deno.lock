@@ -1,10 +1,11 @@
 {
   "version": "5",
   "specifiers": {
-    "npm:@solidjs/router@~0.16.2": "0.16.2_solid-js@1.9.14",
+    "npm:@solidjs/router@~0.16.2": "0.16.3_solid-js@1.9.14",
+    "npm:@solidjs/router@~0.16.3": "0.16.3_solid-js@1.9.14",
     "npm:@types/chrome@~0.1.42": "0.1.43",
     "npm:adm-zip@0.6": "0.6.0",
-    "npm:consola@^3.4.0": "3.4.2",
+    "npm:consola@^3.4.2": "3.4.2",
     "npm:esbuild-plugin-solid@0.6": "0.6.0_esbuild@0.28.1_solid-js@1.9.14",
     "npm:esbuild@~0.28.1": "0.28.1",
     "npm:graceful-fs@*": "4.2.11",
@@ -16,7 +17,7 @@
     "npm:otpauth@^9.5.1": "9.5.1",
     "npm:papaparse@^5.5.4": "5.5.4",
     "npm:qrcode-parser@^2.1.3": "2.1.3",
-    "npm:sass@^1.99.0": "1.101.0",
+    "npm:sass@^1.102.0": "1.102.0",
     "npm:solid-js@*": "1.9.14",
     "npm:solid-js@^1.9.14": "1.9.14",
     "npm:tldts@^7.4.9": "7.4.9",
@@ -858,8 +859,8 @@
       "os": ["linux"],
       "cpu": ["x64"]
     },
-    "@solidjs/router@0.16.2_solid-js@1.9.14": {
-      "integrity": "sha512-pncbV4SGUwGGlELlDWc3B4KDVB0Kt+7+7ct+GTN7D8CgetGSJMzl8RzyAFz+/TtSuFFzp9IzrjrACHUpGzxsKQ==",
+    "@solidjs/router@0.16.3_solid-js@1.9.14": {
+      "integrity": "sha512-WWQkmSmSpl+15HgUktGPbeXkgWmonj4XwPOcZVHJz1EQV3dz5qWHIyQ/BKXFevor6u/0dKvC9FlUmKmDwE1QHw==",
       "dependencies": [
         "solid-js"
       ]
@@ -1500,8 +1501,8 @@
     "safer-buffer@2.1.2": {
       "integrity": "sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg=="
     },
-    "sass@1.101.0": {
-      "integrity": "sha512-OL3GoQyoUdDt843DpVmDO6y2k1sc5IhUDSpu8XucEI+35neq5QivZ1iuegnpraEVTJXlQGK1gl27zKcTLEPbQw==",
+    "sass@1.102.0": {
+      "integrity": "sha512-NSOyTnaQF7rTAEOtI2fwb386vL+akyiQLBZu8Na7hXCb+umJy0GAqlcMIaqACZ6Z1VgTBS4K9PG6B3IdjHGJsw==",
       "dependencies": [
         "chokidar",
         "immutable",
@@ -1746,10 +1747,10 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
-      "npm:@solidjs/router@~0.16.2",
+      "npm:@solidjs/router@~0.16.3",
       "npm:@types/chrome@~0.1.42",
       "npm:adm-zip@0.6",
-      "npm:consola@^3.4.0",
+      "npm:consola@^3.4.2",
       "npm:esbuild-plugin-solid@0.6",
       "npm:esbuild@~0.28.1",
       "npm:hash-wasm@^4.12.0",
@@ -1758,7 +1759,7 @@
       "npm:otpauth@^9.5.1",
       "npm:papaparse@^5.5.4",
       "npm:qrcode-parser@^2.1.3",
-      "npm:sass@^1.99.0",
+      "npm:sass@^1.102.0",
       "npm:solid-js@*",
       "npm:solid-js@^1.9.14",
       "npm:tldts@^7.4.9",
