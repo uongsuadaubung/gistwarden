@@ -92,7 +92,7 @@ export default {
   login_pat_help:
     "Token needs <strong>gist</strong> scope. The extension will create a secret Gist to store your encrypted vault.",
   login_oauth_help:
-    "Connect securely to your GitHub account to sync your vault automatically via your private Cloudflare Worker Proxy.",
+    "Connect securely to your GitHub account to sync your vault automatically via Cloudflare Worker Proxy.",
   login_oauth_hide: "Hide OAuth Configuration",
   login_oauth_show: "Show OAuth Configuration",
   login_oauth_alert_save: "OAuth configuration saved!",
@@ -620,11 +620,10 @@ export default {
     "Log in to GitHub and click the green button below to open the token creation page. Give it a descriptive note (e.g., '{APP_NAME}') and select 'No expiration' so sync doesn't break later.",
   guide_token_step1_btn: "Open GitHub Token Creation Page",
   guide_token_step1_img_info: "Name the Token and choose expiration time",
-  guide_token_step2_title: "Step 2: Check 'gist' and 'read:user' Scopes",
+  guide_token_step2_title: "Step 2: Check 'gist' Scope",
   guide_token_step2_desc:
-    "Find and select the 'gist' checkbox (to sync your vault) and 'read:user' (under the 'user' section - to display your username and avatar in Settings). These scopes only permit {APP_NAME} to access Gists and public profile info, and don't grant access to any of your private repositories.",
-  guide_token_step2_img_info:
-    "Ensure 'gist' and 'read:user' scopes are checked",
+    "Find and select the 'gist' checkbox (to sync your vault). This scope only permits {APP_NAME} to access Gists, and doesn't grant access to any of your private repositories.",
+  guide_token_step2_img_info: "Ensure 'gist' scope is checked",
   guide_token_step3_title: "Step 3: Generate Token",
   guide_token_step3_desc:
     "Scroll to the bottom of the page and click the green 'Generate token' button to create your token.",

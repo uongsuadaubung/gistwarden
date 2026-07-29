@@ -95,7 +95,7 @@ export default {
   login_pat_help:
     "Token cần có quyền truy cập <strong>gist</strong>. Tiện ích sẽ tạo một Gist bí mật (secret gist) để lưu trữ két sắt đã mã hóa của bạn.",
   login_oauth_help:
-    "Kết nối tự động và an toàn với tài khoản GitHub của bạn để đồng bộ két sắt tự động qua Cloudflare Worker Proxy riêng tư của bạn.",
+    "Kết nối tự động và an toàn với tài khoản GitHub của bạn để đồng bộ két sắt tự động qua máy chủ Cloudflare Worker Proxy.",
   login_oauth_hide: "Ẩn cấu hình OAuth",
   login_oauth_show: "Hiện cấu hình OAuth",
   login_oauth_alert_save: "Đã lưu thông số cấu hình OAuth!",
@@ -626,11 +626,10 @@ export default {
     "Đăng nhập GitHub, bấm nút màu xanh bên dưới để mở nhanh trang tạo Token. Hãy đặt một cái tên dễ nhớ (ví dụ: '{APP_NAME}') và chọn hạn dùng là 'No expiration' (Không hết hạn) để không bị lỗi đồng bộ sau này.",
   guide_token_step1_btn: "Mở trang tạo Token trên GitHub",
   guide_token_step1_img_info: "Đặt tên Token và chọn thời gian hết hạn",
-  guide_token_step2_title: "Bước 2: Tích chọn quyền Gist và read:user",
+  guide_token_step2_title: "Bước 2: Tích chọn quyền Gist",
   guide_token_step2_desc:
-    "Tìm và tích chọn vào ô 'gist' (để đồng bộ két sắt) và quyền 'read:user' (dưới mục 'user' - để hiển thị tên đăng nhập và ảnh đại diện của bạn). Các quyền này chỉ cho phép {APP_NAME} truy cập gist và thông tin profile công khai, hoàn toàn không xem được các repository code riêng tư khác của bạn.",
-  guide_token_step2_img_info:
-    "Đảm bảo đã tích chọn quyền 'gist' và 'read:user'",
+    "Tìm và tích chọn vào ô 'gist' (để đồng bộ két sắt). Quyền này chỉ cho phép {APP_NAME} truy cập gist, hoàn toàn không xem được các repository code riêng tư khác của bạn.",
+  guide_token_step2_img_info: "Đảm bảo đã tích chọn quyền 'gist'",
   guide_token_step3_title: "Bước 3: Tạo mã Token",
   guide_token_step3_desc:
     "Cuộn xuống cuối trang rồi nhấn nút 'Generate token' màu xanh lá để tạo mã.",

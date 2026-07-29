@@ -31,7 +31,7 @@ export const GistTab: Component = () => {
             <a
               href={`https://github.com/settings/tokens/new?description=${
                 encodeURIComponent(APP_NAME)
-              }&scopes=gist,read:user`}
+              }&scopes=gist`}
               target="_blank"
               rel="noopener noreferrer"
               class="action-link-btn"

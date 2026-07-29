@@ -349,7 +349,7 @@ export function launchGithubOauthFlow(
 
     const redirectUri = chrome.identity.getRedirectURL();
     const authUrl =
-      `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=gist,read:user&state=${
+      `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=gist&state=${
         encodeURIComponent(redirectUri)
       }`;
 
