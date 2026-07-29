@@ -102,6 +102,7 @@ Deno.test("Export CSV - Bitwarden CSV format", () => {
     "notes",
     "fields",
     "reprompt",
+    "archivedDate",
     "login_uri",
     "login_username",
     "login_password",
@@ -117,10 +118,11 @@ Deno.test("Export CSV - Bitwarden CSV format", () => {
   assertEquals(loginRow[4], "Note 1");
   assertEquals(loginRow[5], 'custom1:value1\ncustom2:value"2');
   assertEquals(loginRow[6], "1");
-  assertEquals(loginRow[7], "https://google.com");
-  assertEquals(loginRow[8], "user1");
-  assertEquals(loginRow[9], "pass1");
-  assertEquals(loginRow[10], "secret123");
+  assertEquals(loginRow[7], "");
+  assertEquals(loginRow[8], "https://google.com");
+  assertEquals(loginRow[9], "user1");
+  assertEquals(loginRow[10], "pass1");
+  assertEquals(loginRow[11], "secret123");
 
   // Note row verification
   const noteRow = rows[2];
@@ -135,4 +137,5 @@ Deno.test("Export CSV - Bitwarden CSV format", () => {
   assertEquals(noteRow[8], "");
   assertEquals(noteRow[9], "");
   assertEquals(noteRow[10], "");
+  assertEquals(noteRow[11], "");
 });

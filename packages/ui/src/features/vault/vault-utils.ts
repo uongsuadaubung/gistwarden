@@ -32,6 +32,7 @@ export function mapCustomFields(
 
 export interface CreateBaseVaultItemInput {
   id?: string;
+  folderId?: string | null;
   name?: string | null;
   notes?: string | null;
   favorite?: boolean | null;
@@ -52,6 +53,7 @@ export function createBaseVaultItem(
   const now = new Date().toISOString();
   return {
     id: input.id !== undefined ? input.id : crypto.randomUUID(),
+    folderId: input.folderId !== undefined ? input.folderId : null,
     name: (input.name ?? "").trim() || (input.fallbackName ?? ""),
     notes: (input.notes ?? "").trim(),
     favorite: !!input.favorite,
@@ -264,6 +266,7 @@ export function mergeVaultItem(
 
   const baseItem: Record<string, unknown> = {
     id: existing.id,
+    folderId: patch.folderId !== undefined ? patch.folderId : existing.folderId,
     type: targetType,
     name: patch.name !== undefined ? patch.name : existing.name,
     notes: patch.notes !== undefined ? patch.notes : existing.notes,
@@ -301,6 +304,7 @@ export function createDefaultVaultItem(
 
   const baseItem: Record<string, unknown> = {
     id: patch.id || crypto.randomUUID(),
+    folderId: patch.folderId || null,
     type: targetType,
     name: patch.name || "Chưa đặt tên",
     notes: patch.notes || "",

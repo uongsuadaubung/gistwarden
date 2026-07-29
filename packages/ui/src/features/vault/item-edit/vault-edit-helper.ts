@@ -20,6 +20,7 @@ import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
 
 export const ItemEditFormSchema = z.object({
   itemType: z.nativeEnum(VaultItemType),
+  folderId: z.string().nullable().optional(),
   name: z.string(),
   notes: z.string(),
   favorite: z.boolean(),
@@ -66,6 +67,7 @@ export function getInitialFormState(
 ): ItemEditFormState {
   const defaults: ItemEditFormState = {
     itemType: VaultItemType.Login,
+    folderId: null,
     name: "",
     notes: "",
     favorite: false,
@@ -110,6 +112,7 @@ export function getInitialFormState(
   const state: ItemEditFormState = {
     ...defaults,
     itemType: item.type,
+    folderId: item.folderId ?? null,
     name: item.name ?? "",
     notes: item.notes ?? "",
     favorite: item.favorite ?? false,
@@ -178,6 +181,7 @@ export function mapFormStateToVaultItem(
 
   const commonData = {
     id: selectedItem?.id ?? undefined,
+    folderId: validatedForm.folderId ?? null,
     name: validatedForm.name.trim(),
     notes: validatedForm.notes.trim(),
     favorite: validatedForm.favorite,

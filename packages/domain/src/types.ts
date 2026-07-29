@@ -22,6 +22,7 @@ export enum View {
   AutofillOptions = "AutofillOptions",
   PasswordHistory = "PasswordHistory",
   Trash = "Trash",
+  Folders = "Folders",
 }
 
 export enum SupportLanguage {

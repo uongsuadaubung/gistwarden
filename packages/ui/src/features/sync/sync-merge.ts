@@ -1,4 +1,5 @@
 import type {
+  Folder,
   TrashVaultItem,
   VaultItem,
   VaultPayload,
@@ -12,6 +13,27 @@ function parseTimestamp(dateStr: string | null | undefined): number {
   if (!dateStr) return 0;
   const time = new Date(dateStr).getTime();
   return Number.isNaN(time) ? 0 : time;
+}
+
+/**
+ * Hợp nhất (Merge) danh sách Folder giữa Local và Remote.
+ */
+export function mergeFolders(
+  localFolders: readonly Folder[],
+  remoteFolders: readonly Folder[],
+): Folder[] {
+  const folderMap = new Map<string, Folder>();
+  for (const f of localFolders) {
+    if (f.id && f.name) {
+      folderMap.set(f.id, f);
+    }
+  }
+  for (const f of remoteFolders) {
+    if (f.id && f.name && !folderMap.has(f.id)) {
+      folderMap.set(f.id, f);
+    }
+  }
+  return Array.from(folderMap.values());
 }
 
 /**
@@ -90,17 +112,25 @@ export function mergeVaultItems(
 }
 
 /**
- * Hợp nhất (Merge) 2 Vault Payload bao gồm danh sách items và mảng trash[].
+ * Hợp nhất (Merge) 2 Vault Payload bao gồm danh sách folders, items và mảng trash[].
  */
 export function mergeVaultPayload(
   localPayload: Partial<VaultPayload>,
   remotePayload: Partial<VaultPayload>,
   lastSyncTimestamp: number,
-): { items: VaultItem[]; trash: TrashVaultItem[] } {
+): VaultPayload {
   const localTrash = localPayload.trash || [];
   const remoteTrash = remotePayload.trash || [];
 
-  // 1. Hợp nhất Trash: Giữ lại bản ghi có deletedDate mới hơn cho mỗi ID
+  // 1. Hợp nhất Folders: Ưu tiên localPayload.folders nếu có
+  const mergedFolders = localPayload.folders !== undefined
+    ? localPayload.folders
+    : mergeFolders(
+      localPayload.folders || [],
+      remotePayload.folders || [],
+    );
+
+  // 2. Hợp nhất Trash: Giữ lại bản ghi có deletedDate mới hơn cho mỗi ID
   const trashMap = new Map<string, TrashVaultItem>();
   for (const tItem of [...localTrash, ...remoteTrash]) {
     const existing = trashMap.get(tItem.item.id);
@@ -115,14 +145,14 @@ export function mergeVaultPayload(
     }
   }
 
-  // 2. Hợp nhất Items ứng cử viên
+  // 3. Hợp nhất Items ứng cử viên
   const candidateItems = mergeVaultItems(
     localPayload.items || [],
     remotePayload.items || [],
     lastSyncTimestamp,
   );
 
-  // 3. Lọc bỏ Item đã nằm trong Trash nếu deletedDate >= revisionDate
+  // 4. Lọc bỏ Item đã nằm trong Trash nếu deletedDate >= revisionDate
   const finalItems: VaultItem[] = [];
   for (const item of candidateItems) {
     const trashEntry = trashMap.get(item.id);
@@ -139,6 +169,7 @@ export function mergeVaultPayload(
   }
 
   return {
+    folders: mergedFolders,
     items: finalItems,
     trash: Array.from(trashMap.values()),
   };

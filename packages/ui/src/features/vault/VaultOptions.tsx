@@ -13,6 +13,7 @@ import {
 import {
   ChevronRightIcon,
   DownloadIcon,
+  FolderIcon,
   SyncIcon,
   TrashIcon,
   UploadIcon,
@@ -160,6 +161,26 @@ export const VaultOptions: Component = () => {
                 <div class="setting-label">{t("vault_options_export")}</div>
                 <div class="setting-sub">
                   {t("vault_options_export_sub")}
+                </div>
+              </div>
+            </div>
+            <ChevronRightIcon />
+          </div>
+
+          {/* Folders */}
+          <div
+            class="setting-row"
+            onClick={() => navigate(View.Folders)}
+          >
+            <div class="setting-row-left">
+              <FolderIcon />
+              <div>
+                <div class="setting-label">
+                  {t("folder_management_title")}{" "}
+                  ({(accountStore.folders || []).length})
+                </div>
+                <div class="setting-sub">
+                  {t("vault_options_folders_sub")}
                 </div>
               </div>
             </div>

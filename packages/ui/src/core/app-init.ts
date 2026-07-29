@@ -35,6 +35,7 @@ import {
 import { setLanguage, type VaultItem } from "@gistwarden/domain";
 import {
   accountStore,
+  applyVaultPayloadToStore,
   loadAllStores,
   setAccountStore,
   setSettingsStore,
@@ -182,18 +183,19 @@ async function loadAndDecryptVault(
     return;
   }
 
-  const { items, trash } = decryptVaultRes.value;
+  const { folders, items, trash } = decryptVaultRes.value;
   const { targetView, selectedItem } = await resolveSavedViewAndItem(
     items,
     isFido2Prompt,
     params,
   );
 
-  setAccountStore({
-    vaultItems: items,
-    trashItems: trash,
-    isLocked: false,
+  applyVaultPayloadToStore({
+    folders: folders || [],
+    items: items || [],
+    trash: trash || [],
   });
+  setAccountStore("isLocked", false);
   setUiStore({
     view: targetView,
     selectedItem: selectedItem || null,

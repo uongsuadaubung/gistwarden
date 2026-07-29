@@ -11,8 +11,15 @@ import {
 } from "@gistwarden/domain";
 import { Fido2CredentialSchema } from "@gistwarden/domain";
 
+export const ImportFolderSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+export type ImportFolder = z.infer<typeof ImportFolderSchema>;
+
 export const ImportLoginItemSchema = z.object({
   id: z.string().nullish(),
+  folderId: z.string().nullish(),
   type: z.literal(VaultItemType.Login),
   name: z.string(),
   notes: z.string().nullish(),
@@ -40,6 +47,7 @@ export const ImportLoginItemSchema = z.object({
 
 export const ImportSecureNoteItemSchema = z.object({
   id: z.string().nullish(),
+  folderId: z.string().nullish(),
   type: z.literal(VaultItemType.SecureNote),
   name: z.string(),
   notes: z.string().nullish(),
@@ -55,6 +63,7 @@ export const ImportSecureNoteItemSchema = z.object({
 
 export const ImportCardItemSchema = z.object({
   id: z.string().nullish(),
+  folderId: z.string().nullish(),
   type: z.literal(VaultItemType.Card),
   name: z.string(),
   notes: z.string().nullish(),
@@ -75,6 +84,7 @@ export const ImportCardItemSchema = z.object({
 
 export const ImportIdentityItemSchema = z.object({
   id: z.string().nullish(),
+  folderId: z.string().nullish(),
   type: z.literal(VaultItemType.Identity),
   name: z.string(),
   notes: z.string().nullish(),
@@ -107,6 +117,7 @@ export const ImportIdentityItemSchema = z.object({
 
 export const ImportSshKeyItemSchema = z.object({
   id: z.string().nullish(),
+  folderId: z.string().nullish(),
   type: z.literal(VaultItemType.SshKey),
   name: z.string(),
   notes: z.string().nullish(),
@@ -133,6 +144,7 @@ export type ImportItem = z.infer<typeof ImportItemSchema>;
 
 export const ImportArraySchema = z.array(ImportItemSchema);
 export const ImportObjectSchema = z.object({
+  folders: z.array(ImportFolderSchema).nullish(),
   items: z.array(ImportItemSchema),
 });
 

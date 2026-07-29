@@ -13,6 +13,7 @@ import {
 } from "@/features/vault/vault-utils.ts";
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
+import Select from "@/components/ui/Select.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
 import { TrashIcon } from "@/icons/svg/index.ts";
 import { t } from "@/core/i18n.ts";
@@ -202,7 +203,7 @@ export const ItemEdit: Component = () => {
           <div class="detail-section-title mt-0">
             {t("edit_section_item_details")}
           </div>
-          <div class="card mb-16">
+          <div class="card mb-16 overflow-visible">
             <div class="form-group">
               <label for="item-name">{t("edit_label_name")}</label>
               <Input
@@ -215,6 +216,23 @@ export const ItemEdit: Component = () => {
                   : formState.itemType === VaultItemType.Card
                   ? "e.g. Visa, Mastercard..."
                   : t("edit_placeholder_name_login")}
+              />
+            </div>
+
+            <div class="form-group mt-12">
+              <label for="item-folder">{t("folder_select_label")}</label>
+              <Select
+                id="item-folder"
+                value={formState.folderId || ""}
+                onChange={(e) =>
+                  updateForm("folderId", e.currentTarget.value || null)}
+                options={[
+                  { value: "", label: t("folder_no_folder_option") },
+                  ...(accountStore.folders || []).map((f) => ({
+                    value: f.id,
+                    label: f.name,
+                  })),
+                ]}
               />
             </div>
           </div>

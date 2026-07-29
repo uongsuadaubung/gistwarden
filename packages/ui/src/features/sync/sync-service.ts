@@ -16,7 +16,7 @@ export async function syncVault(): Promise<Result<void, TranslationKey>> {
     accountStore.vaultItems,
     key,
     accountStore.masterPasswordConfig.salt,
-    accountStore.trashItems || [],
+    { trashItems: accountStore.trashItems || [] },
   );
 
   if (uploadRes.isErr()) {

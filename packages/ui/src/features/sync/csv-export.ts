@@ -1,5 +1,5 @@
 import Papa from "papaparse";
-import { VaultItemType } from "@gistwarden/domain";
+import { type Folder, VaultItemType } from "@gistwarden/domain";
 import type { VaultItem } from "@gistwarden/domain";
 
 /**
@@ -33,7 +33,15 @@ export function exportToBrowserCsv(items: VaultItem[]): string {
  * Xuất danh sách tài khoản sang tệp CSV của Bitwarden.
  * Xuất các mục Đăng nhập (type=login) và Ghi chú bảo mật (type=note).
  */
-export function exportToBitwardenCsv(items: VaultItem[]): string {
+export function exportToBitwardenCsv(
+  items: VaultItem[],
+  folders: Folder[] = [],
+): string {
+  const folderMap = new Map<string, string>();
+  for (const f of folders) {
+    folderMap.set(f.id, f.name);
+  }
+
   const rows: string[][] = [
     [
       "folder",
@@ -43,6 +51,7 @@ export function exportToBitwardenCsv(items: VaultItem[]): string {
       "notes",
       "fields",
       "reprompt",
+      "archivedDate",
       "login_uri",
       "login_username",
       "login_password",
@@ -58,6 +67,7 @@ export function exportToBitwardenCsv(items: VaultItem[]): string {
       const typeStr = item.type === VaultItemType.Login ? "login" : "note";
       const favoriteStr = item.favorite ? "1" : "0";
       const repromptStr = item.reprompt ? "1" : "0";
+      const folderName = (item.folderId && folderMap.get(item.folderId)) || "";
 
       const fieldsStr = item.fields
         ? item.fields.map((f) => `${f.name || ""}:${f.value || ""}`).join("\n")
@@ -76,13 +86,14 @@ export function exportToBitwardenCsv(items: VaultItem[]): string {
       }
 
       rows.push([
-        "", // folder
+        folderName,
         favoriteStr,
         typeStr,
         item.name || "",
         item.notes || "",
         fieldsStr,
         repromptStr,
+        "",
         uri,
         username,
         password,

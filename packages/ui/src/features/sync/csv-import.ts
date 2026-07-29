@@ -1,4 +1,4 @@
-import { VaultItemType } from "@gistwarden/domain";
+import { type Folder, VaultItemType } from "@gistwarden/domain";
 import {
   type VaultField,
   type VaultItem,
@@ -111,8 +111,13 @@ export function parseAndValidateBrowserCsv(
 export function parseAndValidateBitwardenCsv(
   csvString: string,
   existingItems: VaultItem[],
+  existingFolders: Folder[] = [],
 ): Result<
-  { importedCount: number; combinedItems: VaultItem[] },
+  {
+    importedCount: number;
+    combinedItems: VaultItem[];
+    combinedFolders: Folder[];
+  },
   TranslationKey
 > {
   console.log(`[${APP_NAME} CSV Import] Bắt đầu đọc file Bitwarden CSV...`);
@@ -125,6 +130,7 @@ export function parseAndValidateBitwardenCsv(
     h.trim().toLowerCase().replace(/['"]/g, "")
   );
 
+  const folderIdx = headers.indexOf("folder");
   const typeIdx = headers.indexOf("type");
   const nameIdx = headers.indexOf("name");
   const notesIdx = headers.indexOf("notes");
@@ -145,10 +151,32 @@ export function parseAndValidateBitwardenCsv(
   }
 
   const newVaultItems: VaultItem[] = [];
+  const folderMap = new Map<string, Folder>();
+  for (const f of existingFolders) {
+    folderMap.set(f.name.toLowerCase().trim(), f);
+  }
+  const combinedFolders: Folder[] = [...existingFolders];
 
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
     if (row.length === 0 || (row.length === 1 && row[0] === "")) continue;
+
+    const folderNameVal = folderIdx !== -1 ? (row[folderIdx] || "").trim() : "";
+    let folderIdVal: string | null = null;
+
+    if (folderNameVal) {
+      const key = folderNameVal.toLowerCase();
+      let existingFolder = folderMap.get(key);
+      if (!existingFolder) {
+        existingFolder = {
+          id: crypto.randomUUID(),
+          name: folderNameVal,
+        };
+        folderMap.set(key, existingFolder);
+        combinedFolders.push(existingFolder);
+      }
+      folderIdVal = existingFolder.id;
+    }
 
     const typeVal = (row[typeIdx] || "").trim().toLowerCase();
     const nameVal = row[nameIdx] || "";
@@ -183,6 +211,7 @@ export function parseAndValidateBitwardenCsv(
     const uris = uriVal ? [{ uri: uriVal, match: null }] : [];
 
     const base = createBaseVaultItem({
+      folderId: folderIdVal,
       name: nameVal,
       notes: notesVal,
       favorite: favoriteVal,
@@ -225,5 +254,6 @@ export function parseAndValidateBitwardenCsv(
   return ok({
     importedCount: newVaultItems.length,
     combinedItems: validatedListResult.data,
+    combinedFolders,
   });
 }

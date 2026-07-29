@@ -10,6 +10,7 @@ import type {
 } from "@/core/storage-schemas.ts";
 import {
   accountStore,
+  applyVaultPayloadToStore,
   resetAccountStore,
   resetUiStore,
   setAccountStore,
@@ -59,9 +60,11 @@ import {
 } from "@gistwarden/orchestrator";
 import { GistPayloadSchema } from "@gistwarden/repository";
 import {
+  type Folder,
   type TrashVaultItem,
   type VaultItem,
   VaultListSchema,
+  type VaultPayload,
   VaultPayloadSchema,
 } from "@gistwarden/domain";
 import { type TranslationKey } from "@/core/i18n.ts";
@@ -86,7 +89,7 @@ export interface SetupUnlockedSessionOptions {
 
 async function setupUnlockedSession(
   key: CryptoKey,
-  vaultPayload: { items: VaultItem[]; trash?: TrashVaultItem[] },
+  vaultPayload: VaultPayload,
   options?: SetupUnlockedSessionOptions,
 ): Promise<Result<void, TranslationKey>> {
   await setDerivedKey(key);
@@ -114,9 +117,12 @@ async function setupUnlockedSession(
   const finalView = targetView ||
     (uiStore.view === View.Fido2Prompt ? View.Fido2Prompt : View.Vault);
 
+  applyVaultPayloadToStore({
+    folders: vaultPayload.folders || [],
+    items: vaultPayload.items || [],
+    trash: vaultPayload.trash || [],
+  });
   setAccountStore({
-    vaultItems: vaultPayload.items,
-    trashItems: vaultPayload.trash || [],
     githubToken: finalToken,
     githubConfigured: true,
     isLocked: false,
@@ -238,7 +244,7 @@ export async function createNewVault(
   }
 
   await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, payloadToUpload);
-  return await setupUnlockedSession(key, { items: [], trash: [] });
+  return await setupUnlockedSession(key, { folders: [], items: [], trash: [] });
 }
 
 export async function fetchEncryptedVaultContent(): Promise<
@@ -266,12 +272,13 @@ export async function decryptGistVault(
   content: string,
   key: CryptoKey,
 ): Promise<
-  Result<{
-    items: VaultItem[];
-    trash: TrashVaultItem[];
-    targetView: View;
-    selectedItem?: VaultItem;
-  }, TranslationKey>
+  Result<
+    VaultPayload & {
+      targetView: View;
+      selectedItem?: VaultItem;
+    },
+    TranslationKey
+  >
 > {
   const payloadJsonRes = safeJsonParse(content);
   if (payloadJsonRes.isErr()) {
@@ -299,6 +306,7 @@ export async function decryptGistVault(
     return err(itemsJsonRes.error);
   }
 
+  let folders: Folder[] = [];
   let items: VaultItem[] = [];
   let trash: TrashVaultItem[] = [];
 
@@ -310,6 +318,7 @@ export async function decryptGistVault(
   } else {
     const payloadResult = VaultPayloadSchema.safeParse(rawVal);
     if (!payloadResult.success) return err("storage_error");
+    folders = payloadResult.data.folders || [];
     items = payloadResult.data.items;
     trash = payloadResult.data.trash || [];
   }
@@ -329,7 +338,7 @@ export async function decryptGistVault(
     }
   }
 
-  return ok({ items, trash, targetView, selectedItem });
+  return ok({ folders, items, trash, targetView, selectedItem });
 }
 
 export async function verifyMasterPasswordSecurity(): Promise<
@@ -544,11 +553,12 @@ export async function unlock(
 
   await resetMasterPasswordSecurity(saltBase64);
 
-  const { items, trash, targetView, selectedItem } = decryptVaultRes.value;
+  const { folders, items, trash, targetView, selectedItem } =
+    decryptVaultRes.value;
   await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, existingGistContent);
   return await setupUnlockedSession(
     key,
-    { items, trash },
+    { folders, items, trash },
     { targetView, selectedItem },
   );
 }
@@ -586,11 +596,12 @@ export async function unlockVaultWithKey(
     return err(decryptVaultRes.error);
   }
 
-  const { items, trash, targetView, selectedItem } = decryptVaultRes.value;
+  const { folders, items, trash, targetView, selectedItem } =
+    decryptVaultRes.value;
   await setSessionItem(SESSION_KEY_ENCRYPTED_VAULT, existingGistContent);
   return await setupUnlockedSession(
     key,
-    { items, trash },
+    { folders, items, trash },
     { targetView, selectedItem },
   );
 }
@@ -774,6 +785,7 @@ export async function lockVaultSession(): Promise<void> {
   await clearAlarm(ALARM_NAME_VAULT_TIMEOUT);
 
   setAccountStore({
+    folders: [],
     vaultItems: [],
     trashItems: [],
     githubToken: "",

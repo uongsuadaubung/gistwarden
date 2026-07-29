@@ -42,8 +42,15 @@ export const VaultFieldSchema = z.object({
 });
 export type VaultField = z.infer<typeof VaultFieldSchema>;
 
+export const FolderSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+export type Folder = z.infer<typeof FolderSchema>;
+
 export const BaseVaultItemSchema = z.object({
   id: z.string(),
+  folderId: z.string().or(z.null()).optional(),
   name: z.string(),
   notes: z.string().optional(),
   favorite: z.boolean(),
@@ -164,6 +171,7 @@ export const TrashVaultItemSchema = z.object({
 export type TrashVaultItem = z.infer<typeof TrashVaultItemSchema>;
 
 export const VaultPayloadSchema = z.object({
+  folders: z.array(FolderSchema).optional().default([]),
   items: z.array(VaultItemSchema).default([]),
   trash: z.array(TrashVaultItemSchema).optional().default([]),
 });

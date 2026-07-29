@@ -1,14 +1,19 @@
 import { setSessionItem, updateAccountSettings } from "@/core/storage.ts";
 import { encryptData } from "@gistwarden/domain";
 import { getSessionKey } from "@gistwarden/orchestrator";
-import { accountStore, setAccountStore } from "@/core/store.ts";
-import { reconcile } from "solid-js/store";
+import {
+  accountStore,
+  applyVaultPayloadToStore,
+  setAccountStore,
+} from "@/core/store.ts";
 import { isLoginItem, VaultItemType } from "@gistwarden/domain";
 import {
+  type Folder,
   type LoginVaultItem,
   type SaveActionPayload,
   type TrashVaultItem,
   type VaultItem,
+  type VaultPayload,
 } from "@gistwarden/domain";
 import { broadcastMessage, sendBackgroundMessage } from "@/core/messaging.ts";
 
@@ -17,7 +22,6 @@ import { deleteGistRoute } from "@gistwarden/orchestrator";
 import {
   MSG_VAULT_ITEMS_UPDATED,
   SESSION_KEY_ENCRYPTED_VAULT,
-  STORE_KEY_VAULT_ITEMS,
 } from "@/core/constants.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
@@ -27,53 +31,145 @@ import {
   createDefaultVaultItem,
   mergeVaultItem,
 } from "@/features/vault/vault-utils.ts";
+import { getDecryptedVaultItems } from "./vault-repository.ts";
 
-export async function persistAndReconcileVault(
-  items: VaultItem[],
-  trashItems: TrashVaultItem[] = accountStore.trashItems || [],
+export async function executeVaultMutation(
+  mutationFn: (
+    currentPayload: VaultPayload,
+  ) => VaultPayload | Promise<VaultPayload>,
 ): Promise<Result<VaultItem[], TranslationKey>> {
   const key = await getSessionKey();
   if (!key || !accountStore.masterPasswordConfig.salt) {
     return err("login_title_locked");
   }
 
+  // 1. Lấy dữ liệu két sắt mới nhất từ Gist (Decrypt) hoặc fallback từ local store
+  const decrypted = await getDecryptedVaultItems();
+  const currentPayload: VaultPayload = decrypted || {
+    folders: accountStore.folders || [],
+    items: accountStore.vaultItems || [],
+    trash: accountStore.trashItems || [],
+  };
+
+  // 2. Thực thi thao tác biến đổi dữ liệu (Mutation Intent)
+  const updatedPayload = await mutationFn(currentPayload);
+
+  // 3. Đồng bộ dữ liệu mới đã được biến đổi lên Gist và cập nhật Store local
   const uploadRes = await syncVaultToGist(
-    items,
+    updatedPayload.items,
     key,
     accountStore.masterPasswordConfig.salt,
-    trashItems,
+    {
+      trashItems: updatedPayload.trash,
+      folders: updatedPayload.folders,
+    },
   );
 
   if (uploadRes.isErr()) {
     return err(uploadRes.error);
   }
-  const validatedList = uploadRes.value;
 
-  setAccountStore(
-    STORE_KEY_VAULT_ITEMS,
-    reconcile(validatedList),
+  applyVaultPayloadToStore(updatedPayload);
+  return ok(updatedPayload.items);
+}
+
+export async function persistAndReconcileVault(
+  items: VaultItem[],
+  trashItems: TrashVaultItem[] = accountStore.trashItems || [],
+  folders: Folder[] = accountStore.folders || [],
+): Promise<Result<VaultItem[], TranslationKey>> {
+  return await executeVaultMutation((_payload) => ({
+    folders,
+    items,
+    trash: trashItems,
+  }));
+}
+
+export async function addFolder(
+  name: string,
+): Promise<Result<Folder, TranslationKey>> {
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    return err("folder_error_empty_name");
+  }
+  const isDuplicate = (accountStore.folders || []).some(
+    (f) => f.name.trim().toLowerCase() === trimmedName.toLowerCase(),
   );
-  return ok(validatedList);
+  if (isDuplicate) {
+    return err("folder_error_duplicate_name");
+  }
+  const newFolder: Folder = {
+    id: crypto.randomUUID(),
+    name: trimmedName,
+  };
+
+  const res = await executeVaultMutation((payload) => ({
+    ...payload,
+    folders: [...payload.folders, newFolder],
+  }));
+  if (res.isErr()) return err(res.error);
+  return ok(newFolder);
+}
+
+export async function renameFolder(
+  id: string,
+  newName: string,
+): Promise<Result<void, TranslationKey>> {
+  const trimmedName = newName.trim();
+  if (!trimmedName) {
+    return err("folder_error_empty_name");
+  }
+  const isDuplicate = (accountStore.folders || []).some(
+    (f) =>
+      f.id !== id && f.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+  );
+  if (isDuplicate) {
+    return err("folder_error_duplicate_name");
+  }
+
+  const res = await executeVaultMutation((payload) => ({
+    ...payload,
+    folders: payload.folders.map((f) =>
+      f.id === id ? { ...f, name: trimmedName } : f
+    ),
+  }));
+  if (res.isErr()) return err(res.error);
+  return ok();
+}
+
+export async function deleteFolder(
+  id: string,
+): Promise<Result<void, TranslationKey>> {
+  const res = await executeVaultMutation((payload) => ({
+    folders: payload.folders.filter((f) => f.id !== id),
+    items: payload.items.map((item) =>
+      item.folderId === id ? { ...item, folderId: null } : item
+    ),
+    trash: payload.trash,
+  }));
+  if (res.isErr()) return err(res.error);
+  return ok();
 }
 
 export async function saveItem(
   item: Partial<VaultItem>,
 ): Promise<Result<void, TranslationKey>> {
-  let updatedList: VaultItem[];
-
-  if (item.id) {
-    // Edit
-    updatedList = accountStore.vaultItems.map((v) => {
-      if (v.id !== item.id) return v;
-      return mergeVaultItem(v, item);
-    });
-  } else {
-    // New
-    const newItem = createDefaultVaultItem(item);
-    updatedList = [...accountStore.vaultItems, newItem];
-  }
-
-  const res = await persistAndReconcileVault(updatedList);
+  const res = await executeVaultMutation((payload) => {
+    let updatedList: VaultItem[];
+    if (item.id) {
+      updatedList = payload.items.map((v) => {
+        if (v.id !== item.id) return v;
+        return mergeVaultItem(v, item);
+      });
+    } else {
+      const newItem = createDefaultVaultItem(item);
+      updatedList = [...payload.items, newItem];
+    }
+    return {
+      ...payload,
+      items: updatedList,
+    };
+  });
   if (res.isErr()) return err(res.error);
   return ok();
 }
@@ -91,23 +187,21 @@ export async function deleteVaultItems(
     return ok();
   }
 
-  const idSet = new Set(ids);
-  const itemsToMoveToTrash = accountStore.vaultItems.filter((v) =>
-    idSet.has(v.id)
-  );
-  const remainingItems = accountStore.vaultItems.filter((v) =>
-    !idSet.has(v.id)
-  );
-
-  const deletedDate = new Date().toISOString();
-  const addedTrash: TrashVaultItem[] = itemsToMoveToTrash.map((item) => ({
-    item,
-    deletedDate,
-  }));
-
-  const combinedTrash = [...(accountStore.trashItems || []), ...addedTrash];
-
-  const res = await persistAndReconcileVault(remainingItems, combinedTrash);
+  const res = await executeVaultMutation((payload) => {
+    const idSet = new Set(ids);
+    const itemsToMove = payload.items.filter((v) => idSet.has(v.id));
+    const remainingItems = payload.items.filter((v) => !idSet.has(v.id));
+    const deletedDate = new Date().toISOString();
+    const addedTrash: TrashVaultItem[] = itemsToMove.map((item) => ({
+      item,
+      deletedDate,
+    }));
+    return {
+      folders: payload.folders,
+      items: remainingItems,
+      trash: [...payload.trash, ...addedTrash],
+    };
+  });
   if (res.isErr()) return err(res.error);
   return ok();
 }
@@ -115,24 +209,20 @@ export async function deleteVaultItems(
 export async function restoreVaultItem(
   id: string,
 ): Promise<Result<void, TranslationKey>> {
-  const trashEntry = (accountStore.trashItems || []).find(
-    (t) => t.item.id === id,
-  );
-  if (!trashEntry) {
-    return ok();
-  }
-
-  const remainingTrash = (accountStore.trashItems || []).filter(
-    (t) => t.item.id !== id,
-  );
-  const restoredItem: VaultItem = {
-    ...trashEntry.item,
-    revisionDate: new Date().toISOString(),
-  };
-
-  const updatedItems = [...accountStore.vaultItems, restoredItem];
-
-  const res = await persistAndReconcileVault(updatedItems, remainingTrash);
+  const res = await executeVaultMutation((payload) => {
+    const trashEntry = payload.trash.find((t) => t.item.id === id);
+    if (!trashEntry) return payload;
+    const remainingTrash = payload.trash.filter((t) => t.item.id !== id);
+    const restoredItem: VaultItem = {
+      ...trashEntry.item,
+      revisionDate: new Date().toISOString(),
+    };
+    return {
+      folders: payload.folders,
+      items: [...payload.items, restoredItem],
+      trash: remainingTrash,
+    };
+  });
   if (res.isErr()) return err(res.error);
   return ok();
 }
@@ -140,20 +230,19 @@ export async function restoreVaultItem(
 export async function purgeTrashItem(
   id: string,
 ): Promise<Result<void, TranslationKey>> {
-  const remainingTrash = (accountStore.trashItems || []).filter(
-    (t) => t.item.id !== id,
-  );
-
-  const res = await persistAndReconcileVault(
-    accountStore.vaultItems,
-    remainingTrash,
-  );
+  const res = await executeVaultMutation((payload) => ({
+    ...payload,
+    trash: payload.trash.filter((t) => t.item.id !== id),
+  }));
   if (res.isErr()) return err(res.error);
   return ok();
 }
 
 export async function purgeAllTrash(): Promise<Result<void, TranslationKey>> {
-  const res = await persistAndReconcileVault(accountStore.vaultItems, []);
+  const res = await executeVaultMutation((payload) => ({
+    ...payload,
+    trash: [],
+  }));
   if (res.isErr()) return err(res.error);
   return ok();
 }

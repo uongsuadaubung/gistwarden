@@ -16,7 +16,12 @@ import {
   type VaultTimeoutAction,
   type VaultTimeoutValue,
 } from "@gistwarden/repository";
-import type { TrashVaultItem, VaultItem } from "@gistwarden/domain";
+import type {
+  Folder,
+  TrashVaultItem,
+  VaultItem,
+  VaultPayload,
+} from "@gistwarden/domain";
 
 export interface ExtensionSettingsStore {
   language: "en" | "vi";
@@ -41,6 +46,7 @@ export interface AccountStore {
   isLoaded: boolean;
   isLocked: boolean;
   sessionUnlocked: boolean;
+  folders: Folder[];
   vaultItems: VaultItem[];
   trashItems: TrashVaultItem[];
 
@@ -102,6 +108,7 @@ export const initialAccountState: Omit<AccountStore, "isLoaded"> = {
   lastSync: 0,
   isLocked: true,
   sessionUnlocked: false,
+  folders: [],
   vaultItems: [],
   trashItems: [],
   githubConfig: DEFAULT_GITHUB_CONFIG,
@@ -147,6 +154,14 @@ export const [accountStore, setAccountStore] = createStore<AccountStore>({
 export const [uiStore, setUiStore] = createStore<UiSessionStore>({
   ...initialUiState,
 });
+
+export function applyVaultPayloadToStore(payload: VaultPayload): void {
+  setAccountStore({
+    folders: payload.folders || [],
+    vaultItems: payload.items || [],
+    trashItems: payload.trash || [],
+  });
+}
 
 export function resetAccountStore(): void {
   setAccountStore({

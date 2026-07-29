@@ -8,7 +8,12 @@ import {
 } from "solid-js";
 import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
 import { navigate, openItem, selectItem } from "@/core/navigation.ts";
-import { deleteVaultItems, saveItem } from "@/features/vault/vault-service.ts";
+import {
+  addFolder,
+  deleteVaultItems,
+  renameFolder,
+  saveItem,
+} from "@/features/vault/vault-service.ts";
 import {
   confirm,
   copyToClipboardWithMessage,
@@ -16,6 +21,8 @@ import {
   showToast,
 } from "@gistwarden/ui";
 import { Header } from "@/components/ui/Header.tsx";
+import FolderModal from "@/components/ui/FolderModal.tsx";
+import { type Folder, VaultItemType } from "@gistwarden/domain";
 import { createDefaultVaultItem } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import { VaultBatchActionBar } from "@/features/vault/components/VaultBatchActionBar.tsx";
 import { getCurrentTab, sendMessageToTab } from "@/core/tabs.ts";
@@ -27,7 +34,6 @@ import {
   SESSION_KEY_VAULT_SEARCH_QUERY,
 } from "@/core/constants.ts";
 import { View } from "@/core/types.ts";
-import { VaultItemType } from "@gistwarden/domain";
 import type { VaultItem } from "@gistwarden/domain";
 import { generateTotpSafe } from "@/core/totp-utils.ts";
 import { z } from "zod";
@@ -92,11 +98,44 @@ export const Vault: Component = () => {
     },
   );
 
+  const [selectedFolderId, setSelectedFolderId] = createSignal<
+    string | "no_folder"
+  >("no_folder");
+
+  const [showFolderModal, setShowFolderModal] = createSignal(false);
+  const [editingFolder, setEditingFolder] = createSignal<Folder | null>(null);
+
+  const handleSaveFolder = async (name: string): Promise<boolean> => {
+    const current = editingFolder();
+    setGlobalLoading(true);
+    let res;
+    if (current) {
+      res = await renameFolder(current.id, name);
+    } else {
+      res = await addFolder(name);
+    }
+    setGlobalLoading(false);
+
+    if (res.isOk()) {
+      showToast(
+        current ? t("folder_rename_success") : t("folder_add_success"),
+        "success",
+      );
+      setShowFolderModal(false);
+      setEditingFolder(null);
+      return true;
+    } else {
+      showToast(t(res.error), "error");
+      return false;
+    }
+  };
+
   const toggleFilterPanel = () => {
     const nextVal = !showFilterPanel();
     setShowFilterPanel(nextVal);
     if (!nextVal) {
       selectFilterType("all");
+      setSelectedFolderId("no_folder");
     }
   };
 
@@ -219,11 +258,21 @@ export const Vault: Component = () => {
   };
 
   const allItems = () => {
-    return filterVaultItemsByQuery(
+    let items = filterVaultItemsByQuery(
       accountStore.vaultItems,
       search(),
       selectedFilterType(),
     );
+
+    if (showFilterPanel()) {
+      if (selectedFolderId() === "no_folder") {
+        items = items.filter((item) => !item.folderId);
+      } else {
+        items = items.filter((item) => item.folderId === selectedFolderId());
+      }
+    }
+
+    return items;
   };
 
   const cardItems = () => {
@@ -406,6 +455,10 @@ export const Vault: Component = () => {
         title={t("nav_vault")}
         showAdd={true}
         onAddNewItem={handleAddNewItem}
+        onAddNewFolder={() => {
+          setEditingFolder(null);
+          setShowFolderModal(true);
+        }}
       />
 
       {/* Main Body */}
@@ -470,6 +523,9 @@ export const Vault: Component = () => {
             showFilterPanel={showFilterPanel()}
             selectedFilterType={selectedFilterType()}
             onSelectFilterType={selectFilterType}
+            folders={accountStore.folders}
+            selectedFolderId={selectedFolderId()}
+            onSelectFolderId={setSelectedFolderId}
           />
         </div>
 
@@ -685,6 +741,16 @@ export const Vault: Component = () => {
           </Show>
         </div>
       </div>
+
+      <FolderModal
+        isOpen={showFolderModal()}
+        folder={editingFolder()}
+        onClose={() => {
+          setShowFolderModal(false);
+          setEditingFolder(null);
+        }}
+        onSave={handleSaveFolder}
+      />
     </div>
   );
 };

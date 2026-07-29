@@ -1,5 +1,5 @@
 import { type Component, createSignal, For, onMount, Show } from "solid-js";
-import { uiStore } from "@/core/store.ts";
+import { accountStore, uiStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { copyToClipboardWithMessage } from "@gistwarden/ui";
@@ -276,6 +276,16 @@ export const ItemDetail: Component = () => {
                   {t("detail_item_history")}
                 </div>
                 <div class="card mb-16 p-16 font-sz-12 text-muted">
+                  <Show when={item().folderId}>
+                    <div class="py-6 d-flex align-center gap-8">
+                      <span>{t("vault_item_folder")}:</span>
+                      <span class="font-w-500 text-normal">
+                        {accountStore.folders.find((f) =>
+                          f.id === item().folderId
+                        )?.name || ""}
+                      </span>
+                    </div>
+                  </Show>
                   <div class="py-6 d-flex align-center gap-8">
                     <span>{t("detail_revision_date")}:</span>
                     <span class="font-w-500 text-normal">

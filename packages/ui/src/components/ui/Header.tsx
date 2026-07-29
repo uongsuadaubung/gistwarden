@@ -15,8 +15,14 @@ import { confirm, setGlobalLoading } from "@gistwarden/ui";
 import { handlePopout, isPopout } from "@/core/popout-utils.ts";
 import { t } from "@/core/i18n.ts";
 import {
+  CardIcon,
+  FolderIcon,
+  GlobeIcon,
+  IdentityIcon,
+  KeyIcon,
   LockIcon,
   LogoutIcon,
+  NoteIcon,
   PlusIcon,
   PopoutIcon,
   SyncIcon,
@@ -26,6 +32,7 @@ interface HeaderProps {
   title: string;
   showAdd?: boolean;
   onAddNewItem?: (type: VaultItemType) => void;
+  onAddNewFolder?: () => void;
 }
 
 export const Header: Component<HeaderProps> = (props) => {
@@ -77,11 +84,34 @@ export const Header: Component<HeaderProps> = (props) => {
     }
   };
 
+  const getTypeIcon = (type: VaultItemType) => {
+    switch (type) {
+      case VaultItemType.Login:
+        return <GlobeIcon class="dropdown-item-icon" />;
+      case VaultItemType.Card:
+        return <CardIcon class="dropdown-item-icon" />;
+      case VaultItemType.Identity:
+        return <IdentityIcon class="dropdown-item-icon" />;
+      case VaultItemType.SecureNote:
+        return <NoteIcon class="dropdown-item-icon" />;
+      case VaultItemType.SshKey:
+        return <KeyIcon class="dropdown-item-icon" />;
+    }
+  };
+
   const handleAddTypeClick = (type: VaultItemType, e: MouseEvent) => {
     e.stopPropagation();
     setShowAddMenu(false);
     if (props.onAddNewItem) {
       props.onAddNewItem(type);
+    }
+  };
+
+  const handleAddFolderClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    setShowAddMenu(false);
+    if (props.onAddNewFolder) {
+      props.onAddNewFolder();
     }
   };
 
@@ -151,9 +181,9 @@ export const Header: Component<HeaderProps> = (props) => {
                 <For
                   each={[
                     VaultItemType.Login,
-                    VaultItemType.SecureNote,
                     VaultItemType.Card,
                     VaultItemType.Identity,
+                    VaultItemType.SecureNote,
                     VaultItemType.SshKey,
                   ]}
                 >
@@ -163,10 +193,20 @@ export const Header: Component<HeaderProps> = (props) => {
                       type="button"
                       onClick={(e) => handleAddTypeClick(type, e)}
                     >
-                      {getTypeLabel(type)}
+                      {getTypeIcon(type)}
+                      <span>{getTypeLabel(type)}</span>
                     </button>
                   )}
                 </For>
+                <div class="dropdown-divider" />
+                <button
+                  class="dropdown-item"
+                  type="button"
+                  onClick={handleAddFolderClick}
+                >
+                  <FolderIcon class="dropdown-item-icon" />
+                  <span>{t("vault_item_folder")}</span>
+                </button>
               </div>
             </Show>
           </div>

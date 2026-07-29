@@ -201,8 +201,14 @@
 }
 
 .filter-panel {
-  position: relative;
+  display: flex;
+  gap: 8px;
   margin-bottom: 12px;
+
+  .filter-dropdown-container {
+    flex: 1;
+    position: relative;
+  }
 
   .filter-dropdown-trigger {
     display: flex;
@@ -232,6 +238,9 @@
       font-weight: 500;
       color: var(--text);
       flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .chevron-icon {

@@ -1,8 +1,10 @@
 import { decryptData, encryptData } from "@/core/crypto.ts";
 import {
+  type Folder,
   type TrashVaultItem,
   type VaultItem,
   VaultListSchema,
+  type VaultPayload,
   VaultPayloadSchema,
 } from "@gistwarden/domain";
 import { setSessionItem, updateAccountSettings } from "@/core/storage.ts";
@@ -23,9 +25,12 @@ async function fetchAndMergeRemoteVault(
   localItems: VaultItem[],
   localTrash: TrashVaultItem[],
   key: CryptoKey,
-): Promise<
-  Result<{ items: VaultItem[]; trash: TrashVaultItem[] }, TranslationKey>
-> {
+  options?: {
+    folders?: Folder[];
+  },
+): Promise<Result<VaultPayload, TranslationKey>> {
+  const localFolders = options?.folders || accountStore.folders || [];
+
   const sendResult = await sendBackgroundMessage(downloadFromGistRoute);
   if (sendResult.isErr()) {
     return err(sendResult.error);
@@ -35,7 +40,7 @@ async function fetchAndMergeRemoteVault(
   }
   const rawContent = sendResult.value.content || "";
   if (!rawContent) {
-    return ok({ items: localItems, trash: localTrash });
+    return ok({ folders: localFolders, items: localItems, trash: localTrash });
   }
 
   const parseJsonRes = safeJsonParse(rawContent || "{}");
@@ -46,7 +51,7 @@ async function fetchAndMergeRemoteVault(
 
   const { ciphertext, iv } = payload;
   if (!ciphertext || !iv) {
-    return ok({ items: localItems, trash: localTrash });
+    return ok({ folders: localFolders, items: localItems, trash: localTrash });
   }
 
   const decryptRes = await decryptData(ciphertext, iv, key);
@@ -60,6 +65,7 @@ async function fetchAndMergeRemoteVault(
     return err("sync_error_corrupted_payload");
   }
 
+  let remoteFolders: Folder[] = [];
   let remoteItems: VaultItem[] = [];
   let remoteTrash: TrashVaultItem[] = [];
 
@@ -75,13 +81,14 @@ async function fetchAndMergeRemoteVault(
     if (!remoteVaultParse.success) {
       return err("sync_error_invalid_format");
     }
+    remoteFolders = remoteVaultParse.data.folders || [];
     remoteItems = remoteVaultParse.data.items;
     remoteTrash = remoteVaultParse.data.trash || [];
   }
 
   const merged = mergeVaultPayload(
-    { items: localItems, trash: localTrash },
-    { items: remoteItems, trash: remoteTrash },
+    { folders: localFolders, items: localItems, trash: localTrash },
+    { folders: remoteFolders, items: remoteItems, trash: remoteTrash },
     accountStore.lastSync || 0,
   );
   return ok(merged);
@@ -91,8 +98,13 @@ export async function syncVaultToGist(
   items: VaultItem[],
   key: CryptoKey,
   salt: string,
-  trashItems: TrashVaultItem[] = accountStore.trashItems || [],
+  options?: {
+    trashItems?: TrashVaultItem[];
+    folders?: Folder[];
+  },
 ): Promise<Result<VaultItem[], TranslationKey>> {
+  const trashItems = options?.trashItems || accountStore.trashItems || [];
+  const folders = options?.folders || accountStore.folders || [];
   const parsedResult = VaultListSchema.safeParse(items);
   if (!parsedResult.success) {
     return err("storage_error");
@@ -104,6 +116,7 @@ export async function syncVaultToGist(
     validatedList,
     trashItems,
     key,
+    { folders },
   );
   if (mergeResult.isErr()) {
     return err(mergeResult.error);
@@ -111,6 +124,7 @@ export async function syncVaultToGist(
   const finalPayloadToSave = mergeResult.value;
 
   const payloadObject = {
+    folders: finalPayloadToSave.folders,
     items: finalPayloadToSave.items,
     trash: finalPayloadToSave.trash,
   };
@@ -161,6 +175,7 @@ export async function syncVaultToGist(
 
   const now = Date.now();
   setAccountStore({
+    folders: finalPayloadToSave.folders,
     trashItems: finalPayloadToSave.trash,
     lastSync: now,
   });

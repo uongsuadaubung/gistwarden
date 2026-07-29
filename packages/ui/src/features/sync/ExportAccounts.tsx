@@ -33,6 +33,7 @@ export const ExportAccounts: Component = () => {
       const exportItems = accountStore.vaultItems.map((item) => {
         const base = {
           id: item.id,
+          folderId: item.folderId || null,
           type: item.type,
           name: item.name,
           notes: item.notes || "",
@@ -132,7 +133,7 @@ export const ExportAccounts: Component = () => {
 
       const exportPayload = {
         encrypted: false,
-        folders: [],
+        folders: accountStore.folders || [],
         items: exportItems,
       };
 
@@ -148,7 +149,10 @@ export const ExportAccounts: Component = () => {
       }.csv`;
       mimeType = "text/csv";
     } else {
-      fileContent = exportToBitwardenCsv(accountStore.vaultItems);
+      fileContent = exportToBitwardenCsv(
+        accountStore.vaultItems,
+        accountStore.folders,
+      );
       fileName = `${APP_NAME.toLowerCase()}_bitwarden_export_${
         new Date().toISOString().slice(0, 10)
       }.csv`;

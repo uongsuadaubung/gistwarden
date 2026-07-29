@@ -1,4 +1,4 @@
-import { VaultItemType } from "@gistwarden/domain";
+import { type Folder, FolderSchema, VaultItemType } from "@gistwarden/domain";
 import { type ImportItem, ImportItemSchema } from "@gistwarden/repository";
 import { type VaultItem, VaultListSchema } from "@gistwarden/domain";
 import { APP_NAME } from "@/core/constants.ts";
@@ -6,16 +6,22 @@ import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
 import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
+import { mergeFolders } from "@/features/sync/sync-merge.ts";
 
 /**
  * Phân tích và xác thực nội dung chuỗi JSON nhập từ tệp ({APP_NAME} hoặc Bitwarden xuất ra).
- * Trả về danh sách VaultItem[] đã kết hợp với các mục hiện có.
+ * Trả về danh sách VaultItem[] và Folder[] đã kết hợp với các mục hiện có.
  */
 export function parseAndValidateImportJson(
   jsonString: string,
   existingItems: VaultItem[],
+  existingFolders: Folder[] = [],
 ): Result<
-  { importedCount: number; combinedItems: VaultItem[] },
+  {
+    importedCount: number;
+    combinedItems: VaultItem[];
+    combinedFolders: Folder[];
+  },
   TranslationKey
 > {
   console.log(`[${APP_NAME} Import] Bắt đầu đọc file JSON...`);
@@ -28,18 +34,32 @@ export function parseAndValidateImportJson(
   const parsed = parseRes.value;
 
   const itemsToImport: ImportItem[] = [];
+  const importedFolders: Folder[] = [];
+
+  // Extract raw folders list if present using Reflect.get (no 'as' assertion)
+  const rawFolders = parsed !== null && typeof parsed === "object"
+    ? Reflect.get(parsed, "folders")
+    : null;
+
+  if (Array.isArray(rawFolders)) {
+    for (const rawFolder of rawFolders) {
+      const folderRes = FolderSchema.safeParse(rawFolder);
+      if (folderRes.success) {
+        importedFolders.push(folderRes.data);
+      }
+    }
+  }
 
   // Extract raw items list
   let rawItems: unknown[] = [];
+  const parsedItems = parsed !== null && typeof parsed === "object"
+    ? Reflect.get(parsed, "items")
+    : null;
+
   if (Array.isArray(parsed)) {
     rawItems = parsed;
-  } else if (
-    parsed !== null &&
-    typeof parsed === "object" &&
-    "items" in parsed &&
-    Array.isArray(parsed.items)
-  ) {
-    rawItems = parsed.items;
+  } else if (Array.isArray(parsedItems)) {
+    rawItems = parsedItems;
   } else {
     return err("vault_import_error_invalid");
   }
@@ -58,25 +78,18 @@ export function parseAndValidateImportJson(
   }
 
   console.log(
-    `[${APP_NAME} Import] Kiểm tra xong! Có ${itemsToImport.length} tài khoản hợp lệ cần import.`,
+    `[${APP_NAME} Import] Kiểm tra xong! Có ${itemsToImport.length} tài khoản và ${importedFolders.length} thư mục hợp lệ cần import.`,
   );
 
   const now = new Date().toISOString();
-  const newVaultItems: VaultItem[] = itemsToImport.map((item, index) => {
+  const newVaultItems: VaultItem[] = itemsToImport.map((item) => {
     const isLogin = item.type === VaultItemType.Login;
     const loginData = isLogin ? item.login : undefined;
     const rawFido = loginData?.fido2Credentials;
-    console.log(
-      `[${APP_NAME} Import] Tài khoản thứ ${index + 1} ("${item.name}"):`,
-      {
-        hasLogin: !!loginData,
-        rawFidoCredentialsCount: rawFido?.length || 0,
-        rawFidoData: rawFido,
-      },
-    );
 
     const base = createBaseVaultItem({
       id: item.id || undefined,
+      folderId: item.folderId || null,
       name: item.name,
       notes: item.notes,
       favorite: item.favorite,
@@ -171,7 +184,7 @@ export function parseAndValidateImportJson(
     }
   });
 
-  // Merge logic
+  // Merge logic for items
   const existingMap = new Map<string, VaultItem>();
   for (const item of existingItems) {
     if (item.type === VaultItemType.Login) {
@@ -246,8 +259,11 @@ export function parseAndValidateImportJson(
     return err("storage_error");
   }
 
+  const combinedFolders = mergeFolders(existingFolders, importedFolders);
+
   return ok({
     importedCount: addedCount,
     combinedItems: validateResult.data,
+    combinedFolders,
   });
 }
