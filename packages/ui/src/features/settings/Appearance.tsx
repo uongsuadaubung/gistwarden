@@ -1,5 +1,5 @@
 import { type Component } from "solid-js";
-import { settingsStore } from "@/core/store.ts";
+import { setSettingsStore, settingsStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { updateExtensionSettings } from "@/core/storage.ts";
@@ -14,6 +14,7 @@ export const Appearance: Component = () => {
   };
 
   const handleAnimationsToggle = async (checked: boolean) => {
+    setSettingsStore("enablePageAnimations", checked);
     await updateExtensionSettings({ enablePageAnimations: checked });
   };
 

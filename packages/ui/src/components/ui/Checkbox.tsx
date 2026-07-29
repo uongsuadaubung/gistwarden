@@ -12,12 +12,7 @@ interface CheckboxProps {
 
 export const Checkbox: Component<CheckboxProps> = (props) => {
   const handleChange = (e: Event & { currentTarget: HTMLInputElement }) => {
-    const target = e.currentTarget;
-    const oldChecked = props.checked;
-    props.onChange(target.checked);
-    if (props.checked === oldChecked) {
-      target.checked = oldChecked;
-    }
+    props.onChange(e.currentTarget.checked);
   };
 
   return (

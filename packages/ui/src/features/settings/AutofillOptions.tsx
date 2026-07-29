@@ -1,5 +1,5 @@
 import { type Component, Show } from "solid-js";
-import { settingsStore } from "@/core/store.ts";
+import { setSettingsStore, settingsStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
 import { updateExtensionSettings } from "@/core/storage.ts";
@@ -13,16 +13,22 @@ export const AutofillOptions: Component = () => {
   };
 
   const handleAutoSubmitToggle = async (checked: boolean) => {
+    setSettingsStore("autoSubmitOnAutofill", checked);
     await updateExtensionSettings({ autoSubmitOnAutofill: checked });
   };
 
   const handleShowSuggestionsToggle = async (checked: boolean) => {
     if (!checked) {
+      setSettingsStore({
+        showAutofillSuggestionsOnFocus: false,
+        autoSubmitOnAutofill: false,
+      });
       await updateExtensionSettings({
         showAutofillSuggestionsOnFocus: false,
         autoSubmitOnAutofill: false,
       });
     } else {
+      setSettingsStore("showAutofillSuggestionsOnFocus", true);
       await updateExtensionSettings({ showAutofillSuggestionsOnFocus: true });
     }
   };
