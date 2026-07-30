@@ -3,6 +3,7 @@ import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
+import BaseSlideModal from "@/components/ui/BaseSlideModal.tsx";
 
 interface SetPinModalProps {
   isOpen: boolean;
@@ -13,65 +14,43 @@ interface SetPinModalProps {
 export default function SetPinModal(props: SetPinModalProps) {
   const [pin, setPin] = createSignal("");
   const [requireRestart, setRequireRestart] = createSignal(true);
-  const [isClosing, setIsClosing] = createSignal(false);
   const [error, setError] = createSignal("");
 
   createEffect(() => {
     if (props.isOpen) {
-      setIsClosing(false);
       setPin("");
       setRequireRestart(true);
       setError("");
     }
   });
 
-  const triggerClose = () => {
-    if (isClosing()) return;
-    setIsClosing(true);
-    setTimeout(() => {
-      props.onClose();
-    }, 250);
-  };
-
-  const handleSave = (e: Event) => {
-    e.preventDefault();
-    if (isClosing()) return;
-    setError("");
-
-    const value = pin().trim();
-    if (!value) {
-      setError(t("settings_error_fields_required"));
-      return;
-    }
-    if (value.length < 4) {
-      setError(t("set_pin_error_length"));
-      return;
-    }
-
-    setIsClosing(true);
-    setTimeout(() => {
-      props.onSave(value, requireRestart());
-    }, 250);
-  };
-
   return (
-    <Show when={props.isOpen}>
-      <div
-        class={`modal-overlay bottom-slide ${isClosing() ? "is-closing" : ""}`}
-        onClick={triggerClose}
-      >
-        <div class="modal-slide-panel" onClick={(e) => e.stopPropagation()}>
-          <div class="modal-panel-header">
-            <div class="modal-panel-title">{t("set_pin_title")}</div>
-            <button
-              type="button"
-              class="modal-close-btn font-sz-16 font-w-600"
-              onClick={triggerClose}
-            >
-              ✕
-            </button>
-          </div>
+    <BaseSlideModal
+      isOpen={props.isOpen}
+      onClose={props.onClose}
+      title={t("set_pin_title")}
+    >
+      {(triggerClose) => {
+        const handleSave = (e: Event) => {
+          e.preventDefault();
+          setError("");
 
+          const value = pin().trim();
+          if (!value) {
+            setError(t("settings_error_fields_required"));
+            return;
+          }
+          if (value.length < 4) {
+            setError(t("set_pin_error_length"));
+            return;
+          }
+
+          triggerClose(() => {
+            props.onSave(value, requireRestart());
+          });
+        };
+
+        return (
           <form onSubmit={handleSave} class="modal-panel-body">
             <p class="m-0 text-secondary font-sz-13 lh-1_5">
               {t("set_pin_desc")}
@@ -109,19 +88,20 @@ export default function SetPinModal(props: SetPinModalProps) {
             </div>
 
             <div class="modal-panel-footer p-0 border-none">
-              <Button
-                type="submit"
-                variant="primary"
-              >
+              <Button type="submit" variant="primary">
                 {t("set_pin_title")}
               </Button>
-              <Button type="button" variant="secondary" onClick={triggerClose}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => triggerClose()}
+              >
                 {t("btn_cancel")}
               </Button>
             </div>
           </form>
-        </div>
-      </div>
-    </Show>
+        );
+      }}
+    </BaseSlideModal>
   );
 }

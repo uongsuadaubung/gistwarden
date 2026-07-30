@@ -58,15 +58,21 @@ export function navigate(newView: View): void {
   navigatePath(targetPath);
 }
 
-export function selectItem(item: VaultItem | null): void {
+function setCurrentSelectedItem(
+  item: VaultItem | null,
+  targetView: View = View.ItemDetail,
+): void {
   setUiStore(STORE_KEY_SELECTED_ITEM, item);
   if (item) {
-    navigatePath("/vault/detail");
-    setSessionItem(SESSION_KEY_LAST_VIEW, View.ItemDetail);
+    navigate(targetView);
     setSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID, item.id);
   } else {
     removeSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID);
   }
+}
+
+export function selectItem(item: VaultItem | null): void {
+  setCurrentSelectedItem(item);
 }
 
 export async function openItem(
@@ -77,13 +83,5 @@ export async function openItem(
     const authorized = await requestReprompt();
     if (!authorized) return;
   }
-  setUiStore(STORE_KEY_SELECTED_ITEM, item);
-  const targetPath = getViewPath(targetView);
-  navigatePath(targetPath);
-
-  const skipViews = [View.Login, View.Welcome, View.Fido2Prompt];
-  if (!skipViews.includes(targetView)) {
-    setSessionItem(SESSION_KEY_LAST_VIEW, targetView);
-    setSessionItem(SESSION_KEY_LAST_SELECTED_ITEM_ID, item.id);
-  }
+  setCurrentSelectedItem(item, targetView);
 }

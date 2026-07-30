@@ -2,6 +2,7 @@ import { render } from "solid-js/web";
 import {
   type Component,
   createEffect,
+  For,
   Match,
   onMount,
   Show,
@@ -268,38 +269,43 @@ const App: Component = () => {
   const isWebProtocol = typeof window !== "undefined" &&
     window.location.protocol.startsWith("http");
 
+  const routesConfig: Array<{ view: View; component: Component }> = [
+    { view: View.Vault, component: Vault },
+    { view: View.ItemDetail, component: ItemDetail },
+    { view: View.ItemEdit, component: ItemEdit },
+    { view: View.Generator, component: Generator },
+    { view: View.PasswordHistory, component: PasswordHistory },
+    { view: View.Reports, component: Reports },
+    { view: View.ReportExposed, component: ReportExposed },
+    { view: View.ReportReused, component: ReportReused },
+    { view: View.ReportWeak, component: ReportWeak },
+    { view: View.ReportUnsecure, component: ReportUnsecure },
+    { view: View.ReportInactive2FA, component: ReportInactive2FA },
+    { view: View.ReportDataBreach, component: ReportDataBreach },
+    { view: View.Settings, component: Settings },
+    { view: View.Appearance, component: Appearance },
+    { view: View.Language, component: Language },
+    { view: View.Theme, component: Theme },
+    { view: View.AccountSecurity, component: AccountSecurity },
+    { view: View.ChangeMasterPassword, component: ChangeMasterPassword },
+    { view: View.VaultOptions, component: VaultOptions },
+    { view: View.ImportAccounts, component: ImportAccounts },
+    { view: View.ExportAccounts, component: ExportAccounts },
+    { view: View.Folders, component: Folders },
+    { view: View.Trash, component: Trash },
+    { view: View.AutofillOptions, component: AutofillOptions },
+    { view: View.About, component: About },
+    { view: View.Troubleshooting, component: Troubleshooting },
+  ];
+
   const appRoutes = (
     <>
       <Route path="/" component={Vault} />
-      <Route path="/vault" component={Vault} />
-      <Route path="/vault/detail" component={ItemDetail} />
-      <Route path="/vault/edit" component={ItemEdit} />
-      <Route path="/generator" component={Generator} />
-      <Route path="/reports" component={Reports} />
-      <Route path="/reports/exposed" component={ReportExposed} />
-      <Route path="/reports/reused" component={ReportReused} />
-      <Route path="/reports/weak" component={ReportWeak} />
-      <Route path="/reports/unsecure" component={ReportUnsecure} />
-      <Route path="/reports/inactive-2fa" component={ReportInactive2FA} />
-      <Route path="/reports/databreach" component={ReportDataBreach} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/settings/language" component={Language} />
-      <Route path="/settings/theme" component={Theme} />
-      <Route path="/settings/appearance" component={Appearance} />
-      <Route path="/settings/about" component={About} />
-      <Route path="/settings/troubleshooting" component={Troubleshooting} />
-      <Route path="/vault-options" component={VaultOptions} />
-      <Route path="/import" component={ImportAccounts} />
-      <Route path="/export" component={ExportAccounts} />
-      <Route path="/settings/security" component={AccountSecurity} />
-      <Route
-        path="/settings/change-password"
-        component={ChangeMasterPassword}
-      />
-      <Route path="/settings/autofill" component={AutofillOptions} />
-      <Route path="/generator/history" component={PasswordHistory} />
-      <Route path="/vault/trash" component={Trash} />
-      <Route path="/vault/folders" component={Folders} />
+      <For each={routesConfig}>
+        {(route) => (
+          <Route path={getViewPath(route.view)} component={route.component} />
+        )}
+      </For>
       <Route path="*" component={Vault} />
     </>
   );

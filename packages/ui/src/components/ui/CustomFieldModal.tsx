@@ -3,6 +3,7 @@ import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
 import Select from "@/components/ui/Select.tsx";
+import BaseSlideModal from "@/components/ui/BaseSlideModal.tsx";
 import { CustomFieldType } from "@gistwarden/domain";
 import type { VaultField } from "@gistwarden/domain";
 
@@ -18,7 +19,6 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
   const [name, setName] = createSignal("");
   const [value, setValue] = createSignal("");
   const [type, setType] = createSignal<CustomFieldType>(CustomFieldType.Text);
-  const [isClosing, setIsClosing] = createSignal(false);
 
   const fieldTypeOptions = () => [
     { value: CustomFieldType.Text, label: t("edit_field_type_text") },
@@ -30,7 +30,6 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
 
   createEffect(() => {
     if (props.isOpen) {
-      setIsClosing(false);
       if (props.initialField) {
         setName(props.initialField.name || "");
         setValue(props.initialField.value || "");
@@ -43,114 +42,100 @@ export default function CustomFieldModal(props: CustomFieldModalProps) {
     }
   });
 
-  const triggerClose = () => {
-    if (isClosing()) return;
-    setIsClosing(true);
-    setTimeout(() => {
-      props.onClose();
-    }, 250); // Matches the slideDown/fadeOut animation duration (0.25s)
-  };
-
-  const handleSave = () => {
-    if (isClosing()) return;
-    const trimmedName = name().trim();
-    if (!trimmedName) {
-      alert(
-        type() === CustomFieldType.Divider
-          ? t("edit_field_error_empty_divider")
-          : t("edit_field_error_empty_name"),
-      );
-      return;
-    }
-
-    setIsClosing(true);
-    setTimeout(() => {
-      props.onSave({
-        name: trimmedName,
-        value: type() === CustomFieldType.Divider ? "" : value().trim(),
-        type: type(),
-      });
-    }, 250);
-  };
-
   return (
-    <Show when={props.isOpen}>
-      <div
-        class={`modal-overlay bottom-slide ${isClosing() ? "is-closing" : ""}`}
-        onClick={triggerClose}
-      >
-        <div class="modal-slide-panel" onClick={(e) => e.stopPropagation()}>
-          <div class="modal-panel-header">
-            <div class="modal-panel-title">
-              {props.isEdit
-                ? t("edit_field_modal_title_edit")
-                : t("edit_field_modal_title_add")}
-            </div>
-            <button
-              type="button"
-              class="modal-close-btn"
-              onClick={triggerClose}
-            >
-              &times;
-            </button>
-          </div>
+    <BaseSlideModal
+      isOpen={props.isOpen}
+      onClose={props.onClose}
+      title={props.isEdit
+        ? t("edit_field_modal_title_edit")
+        : t("edit_field_modal_title_add")}
+    >
+      {(triggerClose) => {
+        const handleSave = () => {
+          const trimmedName = name().trim();
+          if (!trimmedName) {
+            alert(
+              type() === CustomFieldType.Divider
+                ? t("edit_field_error_empty_divider")
+                : t("edit_field_error_empty_name"),
+            );
+            return;
+          }
 
-          <div class="modal-panel-body">
-            <div class="form-group">
-              <label>{t("edit_field_modal_label_type")}</label>
-              <Select
-                value={type()}
-                onChange={(e) => {
-                  const val = parseInt(e.currentTarget.value);
-                  if (
-                    val === CustomFieldType.Text ||
-                    val === CustomFieldType.Hidden ||
-                    val === CustomFieldType.Boolean ||
-                    val === CustomFieldType.Linked ||
-                    val === CustomFieldType.Divider
-                  ) {
-                    setType(val);
-                  }
-                }}
-                options={fieldTypeOptions()}
-              />
-            </div>
+          triggerClose(() => {
+            props.onSave({
+              name: trimmedName,
+              value: type() === CustomFieldType.Divider ? "" : value().trim(),
+              type: type(),
+            });
+          });
+        };
 
-            <div class="form-group">
-              <label>{t("edit_field_name_placeholder")}</label>
-              <Input
-                type="text"
-                placeholder={type() === CustomFieldType.Divider
-                  ? t("edit_field_modal_placeholder_divider")
-                  : t("edit_field_modal_placeholder_name")}
-                value={name()}
-                onInput={(e) => setName(e.currentTarget.value)}
-              />
-            </div>
-
-            <Show when={type() !== CustomFieldType.Divider}>
+        return (
+          <>
+            <div class="modal-panel-body">
               <div class="form-group">
-                <label>{t("edit_field_val_placeholder")}</label>
-                <Input
-                  type={type() === CustomFieldType.Hidden ? "password" : "text"}
-                  placeholder={t("edit_field_val_placeholder") + "..."}
-                  value={value()}
-                  onInput={(e) => setValue(e.currentTarget.value)}
+                <label>{t("edit_field_modal_label_type")}</label>
+                <Select
+                  value={type()}
+                  onChange={(e) => {
+                    const val = parseInt(e.currentTarget.value);
+                    if (
+                      val === CustomFieldType.Text ||
+                      val === CustomFieldType.Hidden ||
+                      val === CustomFieldType.Boolean ||
+                      val === CustomFieldType.Linked ||
+                      val === CustomFieldType.Divider
+                    ) {
+                      setType(val);
+                    }
+                  }}
+                  options={fieldTypeOptions()}
                 />
               </div>
-            </Show>
-          </div>
 
-          <div class="modal-panel-footer">
-            <Button type="button" variant="primary" onClick={handleSave}>
-              {props.isEdit ? t("btn_save") : t("btn_create")}
-            </Button>
-            <Button type="button" variant="secondary" onClick={triggerClose}>
-              {t("btn_cancel")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </Show>
+              <div class="form-group">
+                <label>{t("edit_field_name_placeholder")}</label>
+                <Input
+                  type="text"
+                  placeholder={type() === CustomFieldType.Divider
+                    ? t("edit_field_modal_placeholder_divider")
+                    : t("edit_field_modal_placeholder_name")}
+                  value={name()}
+                  onInput={(e) => setName(e.currentTarget.value)}
+                />
+              </div>
+
+              <Show when={type() !== CustomFieldType.Divider}>
+                <div class="form-group">
+                  <label>{t("edit_field_val_placeholder")}</label>
+                  <Input
+                    type={type() === CustomFieldType.Hidden
+                      ? "password"
+                      : "text"}
+                    placeholder={t("edit_field_val_placeholder") + "..."}
+                    value={value()}
+                    onInput={(e) => setValue(e.currentTarget.value)}
+                  />
+                </div>
+              </Show>
+            </div>
+
+            <div class="modal-panel-footer">
+              <Button type="button" variant="primary" onClick={handleSave}>
+                {props.isEdit ? t("btn_save") : t("btn_create")}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => triggerClose()}
+              >
+                {t("btn_cancel")}
+              </Button>
+            </div>
+          </>
+        );
+      }}
+    </BaseSlideModal>
   );
 }

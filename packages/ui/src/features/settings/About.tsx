@@ -1,7 +1,12 @@
 import { type Component } from "solid-js";
 import { View } from "@/core/types.ts";
 import { navigate } from "@/core/navigation.ts";
-import { getAppVersion, getExtensionId } from "@/core/runtime.ts";
+import {
+  getAppVersion,
+  getExtensionId,
+  isEdge,
+  isFirefox,
+} from "@/core/runtime.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import {
@@ -20,17 +25,13 @@ export const About: Component = () => {
   const appVersion = getAppVersion();
 
   const getRatingUrl = () => {
-    const userAgent = navigator.userAgent;
-    const isFirefox = userAgent.includes("Firefox");
-    const isEdge = userAgent.includes("Edg/") || userAgent.includes("Edge");
-
     const extId = getExtensionId();
     if (extId) {
-      if (isFirefox) {
+      if (isFirefox()) {
         // Liên kết trang Add-ons của Firefox (đánh giá hiển thị trực tiếp tại trang này)
         return `https://addons.mozilla.org/firefox/addon/${FIREFOX_ADDON_SLUG}/`;
       }
-      if (isEdge) {
+      if (isEdge()) {
         // Liên kết cửa hàng Microsoft Edge Add-ons
         return `https://microsoftedge.microsoft.com/addons/detail/${extId}`;
       }
@@ -39,10 +40,10 @@ export const About: Component = () => {
     }
 
     // Liên kết dự phòng nếu chạy ở môi trường ngoài Extension
-    if (isFirefox) {
+    if (isFirefox()) {
       return "https://addons.mozilla.org/firefox/";
     }
-    if (isEdge) {
+    if (isEdge()) {
       return "https://microsoftedge.microsoft.com/addons/";
     }
     return "https://chromewebstore.google.com/";

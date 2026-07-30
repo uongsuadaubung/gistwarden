@@ -21,6 +21,7 @@ import {
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { handlePopout, isPopout } from "@/core/popout-utils.ts";
+import { isFirefox } from "@/core/runtime.ts";
 import { setSessionItem } from "@/core/storage.ts";
 import {
   SESSION_KEY_LAST_VIEW,
@@ -126,8 +127,7 @@ export const VaultOptions: Component = () => {
           <div
             class="setting-row"
             onClick={async () => {
-              const isFirefox = navigator.userAgent.includes("Firefox");
-              if (isFirefox && !isPopout()) {
+              if (isFirefox() && !isPopout()) {
                 await setSessionItem(
                   SESSION_KEY_LAST_VIEW,
                   View.ImportAccounts,

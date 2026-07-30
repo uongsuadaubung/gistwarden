@@ -5,68 +5,47 @@ import { resolveReprompt } from "@gistwarden/ui";
 import { verifyMasterPassword } from "@gistwarden/orchestrator";
 import Input from "@/components/ui/Input.tsx";
 import Button from "@/components/ui/Button.tsx";
+import BaseSlideModal from "@/components/ui/BaseSlideModal.tsx";
 
 export default function RepromptModal() {
   const [password, setPassword] = createSignal("");
-  const [isClosing, setIsClosing] = createSignal(false);
   const [error, setError] = createSignal("");
 
   createEffect(() => {
     if (uiStore.repromptModal.isOpen) {
-      setIsClosing(false);
       setPassword("");
       setError("");
     }
   });
 
-  const triggerClose = () => {
-    if (isClosing()) return;
-    setIsClosing(true);
-    setTimeout(() => {
-      resolveReprompt(false);
-    }, 250);
-  };
-
-  const handleConfirm = async (e: Event) => {
-    e.preventDefault();
-    if (isClosing()) return;
-    setError("");
-
-    const value = password().trim();
-    if (!value) {
-      setError(t("settings_error_fields_required"));
-      return;
-    }
-
-    const isCorrect = await verifyMasterPassword(value);
-    if (isCorrect) {
-      setIsClosing(true);
-      setTimeout(() => {
-        resolveReprompt(true);
-      }, 250);
-    } else {
-      setError(t("login_error_wrong_mp"));
-    }
-  };
-
   return (
-    <Show when={uiStore.repromptModal.isOpen}>
-      <div
-        class={`modal-overlay bottom-slide ${isClosing() ? "is-closing" : ""}`}
-        onClick={triggerClose}
-      >
-        <div class="modal-slide-panel" onClick={(e) => e.stopPropagation()}>
-          <div class="modal-panel-header">
-            <div class="modal-panel-title">{t("reprompt_modal_title")}</div>
-            <button
-              type="button"
-              class="modal-close-btn font-sz-16 font-w-600"
-              onClick={triggerClose}
-            >
-              ✕
-            </button>
-          </div>
+    <BaseSlideModal
+      isOpen={uiStore.repromptModal.isOpen}
+      onClose={() => resolveReprompt(false)}
+      title={t("reprompt_modal_title")}
+    >
+      {(triggerClose) => {
+        const handleConfirm = async (e: Event) => {
+          e.preventDefault();
+          setError("");
 
+          const value = password().trim();
+          if (!value) {
+            setError(t("settings_error_fields_required"));
+            return;
+          }
+
+          const isCorrect = await verifyMasterPassword(value);
+          if (isCorrect) {
+            triggerClose(() => {
+              resolveReprompt(true);
+            });
+          } else {
+            setError(t("login_error_wrong_mp"));
+          }
+        };
+
+        return (
           <form onSubmit={handleConfirm} class="modal-panel-body">
             <p class="m-0 text-secondary font-sz-13 lh-1_5">
               {t("reprompt_modal_desc")}
@@ -95,19 +74,20 @@ export default function RepromptModal() {
             </div>
 
             <div class="modal-panel-footer p-0 border-none">
-              <Button
-                type="submit"
-                variant="primary"
-              >
+              <Button type="submit" variant="primary">
                 {t("reprompt_modal_confirm")}
               </Button>
-              <Button type="button" variant="secondary" onClick={triggerClose}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => triggerClose()}
+              >
                 {t("btn_cancel")}
               </Button>
             </div>
           </form>
-        </div>
-      </div>
-    </Show>
+        );
+      }}
+    </BaseSlideModal>
   );
 }

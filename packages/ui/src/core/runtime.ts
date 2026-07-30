@@ -39,3 +39,22 @@ export function getExtensionId(): string {
   }
   return chrome.runtime.id || "";
 }
+
+/**
+ * Check if running under Firefox browser environment.
+ */
+export function isFirefox(): boolean {
+  return typeof navigator !== "undefined" &&
+    navigator.userAgent.includes("Firefox");
+}
+
+/**
+ * Check if running under Microsoft Edge browser environment.
+ */
+export function isEdge(): boolean {
+  return (
+    typeof navigator !== "undefined" &&
+    (navigator.userAgent.includes("Edg/") ||
+      navigator.userAgent.includes("Edge"))
+  );
+}
