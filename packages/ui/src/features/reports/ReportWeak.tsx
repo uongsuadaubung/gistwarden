@@ -102,7 +102,7 @@ export const ReportWeak: Component = () => {
                   <div class={`badge ${res.badgeClass} mt-1`}>
                     {t(res.scoreLabelKey)} ({t("report_score_label").replace(
                       "{score}",
-                      res.score.toString(),
+                      (res.score + 1).toString(),
                     )})
                   </div>
                 </div>

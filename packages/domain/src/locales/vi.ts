@@ -666,7 +666,7 @@ export default {
     "Máy chủ kiểm tra rò rỉ gặp sự cố. Vui lòng thử lại sau.",
   report_no_username: "(Không có tên người dùng)",
   report_no_uri: "(Không có trang web)",
-  report_score_label: "Điểm {score}/4",
+  report_score_label: "Điểm {score}/5",
   report_weak_btn_upgrade: "Nâng cấp mật khẩu",
   report_reused_btn_change: "Đổi mật khẩu",
   report_inactive_2fa_badge: "Chưa có TOTP hoặc Passkey",

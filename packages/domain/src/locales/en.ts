@@ -657,7 +657,7 @@ export default {
   report_error_server: "Server error while checking breach data.",
   report_no_username: "(No username)",
   report_no_uri: "(No URI)",
-  report_score_label: "Score {score}/4",
+  report_score_label: "Score {score}/5",
   report_weak_btn_upgrade: "Upgrade Password",
   report_reused_btn_change: "Change Password",
   report_inactive_2fa_badge: "No TOTP or Passkey",
