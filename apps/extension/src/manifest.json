@@ -18,7 +18,9 @@
   "host_permissions": [
     "https://api.github.com/*",
     "https://gist.githubusercontent.com/*",
-    "https://gistwarden.uongsuadaubung.workers.dev/*"
+    "https://gistwarden.uongsuadaubung.workers.dev/*",
+    "https://api.pwnedpasswords.com/*",
+    "https://api.xposedornot.com/*"
   ],
   "action": {
     "default_popup": "popup.html",

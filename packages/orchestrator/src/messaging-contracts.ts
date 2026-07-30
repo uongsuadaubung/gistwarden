@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TranslationKey } from "@gistwarden/domain";
 import { defineRoute } from "./messaging.ts";
 import {
   MSG_CHECK_AUTOFILL_SUGGESTION,
@@ -335,3 +336,35 @@ export const saveCredentialActionRoute = defineRoute({
   payloadSchema: SaveCredentialActionMsgSchema,
   responseSchema: SaveCredentialActionResponseSchema,
 });
+
+const TranslationKeySchema = z.custom<TranslationKey>(
+  (val) => typeof val === "string",
+);
+
+export const checkHIBPRoute = defineRoute({
+  type: "CHECK_PASSWORD_HIBP",
+  payloadSchema: z.object({
+    type: z.literal("CHECK_PASSWORD_HIBP"),
+    password: z.string(),
+  }),
+  responseSchema: z.object({
+    success: z.boolean(),
+    count: z.number(),
+    errorKey: TranslationKeySchema.optional(),
+  }),
+});
+
+export const checkDataBreachRoute = defineRoute({
+  type: "CHECK_EMAIL_BREACH",
+  payloadSchema: z.object({
+    type: z.literal("CHECK_EMAIL_BREACH"),
+    email: z.string(),
+  }),
+  responseSchema: z.object({
+    success: z.boolean(),
+    status: z.enum(["clean", "exposed", "rate_limited", "error"]),
+    breaches: z.array(z.string()).optional(),
+    errorKey: TranslationKeySchema.optional(),
+  }),
+});
+

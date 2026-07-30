@@ -15,3 +15,5 @@ export * from "./src/vault-types.ts";
 export * from "./src/vault-schemas.ts";
 export * from "./src/fido2-schemas.ts";
 export * from "./src/logger.ts";
+export * from "./src/password-strength.ts";
+export * from "./src/vietnamese-wordlist.ts";

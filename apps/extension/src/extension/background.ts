@@ -3,6 +3,7 @@ import { registerAutofillRoutes } from "@/extension/handlers/autofill-handlers.t
 import { registerAuthRoutes } from "@/extension/handlers/auth-handlers.ts";
 import { registerSyncRoutes } from "@/extension/handlers/sync-handlers.ts";
 import { registerFido2Routes } from "@/extension/handlers/fido2-handlers.ts";
+import { registerReportRoutes } from "@/extension/handlers/report-handlers.ts";
 import { SESSION_KEY_SESSION_INITIALIZED } from "@/core/constants.ts";
 import {
   clearSession,
@@ -23,6 +24,7 @@ new MessageRouter()
   .use(registerAuthRoutes)
   .use(registerSyncRoutes)
   .use(registerFido2Routes)
+  .use(registerReportRoutes)
   .listen();
 
 // Listener Management

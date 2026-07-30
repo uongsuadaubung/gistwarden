@@ -79,6 +79,28 @@ async function runBuild() {
       build.onResolve({ filter: /^@gistwarden\/ui/ }, () => {
         return { path: join(projectRoot, "packages", "ui", "mod.ts") };
       });
+      build.onResolve({ filter: /^zxcvbn$/ }, () => {
+        const p1 = join(
+          projectRoot,
+          "node_modules",
+          ".deno",
+          "@zxcvbn-ts+core@3.0.4",
+          "node_modules",
+          "@zxcvbn-ts",
+          "core",
+          "dist",
+          "index.esm.js",
+        );
+        const p2 = join(
+          projectRoot,
+          "node_modules",
+          "@zxcvbn-ts",
+          "core",
+          "dist",
+          "index.esm.js",
+        );
+        return { path: existsSync(p1) ? p1 : p2 };
+      });
       build.onResolve({ filter: /^@\// }, (args) => {
         const rel = args.path.substring(2);
         if (

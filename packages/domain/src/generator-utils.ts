@@ -1,4 +1,4 @@
-import { wordlist } from "./wordlist.ts";
+import { ENGLISH_WORDLIST } from "./wordlist.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "./i18n.ts";
 
@@ -120,8 +120,8 @@ export function generatePassphrase(
   const chosenWords: string[] = [];
 
   for (let i = 0; i < words; i++) {
-    const wordIndex = getRandomBoundedInt(wordlist.length);
-    let word = wordlist[wordIndex];
+    const wordIndex = getRandomBoundedInt(ENGLISH_WORDLIST.length);
+    let word = ENGLISH_WORDLIST[wordIndex];
 
     if (options.capitalize) {
       word = word.charAt(0).toUpperCase() + word.slice(1);

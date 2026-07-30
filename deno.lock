@@ -1,9 +1,11 @@
 {
   "version": "5",
   "specifiers": {
+    "npm:@solidjs/router@1": "1.0.0_solid-js@1.9.14",
     "npm:@solidjs/router@~0.16.2": "0.16.3_solid-js@1.9.14",
-    "npm:@solidjs/router@~0.16.3": "0.16.3_solid-js@1.9.14",
     "npm:@types/chrome@~0.1.42": "0.1.43",
+    "npm:@zxcvbn-ts/core@^3.0.4": "3.0.4",
+    "npm:@zxcvbn-ts/core@^4.1.2": "4.1.2",
     "npm:adm-zip@0.6": "0.6.0",
     "npm:consola@^3.4.2": "3.4.2",
     "npm:esbuild-plugin-solid@0.6": "0.6.0_esbuild@0.28.1_solid-js@1.9.14",
@@ -865,6 +867,12 @@
         "solid-js"
       ]
     },
+    "@solidjs/router@1.0.0_solid-js@1.9.14": {
+      "integrity": "sha512-cCSk1hvgCowiMa9bzzYWHiLu1U4E22+DfJe6/rOwAyECKrxc3jrd5QnoW3sDDJtW+e077cz/M67bPl3DqOBw1Q==",
+      "dependencies": [
+        "solid-js"
+      ]
+    },
     "@tokenizer/inflate@0.4.1": {
       "integrity": "sha512-2mAv+8pkG6GIZiF1kNg1jAjh27IDxEPKwdGul3snfztFerfPGI1LjDezZp3i7BElXompqEtPmoPx6c2wgtWsOA==",
       "dependencies": [
@@ -896,6 +904,18 @@
     },
     "@types/node@16.9.1": {
       "integrity": "sha512-QpLcX9ZSsq3YYUUnD3nFDY8H7wctAhQj/TFKL8Ya8v5fMm3CFXxo8zStsLAl780ltoYoo1WvKUVGBQK+1ifr7g=="
+    },
+    "@zxcvbn-ts/core@3.0.4": {
+      "integrity": "sha512-aQeiT0F09FuJaAqNrxynlAwZ2mW/1MdXakKWNmGM1Qp/VaY6CnB/GfnMS2T8gB2231Esp1/maCWd8vTG4OuShw==",
+      "dependencies": [
+        "fastest-levenshtein"
+      ]
+    },
+    "@zxcvbn-ts/core@4.1.2": {
+      "integrity": "sha512-RQmxWB3AMI+HGQErQdUv6Aq32aQhp6xOxrfgCP0+T9MsLZoP3xtLHuT8O8VojsUxdmQVZfJlYkYb1A0wOwIS+Q==",
+      "dependencies": [
+        "fastest-levenshtein"
+      ]
     },
     "adm-zip@0.6.0": {
       "integrity": "sha512-XleryMhbuksdKtofnWZ9Sk+4CUTbms4Mb/EU32SZwToAyZ5RgVos/ki8n+yr0LWHOGKuakbXTuuYNHLQjhddgg=="
@@ -1118,6 +1138,9 @@
     },
     "exif-parser@0.1.12": {
       "integrity": "sha512-c2bQfLNbMzLPmzQuOr8fy0csy84WmwnER81W88DzTp9CYNPJ6yzOj2EZAh9pywYpqHnshVLHQJ8WzldAyfY+Iw=="
+    },
+    "fastest-levenshtein@1.0.16": {
+      "integrity": "sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg=="
     },
     "file-type@21.3.4": {
       "integrity": "sha512-Ievi/yy8DS3ygGvT47PjSfdFoX+2isQueoYP1cntFW1JLYAuS4GD7NUPGg4zv2iZfV52uDyk5w5Z0TdpRS6Q1g==",
@@ -1747,8 +1770,9 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
-      "npm:@solidjs/router@~0.16.3",
+      "npm:@solidjs/router@1",
       "npm:@types/chrome@~0.1.42",
+      "npm:@zxcvbn-ts/core@^4.1.2",
       "npm:adm-zip@0.6",
       "npm:consola@^3.4.2",
       "npm:esbuild-plugin-solid@0.6",
@@ -1787,6 +1811,7 @@
       },
       "packages/domain": {
         "dependencies": [
+          "npm:@zxcvbn-ts/core@^3.0.4",
           "npm:hash-wasm@^4.12.0",
           "npm:neverthrow@^8.2.0",
           "npm:otpauth@^9.5.1",

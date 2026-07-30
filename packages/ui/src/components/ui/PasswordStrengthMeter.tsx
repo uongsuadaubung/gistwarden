@@ -1,4 +1,5 @@
 import { type Component, createMemo } from "solid-js";
+import { evaluatePasswordStrength } from "@gistwarden/domain";
 import { t } from "@/core/i18n.ts";
 
 interface PasswordStrengthMeterProps {
@@ -6,10 +7,11 @@ interface PasswordStrengthMeterProps {
 }
 
 type StrengthLabel =
+  | "pwd_strength_very_weak"
   | "pwd_strength_weak"
   | "pwd_strength_fair"
-  | "pwd_strength_good"
-  | "pwd_strength_strong";
+  | "pwd_strength_strong"
+  | "pwd_strength_very_strong";
 
 interface StrengthResult {
   score: number;
@@ -20,52 +22,42 @@ interface StrengthResult {
 export const PasswordStrengthMeter: Component<PasswordStrengthMeterProps> = (
   props,
 ) => {
-  const evaluateStrength = (pass: string): StrengthResult => {
-    let score = 0;
-    if (!pass) {
-      return {
-        score: 0,
-        label: "pwd_strength_weak",
-        className: "pwd-strength-0",
-      };
+  const strength = createMemo<StrengthResult>(() => {
+    const res = evaluatePasswordStrength(props.password);
+    switch (res.score) {
+      case 0:
+        return {
+          score: 0,
+          label: "pwd_strength_very_weak",
+          className: "pwd-strength-very-weak",
+        };
+      case 1:
+        return {
+          score: 1,
+          label: "pwd_strength_weak",
+          className: "pwd-strength-weak",
+        };
+      case 2:
+        return {
+          score: 2,
+          label: "pwd_strength_fair",
+          className: "pwd-strength-fair",
+        };
+      case 3:
+        return {
+          score: 3,
+          label: "pwd_strength_strong",
+          className: "pwd-strength-strong",
+        };
+      case 4:
+      default:
+        return {
+          score: 4,
+          label: "pwd_strength_very_strong",
+          className: "pwd-strength-very-strong",
+        };
     }
-
-    if (pass.length > 6) score += 1;
-    if (pass.length >= 10) score += 1;
-    if (/[A-Z]/.test(pass)) score += 1;
-    if (/[a-z]/.test(pass)) score += 1;
-    if (/[0-9]/.test(pass)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
-
-    if (score <= 2) {
-      return {
-        score,
-        label: "pwd_strength_weak",
-        className: "pwd-strength-weak",
-      };
-    }
-    if (score <= 4) {
-      return {
-        score,
-        label: "pwd_strength_fair",
-        className: "pwd-strength-fair",
-      };
-    }
-    if (score === 5) {
-      return {
-        score,
-        label: "pwd_strength_good",
-        className: "pwd-strength-good",
-      };
-    }
-    return {
-      score,
-      label: "pwd_strength_strong",
-      className: "pwd-strength-strong",
-    };
-  };
-
-  const strength = createMemo(() => evaluateStrength(props.password));
+  });
 
   return (
     <div class="pwd-strength-container">
@@ -74,6 +66,7 @@ export const PasswordStrengthMeter: Component<PasswordStrengthMeterProps> = (
         <div class="pwd-strength-divider div-1" />
         <div class="pwd-strength-divider div-2" />
         <div class="pwd-strength-divider div-3" />
+        <div class="pwd-strength-divider div-4" />
       </div>
       <div class={`pwd-strength-text ${strength().className}`}>
         {t(strength().label)}

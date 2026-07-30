@@ -15,6 +15,7 @@ import { getCurrentTab } from "@/core/tabs.ts";
 import { addPasswordHistoryItem } from "@/core/storage.ts";
 import { extractDomainFromTabUrl } from "@/core/domain-utils.ts";
 import { copyToClipboardWithMessage } from "@gistwarden/ui";
+import PasswordStrengthMeter from "@/components/ui/PasswordStrengthMeter.tsx";
 
 export const Generator: Component = () => {
   const [activeTab, setActiveTab] = createSignal<"password" | "passphrase">(
@@ -257,6 +258,10 @@ export const Generator: Component = () => {
             </div>
           </div>
 
+          <div class="mb-4">
+            <PasswordStrengthMeter password={password()} />
+          </div>
+
           {/* Options */}
           <div class="options-title">{t("gen_options_title")}</div>
 
@@ -412,6 +417,10 @@ export const Generator: Component = () => {
                 <CopyIcon />
               </button>
             </div>
+          </div>
+
+          <div class="mb-4">
+            <PasswordStrengthMeter password={password()} />
           </div>
 
           {/* Options */}

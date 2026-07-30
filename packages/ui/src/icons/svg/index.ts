@@ -49,4 +49,5 @@ export { default as CapsLockIcon } from "@/icons/svg/CapsLockIcon.tsx";
 export { default as ListCheckIcon } from "@/icons/svg/ListCheckIcon.tsx";
 export { default as AutofillIcon } from "@/icons/svg/AutofillIcon.tsx";
 export { default as FolderIcon } from "@/icons/svg/FolderIcon.tsx";
+export { default as ReportsIcon } from "@/icons/svg/ReportsIcon.tsx";
 export * from "@/icons/svg/types.ts";

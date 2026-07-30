@@ -13,6 +13,7 @@
     "otpauth": "npm:otpauth@^9.5.1",
     "papaparse": "npm:papaparse@^5.5.4",
     "solid-js": "npm:solid-js@^1.9.14",
-    "tldts": "npm:tldts@^7.4.9"
+    "tldts": "npm:tldts@^7.4.9",
+    "zxcvbn": "npm:@zxcvbn-ts/core@^3.0.4"
   }
 }

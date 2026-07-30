@@ -109,10 +109,12 @@ export default {
   login_oauth_worker_url: "URL Cloudflare Worker Proxy",
   login_btn_save_config: "Lưu cấu hình",
   login_master_password: "Mật khẩu Master",
+  pwd_strength_very_weak: "Rất yếu",
   pwd_strength_weak: "Yếu",
   pwd_strength_fair: "Trung bình",
   pwd_strength_good: "Tốt",
   pwd_strength_strong: "Mạnh",
+  pwd_strength_very_strong: "Rất mạnh",
   login_placeholder_mp: "Nhập mật khẩu Master...",
   login_btn_unlock: "Mở khóa",
   login_forgot_password: "Quên mật khẩu Master?",
@@ -611,7 +613,79 @@ export default {
   // Navigation tabs
   nav_vault: "Két sắt",
   nav_generator: "Trình tạo",
+  nav_reports: "Báo cáo",
   nav_settings: "Cài đặt",
+
+  // Reports Feature
+  reports_title: "Báo cáo bảo mật",
+  reports_subtitle:
+    "Phát hiện và vá các lỗ hổng bảo mật cho các tài khoản trực tuyến của bạn bằng cách chọn các báo cáo dưới đây.",
+  report_exposed_title: "Mật khẩu rò rỉ",
+  report_exposed_desc:
+    "Mật khẩu bị rò rỉ trong các vụ vi phạm dữ liệu là mục tiêu dễ dàng cho kẻ tấn công. Thay đổi các mật khẩu này để ngăn chặn nguy cơ xâm nhập.",
+  report_exposed_btn_check: "Kiểm tra mật khẩu rò rỉ",
+  report_exposed_clean_msg:
+    "Tuyệt vời! Không tìm thấy mật khẩu rò rỉ nào trong kho lưu trữ của bạn.",
+  report_exposed_found_msg:
+    "Cảnh báo: Phát hiện {count} mật khẩu đã bị rò rỉ dữ liệu trên internet!",
+  report_reused_title: "Mật khẩu dùng lại",
+  report_reused_desc:
+    "Sử dụng lại mật khẩu giúp kẻ tấn công dễ dàng đột nhập vào nhiều tài khoản. Thay đổi để mỗi tài khoản có mật khẩu duy nhất.",
+  report_reused_group_title: "Nhóm Mật Khẩu #{index} ({count} tài khoản)",
+  report_reused_clean_msg:
+    "Xuất sắc! Không có mật khẩu nào bị dùng lặp lại trong kho lưu trữ.",
+  report_weak_title: "Mật khẩu yếu",
+  report_weak_desc:
+    "Mật khẩu yếu có thể bị kẻ tấn công dễ dàng đoán ra. Thay đổi thành mật khẩu mạnh hơn bằng trình tạo mật khẩu.",
+  report_weak_clean_msg:
+    "Tuyệt vời! Tất cả mật khẩu trong kho lưu trữ đều đạt tiêu chuẩn an toàn cao.",
+  report_unsecure_title: "Trang web không an toàn",
+  report_unsecure_desc:
+    "Các URL bắt đầu bằng http:// không sử dụng mã hóa an toàn nhất. Đổi URL sang https:// để duyệt web an toàn hơn.",
+  report_unsecure_btn_upgrade: "Nâng cấp sang HTTPS",
+  report_unsecure_clean_msg:
+    "Rất tốt! Tất cả trang web đều sử dụng kết nối mã hóa HTTPS.",
+  report_inactive_2fa_title: "Chưa bật xác minh 2 bước",
+  report_inactive_2fa_desc:
+    "Xác minh hai bước thêm một lớp bảo vệ cho tài khoản. Hãy cài đặt mã TOTP hoặc Passkey cho các tài khoản này.",
+  report_inactive_2fa_clean_msg:
+    "Tốt lắm! Tất cả tài khoản đều đã được bảo vệ bằng mã TOTP hoặc Passkey.",
+  report_databreach_title: "Rò rỉ dữ liệu Email",
+  report_databreach_desc:
+    "Các tài khoản bị vi phạm có thể tiết lộ thông tin cá nhân của bạn. Nhập địa chỉ Email bên dưới để kiểm tra rò rỉ qua hệ thống XposedOrNot.",
+  report_databreach_placeholder: "Nhập địa chỉ Email cần kiểm tra...",
+  report_databreach_btn_check: "Kiểm tra Email rò rỉ",
+  report_databreach_clean_msg:
+    "Tin vui! Địa chỉ Email này chưa bị phát hiện trong vụ vi phạm dữ liệu nào.",
+  report_databreach_found_title:
+    "Cảnh báo: Địa chỉ Email '{email}' đã bị rò rỉ trong các vụ vi phạm dữ liệu sau:",
+  report_error_rate_limit:
+    "Đã vượt quá giới hạn lượt gọi API (Rate Limit). Vui lòng thử lại sau ít phút.",
+  report_error_network: "Lỗi kết nối mạng khi kiểm tra dữ liệu rò rỉ.",
+  report_error_server: "Máy chủ kiểm tra rò rỉ gặp sự cố. Vui lòng thử lại sau.",
+  report_no_username: "(Không có tên người dùng)",
+  report_no_uri: "(Không có trang web)",
+  report_score_label: "Điểm {score}/4",
+  report_weak_btn_upgrade: "Nâng cấp mật khẩu",
+  report_reused_btn_change: "Đổi mật khẩu",
+  report_inactive_2fa_badge: "Chưa có TOTP hoặc Passkey",
+  report_inactive_2fa_btn_setup: "Thiết lập 2FA",
+  report_databreach_btn_checking: "Đang kiểm tra...",
+  report_scanning_progress: "Đang quét ({progress}%)...",
+  report_exposed_found_count: "Phát hiện {count} tài khoản bị rò rỉ",
+  report_exposed_times: "Đã rò rỉ {count} lần",
+  report_export_btn: "Xuất HTML",
+  report_export_title: "Báo Cáo Bảo Mật Mật Khẩu Rò Rỉ - Gistwarden",
+  report_export_heading: "🛡️ Báo Cáo Bảo Mật Mật Khẩu Rò Rỉ",
+  report_export_meta:
+    "Được tạo bởi Gistwarden thông qua API Have I Been Pwned (HIBP)",
+  report_export_summary:
+    "🚨 Cảnh báo: Phát hiện {count} tài khoản có mật khẩu bị rò rỉ! Hãy thay đổi các mật khẩu này ngay lập tức.",
+  report_export_col_account: "Tên tài khoản",
+  report_export_col_username: "Tên người dùng / Email",
+  report_export_col_exposure: "Mức độ rò rỉ",
+  report_export_footer:
+    "Kiểm toán bảo mật Gistwarden Vault • Bảo vệ bằng thuật toán băm k-Anonymity SHA-1",
 
   // Guide Page
   settings_user_guide: "Hướng dẫn sử dụng",

@@ -1,0 +1,448 @@
+/* Reports View & Sub-Reports Styling - 100% Synchronized with Vault & System Design Tokens */
+
+/* Main Reports View Layout */
+.reports-view {
+  padding: 16px;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.report-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  min-height: 140px;
+  height: 100%;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform
+    0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    background-color: var(--hover-bg);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-2, rgba(0,0,0,0.15));
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.report-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background-color: var(--white-translucent-5);
+  color: var(--text);
+  margin-top: 2px;
+
+  svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--text) !important;
+    color: var(--text) !important;
+  }
+}
+
+.report-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.report-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.report-card-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Detail View Layout (Sub-reports) */
+.report-detail-view {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+
+  .page-subtitle {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+}
+
+/* Export Actions Row */
+.export-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  margin-bottom: 14px;
+}
+
+/* Form controls in Sub-Reports */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Reused Password Groups - Clean Flat Group Cards */
+.group-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+
+    .group-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+  }
+
+  .group-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* Item Lists & Vault-Consistent Item Rows */
+.item-list,
+.reused-groups-list,
+.weak-items-list,
+.unsecure-items-list,
+.inactive-items-list,
+.breach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  gap: 12px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background-color: var(--hover-bg);
+    border-color: var(--border-hover, var(--border));
+  }
+}
+
+.group-card .item-row {
+  background-color: var(--white-translucent-5);
+  border: 1px solid var(--border-translucent, var(--border));
+
+  &:hover {
+    background-color: var(--hover-bg);
+  }
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+
+  .fw-bold,
+  .fw-semibold {
+    font-size: 13px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  .text-muted,
+  .font-monospace {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+}
+
+.item-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.breach-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  span {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background-color: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: 3px;
+  transition: width 0.15s ease;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 16px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  .empty-state-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+
+    svg {
+      width: 28px;
+      height: 28px;
+      fill: var(--text) !important;
+      color: var(--text) !important;
+    }
+  }
+}
+
+/* Alert Boxes */
+.alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+
+  &.alert-danger {
+    background-color: var(--error-translucent-15);
+    color: var(--error);
+    border: 1px solid var(--error-translucent-30, rgba(239, 68, 68, 0.3));
+  }
+
+  &.alert-warning {
+    background-color: var(--warning-translucent-15);
+    color: var(--warning);
+    border: 1px solid var(--warning-translucent-30, rgba(245, 158, 11, 0.3));
+  }
+
+  &.alert-success {
+    background-color: var(--success-translucent-15);
+    color: var(--success);
+    border: 1px solid var(--success-translucent-30, rgba(16, 185, 129, 0.3));
+  }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Badges - Subtle & Harmonious Styling */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2.5px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  width: fit-content;
+  line-height: 1.2;
+}
+
+.badge-danger-dark {
+  background-color: rgba(185, 28, 28, 0.25);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.badge-danger {
+  background-color: var(--error-translucent-15);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-warning {
+  background-color: var(--warning-translucent-15);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-secondary {
+  background-color: var(--white-translucent-5);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* Common Utility Helper Classes */
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.flex-align-center {
+  display: flex;
+  align-items: center;
+}
+
+.gap-1 {
+  gap: 4px;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.fw-bold {
+  font-weight: 700;
+}
+
+.fw-semibold {
+  font-weight: 600;
+}
+
+.fw-medium {
+  font-weight: 500;
+}
+
+.text-sm {
+  font-size: 12px;
+}
+
+.font-monospace {
+  font-family: monospace;
+}
+
+.text-orange {
+  color: #f97316 !important;
+}
+
+.text-info {
+  color: #3b82f6 !important;
+}
+
+.text-purple {
+  color: #a855f7 !important;
+}
+
+.text-success {
+  color: var(--success) !important;
+}
+
+.text-danger {
+  color: var(--error) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}

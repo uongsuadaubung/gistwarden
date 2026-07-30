@@ -23,6 +23,13 @@ export enum View {
   PasswordHistory = "PasswordHistory",
   Trash = "Trash",
   Folders = "Folders",
+  Reports = "Reports",
+  ReportExposed = "ReportExposed",
+  ReportReused = "ReportReused",
+  ReportWeak = "ReportWeak",
+  ReportUnsecure = "ReportUnsecure",
+  ReportInactive2FA = "ReportInactive2FA",
+  ReportDataBreach = "ReportDataBreach",
 }
 
 export enum SupportLanguage {

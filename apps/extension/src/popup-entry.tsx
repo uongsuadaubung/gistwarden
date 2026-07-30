@@ -31,6 +31,7 @@ import {
 import { View } from "@gistwarden/domain";
 import {
   GeneratorIcon,
+  ReportsIcon,
   SettingsIcon,
   SyncIcon,
   VaultIcon,
@@ -68,6 +69,13 @@ import AutofillOptions from "@/features/settings/AutofillOptions.tsx";
 import PasswordHistory from "@/features/generator/PasswordHistory.tsx";
 import Trash from "@/features/vault/Trash.tsx";
 import Folders from "@/features/vault/Folders.tsx";
+import Reports from "@/features/reports/Reports.tsx";
+import ReportExposed from "@/features/reports/ReportExposed.tsx";
+import ReportReused from "@/features/reports/ReportReused.tsx";
+import ReportWeak from "@/features/reports/ReportWeak.tsx";
+import ReportUnsecure from "@/features/reports/ReportUnsecure.tsx";
+import ReportInactive2FA from "@/features/reports/ReportInactive2FA.tsx";
+import ReportDataBreach from "@/features/reports/ReportDataBreach.tsx";
 import ConfirmModal from "@/components/ui/ConfirmModal.tsx";
 import RepromptModal from "@/components/ui/RepromptModal.tsx";
 import { t } from "@/core/i18n.ts";
@@ -134,6 +142,7 @@ const MainLayout: Component<RouteSectionProps> = (props) => {
                 when={[
                   View.Vault,
                   View.Generator,
+                  View.Reports,
                   View.Settings,
                 ].includes(uiStore.view)}
               >
@@ -155,6 +164,15 @@ const MainLayout: Component<RouteSectionProps> = (props) => {
                   >
                     <GeneratorIcon />
                     <span>{t("nav_generator")}</span>
+                  </div>
+                  <div
+                    class={`nav-item ${
+                      uiStore.view === View.Reports ? "active" : ""
+                    }`}
+                    onClick={() => navigate(View.Reports)}
+                  >
+                    <ReportsIcon />
+                    <span>{t("nav_reports")}</span>
                   </div>
                   <div
                     class={`nav-item ${
@@ -257,6 +275,13 @@ const App: Component = () => {
       <Route path="/vault/detail" component={ItemDetail} />
       <Route path="/vault/edit" component={ItemEdit} />
       <Route path="/generator" component={Generator} />
+      <Route path="/reports" component={Reports} />
+      <Route path="/reports/exposed" component={ReportExposed} />
+      <Route path="/reports/reused" component={ReportReused} />
+      <Route path="/reports/weak" component={ReportWeak} />
+      <Route path="/reports/unsecure" component={ReportUnsecure} />
+      <Route path="/reports/inactive-2fa" component={ReportInactive2FA} />
+      <Route path="/reports/databreach" component={ReportDataBreach} />
       <Route path="/settings" component={Settings} />
       <Route path="/settings/language" component={Language} />
       <Route path="/settings/theme" component={Theme} />
