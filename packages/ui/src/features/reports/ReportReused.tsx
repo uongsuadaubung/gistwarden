@@ -4,7 +4,7 @@ import { accountStore } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
-import { KeyIcon, ShieldIcon } from "@/icons/svg/index.ts";
+import { RepeatKeyIcon } from "@/icons/svg/index.ts";
 import { formatVaultItemUsername } from "./reports-service.ts";
 
 interface ReusedGroup {
@@ -61,7 +61,7 @@ export const ReportReused: Component = () => {
         fallback={
           <div class="empty-state text-center p-4">
             <div class="empty-state-icon mb-2">
-              <ShieldIcon />
+              <RepeatKeyIcon />
             </div>
             <p class="text-muted fw-medium">
               {t("report_reused_clean_msg")}
@@ -75,7 +75,7 @@ export const ReportReused: Component = () => {
               <div class="group-card">
                 <div class="group-header flex-align-center gap-2">
                   <div class="text-warning">
-                    <KeyIcon />
+                    <RepeatKeyIcon />
                   </div>
                   <h4 class="group-title">
                     {t("report_reused_group_title")

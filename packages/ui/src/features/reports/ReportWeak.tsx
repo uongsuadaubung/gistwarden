@@ -10,7 +10,7 @@ import { accountStore } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
-import { ShieldIcon } from "@/icons/svg/index.ts";
+import { GaugeIcon } from "@/icons/svg/index.ts";
 import { formatVaultItemUsername } from "./reports-service.ts";
 
 interface WeakResult {
@@ -82,7 +82,7 @@ export const ReportWeak: Component = () => {
         fallback={
           <div class="empty-state text-center p-4">
             <div class="empty-state-icon mb-2">
-              <ShieldIcon />
+              <GaugeIcon />
             </div>
             <p class="text-muted fw-medium">
               {t("report_weak_clean_msg")}

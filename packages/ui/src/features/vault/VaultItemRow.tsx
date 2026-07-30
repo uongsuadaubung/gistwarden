@@ -16,8 +16,9 @@ import type {
 import {
   ExternalLinkIcon,
   GlobeIcon,
-  KeyIcon,
+  IdentityIcon,
   NoteIcon,
+  SshKeyIcon,
 } from "@/icons/svg/index.ts";
 import { openItem } from "@/core/navigation.ts";
 import { openTab } from "@/core/tabs.ts";
@@ -126,10 +127,10 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
           {(cardItem) => <CardBrandIcon brand={cardItem().card.brand || ""} />}
         </Show>
         <Show when={Number(props.item.type) === VaultItemType.Identity}>
-          <CardBrandIcon brand="" />
+          <IdentityIcon />
         </Show>
         <Show when={Number(props.item.type) === VaultItemType.SshKey}>
-          <KeyIcon />
+          <SshKeyIcon />
         </Show>
         <Show when={Number(props.item.type) === VaultItemType.Login}>
           <Show

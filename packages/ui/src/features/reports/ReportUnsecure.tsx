@@ -4,7 +4,7 @@ import { accountStore } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
-import { GlobeIcon, ShieldIcon } from "@/icons/svg/index.ts";
+import { GlobeUnlockIcon } from "@/icons/svg/index.ts";
 import { saveItem } from "@/features/vault/vault-service.ts";
 import { setGlobalLoading } from "@gistwarden/ui";
 
@@ -79,7 +79,7 @@ export const ReportUnsecure: Component = () => {
         fallback={
           <div class="empty-state text-center p-4 card mt-3">
             <div class="empty-state-icon mb-2">
-              <ShieldIcon />
+              <GlobeUnlockIcon />
             </div>
             <p class="text-muted fw-medium">
               {t("report_unsecure_clean_msg")}
@@ -94,7 +94,7 @@ export const ReportUnsecure: Component = () => {
                 <div class="item-info">
                   <div class="fw-bold flex-align-center gap-1">
                     <span class="text-info">
-                      <GlobeIcon />
+                      <GlobeUnlockIcon />
                     </span>
                     {item.name}
                   </div>

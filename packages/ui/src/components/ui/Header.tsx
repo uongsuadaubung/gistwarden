@@ -19,12 +19,12 @@ import {
   FolderIcon,
   GlobeIcon,
   IdentityIcon,
-  KeyIcon,
   LockIcon,
   LogoutIcon,
   NoteIcon,
   PlusIcon,
   PopoutIcon,
+  SshKeyIcon,
   SyncIcon,
 } from "@/icons/svg/index.ts";
 
@@ -95,7 +95,7 @@ export const Header: Component<HeaderProps> = (props) => {
       case VaultItemType.SecureNote:
         return <NoteIcon class="dropdown-item-icon" />;
       case VaultItemType.SshKey:
-        return <KeyIcon class="dropdown-item-icon" />;
+        return <SshKeyIcon class="dropdown-item-icon" />;
     }
   };
 

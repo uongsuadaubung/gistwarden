@@ -10,7 +10,7 @@ import { accountStore } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
-import { DownloadIcon, ShieldIcon, SyncIcon } from "@/icons/svg/index.ts";
+import { DownloadIcon, ShieldAlertIcon, SyncIcon } from "@/icons/svg/index.ts";
 import {
   checkPasswordHIBPUseCase,
   formatVaultItemUsername,
@@ -189,7 +189,7 @@ export const ReportExposed: Component = () => {
           onClick={handleStartScan}
           disabled={isScanning()}
         >
-          <Show when={isScanning()} fallback={<ShieldIcon />}>
+          <Show when={isScanning()} fallback={<ShieldAlertIcon />}>
             <SyncIcon class="spinning" />
           </Show>
           {isScanning()
@@ -224,7 +224,7 @@ export const ReportExposed: Component = () => {
           fallback={
             <div class="empty-state text-center p-4 card">
               <div class="empty-state-icon mb-2">
-                <ShieldIcon />
+                <ShieldAlertIcon />
               </div>
               <p class="text-muted fw-medium">
                 {t("report_exposed_clean_msg")}

@@ -4,11 +4,12 @@ import { navigate } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import { Header } from "@/components/ui/Header.tsx";
 import {
-  GlobeIcon,
-  InfoIcon,
-  KeyIcon,
-  LockIcon,
-  ShieldIcon,
+  DatabaseBreachIcon,
+  GaugeIcon,
+  GlobeUnlockIcon,
+  RepeatKeyIcon,
+  Shield2FAIcon,
+  ShieldAlertIcon,
 } from "@/icons/svg/index.ts";
 
 export const Reports: Component = () => {
@@ -27,7 +28,7 @@ export const Reports: Component = () => {
             onClick={() => navigate(View.ReportExposed)}
           >
             <div class="report-card-icon">
-              <ShieldIcon />
+              <ShieldAlertIcon />
             </div>
             <div class="report-card-content">
               <h3 class="report-card-title">{t("report_exposed_title")}</h3>
@@ -41,7 +42,7 @@ export const Reports: Component = () => {
             onClick={() => navigate(View.ReportReused)}
           >
             <div class="report-card-icon">
-              <KeyIcon />
+              <RepeatKeyIcon />
             </div>
             <div class="report-card-content">
               <h3 class="report-card-title">{t("report_reused_title")}</h3>
@@ -55,7 +56,7 @@ export const Reports: Component = () => {
             onClick={() => navigate(View.ReportWeak)}
           >
             <div class="report-card-icon">
-              <InfoIcon />
+              <GaugeIcon />
             </div>
             <div class="report-card-content">
               <h3 class="report-card-title">{t("report_weak_title")}</h3>
@@ -69,7 +70,7 @@ export const Reports: Component = () => {
             onClick={() => navigate(View.ReportUnsecure)}
           >
             <div class="report-card-icon">
-              <GlobeIcon />
+              <GlobeUnlockIcon />
             </div>
             <div class="report-card-content">
               <h3 class="report-card-title">{t("report_unsecure_title")}</h3>
@@ -83,7 +84,7 @@ export const Reports: Component = () => {
             onClick={() => navigate(View.ReportInactive2FA)}
           >
             <div class="report-card-icon">
-              <LockIcon />
+              <Shield2FAIcon />
             </div>
             <div class="report-card-content">
               <h3 class="report-card-title">
@@ -99,7 +100,7 @@ export const Reports: Component = () => {
             onClick={() => navigate(View.ReportDataBreach)}
           >
             <div class="report-card-icon">
-              <ShieldIcon />
+              <DatabaseBreachIcon />
             </div>
             <div class="report-card-content">
               <h3 class="report-card-title">{t("report_databreach_title")}</h3>

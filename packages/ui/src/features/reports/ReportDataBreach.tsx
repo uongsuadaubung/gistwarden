@@ -3,7 +3,7 @@ import { View } from "@gistwarden/domain";
 import { navigate } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
-import { ShieldIcon, SyncIcon } from "@/icons/svg/index.ts";
+import { DatabaseBreachIcon, SyncIcon } from "@/icons/svg/index.ts";
 import { checkEmailBreachUseCase } from "./reports-service.ts";
 
 export const ReportDataBreach: Component = () => {
@@ -67,7 +67,7 @@ export const ReportDataBreach: Component = () => {
           class="btn btn-primary w-100 flex-center gap-2"
           disabled={isChecking() || !emailInput().trim()}
         >
-          <Show when={isChecking()} fallback={<ShieldIcon />}>
+          <Show when={isChecking()} fallback={<DatabaseBreachIcon />}>
             <SyncIcon class="spinning" />
           </Show>
           {isChecking()
@@ -86,7 +86,7 @@ export const ReportDataBreach: Component = () => {
           fallback={
             <div class="empty-state text-center p-4 card">
               <div class="empty-state-icon text-success mb-2">
-                <ShieldIcon />
+                <DatabaseBreachIcon />
               </div>
               <p class="text-success fw-medium">
                 {t("report_databreach_clean_msg")}

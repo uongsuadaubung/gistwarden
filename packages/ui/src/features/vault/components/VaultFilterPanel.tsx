@@ -8,9 +8,9 @@ import {
   FolderIcon,
   GlobeIcon,
   IdentityIcon,
-  KeyIcon,
   ListIcon,
   NoteIcon,
+  SshKeyIcon,
 } from "@/icons/svg/index.ts";
 
 export interface VaultFilterPanelProps {
@@ -172,7 +172,7 @@ export const VaultFilterPanel: Component<VaultFilterPanelProps> = (props) => {
                 }`}
                 onClick={() => handleSelectType(VaultItemType.SshKey)}
               >
-                <KeyIcon class="item-icon" />
+                <SshKeyIcon class="item-icon" />
                 <span>{t("vault_item_ssh_key")}</span>
               </div>
             </div>
