@@ -4,7 +4,16 @@ import {
   sendBackgroundMessage,
 } from "@gistwarden/orchestrator";
 import { safeFetch } from "@gistwarden/network";
-import type { TranslationKey } from "@gistwarden/domain";
+import {
+  hashPasswordSHA1PrefixSuffix,
+  type LoginVaultItem,
+  type TranslationKey,
+} from "@gistwarden/domain";
+import { t } from "@/core/i18n.ts";
+
+export function formatVaultItemUsername(item: LoginVaultItem): string {
+  return item.login?.username || t("report_no_username");
+}
 
 export async function checkPasswordHIBPUseCase(
   password: string,
@@ -23,17 +32,7 @@ export async function checkPasswordHIBPUseCase(
   }
 
   try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest("SHA-1", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")
-      .toUpperCase();
-
-    const prefix = hashHex.substring(0, 5);
-    const suffix = hashHex.substring(5);
+    const { prefix, suffix } = await hashPasswordSHA1PrefixSuffix(password);
 
     const res = await safeFetch(
       `https://api.pwnedpasswords.com/range/${prefix}`,

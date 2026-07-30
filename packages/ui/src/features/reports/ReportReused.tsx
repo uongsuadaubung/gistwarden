@@ -5,6 +5,7 @@ import { navigate, selectItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { KeyIcon, ShieldIcon } from "@/icons/svg/index.ts";
+import { formatVaultItemUsername } from "./reports-service.ts";
 
 interface ReusedGroup {
   passwordHashKey: string;
@@ -90,7 +91,7 @@ export const ReportReused: Component = () => {
                         <div class="item-info">
                           <div class="fw-semibold">{item.name}</div>
                           <div class="text-muted text-sm">
-                            {item.login.username || t("report_no_username")}
+                            {formatVaultItemUsername(item)}
                           </div>
                         </div>
                         <button

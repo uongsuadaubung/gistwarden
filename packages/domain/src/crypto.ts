@@ -529,3 +529,25 @@ export async function parseSshKey(privateKeyText: string): Promise<
     keyFingerprint,
   });
 }
+
+/**
+ * Băm mật khẩu bằng SHA-1 và tách 5 ký tự đầu (prefix) & phần còn lại (suffix)
+ * Phục vụ cơ chế quét HIBP k-Anonymity privacy protection.
+ */
+export async function hashPasswordSHA1PrefixSuffix(
+  password: string,
+): Promise<{ prefix: string; suffix: string }> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-1", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+
+  return {
+    prefix: hashHex.substring(0, 5),
+    suffix: hashHex.substring(5),
+  };
+}

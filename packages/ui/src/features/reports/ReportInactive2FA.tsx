@@ -5,6 +5,7 @@ import { navigate, selectItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { LockIcon, ShieldIcon } from "@/icons/svg/index.ts";
+import { formatVaultItemUsername } from "./reports-service.ts";
 
 export const ReportInactive2FA: Component = () => {
   const inactiveItems = createMemo<LoginVaultItem[]>(() => {
@@ -66,7 +67,7 @@ export const ReportInactive2FA: Component = () => {
                     {item.name}
                   </div>
                   <div class="text-muted text-sm">
-                    {item.login.username || t("report_no_username")}
+                    {formatVaultItemUsername(item)}
                   </div>
                   <div class="badge badge-secondary mt-1">
                     {t("report_inactive_2fa_badge")}

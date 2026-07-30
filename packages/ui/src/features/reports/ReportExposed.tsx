@@ -1,11 +1,20 @@
-import { type Component, createEffect, createSignal, For, Show } from "solid-js";
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  For,
+  Show,
+} from "solid-js";
 import { isLoginItem, type LoginVaultItem, View } from "@gistwarden/domain";
 import { accountStore } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { DownloadIcon, ShieldIcon, SyncIcon } from "@/icons/svg/index.ts";
-import { checkPasswordHIBPUseCase } from "./reports-service.ts";
+import {
+  checkPasswordHIBPUseCase,
+  formatVaultItemUsername,
+} from "./reports-service.ts";
 
 interface ExposedResult {
   item: LoginVaultItem;
@@ -86,14 +95,16 @@ export const ReportExposed: Component = () => {
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #334155; font-weight: bold; color: #f8fafc;">${res.item.name}</td>
         <td style="padding: 10px; border-bottom: 1px solid #334155; color: #94a3b8;">${
-          res.item.login?.username || t("report_no_username")
+          formatVaultItemUsername(res.item)
         }</td>
         <td style="padding: 10px; border-bottom: 1px solid #334155;">
           <span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-            ${t("report_exposed_times").replace(
-          "{count}",
-          res.count.toLocaleString(),
-        )}
+            ${
+          t("report_exposed_times").replace(
+            "{count}",
+            res.count.toLocaleString(),
+          )
+        }
           </span>
         </td>
       </tr>
@@ -129,7 +140,9 @@ export const ReportExposed: Component = () => {
       <div class="meta">${dateStr}</div>
     </div>
     <div class="summary">
-      ${t("report_export_summary").replace("{count}", results.length.toString())}
+      ${
+      t("report_export_summary").replace("{count}", results.length.toString())
+    }
     </div>
     <table>
       <thead>
@@ -250,7 +263,7 @@ export const ReportExposed: Component = () => {
                   <div class="item-info">
                     <div class="fw-bold">{res.item.name}</div>
                     <div class="text-muted text-sm">
-                      {res.item.login.username || t("report_no_username")}
+                      {formatVaultItemUsername(res.item)}
                     </div>
                     <div class="badge badge-danger mt-1">
                       {t("report_exposed_times").replace(

@@ -1,26 +1,16 @@
 import type { MessageRouter } from "@/extension/message-router.ts";
-import {
-  checkDataBreachRoute,
-  checkHIBPRoute,
-} from "@gistwarden/orchestrator";
+import { checkDataBreachRoute, checkHIBPRoute } from "@gistwarden/orchestrator";
 import { safeFetch } from "@gistwarden/network";
-import type { TranslationKey } from "@gistwarden/domain";
+import {
+  hashPasswordSHA1PrefixSuffix,
+  type TranslationKey,
+} from "@gistwarden/domain";
 
 export async function checkPasswordHIBPBackground(
   password: string,
 ): Promise<{ count: number; errorKey?: TranslationKey }> {
   try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest("SHA-1", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")
-      .toUpperCase();
-
-    const prefix = hashHex.substring(0, 5);
-    const suffix = hashHex.substring(5);
+    const { prefix, suffix } = await hashPasswordSHA1PrefixSuffix(password);
 
     const res = await safeFetch(
       `https://api.pwnedpasswords.com/range/${prefix}`,

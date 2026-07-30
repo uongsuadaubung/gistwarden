@@ -367,4 +367,3 @@ export const checkDataBreachRoute = defineRoute({
     errorKey: TranslationKeySchema.optional(),
   }),
 });
-

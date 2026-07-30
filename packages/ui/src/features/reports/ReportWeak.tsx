@@ -11,6 +11,7 @@ import { navigate, selectItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { ShieldIcon } from "@/icons/svg/index.ts";
+import { formatVaultItemUsername } from "./reports-service.ts";
 
 interface WeakResult {
   item: LoginVaultItem;
@@ -96,7 +97,7 @@ export const ReportWeak: Component = () => {
                 <div class="item-info">
                   <div class="fw-bold">{res.item.name}</div>
                   <div class="text-muted text-sm">
-                    {res.item.login.username || t("report_no_username")}
+                    {formatVaultItemUsername(res.item)}
                   </div>
                   <div class={`badge ${res.badgeClass} mt-1`}>
                     {t(res.scoreLabelKey)} ({t("report_score_label").replace(

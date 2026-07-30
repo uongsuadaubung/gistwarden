@@ -662,7 +662,8 @@ export default {
   report_error_rate_limit:
     "Đã vượt quá giới hạn lượt gọi API (Rate Limit). Vui lòng thử lại sau ít phút.",
   report_error_network: "Lỗi kết nối mạng khi kiểm tra dữ liệu rò rỉ.",
-  report_error_server: "Máy chủ kiểm tra rò rỉ gặp sự cố. Vui lòng thử lại sau.",
+  report_error_server:
+    "Máy chủ kiểm tra rò rỉ gặp sự cố. Vui lòng thử lại sau.",
   report_no_username: "(Không có tên người dùng)",
   report_no_uri: "(Không có trang web)",
   report_score_label: "Điểm {score}/4",
