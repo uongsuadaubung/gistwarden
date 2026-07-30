@@ -3,6 +3,7 @@ import {
   type NotificationPayload,
   NotificationToast,
 } from "@/features/notification/NotificationToast.tsx";
+import { attachNotificationStyles } from "@/features/notification/notification-toast.styles.ts";
 
 export type { NotificationPayload };
 
@@ -64,8 +65,12 @@ export class NotificationBarManager {
     host.style.right = "20px";
     host.style.zIndex = "2147483647";
     host.style.pointerEvents = "auto";
+    host.style.display = "block";
+    host.style.width = "auto";
+    host.style.height = "auto";
 
     const shadow = host.attachShadow({ mode: "closed" });
+    attachNotificationStyles(shadow);
 
     this.disposeSolid = render(
       () => (
