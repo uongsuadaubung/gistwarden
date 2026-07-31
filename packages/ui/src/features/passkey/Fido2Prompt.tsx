@@ -9,15 +9,16 @@ import {
   Show,
   Switch,
 } from "solid-js";
-import { Result } from "neverthrow";
 import { accountStore, settingsStore } from "@/core/store.ts";
+
 import { unlock } from "@/features/auth/auth-service.ts";
 import { unlockWithPin } from "@/features/auth/pin-service.ts";
 import { setGlobalLoading } from "@gistwarden/ui";
 import { APP_NAME, MSG_FIDO2_HEARTBEAT } from "@/core/constants.ts";
 import { getPendingFido2RequestRoute } from "@gistwarden/orchestrator";
 import { notifyBackground, sendBackgroundMessage } from "@/core/messaging.ts";
-import type { LoginVaultItem } from "@gistwarden/domain";
+import { type LoginVaultItem, safeParseUrl } from "@gistwarden/domain";
+
 import {
   assertFido2Passkey,
   type Fido2Request,
@@ -96,12 +97,8 @@ export const Fido2Prompt: Component = () => {
       if (req.type === "get") {
         let rpId = req.options.rpId;
         if (!rpId) {
-          const safeParseUrl = Result.fromThrowable(
-            (u: string) => new URL(u),
-            () => new Error(),
-          );
-          const parseResult = safeParseUrl(req.origin);
-          rpId = parseResult.map((u) => u.hostname).unwrapOr(req.origin);
+          const parsed = safeParseUrl(req.origin);
+          rpId = parsed.isOk() ? parsed.value.hostname : req.origin;
         }
         const list = findMatchingFido2Credentials(items, rpId);
         setMatchingCredentials(list);
@@ -176,12 +173,8 @@ export const Fido2Prompt: Component = () => {
       if (res.type === "get") {
         let rpId = res.options.rpId;
         if (!rpId) {
-          const safeParseUrl = Result.fromThrowable(
-            (u: string) => new URL(u),
-            () => new Error(),
-          );
-          const parseResult = safeParseUrl(res.origin);
-          rpId = parseResult.map((u) => u.hostname).unwrapOr(res.origin);
+          const parsed = safeParseUrl(res.origin);
+          rpId = parsed.isOk() ? parsed.value.hostname : res.origin;
         }
         findMatchingPasskeys(rpId);
       } else if (res.type === "create") {

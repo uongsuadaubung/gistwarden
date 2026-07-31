@@ -67,5 +67,3 @@ export async function setupGithub(
   });
   return ok();
 }
-
-export { launchGithubOauthFlow } from "@gistwarden/network";

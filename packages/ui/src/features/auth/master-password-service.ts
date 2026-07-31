@@ -1,17 +1,19 @@
 import { deriveKey, encryptData, generateSalt } from "@gistwarden/domain";
 import { setDerivedKey, verifyMasterPassword } from "@gistwarden/orchestrator";
+import { DEFAULT_PIN_CONFIG } from "@gistwarden/repository";
 import {
-  DEFAULT_PIN_CONFIG,
   getGithubToken,
   setSessionItem,
   updateAccountSettings,
 } from "@/core/storage.ts";
+
 import {
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
 } from "@/core/constants.ts";
 import { accountStore, setAccountStore } from "@/core/store.ts";
-import { syncVaultToGist } from "@/features/sync/sync-utils.ts";
+import { syncVaultToGist } from "@gistwarden/orchestrator";
+
 import { err, ok, Result } from "neverthrow";
 import { type TranslationKey } from "@/core/i18n.ts";
 

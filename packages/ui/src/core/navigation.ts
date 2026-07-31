@@ -10,8 +10,6 @@ import { requestReprompt } from "./ui-service.ts";
 import { removeSessionItem, setSessionItem } from "@gistwarden/repository";
 import { getPathView, getViewPath } from "@/core/router.ts";
 
-export { pathDepths as viewDepths } from "@/core/router.ts";
-
 type NavigatorFn = (to: string, options?: { replace?: boolean }) => void;
 
 export class NavigationManager {

@@ -22,12 +22,6 @@ import {
   GeneratedPasswordHistoryListSchema,
 } from "./storage-schemas.ts";
 
-export {
-  DEFAULT_GITHUB_CONFIG,
-  DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG,
-  DEFAULT_PIN_CONFIG,
-} from "./storage-schemas.ts";
-
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }

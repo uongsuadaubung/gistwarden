@@ -3,7 +3,8 @@ import type { TranslationKey } from "@/core/i18n.ts";
 import { VaultItemType } from "@gistwarden/domain";
 import type { LoginVaultItem, VaultItem } from "@gistwarden/domain";
 import type { Fido2Credential } from "@gistwarden/domain";
-import { isMatchingDomain } from "@/features/vault/vault-domain-matching.ts";
+import { isMatchingDomain } from "@gistwarden/domain";
+
 import { saveItem } from "@/features/vault/vault-service.ts";
 import {
   generatePasskeyAssertResponse,

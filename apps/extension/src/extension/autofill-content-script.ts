@@ -25,7 +25,10 @@ import {
   checkAutofillSuggestionRoute,
   checkPendingNotificationRoute,
 } from "@gistwarden/orchestrator";
-import { NotificationPayloadSchema } from "@gistwarden/domain";
+import {
+  type AutofillMatchingAccount,
+  NotificationPayloadSchema,
+} from "@gistwarden/domain";
 
 // Listen for messages from background script
 onExtensionMessage((message, _sender, sendResponse) => {
@@ -89,7 +92,7 @@ setupAutofillFocusMonitoring(async () => {
 
   showNotificationBar({
     ...payloadData,
-    onFill: async (selectedAcc) => {
+    onFill: async (selectedAcc?: AutofillMatchingAccount) => {
       isProgrammaticAutofilling = true;
       const u = selectedAcc?.username || payloadData.username;
       const p = selectedAcc?.password || payloadData.password;

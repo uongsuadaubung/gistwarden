@@ -21,7 +21,7 @@
     "@/core/i18n.ts": "../domain/src/i18n.ts",
     "@/core/totp-utils.ts": "../domain/src/totp-utils.ts",
     "@/core/session-manager.ts": "../domain/src/session-manager.ts",
-    "@/core/session-signal.ts": "../domain/src/session-signal.ts",
+    "@/core/session-signal.ts": "./src/core/session-signal.ts",
     "@/core/types.ts": "../domain/src/types.ts",
     "@/core/constants.ts": "../domain/src/constants.ts",
     "@/core/generator-utils.ts": "../domain/src/generator-utils.ts",

@@ -1,11 +1,7 @@
 import { render } from "solid-js/web";
-import {
-  type NotificationPayload,
-  NotificationToast,
-} from "@/features/notification/NotificationToast.tsx";
+import { NotificationToast } from "@/features/notification/NotificationToast.tsx";
+import type { NotificationPayload } from "@gistwarden/domain";
 import { attachNotificationStyles } from "@/features/notification/notification-toast.styles.ts";
-
-export type { NotificationPayload };
 
 export class NotificationBarManager {
   private notificationHost: HTMLElement | null = null;
