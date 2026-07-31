@@ -23,6 +23,8 @@ import {
   DEFAULT_PIN_CONFIG,
   getAccountSettings,
   getGithubToken,
+} from "@gistwarden/repository";
+import {
   getSessionItem,
   removeSessionItem,
   resetAccountSettings,

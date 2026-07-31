@@ -5,8 +5,9 @@ import { APP_NAME } from "@/core/constants.ts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeJsonParse } from "@/core/json-utils.ts";
-import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
-import { mergeFolders } from "@/features/sync/sync-merge.ts";
+import { createBaseVaultItem } from "@gistwarden/domain";
+
+import { mergeFolders } from "@gistwarden/orchestrator";
 
 /**
  * Phân tích và xác thực nội dung chuỗi JSON nhập từ tệp ({APP_NAME} hoặc Bitwarden xuất ra).

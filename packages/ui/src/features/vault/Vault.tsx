@@ -56,7 +56,7 @@ import { VaultFilterPanel } from "@/features/vault/components/VaultFilterPanel.t
 import {
   filterMatchingDomainItems,
   filterVaultItemsByQuery,
-} from "@/features/vault/vault-domain-matching.ts";
+} from "@gistwarden/domain";
 
 const AutofillResponseSchema = z.object({
   success: z.boolean(),

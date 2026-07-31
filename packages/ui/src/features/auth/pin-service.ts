@@ -1,9 +1,10 @@
 import { setAccountStore, setSettingsStore } from "@/core/store.ts";
+import { DEFAULT_PIN_CONFIG } from "@gistwarden/repository";
 import {
-  DEFAULT_PIN_CONFIG,
   updateAccountSettings,
   updateExtensionSettings,
 } from "@/core/storage.ts";
+
 import { arrayBufferToBase64, deriveKey } from "@/core/crypto.ts";
 import { computeHmac, encryptData, generateSalt } from "@gistwarden/domain";
 import { getSessionKey } from "@gistwarden/orchestrator";

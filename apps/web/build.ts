@@ -106,7 +106,6 @@ async function runBuild() {
         if (
           rel.startsWith("core/crypto") || rel.startsWith("core/totp-utils") ||
           rel.startsWith("core/session-manager") ||
-          rel.startsWith("core/session-signal") ||
           rel.startsWith("core/types") || rel.startsWith("core/constants") ||
           rel.startsWith("core/generator-utils") ||
           rel.startsWith("core/domain-utils") ||

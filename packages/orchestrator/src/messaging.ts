@@ -128,3 +128,22 @@ export async function broadcastMessage(
 ): Promise<Result<void, TranslationKey>> {
   return await notifyBackground(message);
 }
+
+export async function sendMessageToTab(
+  tabId: number,
+  message: unknown,
+): Promise<Result<unknown, TranslationKey>> {
+  if (
+    typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.sendMessage
+  ) {
+    return err("tab_error_send_message");
+  }
+
+  try {
+    const res = await chrome.tabs.sendMessage(tabId, message);
+    return ok(res);
+  } catch (e) {
+    logger.messaging.warn("Failed to send message to tab:", e);
+    return err("tab_error_send_message");
+  }
+}

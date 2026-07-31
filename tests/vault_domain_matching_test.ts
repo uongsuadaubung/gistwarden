@@ -3,7 +3,8 @@ import {
   filterMatchingDomainItems,
   isMatchingDomain,
   isSingleUriMatch,
-} from "../packages/ui/src/features/vault/vault-domain-matching.ts";
+} from "../packages/domain/mod.ts";
+
 import {
   type LoginVaultItem,
   UriMatchMode,

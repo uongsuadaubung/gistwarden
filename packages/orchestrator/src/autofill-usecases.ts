@@ -1,21 +1,25 @@
 import { z } from "zod";
-import { getBaseDomain, getDomainFromItem } from "@/core/domain-utils.ts";
-import { isLoginItem, VaultItemType } from "@gistwarden/domain";
-import { getDecryptedVaultItems } from "@/features/vault/vault-repository.ts";
-import { pendingNotificationManager } from "@gistwarden/orchestrator";
-import { openPopup, sendMessageToTab } from "@/core/tabs.ts";
-import {
-  MSG_SHOW_NOTIFICATION_BAR,
-  STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
-} from "@/core/constants.ts";
-import { getLocalItem, removeLocalItem, setLocalItem } from "@/core/storage.ts";
-import { batchSavePayloads } from "@/features/vault/vault-service.ts";
 import {
   type CheckAutofillSuggestionResponse,
+  filterMatchingDomainItems,
+  getBaseDomain,
+  getDomainFromItem,
+  isLoginItem,
+  MSG_SHOW_NOTIFICATION_BAR,
   type SaveActionPayload,
   SaveActionPayloadSchema,
+  STORAGE_KEY_UNAPPROVED_PENDING_LOGINS,
+  VaultItemType,
 } from "@gistwarden/domain";
-import { filterMatchingDomainItems } from "@/features/vault/vault-domain-matching.ts";
+import {
+  getLocalItem,
+  removeLocalItem,
+  setLocalItem,
+} from "@gistwarden/repository";
+import { pendingNotificationManager } from "./pending-notification-manager.ts";
+import { sendMessageToTab } from "./messaging.ts";
+import { getDecryptedVaultItems } from "./vault-repository-usecase.ts";
+import { batchSavePayloads } from "./vault-mutation-usecases.ts";
 
 const SubmittedCredentialsSchema = z.object({
   domain: z.string(),
@@ -162,7 +166,6 @@ export async function saveCredentialActionUseCase(
     pendingList.push(payload);
     await setLocalItem(STORAGE_KEY_UNAPPROVED_PENDING_LOGINS, pendingList);
 
-    await openPopup();
     return true;
   }
 

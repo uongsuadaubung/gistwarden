@@ -4,22 +4,9 @@ import { MSG_SAVE_CREDENTIAL_ACTION } from "@/core/constants.ts";
 
 import { notifyBackground } from "@/core/messaging.ts";
 import {
-  type AddCredentialPayload,
   type AutofillMatchingAccount,
-  type AutofillSuggestionPayload,
   type NotificationPayload,
-  type SaveCredentialPayload,
-  type UpdateCredentialPayload,
 } from "@gistwarden/domain";
-
-export type {
-  AddCredentialPayload,
-  AutofillMatchingAccount,
-  AutofillSuggestionPayload,
-  NotificationPayload,
-  SaveCredentialPayload,
-  UpdateCredentialPayload,
-};
 
 interface NotificationToastProps {
   payload: NotificationPayload;

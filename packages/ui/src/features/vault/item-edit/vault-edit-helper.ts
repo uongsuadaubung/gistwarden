@@ -16,7 +16,7 @@ import type {
 } from "@gistwarden/domain";
 import { LoginUriSchema, VaultFieldSchema } from "@gistwarden/domain";
 import { Fido2CredentialSchema } from "@gistwarden/domain";
-import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
+import { createBaseVaultItem } from "@gistwarden/domain";
 
 export const ItemEditFormSchema = z.object({
   itemType: z.nativeEnum(VaultItemType),

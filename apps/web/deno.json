@@ -19,7 +19,7 @@
     "@/core/i18n.ts": "../../packages/domain/src/i18n.ts",
     "@/core/totp-utils.ts": "../../packages/domain/src/totp-utils.ts",
     "@/core/session-manager.ts": "../../packages/domain/src/session-manager.ts",
-    "@/core/session-signal.ts": "../../packages/domain/src/session-signal.ts",
+    "@/core/session-signal.ts": "../../packages/ui/src/core/session-signal.ts",
     "@/core/types.ts": "../../packages/domain/src/types.ts",
     "@/core/constants.ts": "../../packages/domain/src/constants.ts",
     "@/core/generator-utils.ts": "../../packages/domain/src/generator-utils.ts",

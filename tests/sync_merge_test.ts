@@ -2,7 +2,8 @@ import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   mergeVaultItems,
   mergeVaultPayload,
-} from "../packages/ui/src/features/sync/sync-merge.ts";
+} from "../packages/orchestrator/mod.ts";
+
 import {
   type CardVaultItem,
   type IdentityVaultItem,

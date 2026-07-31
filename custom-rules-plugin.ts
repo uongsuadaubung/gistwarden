@@ -330,7 +330,6 @@ const customRulesPlugin: LintPlugin = {
                 rel.startsWith("core/crypto") ||
                 rel.startsWith("core/totp-utils") ||
                 rel.startsWith("core/session-manager") ||
-                rel.startsWith("core/session-signal") ||
                 rel.startsWith("core/types") ||
                 rel.startsWith("core/constants") ||
                 rel.startsWith("core/generator-utils") ||
@@ -359,13 +358,14 @@ const customRulesPlugin: LintPlugin = {
                 targetLayerName = "Network (L3)";
               } else if (
                 rel.startsWith("core/session-usecases") ||
+                rel.startsWith("core/autofill-usecases") ||
+                rel.startsWith("core/vault-repository-usecase") ||
                 rel.startsWith("core/app-init") ||
                 rel.startsWith("core/messaging") ||
                 rel.startsWith("core/messaging-contracts") ||
                 rel.startsWith("core/alarms") || rel.startsWith("core/idle") ||
                 rel.startsWith("core/ui-service") ||
-                rel.startsWith("core/runtime") ||
-                rel.startsWith("features/vault/autofill-usecase")
+                rel.startsWith("core/runtime")
               ) {
                 targetLayer = 4;
                 targetLayerName = "Orchestrator (L4)";
@@ -400,6 +400,321 @@ const customRulesPlugin: LintPlugin = {
                 node,
                 message:
                   `Layer Violation: Lower layer ${fileLayerName} is importing directly from higher layer ${targetLayerName} ('${importPath}'). Lower layers MUST NOT depend on higher layers.`,
+              });
+            }
+          },
+        };
+      },
+    },
+
+    // Luật 10: Cấm re-export (Import symbol/hàm nào thì cấm export lại symbol/hàm đó)
+    "no-re-export": {
+      create(context: LintContext) {
+        const importedSymbols = new Set<string>();
+
+        return {
+          Program(node: LintNode & { body?: LintNode[] }) {
+            if (!node.body || !Array.isArray(node.body)) return;
+
+            for (const statement of node.body) {
+              if (statement.type === "ImportDeclaration") {
+                const specifiers = Reflect.get(statement, "specifiers");
+                if (Array.isArray(specifiers)) {
+                  for (const spec of specifiers) {
+                    if (spec && typeof spec === "object") {
+                      const local = Reflect.get(spec, "local");
+                      const imported = Reflect.get(spec, "imported");
+                      if (
+                        local && typeof local === "object" && "name" in local &&
+                        typeof local.name === "string"
+                      ) {
+                        importedSymbols.add(local.name);
+                      } else if (
+                        imported && typeof imported === "object" &&
+                        "name" in imported && typeof imported.name === "string"
+                      ) {
+                        importedSymbols.add(imported.name);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+
+          ExportAllDeclaration(
+            node: LintNode & { source?: { value?: string } },
+          ) {
+            const normalizedFile = context.filename
+              ? context.filename.replace(/\\/g, "/")
+              : "";
+            if (
+              normalizedFile.endsWith("/mod.ts") ||
+              normalizedFile.endsWith("/index.ts")
+            ) {
+              return;
+            }
+            context.report({
+              node,
+              message:
+                `Re-exporting all symbols from '${node.source?.value}' is forbidden. Import and use symbols directly from their authoritative source.`,
+            });
+          },
+
+          ExportNamedDeclaration(
+            node: LintNode & {
+              source?: { value?: string };
+              specifiers?: Array<{
+                local?: { name?: string };
+                exported?: { name?: string };
+              }>;
+              declaration?: LintNode & {
+                declarations?: Array<{
+                  id?: { name?: string };
+                  init?: { type?: string; name?: string };
+                }>;
+              };
+            },
+          ) {
+            const normalizedFile = context.filename
+              ? context.filename.replace(/\\/g, "/")
+              : "";
+            if (
+              normalizedFile.endsWith("/mod.ts") ||
+              normalizedFile.endsWith("/index.ts")
+            ) {
+              return;
+            }
+
+            if (node.source) {
+              context.report({
+                node,
+                message:
+                  `Direct re-exporting from '${node.source.value}' is forbidden. Import and use symbols directly from their source layer.`,
+              });
+              return;
+            }
+
+            if (node.specifiers && Array.isArray(node.specifiers)) {
+              for (const spec of node.specifiers) {
+                const localName = spec.local?.name || spec.exported?.name;
+                if (localName && importedSymbols.has(localName)) {
+                  context.report({
+                    node,
+                    message:
+                      `Re-exporting imported symbol '${localName}' is forbidden. Import '${localName}' directly from its original source layer.`,
+                  });
+                }
+              }
+            }
+
+            if (
+              node.declaration &&
+              node.declaration.type === "VariableDeclaration" &&
+              node.declaration.declarations
+            ) {
+              for (const decl of node.declaration.declarations) {
+                if (
+                  decl.init &&
+                  decl.init.type === "Identifier" &&
+                  decl.init.name &&
+                  importedSymbols.has(decl.init.name)
+                ) {
+                  context.report({
+                    node,
+                    message:
+                      `Re-exporting imported symbol '${decl.init.name}' via alias '${decl.id?.name}' is forbidden.`,
+                  });
+                }
+              }
+            }
+          },
+        };
+      },
+    },
+
+    // =========================================================================
+    // 5 LUẬT ĐỘC LẬP DÀNH RIÊNG CHO 5 TẦNG KIẾN TRÚC (5 DEDICATED LAYER RULES)
+    // =========================================================================
+
+    // 1. Rule Tầng Domain (Layer 1): Thuần túy logic toán/crypto, cấm fetch, storage, UI
+    "domain-pureness": {
+      create(context: LintContext): Record<string, (node: LintNode) => void> {
+        const rawFile = context.filename
+          ? context.filename.replace(/\\/g, "/")
+          : "";
+        if (!rawFile.includes("/packages/domain/")) return {};
+
+        return {
+          JSXElement(node: LintNode) {
+            context.report({
+              node,
+              message:
+                `[Domain Rule] Rendering JSX elements is strictly forbidden in Domain layer ('${rawFile}').`,
+            });
+          },
+          CallExpression(
+            node: LintNode & { callee?: { type?: string; name?: string } },
+          ) {
+            if (
+              node.callee?.type === "Identifier" && node.callee.name === "fetch"
+            ) {
+              context.report({
+                node,
+                message:
+                  `[Domain Rule] Direct 'fetch()' calls are strictly forbidden in Domain layer. Delegate HTTP requests to Network layer.`,
+              });
+            }
+          },
+          MemberExpression(
+            node: LintNode & { object?: { type?: string; name?: string } },
+          ) {
+            if (
+              node.object?.type === "Identifier" &&
+              (node.object.name === "localStorage" ||
+                node.object.name === "sessionStorage")
+            ) {
+              context.report({
+                node,
+                message:
+                  `[Domain Rule] Accessing Web Storage '${node.object.name}' directly is forbidden in Domain layer. Delegate to Repository layer.`,
+              });
+            }
+          },
+        };
+      },
+    },
+
+    // 2. Rule Tầng Repository (Layer 2): Đọc/ghi storage & schema, cấm fetch trực tiếp & UI
+    "repository-boundary": {
+      create(context: LintContext): Record<string, (node: LintNode) => void> {
+        const rawFile = context.filename
+          ? context.filename.replace(/\\/g, "/")
+          : "";
+        if (!rawFile.includes("/packages/repository/")) return {};
+
+        return {
+          JSXElement(node: LintNode) {
+            context.report({
+              node,
+              message:
+                `[Repository Rule] Rendering JSX elements is strictly forbidden in Repository layer.`,
+            });
+          },
+          CallExpression(
+            node: LintNode & { callee?: { type?: string; name?: string } },
+          ) {
+            if (
+              node.callee?.type === "Identifier" && node.callee.name === "fetch"
+            ) {
+              context.report({
+                node,
+                message:
+                  `[Repository Rule] Direct 'fetch()' calls are forbidden in Repository layer. Use Network layer ('packages/network') instead.`,
+              });
+            }
+          },
+        };
+      },
+    },
+
+    // 3. Rule Tầng Network (Layer 3): Xử lý HTTP API/OAuth, cấm thao tác storage & UI
+    "network-purity": {
+      create(context: LintContext): Record<string, (node: LintNode) => void> {
+        const rawFile = context.filename
+          ? context.filename.replace(/\\/g, "/")
+          : "";
+        if (!rawFile.includes("/packages/network/")) return {};
+
+        return {
+          JSXElement(node: LintNode) {
+            context.report({
+              node,
+              message:
+                `[Network Rule] Rendering JSX elements is strictly forbidden in Network layer.`,
+            });
+          },
+          MemberExpression(
+            node: LintNode & { object?: { type?: string; name?: string } },
+          ) {
+            if (
+              node.object?.type === "Identifier" &&
+              (node.object.name === "localStorage" ||
+                node.object.name === "sessionStorage")
+            ) {
+              context.report({
+                node,
+                message:
+                  `[Network Rule] Direct access to Web Storage '${node.object.name}' is forbidden in Network layer. Return response payload to Orchestrator.`,
+              });
+            }
+          },
+        };
+      },
+    },
+
+    // 4. Rule Tầng Orchestrator (Layer 4): Điều phối use-cases, cấm JSX & cấm storage thô
+    "orchestrator-boundary": {
+      create(context: LintContext): Record<string, (node: LintNode) => void> {
+        const rawFile = context.filename
+          ? context.filename.replace(/\\/g, "/")
+          : "";
+        if (!rawFile.includes("/packages/orchestrator/")) return {};
+
+        return {
+          JSXElement(node: LintNode) {
+            context.report({
+              node,
+              message:
+                `[Orchestrator Rule] Rendering JSX components is strictly forbidden in Orchestrator layer.`,
+            });
+          },
+          MemberExpression(
+            node: LintNode & { object?: { type?: string; name?: string } },
+          ) {
+            if (
+              node.object?.type === "Identifier" &&
+              (node.object.name === "localStorage" ||
+                node.object.name === "sessionStorage")
+            ) {
+              context.report({
+                node,
+                message:
+                  `[Orchestrator Rule] Direct access to raw Web Storage '${node.object.name}' is forbidden. Use Repository layer abstractions instead.`,
+              });
+            }
+          },
+        };
+      },
+    },
+
+    // 5. Rule Tầng UI (Layer 5): Giao diện & Event, cấm gọi trực tiếp chrome.storage thô
+    "ui-boundary": {
+      create(context: LintContext): Record<string, (node: LintNode) => void> {
+        const rawFile = context.filename
+          ? context.filename.replace(/\\/g, "/")
+          : "";
+        if (!rawFile.includes("/packages/ui/")) return {};
+
+        return {
+          MemberExpression(
+            node: LintNode & {
+              object?: {
+                type?: string;
+                name?: string;
+                object?: { name?: string };
+              };
+              property?: { name?: string };
+            },
+          ) {
+            if (
+              node.object?.name === "chrome" &&
+              node.property?.name === "storage"
+            ) {
+              context.report({
+                node,
+                message:
+                  `[UI Rule] Direct access to 'chrome.storage' is forbidden in UI layer. Delegate data storage operations to Repository/Orchestrator layer.`,
               });
             }
           },

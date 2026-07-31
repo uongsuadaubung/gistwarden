@@ -6,7 +6,8 @@ import {
 } from "@gistwarden/domain";
 import { APP_NAME } from "@/core/constants.ts";
 import { parseCSV } from "@/core/csv-parser.ts";
-import { createBaseVaultItem } from "@/features/vault/vault-utils.ts";
+import { createBaseVaultItem } from "@gistwarden/domain";
+
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeParseUrl } from "@/core/domain-utils.ts";

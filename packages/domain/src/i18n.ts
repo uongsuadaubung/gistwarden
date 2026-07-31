@@ -3,9 +3,7 @@ import { createSignal } from "solid-js";
 import en from "./locales/en.ts";
 import vi from "./locales/vi.ts";
 import { APP_NAME } from "./constants.ts";
-import { SupportLanguage, SupportLanguageSchema } from "./types.ts";
-
-export { SupportLanguage, SupportLanguageSchema };
+import { SupportLanguage } from "./types.ts";
 
 const LangSchema = z.object({
   // Common buttons & notifications

@@ -1,17 +1,16 @@
-import { SESSION_KEY_ENCRYPTED_VAULT } from "@/core/constants.ts";
-import { decryptData } from "@gistwarden/domain";
-import { getSessionKey } from "@gistwarden/orchestrator";
-import { safeJsonParse } from "@/core/json-utils.ts";
-import { getSessionItem } from "@/core/storage.ts";
-import { EncryptedPayloadSchema } from "@gistwarden/repository";
 import {
+  decryptData,
   type Folder,
+  safeJsonParse,
+  SESSION_KEY_ENCRYPTED_VAULT,
   type TrashVaultItem,
   type VaultItem,
   VaultListSchema,
   type VaultPayload,
   VaultPayloadSchema,
 } from "@gistwarden/domain";
+import { EncryptedPayloadSchema, getSessionItem } from "@gistwarden/repository";
+import { getSessionKey } from "./crypto-usecases.ts";
 
 export type DecryptedVaultData = VaultPayload & {
   key: CryptoKey;

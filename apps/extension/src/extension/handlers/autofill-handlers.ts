@@ -1,10 +1,17 @@
-import type { MessageRouter } from "@/extension/message-router.ts";
+import type {
+  MessageContext,
+  MessageRouter,
+} from "@/extension/message-router.ts";
 import { type SimpleSuccessResponse } from "@gistwarden/repository";
 import {
   checkAutofillSuggestionRoute,
+  checkAutofillSuggestionUseCase,
   checkPendingNotificationRoute,
   credentialsSubmittedRoute,
+  pendingNotificationManager,
+  processSubmittedCredentialsUseCase,
   saveCredentialActionRoute,
+  saveCredentialActionUseCase,
 } from "@gistwarden/orchestrator";
 import {
   type CheckAutofillSuggestionMsg,
@@ -15,13 +22,6 @@ import {
   type SaveCredentialActionMsg,
   type SaveCredentialActionResponse,
 } from "@gistwarden/domain";
-import { pendingNotificationManager } from "@gistwarden/orchestrator";
-import type { MessageContext } from "@/extension/message-router.ts";
-import {
-  checkAutofillSuggestionUseCase,
-  processSubmittedCredentialsUseCase,
-  saveCredentialActionUseCase,
-} from "@/features/vault/autofill-usecase.ts";
 
 export async function handleSaveCredentialAction(
   rawPayload: unknown,
