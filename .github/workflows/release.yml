@@ -19,6 +19,12 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Upgrade Bun to Canary
+        run: bun upgrade --canary
+
+      - name: Install dependencies
+        run: bun install
+
       - name: Bump version and commit
         run: |
           git config --global user.name "github-actions[bot]"
