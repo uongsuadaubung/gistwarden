@@ -17,7 +17,6 @@ import {
 import { ExtensionSettingsSchema } from "@/core/storage-schemas.ts";
 import { syncLockStateBadge } from "@/extension/background-badge.ts";
 import { setupAlarmsListener } from "@/extension/background-alarms.ts";
-import { setupIdleListener } from "@/extension/background-idle.ts";
 
 new MessageRouter()
   .use(registerAutofillRoutes)
@@ -29,7 +28,6 @@ new MessageRouter()
 
 // Listener Management
 setupAlarmsListener();
-setupIdleListener();
 
 // Khởi tạo phiên làm việc và xử lý đăng xuất khi khởi động lại trình duyệt
 async function initSession() {

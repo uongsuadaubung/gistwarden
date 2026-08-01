@@ -29,7 +29,6 @@ export const VaultTimeoutActionSchema = z.enum(["lock", "logout"]);
 export type VaultTimeoutAction = z.infer<typeof VaultTimeoutActionSchema>;
 
 export const VaultTimeoutValueSchema = z.enum([
-  "onSystemLock",
   "onRestart",
   "1",
   "5",
@@ -60,7 +59,7 @@ export const ExtensionSettingsSchema = z.object({
   welcomeAccepted: z.boolean().default(false),
   theme: z.nativeEnum(ThemeMode).default(ThemeMode.Dark),
   requireMasterPasswordOnRestart: z.boolean().default(true),
-  vaultTimeout: VaultTimeoutValueSchema.default("onSystemLock"),
+  vaultTimeout: VaultTimeoutValueSchema.default("onRestart"),
   vaultTimeoutAction: VaultTimeoutActionSchema.default("lock"),
   timeOffset: z.number().default(0),
   autoSubmitOnAutofill: z.boolean().default(true),

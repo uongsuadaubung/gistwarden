@@ -27,7 +27,7 @@ export async function updateTimeoutAlarm(): Promise<void> {
   const settings = settingsRes.value;
   const timeout = settings.vaultTimeout;
 
-  if (timeout !== "onRestart" && timeout !== "onSystemLock") {
+  if (timeout !== "onRestart") {
     const minutes = parseInt(timeout, 10);
     if (!isNaN(minutes) && minutes > 0) {
       const derivedKeyRes = await getSessionItem(SESSION_KEY_DERIVED_KEY);

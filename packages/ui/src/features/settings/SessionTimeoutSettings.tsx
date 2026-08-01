@@ -25,7 +25,6 @@ export const SessionTimeoutSettings: Component<SessionTimeoutSettingsProps> = (
   );
 
   const timeoutOptions = () => [
-    { value: "onSystemLock", label: t("timeout_on_system_lock") },
     { value: "onRestart", label: t("timeout_on_restart") },
     { value: "1", label: t("timeout_1min") },
     { value: "5", label: t("timeout_5min") },

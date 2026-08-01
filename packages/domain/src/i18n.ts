@@ -407,7 +407,6 @@ const LangSchema = z.object({
   timeout_action_lock: z.string(),
   timeout_action_logout: z.string(),
   timeout_on_restart: z.string(),
-  timeout_on_system_lock: z.string(),
   timeout_1min: z.string(),
   timeout_5min: z.string(),
   timeout_15min: z.string(),

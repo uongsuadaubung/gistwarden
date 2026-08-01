@@ -69,8 +69,6 @@
       "@/core/messaging-contracts.ts": ["./packages/orchestrator/src/messaging-contracts.ts"],
       "@/core/alarms": ["./packages/orchestrator/src/alarms.ts"],
       "@/core/alarms.ts": ["./packages/orchestrator/src/alarms.ts"],
-      "@/core/idle": ["./packages/orchestrator/src/idle.ts"],
-      "@/core/idle.ts": ["./packages/orchestrator/src/idle.ts"],
       "@/core/ui-service": ["./packages/ui/src/core/ui-service.ts"],
       "@/core/ui-service.ts": ["./packages/ui/src/core/ui-service.ts"],
       "@/*": ["./packages/ui/src/*"]

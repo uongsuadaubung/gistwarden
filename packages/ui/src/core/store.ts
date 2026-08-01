@@ -93,7 +93,7 @@ export const initialExtensionSettings: Omit<
   welcomeAccepted: false,
   theme: ThemeMode.Dark,
   requireMasterPasswordOnRestart: true,
-  vaultTimeout: "onSystemLock",
+  vaultTimeout: "onRestart",
   vaultTimeoutAction: "lock",
   timeOffset: 0,
   autoSubmitOnAutofill: true,
