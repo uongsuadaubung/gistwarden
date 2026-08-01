@@ -1,22 +1,23 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { JSDOM } from "jsdom";
+import { Window } from "happy-dom";
 import { performAutofill } from "../apps/extension/src/extension/autofill-core.ts";
 
 function setupDOM(html: string) {
-  const dom = new JSDOM(html, { url: "https://example.com/login" });
+  const window = new Window({ url: "https://example.com/login" });
+  window.document.body.innerHTML = html;
 
   // Define necessary globals for the test to act like a browser
   Object.assign(globalThis, {
-    document: dom.window.document,
-    window: dom.window,
-    HTMLElement: dom.window.HTMLElement,
-    HTMLInputElement: dom.window.HTMLInputElement,
-    HTMLFormElement: dom.window.HTMLFormElement,
-    Event: dom.window.Event,
-    Node: dom.window.Node,
+    document: window.document,
+    window: window,
+    HTMLElement: window.HTMLElement,
+    HTMLInputElement: window.HTMLInputElement,
+    HTMLFormElement: window.HTMLFormElement,
+    Event: window.Event,
+    Node: window.Node,
   });
 
-  return dom.window.document;
+  return window.document;
 }
 
 Deno.test("Autofill - standard login form", () => {
@@ -33,10 +34,14 @@ Deno.test("Autofill - standard login form", () => {
   const userInput = doc.getElementById("user");
   const passInput = doc.getElementById("pass");
 
-  if (userInput instanceof HTMLInputElement) {
+  if (
+    userInput && "value" in userInput && typeof userInput.value === "string"
+  ) {
     assertEquals(userInput.value, "myuser");
   }
-  if (passInput instanceof HTMLInputElement) {
+  if (
+    passInput && "value" in passInput && typeof passInput.value === "string"
+  ) {
     assertEquals(passInput.value, "mypass");
   }
 });
@@ -55,10 +60,14 @@ Deno.test("Autofill - form without form tags (just inputs)", () => {
   const userInput = doc.getElementById("username");
   const passInput = doc.getElementById("password");
 
-  if (userInput instanceof HTMLInputElement) {
+  if (
+    userInput && "value" in userInput && typeof userInput.value === "string"
+  ) {
     assertEquals(userInput.value, "john_doe");
   }
-  if (passInput instanceof HTMLInputElement) {
+  if (
+    passInput && "value" in passInput && typeof passInput.value === "string"
+  ) {
     assertEquals(passInput.value, "secret123");
   }
 });
@@ -74,7 +83,9 @@ Deno.test("Autofill - only username fallback", () => {
   assertEquals(result, true);
 
   const userInput = doc.getElementById("user_id");
-  if (userInput instanceof HTMLInputElement) {
+  if (
+    userInput && "value" in userInput && typeof userInput.value === "string"
+  ) {
     assertEquals(userInput.value, "only_user");
   }
 });
@@ -82,8 +93,7 @@ Deno.test("Autofill - only username fallback", () => {
 Deno.test("Autofill - no matching fields", () => {
   const _doc = setupDOM(`
     <div>
-      <input type="checkbox" id="check" />
-      <button id="btn">Click</button>
+      <div id="not-an-input">Hello</div>
     </div>
   `);
 

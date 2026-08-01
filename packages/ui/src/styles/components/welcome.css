@@ -1,4 +1,3 @@
-/* Welcome Tour Styles */
 .tour-container {
   display: flex;
   flex-direction: column;
@@ -30,7 +29,7 @@
   }
 
   .login-lang-selector {
-    position: static; /* Override absolute position if any */
+    position: static;
     background: rgba(255, 255, 255, 0.05);
     padding: 3px 8px;
     border-radius: 12px;
@@ -47,17 +46,6 @@
   overflow: hidden;
   position: relative;
   width: 100%;
-}
-
-@keyframes tourSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .tour-slide {
@@ -108,47 +96,27 @@
   padding: 0 8px;
 }
 
-/* Animations for SVG elements */
-@keyframes svgPulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.9;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 1;
-  }
-}
-
-@keyframes svgFloat {
-  0%,
-  100% {
-    transform: translateY(0px) translate(var(--x, 0), var(--y, 0));
-  }
-  50% {
-    transform: translateY(-5px) translate(var(--x, 0), var(--y, 0));
-  }
-}
-
 .tour-svg {
   .floating-icon {
     animation: svgFloat 3s ease-in-out infinite;
     --x: 35px;
     --y: 35px;
   }
+
   .floating-icon-delayed {
     animation: svgFloat 3s ease-in-out infinite;
     animation-delay: 1.5s;
     --x: 140px;
     --y: 90px;
   }
+
   .floating-icon-delayed-2 {
     animation: svgFloat 3s ease-in-out infinite;
     animation-delay: 0.8s;
     --x: 150px;
     --y: 25px;
   }
+
   .passkey-fingerprint-group {
     transform: translate(110px, 80px);
   }
@@ -177,21 +145,21 @@
   transition: all 0.2s ease;
   padding: 0;
 
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--primary-accent);
-    color: var(--primary-accent);
-    transform: scale(1.05);
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.95);
-  }
-
   &:disabled {
     opacity: 0.2;
     cursor: not-allowed;
   }
+}
+
+.tour-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary-accent);
+  color: var(--primary-accent);
+  transform: scale(1.05);
+}
+
+.tour-nav-btn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .tour-dots {
@@ -281,4 +249,35 @@
   width: 100%;
   margin-top: auto;
   padding: 0 4px;
+}
+
+@keyframes tourSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes svgPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+@keyframes svgFloat {
+  0%,
+  100% {
+    transform: translateY(0px) translate(var(--x, 0), var(--y, 0));
+  }
+  50% {
+    transform: translateY(-5px) translate(var(--x, 0), var(--y, 0));
+  }
 }

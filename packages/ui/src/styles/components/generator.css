@@ -1,4 +1,3 @@
-/* Generator View Settings */
 .generator-tabs {
   display: flex;
   background-color: transparent;
@@ -36,10 +35,10 @@
     background-color: var(--primary);
     color: var(--white);
   }
+}
 
-  &:hover:not(.active) {
-    background-color: var(--primary-translucent-10);
-  }
+.generator-tab:hover:not(.active) {
+  background-color: var(--primary-translucent-10);
 }
 
 .generator-output {
@@ -84,11 +83,6 @@
       align-items: center;
       justify-content: center;
 
-      &:hover:not(:disabled) {
-        color: var(--text);
-        background-color: var(--hover-bg);
-      }
-
       &.copied {
         color: var(--success) !important;
       }
@@ -104,16 +98,20 @@
         fill: currentColor;
       }
     }
+
+    .icon-btn:hover:not(:disabled) {
+      color: var(--text);
+      background-color: var(--hover-bg);
+    }
   }
 }
 
-/* Character Color Highlighting */
 .pwd-digit {
   color: var(--primary-accent, #3b82f6);
 }
 
 .pwd-special {
-  color: #ff9f43; // Cam/đỏ sáng
+  color: #ff9f43;
 }
 
 .pwd-alpha {
@@ -166,7 +164,7 @@
   gap: 12px;
   margin-bottom: 14px;
 
-  input[type="range"] {
+  input[type=range] {
     flex: 1;
     accent-color: var(--primary);
   }

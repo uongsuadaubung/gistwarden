@@ -1,23 +1,24 @@
-@use "./components/slide-modal";
-@use "./components/header";
-@use "./components/page-transitions";
-@use "./components/input";
-@use "./components/button";
-@use "./components/card";
-@use "./components/login";
-@use "./components/welcome";
-@use "./components/vault";
-@use "./components/item-detail";
-@use "./components/generator";
-@use "./components/settings";
-@use "./components/fido2";
-@use "./components/confirm-modal";
-@use "./components/guide";
-@use "./components/checkbox";
-@use "./components/select";
-@use "./components/password-strength";
-@use "./components/trash";
-@use "./components/reports";
+@import "./components/slide-modal.css";
+@import "./components/header.css";
+@import "./components/page-transitions.css";
+@import "./components/input.css";
+@import "./components/button.css";
+@import "./components/card.css";
+@import "./components/login.css";
+@import "./components/welcome.css";
+@import "./components/vault.css";
+@import "./components/item-detail.css";
+@import "./components/generator.css";
+@import "./components/settings.css";
+@import "./components/fido2.css";
+@import "./components/confirm-modal.css";
+@import "./components/guide.css";
+@import "./components/checkbox.css";
+@import "./components/select.css";
+@import "./components/password-strength.css";
+@import "./components/trash.css";
+@import "./components/reports.css";
+
 :root {
   /* Constant colors */
   --white: #ffffff;
@@ -624,7 +625,7 @@ html.mode-responsive #root {
   gap: 8px;
   border: 1px solid transparent;
 
-  // Default / Dark theme
+  /* Default / Dark theme */
   background-color: rgba(30, 41, 59, 0.9);
   backdrop-filter: blur(8px);
   color: #f8fafc;

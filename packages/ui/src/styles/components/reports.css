@@ -1,6 +1,3 @@
-/* Reports View & Sub-Reports Styling - 100% Synchronized with Vault & System Design Tokens */
-
-/* Main Reports View Layout */
 .reports-view {
   padding: 16px;
   height: 100%;
@@ -37,7 +34,7 @@
     background-color: var(--hover-bg);
     border-color: var(--primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--shadow-2, rgba(0,0,0,0.15));
+    box-shadow: 0 4px 12px var(--shadow-2, rgba(0, 0, 0, 0.15));
   }
 
   &:active {
@@ -95,7 +92,6 @@
   word-break: break-word;
 }
 
-/* Detail View Layout (Sub-reports) */
 .report-detail-view {
   padding: 16px;
   height: 100%;
@@ -110,7 +106,6 @@
   }
 }
 
-/* Export Actions Row */
 .export-actions-row {
   display: flex;
   justify-content: space-between;
@@ -119,7 +114,6 @@
   margin-bottom: 14px;
 }
 
-/* Form controls in Sub-Reports */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -134,7 +128,6 @@
   display: block;
 }
 
-/* Reused Password Groups - Clean Flat Group Cards */
 .group-card {
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -163,9 +156,17 @@
     flex-direction: column;
     gap: 6px;
   }
+
+  .item-row {
+    background-color: var(--white-translucent-5);
+    border: 1px solid var(--border-translucent, var(--border));
+
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+  }
 }
 
-/* Item Lists & Vault-Consistent Item Rows */
 .item-list,
 .reused-groups-list,
 .weak-items-list,
@@ -194,15 +195,6 @@
   }
 }
 
-.group-card .item-row {
-  background-color: var(--white-translucent-5);
-  border: 1px solid var(--border-translucent, var(--border));
-
-  &:hover {
-    background-color: var(--hover-bg);
-  }
-}
-
 .item-info {
   display: flex;
   flex-direction: column;
@@ -210,26 +202,26 @@
   min-width: 0;
   flex: 1;
   overflow: hidden;
+}
 
-  .fw-bold,
-  .fw-semibold {
-    font-size: 13px;
-    color: var(--text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-  }
+.item-info .fw-bold,
+.item-info .fw-semibold {
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
 
-  .text-muted,
-  .font-monospace {
-    font-size: 12px;
-    color: var(--text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-  }
+.item-info .text-muted,
+.item-info .font-monospace {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .item-actions {
@@ -256,7 +248,6 @@
   }
 }
 
-/* Progress Bar */
 .progress-bar-container {
   width: 100%;
   height: 6px;
@@ -272,7 +263,6 @@
   transition: width 0.15s ease;
 }
 
-/* Empty State */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -299,7 +289,6 @@
   }
 }
 
-/* Alert Boxes */
 .alert {
   padding: 10px 14px;
   border-radius: 8px;
@@ -329,16 +318,6 @@
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Badges - Subtle & Harmonious Styling */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -374,7 +353,6 @@
   border: 1px solid var(--border);
 }
 
-/* Common Utility Helper Classes */
 .flex-between {
   display: flex;
   justify-content: space-between;
@@ -443,4 +421,13 @@
 
 .text-muted {
   color: var(--text-muted) !important;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

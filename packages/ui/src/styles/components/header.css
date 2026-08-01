@@ -1,7 +1,5 @@
-/* Common Header Styling (Bitwarden Style) */
-
 .app-header {
-  background-color: #0b101f; /* Dark navy blue from screenshots */
+  background-color: #0b101f;
   color: var(--white);
   padding: 0 16px;
   display: flex;
@@ -24,7 +22,6 @@
     align-items: center;
     gap: 16px;
 
-    /* + New Button style */
     .add-menu-container {
       position: relative;
     }
@@ -33,9 +30,9 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background-color: #5b9cf4; /* Pill background */
+      background-color: #5b9cf4;
       border: none;
-      color: #0c1322; /* Dark text for contrast */
+      color: #0c1322;
       font-size: 13px;
       font-weight: 600;
       padding: 6px 14px;
@@ -54,7 +51,6 @@
       }
     }
 
-    /* Popout Icon Button */
     .header-icon-btn {
       background: none;
       border: none;
@@ -77,7 +73,6 @@
       }
     }
 
-    /* Profile menu container */
     .profile-menu-container {
       position: relative;
     }
@@ -86,7 +81,7 @@
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background-color: #7b1fa2; /* Purple Bitwarden style */
+      background-color: #7b1fa2;
       color: var(--white);
       border: none;
       font-size: 12px;
@@ -116,30 +111,13 @@
       }
     }
 
-    /* Dropdowns */
-    .add-dropdown,
-    .profile-dropdown {
-      position: absolute;
-      top: 100%;
-      margin-top: 8px;
-      background-color: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      box-shadow: var(--shadow-dropdown);
-      z-index: 1000;
-      padding: 6px 0;
-      display: flex;
-      flex-direction: column;
-      min-width: 140px;
-    }
-
     .add-dropdown {
-      left: 0; /* Align with "+ New" button left edge */
+      left: 0;
       width: 150px;
     }
 
     .profile-dropdown {
-      right: 0; /* Align with avatar right edge */
+      right: 0;
       width: 170px;
     }
 
@@ -195,10 +173,25 @@
   }
 }
 
-/* Light theme overrides */
+.app-header .header-actions .add-dropdown,
+.app-header .header-actions .profile-dropdown {
+  position: absolute;
+  top: 100%;
+  margin-top: 8px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-dropdown);
+  z-index: 1000;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+}
+
 body.light-theme {
   .app-header {
-    background-color: var(--header-bg); /* Use standard light-theme header-bg (#175ddc) */
+    background-color: var(--header-bg);
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
     .header-btn-new {
@@ -212,6 +205,7 @@ body.light-theme {
 
     .header-icon-btn {
       color: rgba(255, 255, 255, 0.75);
+
       &:hover {
         color: var(--white);
       }

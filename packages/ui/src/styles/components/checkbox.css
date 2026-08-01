@@ -29,24 +29,24 @@
     &:checked {
       background-color: var(--primary, #175ddc);
       border-color: var(--primary, #175ddc);
-
-      &::after {
-        content: "";
-        position: absolute;
-        width: 4px;
-        height: 8px;
-        border: solid #ffffff;
-        border-width: 0 2px 2px 0;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -60%) rotate(45deg);
-      }
     }
 
     &:disabled {
       cursor: not-allowed;
       opacity: 0.5;
     }
+  }
+
+  .checkbox-control:checked::after {
+    content: "";
+    position: absolute;
+    width: 4px;
+    height: 8px;
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%) rotate(45deg);
   }
 
   .checkbox-label {

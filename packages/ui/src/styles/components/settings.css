@@ -1,4 +1,3 @@
-/* Settings user panel */
 .user-panel {
   display: flex;
   align-items: center;
@@ -60,15 +59,6 @@
     border-bottom: none;
   }
 
-  &-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-    overflow: hidden;
-    text-align: left;
-  }
-
   .setting-label {
     font-weight: 500;
   }
@@ -86,4 +76,13 @@
     color: var(--text-muted);
     flex-shrink: 0;
   }
+}
+
+.setting-row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  overflow: hidden;
+  text-align: left;
 }
