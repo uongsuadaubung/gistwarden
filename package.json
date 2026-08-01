@@ -5,11 +5,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun run scripts/build.ts extension",
+    "build": "bun run scripts/build.ts dev",
     "build:extension": "bun run scripts/build.ts extension",
     "build:web": "bun run scripts/build.ts web",
     "build:all": "bun run scripts/build.ts all",
-    "watch": "bun run scripts/build.ts extension --watch",
     "test": "bun test tests/",
     "typecheck": "tsc --noEmit",
     "bump-version": "bun run version.ts"

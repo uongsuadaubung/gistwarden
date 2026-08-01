@@ -21,27 +21,27 @@ const extSrcDir = join(projectRoot, "apps", "extension", "src");
 const webSrcDir = join(projectRoot, "apps", "web", "src");
 const uiDir = join(projectRoot, "packages", "ui", "src");
 
-// Determine build target from arguments: "extension" (default), "web", or "all"
+// Determine build target and flags from arguments
 const args = process.argv.slice(2);
-const targetArg =
-  args.find((a) => ["extension", "web", "all"].includes(a)) || "extension";
-const isWatch = args.includes("--watch");
+const validTargets = ["extension", "chrome", "firefox", "web", "all", "dev"];
+const targetArg = args.find((a) => validTargets.includes(a)) || "extension";
+const isFastDev = args.includes("--fast") || targetArg === "dev";
 
-const buildExtension = targetArg === "extension" || targetArg === "all";
-const buildWeb = targetArg === "web" || targetArg === "all";
+const buildChrome = ["extension", "chrome", "all", "dev"].includes(targetArg);
+const buildFirefox = ["extension", "firefox", "all", "dev"].includes(targetArg);
+const buildWeb = ["web", "all"].includes(targetArg);
+const buildExtension = buildChrome || buildFirefox;
 
 // Clean and create target output directories
-if (!isWatch) {
-  if (buildExtension) {
-    [chromeDir, firefoxDir].forEach((dir) => {
-      if (existsSync(dir)) rmSync(dir, { recursive: true });
-      mkdirSync(dir, { recursive: true });
-    });
-  }
-  if (buildWeb) {
-    if (existsSync(webDistDir)) rmSync(webDistDir, { recursive: true });
-    mkdirSync(webDistDir, { recursive: true });
-  }
+if (buildExtension) {
+  [chromeDir, firefoxDir].forEach((dir) => {
+    if (existsSync(dir)) rmSync(dir, { recursive: true });
+    mkdirSync(dir, { recursive: true });
+  });
+}
+if (buildWeb) {
+  if (existsSync(webDistDir)) rmSync(webDistDir, { recursive: true });
+  mkdirSync(webDistDir, { recursive: true });
 }
 
 function bundleCss(entryPath: string): string {
@@ -158,21 +158,32 @@ async function zipFolderNative(sourceDir: string, outputFile: string): Promise<v
 }
 
 async function createZipPackages() {
-  if (isWatch || !buildExtension) return;
-  console.log("Creating ZIP packages...");
-  try {
-    const chromeZipPath = join(distDir, "chrome.zip");
-    const firefoxZipPath = join(distDir, "firefox.zip");
+  if (!buildExtension) return;
 
-    await Promise.all([
-      zipFolderNative(chromeDir, chromeZipPath),
-      zipFolderNative(firefoxDir, firefoxZipPath),
-    ]);
+  const chromeZipPath = join(distDir, "chrome.zip");
+  const firefoxZipPath = join(distDir, "firefox.zip");
 
-    console.log("✓ ZIP packaging successful.");
-  } catch (zipErr) {
-    console.error("ZIP packaging failed:", zipErr);
-    process.exit(1);
+  const tasks: Promise<void>[] = [];
+
+  // Skip chrome.zip in dev mode (Chrome uses unpacked dist/chrome)
+  if (buildChrome && !isFastDev && !args.includes("--no-zip-chrome")) {
+    tasks.push(zipFolderNative(chromeDir, chromeZipPath));
+  }
+
+  // Always create firefox.zip when building firefox (including dev mode)
+  if (buildFirefox && !args.includes("--no-zip-firefox")) {
+    tasks.push(zipFolderNative(firefoxDir, firefoxZipPath));
+  }
+
+  if (tasks.length > 0) {
+    console.log("Creating ZIP packages...");
+    try {
+      await Promise.all(tasks);
+      console.log("✓ ZIP packaging successful.");
+    } catch (zipErr) {
+      console.error("ZIP packaging failed:", zipErr);
+      process.exit(1);
+    }
   }
 }
 
@@ -258,7 +269,6 @@ async function buildTargetDirectory(outputDir: string) {
 async function runBuild() {
   copyAssets();
   console.log(`Bundling with Bun.build (${targetArg.toUpperCase()})...`);
-
   try {
     if (buildExtension) {
       await buildTargetDirectory(chromeDir);
@@ -286,32 +296,34 @@ async function runBuild() {
     }
 
     console.log("✓ Bundling with Bun.build successful.");
-    if (!isWatch && buildExtension) {
+    if (buildExtension) {
       await createZipPackages();
     }
 
-    if (!isWatch) {
-      console.log("\nDone! Output files in /dist:");
-      if (buildExtension) {
-        console.log("  - chrome/        (unpacked Extension)");
-        console.log("  - firefox/       (unpacked Extension)");
+    console.log("\nDone! Output files in /dist:");
+    if (buildExtension) {
+      if (buildChrome) console.log("  - chrome/        (unpacked Extension)");
+      if (buildFirefox) console.log("  - firefox/       (unpacked Extension)");
+      if (buildChrome && !isFastDev && !args.includes("--no-zip-chrome")) {
         console.log("  - chrome.zip     (packed Chrome ZIP)");
+      }
+      if (buildFirefox && !args.includes("--no-zip-firefox")) {
         console.log("  - firefox.zip    (packed Firefox ZIP)");
       }
-      if (buildWeb) {
-        console.log("  - web/           (standalone Web App)");
-      }
+    }
+    if (buildWeb) {
+      console.log("  - web/           (standalone Web App)");
     }
   } catch (e) {
     console.error("Bun.build failed:", e);
-    if (!isWatch) process.exit(1);
+    process.exit(1);
   }
 }
 
-if (!isWatch) {
+if (!args.includes("--no-test")) {
   await Promise.all([runVerifications(), runBuild()]);
-  const duration = ((performance.now() - startTime) / 1000).toFixed(2);
-  console.log(`\n🎉 Total build time: ${duration}s`);
 } else {
   await runBuild();
 }
+const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+console.log(`\n🎉 Total build time: ${duration}s`);
