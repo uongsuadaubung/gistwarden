@@ -11,6 +11,7 @@ import { navigate, openItem, selectItem } from "@/core/navigation.ts";
 import {
   addFolder,
   deleteVaultItems,
+  moveVaultItemsToFolder,
   renameFolder,
   saveItem,
 } from "@/features/vault/vault-service.ts";
@@ -22,6 +23,7 @@ import {
 } from "@gistwarden/ui";
 import { Header } from "@/components/ui/Header.tsx";
 import FolderModal from "@/components/ui/FolderModal.tsx";
+import MoveToFolderModal from "@/features/vault/components/MoveToFolderModal.tsx";
 import { type Folder, VaultItemType } from "@gistwarden/domain";
 import { createDefaultVaultItem } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import { VaultBatchActionBar } from "@/features/vault/components/VaultBatchActionBar.tsx";
@@ -104,6 +106,7 @@ export const Vault: Component = () => {
 
   const [showFolderModal, setShowFolderModal] = createSignal(false);
   const [editingFolder, setEditingFolder] = createSignal<Folder | null>(null);
+  const [showMoveToFolderModal, setShowMoveToFolderModal] = createSignal(false);
 
   const handleSaveFolder = async (name: string): Promise<boolean> => {
     const current = editingFolder();
@@ -202,6 +205,31 @@ export const Vault: Component = () => {
       setIsSelectMode(false);
     } else {
       showToast(t(res.error), "error");
+    }
+  };
+
+  const handleMoveSelectedToFolder = async (
+    targetFolderId: string | null,
+  ): Promise<boolean> => {
+    const selected = Array.from(selectedItemIds());
+    if (selected.length === 0) return false;
+
+    setGlobalLoading(true);
+    const res = await moveVaultItemsToFolder(selected, targetFolderId);
+    setGlobalLoading(false);
+
+    if (res.isOk()) {
+      showToast(
+        t("vault_move_to_folder_success", { count: selected.length }),
+        "success",
+      );
+      setSelectedItemIds(new Set<string>());
+      setIsSelectMode(false);
+      setShowMoveToFolderModal(false);
+      return true;
+    } else {
+      showToast(t(res.error), "error");
+      return false;
     }
   };
 
@@ -512,9 +540,11 @@ export const Vault: Component = () => {
             <VaultBatchActionBar
               selectedCount={selectedItemIds().size}
               allVisibleCount={getAllVisibleItemIds().length}
+              foldersCount={accountStore.folders.length}
               onToggleSelectMode={toggleSelectMode}
               onSelectAll={handleSelectAll}
               onDeleteSelected={handleDeleteSelected}
+              onMoveToFolder={() => setShowMoveToFolderModal(true)}
             />
           </Show>
 
@@ -750,6 +780,13 @@ export const Vault: Component = () => {
           setEditingFolder(null);
         }}
         onSave={handleSaveFolder}
+      />
+
+      <MoveToFolderModal
+        isOpen={showMoveToFolderModal()}
+        folders={accountStore.folders}
+        onClose={() => setShowMoveToFolderModal(false)}
+        onConfirm={handleMoveSelectedToFolder}
       />
     </div>
   );

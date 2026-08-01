@@ -212,6 +212,9 @@ export default {
   vault_select_all: "Chọn tất cả",
   vault_deselect_all: "Bỏ chọn tất cả",
   vault_btn_delete_selected: "Xóa đã chọn",
+  vault_btn_move_to_folder: "Chuyển vào thư mục",
+  vault_move_to_folder_modal_title: "Di chuyển vào thư mục",
+  vault_move_to_folder_success: "Đã di chuyển {count} mục vào thư mục",
   vault_confirm_bulk_delete_title: "Xác nhận xóa tài khoản",
   vault_confirm_bulk_delete_msg:
     "Bạn có chắc chắn muốn xóa {count} tài khoản đã chọn không?",

@@ -31,7 +31,9 @@
       display: flex;
       flex-direction: column;
       animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      box-sizing: border-box;
+      &.modal-panel-spacious {
+        min-height: 250px;
+      }
 
       .modal-panel-header {
         display: flex;
@@ -66,6 +68,18 @@
         gap: 12px;
         margin-bottom: 20px;
         overflow-y: auto;
+
+        &.overflow-visible {
+          overflow: visible;
+        }
+
+        &.min-height-spacious {
+          min-height: 250px;
+        }
+
+        &.min-height-tall {
+          min-height: 350px;
+        }
       }
 
       .modal-panel-footer {
@@ -73,6 +87,7 @@
         gap: 12px;
         align-items: center;
         justify-content: space-between;
+        margin-top: auto;
 
         button {
           &:not(.delete-folder-btn) {

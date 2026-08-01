@@ -9,6 +9,7 @@ export interface BaseSlideModalProps {
     | JSX.Element
     | ((triggerClose: (action?: () => void) => void) => JSX.Element);
   usePortal?: boolean;
+  panelClass?: string;
 }
 
 export function BaseSlideModal(props: BaseSlideModalProps): JSX.Element {
@@ -36,7 +37,10 @@ export function BaseSlideModal(props: BaseSlideModalProps): JSX.Element {
       class={`modal-overlay bottom-slide ${isClosing() ? "is-closing" : ""}`}
       onClick={() => triggerClose()}
     >
-      <div class="modal-slide-panel" onClick={(e) => e.stopPropagation()}>
+      <div
+        class={`modal-slide-panel ${props.panelClass || ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <Show when={props.title}>
           <div class="modal-panel-header">
             <div class="modal-panel-title">{props.title}</div>

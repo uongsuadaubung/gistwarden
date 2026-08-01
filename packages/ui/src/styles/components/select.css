@@ -2,9 +2,10 @@
   position: relative;
   width: 100%;
   display: flex;
-  align-items: center;
+  flex-direction: column;
 
   .select-control {
+    position: relative;
     width: 100%;
     padding: 10px 36px 10px 14px;
     font-family: inherit;
@@ -48,7 +49,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: color 0.2s, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: color 0.2s, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
       svg {
         width: 100%;
@@ -69,10 +70,51 @@
     }
   }
 
-  .select-dropdown-options {
+  /* Overlay mode (default) */
+  .select-dropdown-wrapper.overlay {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
+    width: 100%;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+
+    &.is-open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+  }
+
+  /* In-flow mode (smooth grid height accordion expansion) */
+  .select-dropdown-wrapper.in-flow {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &.is-open {
+      grid-template-rows: 1fr;
+
+      .select-dropdown-inner {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .select-dropdown-inner {
+      overflow: hidden;
+      min-height: 0;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  }
+
+  .select-dropdown-options {
+    margin-top: 4px;
     width: 100%;
     background-color: var(--surface);
     border: 1px solid var(--border);
@@ -85,6 +127,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    box-sizing: border-box;
 
     .select-dropdown-header {
       padding: 6px 12px;

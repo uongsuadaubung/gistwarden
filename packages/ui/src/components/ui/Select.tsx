@@ -23,6 +23,7 @@ interface SelectProps {
   options: SelectOption[];
   class?: string;
   disabled?: boolean;
+  inFlow?: boolean;
 }
 
 export const Select: Component<SelectProps> = (props) => {
@@ -89,31 +90,37 @@ export const Select: Component<SelectProps> = (props) => {
         </div>
       </button>
 
-      <Show when={isOpen()}>
-        <div class="select-dropdown-options">
-          <For each={props.options}>
-            {(opt) => (
-              <Show
-                when={!opt.isHeader}
-                fallback={
-                  <div class="select-dropdown-header">
+      <div
+        class={`select-dropdown-wrapper ${
+          props.inFlow ? "in-flow" : "overlay"
+        } ${isOpen() ? "is-open" : ""}`}
+      >
+        <div class="select-dropdown-inner">
+          <div class="select-dropdown-options">
+            <For each={props.options}>
+              {(opt) => (
+                <Show
+                  when={!opt.isHeader}
+                  fallback={
+                    <div class="select-dropdown-header">
+                      {opt.label}
+                    </div>
+                  }
+                >
+                  <div
+                    class={`select-dropdown-item ${
+                      String(opt.value) === String(props.value) ? "selected" : ""
+                    } ${opt.disabled ? "disabled" : ""}`}
+                    onClick={() => !opt.disabled && handleSelect(opt.value)}
+                  >
                     {opt.label}
                   </div>
-                }
-              >
-                <div
-                  class={`select-dropdown-item ${
-                    String(opt.value) === String(props.value) ? "selected" : ""
-                  } ${opt.disabled ? "disabled" : ""}`}
-                  onClick={() => !opt.disabled && handleSelect(opt.value)}
-                >
-                  {opt.label}
-                </div>
-              </Show>
-            )}
-          </For>
+                </Show>
+              )}
+            </For>
+          </div>
         </div>
-      </Show>
+      </div>
     </div>
   );
 };

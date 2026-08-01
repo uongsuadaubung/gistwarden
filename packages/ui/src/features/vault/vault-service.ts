@@ -5,6 +5,7 @@ import {
   deleteVaultItemsUseCase,
   executeVaultMutationUseCase,
   getDecryptedVaultItems,
+  moveVaultItemsToFolderUseCase,
   purgeAllTrashUseCase,
   purgeTrashItemUseCase,
   renameFolderUseCase,
@@ -109,6 +110,18 @@ export async function deleteVaultItems(
   const payload = await getOrBuildCurrentPayload();
   const salt = accountStore.masterPasswordConfig.salt || "";
   const res = await deleteVaultItemsUseCase(payload, salt, ids);
+  if (res.isErr()) return err(res.error);
+  applyVaultPayloadToStore(res.value);
+  return ok();
+}
+
+export async function moveVaultItemsToFolder(
+  ids: string[],
+  folderId: string | null,
+): Promise<Result<void, TranslationKey>> {
+  const payload = await getOrBuildCurrentPayload();
+  const salt = accountStore.masterPasswordConfig.salt || "";
+  const res = await moveVaultItemsToFolderUseCase(payload, salt, ids, folderId);
   if (res.isErr()) return err(res.error);
   applyVaultPayloadToStore(res.value);
   return ok();

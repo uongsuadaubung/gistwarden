@@ -198,6 +198,9 @@ const LangSchema = z.object({
   vault_select_all: z.string(),
   vault_deselect_all: z.string(),
   vault_btn_delete_selected: z.string(),
+  vault_btn_move_to_folder: z.string(),
+  vault_move_to_folder_modal_title: z.string(),
+  vault_move_to_folder_success: z.string(),
   vault_confirm_bulk_delete_title: z.string(),
   vault_confirm_bulk_delete_msg: z.string(),
 

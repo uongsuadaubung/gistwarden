@@ -1,13 +1,15 @@
-import { type Component } from "solid-js";
-import { CloseIcon, TrashIcon } from "@/icons/svg/index.ts";
+import { type Component, Show } from "solid-js";
+import { CloseIcon, FolderIcon, TrashIcon } from "@/icons/svg/index.ts";
 import { t } from "@/core/i18n.ts";
 
 export interface VaultBatchActionBarProps {
   selectedCount: number;
   allVisibleCount: number;
+  foldersCount: number;
   onToggleSelectMode: () => void;
   onSelectAll: () => void;
   onDeleteSelected: () => void;
+  onMoveToFolder: () => void;
 }
 
 export const VaultBatchActionBar: Component<VaultBatchActionBarProps> = (
@@ -41,6 +43,18 @@ export const VaultBatchActionBar: Component<VaultBatchActionBarProps> = (
             ? t("vault_deselect_all")
             : t("vault_select_all")}
         </button>
+        <Show when={props.foldersCount > 0}>
+          <button
+            type="button"
+            class="btn-bulk-move"
+            disabled={props.selectedCount === 0}
+            onClick={props.onMoveToFolder}
+            title={t("vault_btn_move_to_folder")}
+          >
+            <FolderIcon class="btn-icon" />
+            <span>{t("vault_btn_move_to_folder")}</span>
+          </button>
+        </Show>
         <button
           type="button"
           class="btn-bulk-delete"

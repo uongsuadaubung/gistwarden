@@ -176,6 +176,36 @@ export async function deleteVaultItemsUseCase(
   });
 }
 
+export async function moveVaultItemsToFolderUseCase(
+  currentPayload: VaultPayload,
+  salt: string,
+  ids: string[],
+  folderId: string | null,
+): Promise<Result<VaultPayload, TranslationKey>> {
+  if (ids.length === 0) {
+    return ok(currentPayload);
+  }
+
+  return await executeVaultMutationUseCase(currentPayload, salt, (payload) => {
+    const idSet = new Set(ids);
+    const updatedItems = payload.items.map((item) => {
+      if (idSet.has(item.id)) {
+        return {
+          ...item,
+          folderId,
+          revisionDate: new Date().toISOString(),
+        };
+      }
+      return item;
+    });
+
+    return {
+      ...payload,
+      items: updatedItems,
+    };
+  });
+}
+
 export async function restoreVaultItemUseCase(
   currentPayload: VaultPayload,
   salt: string,

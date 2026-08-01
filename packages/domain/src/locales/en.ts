@@ -209,6 +209,9 @@ export default {
   vault_select_all: "Select all",
   vault_deselect_all: "Deselect all",
   vault_btn_delete_selected: "Delete selected",
+  vault_btn_move_to_folder: "Move to folder",
+  vault_move_to_folder_modal_title: "Move selected items to folder",
+  vault_move_to_folder_success: "Moved {count} item(s) to folder",
   vault_confirm_bulk_delete_title: "Confirm Deletion",
   vault_confirm_bulk_delete_msg:
     "Are you sure you want to delete {count} selected item(s)?",
