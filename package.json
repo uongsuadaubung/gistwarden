@@ -17,7 +17,6 @@
   "dependencies": {
     "@solidjs/router": "^1.0.0",
     "@zxcvbn-ts/core": "^4.1.2",
-    "adm-zip": "^0.6.0",
     "consola": "^3.4.2",
     "happy-dom": "^20.11.1",
     "hash-wasm": "^4.12.0",
@@ -31,7 +30,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/adm-zip": "^0.5.8",
     "@types/chrome": "^0.2.5",
     "@types/node": "^26.1.2",
     "@types/papaparse": "^5.5.2",

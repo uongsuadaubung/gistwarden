@@ -9,7 +9,6 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import AdmZip from "adm-zip";
 import { SolidPlugin as solidPlugin } from "bun-plugin-solid";
 
 const startTime = performance.now();
@@ -145,22 +144,31 @@ function copyAssets() {
   console.log("✓ Assets copied successfully.");
 }
 
+async function zipFolderNative(sourceDir: string, outputFile: string): Promise<void> {
+  const entries = readdirSync(sourceDir);
+  if (entries.length === 0) return;
+  const proc = Bun.spawn(["tar", "-a", "-c", "-f", outputFile, "-C", sourceDir, ...entries], {
+    stdout: "ignore",
+    stderr: "inherit",
+  });
+  const exitCode = await proc.exited;
+  if (exitCode !== 0 || !existsSync(outputFile)) {
+    throw new Error(`Failed to create ZIP package for ${sourceDir}`);
+  }
+}
+
 async function createZipPackages() {
   if (isWatch || !buildExtension) return;
   console.log("Creating ZIP packages...");
   try {
+    const chromeZipPath = join(distDir, "chrome.zip");
+    const firefoxZipPath = join(distDir, "firefox.zip");
+
     await Promise.all([
-      Promise.resolve().then(() => {
-        const chromeZip = new AdmZip();
-        chromeZip.addLocalFolder(chromeDir);
-        chromeZip.writeZip(join(distDir, "chrome.zip"));
-      }),
-      Promise.resolve().then(() => {
-        const firefoxZip = new AdmZip();
-        firefoxZip.addLocalFolder(firefoxDir);
-        firefoxZip.writeZip(join(distDir, "firefox.zip"));
-      }),
+      zipFolderNative(chromeDir, chromeZipPath),
+      zipFolderNative(firefoxDir, firefoxZipPath),
     ]);
+
     console.log("✓ ZIP packaging successful.");
   } catch (zipErr) {
     console.error("ZIP packaging failed:", zipErr);
@@ -169,30 +177,34 @@ async function createZipPackages() {
 }
 
 async function runCommandOrExit(name: string, command: string, cmdArgs: string[]) {
-  console.log(`Running ${name}...`);
   const proc = Bun.spawn([command, ...cmdArgs], {
-    stdout: "inherit",
-    stderr: "inherit",
+    stdout: "pipe",
+    stderr: "pipe",
     cwd: projectRoot,
   });
-  const exitCode = await proc.exited;
+
+  const [stdoutStr, stderrStr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+
   if (exitCode !== 0) {
-    console.error(`❌ ${name} failed. Stopping build.`);
+    console.error(`\n❌ ${name} failed! Error output:\n`);
+    if (stdoutStr.trim()) console.error(stdoutStr);
+    if (stderrStr.trim()) console.error(stderrStr);
     process.exit(exitCode ?? 1);
   }
-  console.log(`✓ ${name} passed.`);
 }
 
 async function runVerifications() {
-  console.log("=====================================");
-  console.log("Chạy kiểm tra song song với Bun (TypeCheck, Test)...");
+  console.log("Running TypeCheck & Tests...");
   try {
     await Promise.all([
       runCommandOrExit("bun typecheck", "bun", ["run", "typecheck"]),
       runCommandOrExit("bun test", "bun", ["test"]),
     ]);
-    console.log("=====================================");
-    console.log("Hoàn thành tất cả các bước kiểm tra!\n");
+    console.log("✓ TypeCheck & Tests passed.");
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(errorMsg);
@@ -249,10 +261,12 @@ async function runBuild() {
 
   try {
     if (buildExtension) {
-      await Promise.all([
-        buildTargetDirectory(chromeDir),
-        buildTargetDirectory(firefoxDir),
-      ]);
+      await buildTargetDirectory(chromeDir);
+      readdirSync(chromeDir).forEach((file) => {
+        if (file.endsWith(".js")) {
+          copyFileSync(join(chromeDir, file), join(firefoxDir, file));
+        }
+      });
     }
 
     if (buildWeb) {
