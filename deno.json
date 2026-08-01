@@ -23,6 +23,7 @@
     "./apps/web"
   ],
   "imports": {
+    "lucide-solid": "npm:lucide-solid@^1.28.0",
     "@gistwarden/domain": "./packages/domain/mod.ts",
     "@gistwarden/repository": "./packages/repository/mod.ts",
     "@gistwarden/network": "./packages/network/mod.ts",

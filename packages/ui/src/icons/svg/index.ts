@@ -1,60 +1,129 @@
-export { default as RefreshIcon } from "@/icons/svg/RefreshIcon.tsx";
-export { default as LockIcon } from "@/icons/svg/LockIcon.tsx";
+import { type Component, mergeProps } from "solid-js";
+import type { IconProps } from "@/icons/svg/types.ts";
+import {
+  ArrowLeft,
+  ArrowUp,
+  ChartColumn,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CircleMinus,
+  CircleQuestionMark,
+  Clipboard,
+  Copy,
+  CreditCard,
+  Database,
+  Download,
+  EllipsisVertical,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FileText,
+  Folder,
+  Gauge,
+  Globe,
+  GripVertical,
+  Heart,
+  Info,
+  Key,
+  KeyRound,
+  Languages,
+  List,
+  ListFilter,
+  Lock,
+  LogOut,
+  Moon,
+  Palette,
+  Pencil,
+  PictureInPicture2,
+  Plus,
+  QrCode,
+  RefreshCw,
+  Repeat,
+  Search,
+  Settings,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  SquareCheck,
+  Sun,
+  SunMedium,
+  Terminal,
+  Trash2,
+  Upload,
+  User,
+  WandSparkles,
+  X,
+} from "lucide-solid";
+
+function wrapLucide(
+  LucideComp: Component<Record<string, unknown>>,
+): Component<IconProps> {
+  return (props: IconProps) => {
+    const merged = mergeProps({ size: 16, strokeWidth: 2 }, props);
+    return LucideComp(merged);
+  };
+}
+
+export const RefreshIcon = wrapLucide(RefreshCw);
+export const LockIcon = wrapLucide(Lock);
 export { default as AppIcon } from "@/icons/svg/AppIcon.tsx";
-export { default as VaultIcon } from "@/icons/svg/VaultIcon.tsx";
 export { default as GithubIcon } from "@/icons/svg/GithubIcon.tsx";
-export { default as ChevronDownIcon } from "@/icons/svg/ChevronDownIcon.tsx";
-export { default as ArrowLeftIcon } from "@/icons/svg/ArrowLeftIcon.tsx";
-export { default as CopyIcon } from "@/icons/svg/CopyIcon.tsx";
-export { default as EyeIcon } from "@/icons/svg/EyeIcon.tsx";
-export { default as EyeOffIcon } from "@/icons/svg/EyeOffIcon.tsx";
-export { default as ExternalLinkIcon } from "@/icons/svg/ExternalLinkIcon.tsx";
-export { default as SearchIcon } from "@/icons/svg/SearchIcon.tsx";
-export { default as PlusIcon } from "@/icons/svg/PlusIcon.tsx";
-export { default as SyncIcon } from "@/icons/svg/SyncIcon.tsx";
-export { default as ThemeIcon } from "@/icons/svg/ThemeIcon.tsx";
-export { default as PaletteIcon } from "@/icons/svg/PaletteIcon.tsx";
-export { default as KeyIcon } from "@/icons/svg/KeyIcon.tsx";
-export { default as UploadIcon } from "@/icons/svg/UploadIcon.tsx";
-export { default as TrashIcon } from "@/icons/svg/TrashIcon.tsx";
-export { default as LogoutIcon } from "@/icons/svg/LogoutIcon.tsx";
-export { default as ShieldIcon } from "@/icons/svg/ShieldIcon.tsx";
-export { default as InfoIcon } from "@/icons/svg/InfoIcon.tsx";
-export { default as QuestionIcon } from "@/icons/svg/QuestionIcon.tsx";
-export { default as QrIcon } from "@/icons/svg/QrIcon.tsx";
-export { default as GeneratorIcon } from "@/icons/svg/GeneratorIcon.tsx";
-export { default as SettingsIcon } from "@/icons/svg/SettingsIcon.tsx";
-export { default as DragIcon } from "@/icons/svg/DragIcon.tsx";
-export { default as EditIcon } from "@/icons/svg/EditIcon.tsx";
-export { default as HeartFilledIcon } from "@/icons/svg/HeartFilledIcon.tsx";
-export { default as HeartOutlineIcon } from "@/icons/svg/HeartOutlineIcon.tsx";
-export { default as NoteIcon } from "@/icons/svg/NoteIcon.tsx";
-export { default as ChevronRightIcon } from "@/icons/svg/ChevronRightIcon.tsx";
-export { default as DownloadIcon } from "@/icons/svg/DownloadIcon.tsx";
-export { default as GlobeIcon } from "@/icons/svg/GlobeIcon.tsx";
-export { default as MoreVerticalIcon } from "@/icons/svg/MoreVerticalIcon.tsx";
-export { default as CloseIcon } from "@/icons/svg/CloseIcon.tsx";
-export { default as ClipboardIcon } from "@/icons/svg/ClipboardIcon.tsx";
-export { default as FilterIcon } from "@/icons/svg/FilterIcon.tsx";
-export { default as CardIcon } from "@/icons/svg/CardIcon.tsx";
-export { default as IdentityIcon } from "@/icons/svg/IdentityIcon.tsx";
-export { default as ListIcon } from "@/icons/svg/ListIcon.tsx";
-export { default as PopoutIcon } from "@/icons/svg/PopoutIcon.tsx";
-export { default as MinusCircleIcon } from "@/icons/svg/MinusCircleIcon.tsx";
-export { default as SunIcon } from "@/icons/svg/SunIcon.tsx";
-export { default as MoonIcon } from "@/icons/svg/MoonIcon.tsx";
-export { default as EnIcon } from "@/icons/svg/EnIcon.tsx";
-export { default as ViIcon } from "@/icons/svg/ViIcon.tsx";
-export { default as CapsLockIcon } from "@/icons/svg/CapsLockIcon.tsx";
-export { default as ListCheckIcon } from "@/icons/svg/ListCheckIcon.tsx";
-export { default as AutofillIcon } from "@/icons/svg/AutofillIcon.tsx";
-export { default as FolderIcon } from "@/icons/svg/FolderIcon.tsx";
-export { default as ReportsIcon } from "@/icons/svg/ReportsIcon.tsx";
-export { default as ShieldAlertIcon } from "@/icons/svg/ShieldAlertIcon.tsx";
-export { default as RepeatKeyIcon } from "@/icons/svg/RepeatKeyIcon.tsx";
-export { default as GaugeIcon } from "@/icons/svg/GaugeIcon.tsx";
-export { default as GlobeUnlockIcon } from "@/icons/svg/GlobeUnlockIcon.tsx";
-export { default as Shield2FAIcon } from "@/icons/svg/Shield2FAIcon.tsx";
-export { default as DatabaseBreachIcon } from "@/icons/svg/DatabaseBreachIcon.tsx";
-export { default as SshKeyIcon } from "@/icons/svg/SshKeyIcon.tsx";
+export const VaultIcon = wrapLucide(Shield);
+export const ChevronDownIcon = wrapLucide(ChevronDown);
+export const ChevronLeftIcon = wrapLucide(ChevronLeft);
+export const ArrowLeftIcon = wrapLucide(ArrowLeft);
+export const CopyIcon = wrapLucide(Copy);
+export const EyeIcon = wrapLucide(Eye);
+export const EyeOffIcon = wrapLucide(EyeOff);
+export const ExternalLinkIcon = wrapLucide(ExternalLink);
+export const SearchIcon = wrapLucide(Search);
+export const PlusIcon = wrapLucide(Plus);
+export const SyncIcon = wrapLucide(RefreshCw);
+export const ThemeIcon = wrapLucide(SunMedium);
+export const PaletteIcon = wrapLucide(Palette);
+export const KeyIcon = wrapLucide(Key);
+export const UploadIcon = wrapLucide(Upload);
+export const TrashIcon = wrapLucide(Trash2);
+export const LogoutIcon = wrapLucide(LogOut);
+export const ShieldIcon = wrapLucide(ShieldCheck);
+export const InfoIcon = wrapLucide(Info);
+export const QuestionIcon = wrapLucide(CircleQuestionMark);
+export const QrIcon = wrapLucide(QrCode);
+export const GeneratorIcon = wrapLucide(KeyRound);
+export const SettingsIcon = wrapLucide(Settings);
+export const DragIcon = wrapLucide(GripVertical);
+export const EditIcon = wrapLucide(Pencil);
+export const HeartFilledIcon = wrapLucide(Heart);
+export const HeartOutlineIcon = wrapLucide(Heart);
+export const NoteIcon = wrapLucide(FileText);
+export const ChevronRightIcon = wrapLucide(ChevronRight);
+export const DownloadIcon = wrapLucide(Download);
+export const GlobeIcon = wrapLucide(Globe);
+export const MoreVerticalIcon = wrapLucide(EllipsisVertical);
+export const CloseIcon = wrapLucide(X);
+export const ClipboardIcon = wrapLucide(Clipboard);
+export const FilterIcon = wrapLucide(ListFilter);
+export const CardIcon = wrapLucide(CreditCard);
+export const IdentityIcon = wrapLucide(User);
+export const ListIcon = wrapLucide(List);
+export const PopoutIcon = wrapLucide(PictureInPicture2);
+export const MinusCircleIcon = wrapLucide(CircleMinus);
+export const SunIcon = wrapLucide(Sun);
+export const MoonIcon = wrapLucide(Moon);
+export const EnIcon = wrapLucide(Languages);
+export const ViIcon = wrapLucide(Languages);
+export const CapsLockIcon = wrapLucide(ArrowUp);
+export const ListCheckIcon = wrapLucide(SquareCheck);
+export const AutofillIcon = wrapLucide(WandSparkles);
+export const FolderIcon = wrapLucide(Folder);
+export const ReportsIcon = wrapLucide(ChartColumn);
+export const ShieldAlertIcon = wrapLucide(ShieldAlert);
+export const RepeatKeyIcon = wrapLucide(Repeat);
+export const GaugeIcon = wrapLucide(Gauge);
+export const GlobeUnlockIcon = wrapLucide(Globe);
+export const Shield2FAIcon = wrapLucide(ShieldCheck);
+export const DatabaseBreachIcon = wrapLucide(Database);
+export const SshKeyIcon = wrapLucide(Terminal);
+
 export * from "@/icons/svg/types.ts";

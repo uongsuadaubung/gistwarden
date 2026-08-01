@@ -6,64 +6,64 @@
     display: flex;
     align-items: center;
     gap: 10px;
-  }
 
-  .checkbox-control {
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    padding: 0;
-    flex-shrink: 0;
-    border: 1.5px solid var(--border, #314158);
-    border-radius: 4px;
-    background-color: var(--bg-input, transparent);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: background-color 0.2s, border-color 0.2s;
+    .checkbox-control {
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      padding: 0;
+      flex-shrink: 0;
+      border: 1.5px solid var(--border, #314158);
+      border-radius: 4px;
+      background-color: var(--bg-input, transparent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: background-color 0.2s, border-color 0.2s;
 
-    &:checked {
-      background-color: var(--primary, #175ddc);
-      border-color: var(--primary, #175ddc);
+      &:checked {
+        background-color: var(--primary, #175ddc);
+        border-color: var(--primary, #175ddc);
+
+        &::after {
+          content: "";
+          position: absolute;
+          width: 4px;
+          height: 8px;
+          border: solid #ffffff;
+          border-width: 0 2px 2px 0;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -60%) rotate(45deg);
+        }
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
     }
 
-    &:disabled {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-  }
+    .checkbox-label {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.4;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      color: inherit;
+      text-transform: none;
+      letter-spacing: normal;
 
-  .checkbox-control:checked::after {
-    content: "";
-    position: absolute;
-    width: 4px;
-    height: 8px;
-    border: solid #ffffff;
-    border-width: 0 2px 2px 0;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -60%) rotate(45deg);
-  }
-
-  .checkbox-label {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.4;
-    display: inline-flex;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-    color: inherit;
-    text-transform: none;
-    letter-spacing: normal;
-
-    &.disabled {
-      color: var(--text-muted);
-      cursor: not-allowed;
+      &.disabled {
+        color: var(--text-muted);
+        cursor: not-allowed;
+      }
     }
   }
 

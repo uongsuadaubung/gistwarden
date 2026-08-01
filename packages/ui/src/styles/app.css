@@ -859,3 +859,17 @@ body.light-theme {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
+
+/* Lucide SVG Icon Global Reset */
+svg.lucide,
+svg[class*="lucide-"],
+svg.lucide-icon {
+  fill: none !important;
+  stroke: currentColor;
+}
+
+svg.icon-filled,
+.icon-filled {
+  fill: currentColor !important;
+  stroke: none !important;
+}

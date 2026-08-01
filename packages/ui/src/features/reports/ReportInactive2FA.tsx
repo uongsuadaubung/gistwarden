@@ -4,7 +4,6 @@ import { accountStore } from "@/core/store.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { t } from "@/core/i18n.ts";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
-import { Shield2FAIcon } from "@/icons/svg/index.ts";
 import { formatVaultItemUsername } from "./reports-service.ts";
 
 export const ReportInactive2FA: Component = () => {
@@ -46,9 +45,6 @@ export const ReportInactive2FA: Component = () => {
         when={inactiveItems().length > 0}
         fallback={
           <div class="empty-state text-center p-4 card mt-3">
-            <div class="empty-state-icon mb-2">
-              <Shield2FAIcon />
-            </div>
             <p class="text-muted fw-medium">
               {t("report_inactive_2fa_clean_msg")}
             </p>
@@ -60,17 +56,9 @@ export const ReportInactive2FA: Component = () => {
             {(item) => (
               <div class="item-row flex-between align-center">
                 <div class="item-info">
-                  <div class="fw-bold flex-align-center gap-1">
-                    <span class="text-purple">
-                      <Shield2FAIcon />
-                    </span>
-                    {item.name}
-                  </div>
+                  <div class="fw-bold">{item.name}</div>
                   <div class="text-muted text-sm">
                     {formatVaultItemUsername(item)}
-                  </div>
-                  <div class="badge badge-secondary mt-1">
-                    {t("report_inactive_2fa_badge")}
                   </div>
                 </div>
                 <button
