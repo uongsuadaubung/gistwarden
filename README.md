@@ -2,10 +2,11 @@
 
 [![SolidJS](https://img.shields.io/badge/SolidJS-1.9-2c4f7c?style=for-the-badge&logo=solid&logoColor=white)](https://solidjs.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Deno](https://img.shields.io/badge/Deno-2.x-black?style=for-the-badge&logo=deno&logoColor=white)](https://deno.com)
+[![Bun](https://img.shields.io/badge/Bun-1.4-black?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![Esbuild](https://img.shields.io/badge/Esbuild-0.28-ffcf00?style=for-the-badge&logo=esbuild&logoColor=black)](https://esbuild.github.io)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285f4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](https://opensource.org/licenses/ISC)
+
 
 Gistwarden is an open-source browser extension designed to manage passwords,
 one-time passwords (TOTP), secure notes, and passkeys (FIDO2/WebAuthn) securely,
@@ -161,14 +162,14 @@ personal GitHub Gists. Follow these simple steps:
 
 ## 🏗️ Development & Build Commands
 
-This project uses **Deno** natively to develop, lint, format, and bundle.
+This project uses **Bun** natively to develop, test, typecheck, and bundle.
 
-### 1. Build the Extension
+### 1. Build the Extension & Web App
 
 Compile, bundle, and package the production zip archives:
 
 ```bash
-deno task build
+bun run build:all
 ```
 
 ### 2. Live Rebuild (Watch Mode)
@@ -176,29 +177,22 @@ deno task build
 Re-compile extension automatically on file modifications:
 
 ```bash
-deno task watch
+bun run watch
 ```
 
-### 3. Run Linter
+### 3. Type Check
 
-Verify code style compliance:
+Verify TypeScript type compliance:
 
 ```bash
-deno task lint
+bun run typecheck
 ```
 
-### 4. Code Formatting
-
-Format files to match style guideline:
-
-```bash
-deno task fmt
-```
-
-### 5. Run Unit Tests
+### 4. Run Unit Tests
 
 Run standard cryptographic and utility test suites:
 
 ```bash
-deno task test
+bun test
 ```
+

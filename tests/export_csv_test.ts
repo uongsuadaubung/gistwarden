@@ -1,11 +1,11 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, test } from "./assert.ts";
 import {
   exportToBitwardenCsv,
   exportToBrowserCsv,
 } from "../packages/ui/src/features/sync/csv-export.ts";
 import { parseCSV, type VaultItem, VaultItemType } from "@gistwarden/domain";
 
-Deno.test("Export CSV - Browser CSV format", () => {
+test("Export CSV - Browser CSV format", () => {
   const items: VaultItem[] = [
     {
       id: "1",
@@ -52,7 +52,7 @@ Deno.test("Export CSV - Browser CSV format", () => {
   assertEquals(loginRow[4], "Line1\nLine2");
 });
 
-Deno.test("Export CSV - Bitwarden CSV format", () => {
+test("Export CSV - Bitwarden CSV format", () => {
   const items: VaultItem[] = [
     {
       id: "1",

@@ -11,7 +11,7 @@ const manifestPath = join(
 
 if (!existsSync(manifestPath)) {
   console.error("Error: apps/extension/src/manifest.json not found!");
-  Deno.exit(1);
+  process.exit(1);
 }
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));

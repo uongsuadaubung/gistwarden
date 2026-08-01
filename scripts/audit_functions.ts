@@ -1,4 +1,5 @@
-import { walk } from "https://deno.land/std@0.224.0/fs/walk.ts";
+import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 interface FunctionDetail {
   name: string;
@@ -12,20 +13,31 @@ interface FileAudit {
   functions: FunctionDetail[];
 }
 
-async function auditCodebase(): Promise<FileAudit[]> {
+function getFilesRecursive(dir: string): string[] {
+  const results: string[] = [];
+  const list = readdirSync(dir);
+  for (const file of list) {
+    const filePath = join(dir, file);
+    const stat = statSync(filePath);
+    if (stat.isDirectory()) {
+      if (file !== "node_modules" && file !== "dist" && file !== ".git") {
+        results.push(...getFilesRecursive(filePath));
+      }
+    } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
+      results.push(filePath);
+    }
+  }
+  return results;
+}
+
+function auditCodebase(): FileAudit[] {
   const results: FileAudit[] = [];
   const rootDirs = ["packages", "apps"];
 
   for (const rootDir of rootDirs) {
-    for await (
-      const entry of walk(rootDir, {
-        exts: [".ts", ".tsx"],
-        skip: [/node_modules/, /dist/, /\.git/],
-      })
-    ) {
-      if (!entry.isFile) continue;
-
-      const content = await Deno.readTextFile(entry.path);
+    const files = getFilesRecursive(rootDir);
+    for (const filePath of files) {
+      const content = readFileSync(filePath, "utf8");
       const lines = content.split("\n");
       const functions: FunctionDetail[] = [];
 
@@ -47,23 +59,23 @@ async function auditCodebase(): Promise<FileAudit[]> {
           return;
         }
 
-        // Match export const foo = ... => or const foo = ... =>
-        const constMatch = trimmed.match(
-          /^(export\s+)?const\s+([A-Za-z0-9_$]+)\s*=\s*(async\s*)?(\([^)]*\)|[A-Za-z0-9_$]+|\s*)\s*=>/,
+        // Match export const foo = (...) => / function
+        const arrowMatch = trimmed.match(
+          /^(export\s+)?const\s+([A-Za-z0-9_$]+)\s*=\s*(\([^)]*\)|[A-Za-z0-9_$]+)\s*=>/,
         );
-        if (constMatch) {
+        if (arrowMatch) {
           functions.push({
-            name: constMatch[2],
+            name: arrowMatch[2],
             kind: "arrow",
-            isExported: !!constMatch[1],
+            isExported: !!arrowMatch[1],
             line: lineNum,
           });
           return;
         }
 
-        // Match class declaration
+        // Match class definition
         const classMatch = trimmed.match(
-          /^(export\s+)?(default\s+)?class\s+([A-Za-z0-9_$]+)/,
+          /^(export\s+)?(abstract\s+)?class\s+([A-Za-z0-9_$]+)/,
         );
         if (classMatch) {
           functions.push({
@@ -72,87 +84,22 @@ async function auditCodebase(): Promise<FileAudit[]> {
             isExported: !!classMatch[1],
             line: lineNum,
           });
-          return;
-        }
-
-        // Match class method or interface method
-        const methodMatch = trimmed.match(
-          /^(public|private|protected|async|\s)*(async\s+)?([A-Za-z0-9_$]+)\s*\([^)]*\)\s*(:\s*[^{]+)?\s*\{/,
-        );
-        if (
-          methodMatch &&
-          !["if", "for", "while", "switch", "catch", "constructor"].includes(
-            methodMatch[3],
-          )
-        ) {
-          if (
-            !functions.some((f) =>
-              f.name === methodMatch[3] && f.line === lineNum
-            )
-          ) {
-            functions.push({
-              name: methodMatch[3],
-              kind: "method",
-              isExported: false,
-              line: lineNum,
-            });
-          }
         }
       });
 
-      // Normalize path
-      const normalizedPath = entry.path.replace(/\\/g, "/");
-      results.push({
-        filePath: normalizedPath,
-        functions,
-      });
+      if (functions.length > 0) {
+        results.push({
+          filePath: filePath.replace(/\\/g, "/"),
+          functions,
+        });
+      }
     }
   }
 
-  return results.sort((a, b) => a.filePath.localeCompare(b.filePath));
+  return results;
 }
 
-// Generate Markdown
-const auditData = await auditCodebase();
-const totalFiles = auditData.length;
-const totalFunctions = auditData.reduce(
-  (acc, item) => acc + item.functions.length,
-  0,
-);
-
-let markdown =
-  `# Báo Cáo Tự Động Rà Soát Toàn Bộ File và Function (Automated Codebase AST Audit)
-
-> **Báo cáo này được tạo tự động bởi script \`scripts/audit_functions.ts\`**.
-> - **Tổng số file (.ts, .tsx)**: **${totalFiles}**
-> - **Tổng số hàm/methods/classes phát hiện được**: **${totalFunctions}**
-
----
-
-## Danh Sách Chi Tiết Theo File
-
-`;
-
-for (const file of auditData) {
-  markdown += `### 📄 File: \`${file.filePath}\`\n`;
-  if (file.functions.length === 0) {
-    markdown +=
-      `*Không chứa định nghĩa hàm hoặc class trực tiếp (File types, schemas hoặc re-exports thuần).* \n\n`;
-  } else {
-    markdown +=
-      `| Dòng | Tên Hàm / Component / Class | Phân Loại | Exported? |\n`;
-    markdown += `| :--- | :--- | :--- | :--- |\n`;
-    for (const fn of file.functions) {
-      markdown += `| L${fn.line} | \`${fn.name}\` | ${fn.kind} | ${
-        fn.isExported ? "✅ Có" : "❌ Không (Internal)"
-      } |\n`;
-    }
-    markdown += `\n`;
-  }
-}
-
-await Deno.writeTextFile("docs/automated_function_audit.md", markdown);
-console.log(
-  `[Success] Audit complete! Found ${totalFiles} files and ${totalFunctions} functions.`,
-);
-console.log(`Report generated at: docs/automated_function_audit.md`);
+const auditResult = auditCodebase();
+const summaryPath = "scratch/function_audit.json";
+writeFileSync(summaryPath, JSON.stringify(auditResult, null, 2), "utf8");
+console.log(`✓ Audit complete. Saved ${auditResult.length} files to ${summaryPath}`);

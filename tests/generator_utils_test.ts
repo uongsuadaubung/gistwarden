@@ -1,14 +1,15 @@
 import {
   assertEquals,
   assertMatch,
-} from "https://deno.land/std@0.224.0/assert/mod.ts";
+  test,
+} from "./assert.ts";
 import {
   generatePassphrase,
   generatePassword,
   getRandomBoundedInt,
 } from "@gistwarden/domain";
 
-Deno.test("generator-utils: generatePassword respects length", () => {
+test("generator-utils: generatePassword respects length", () => {
   const pwd = generatePassword({
     length: 20,
     uppercase: true,
@@ -25,7 +26,7 @@ Deno.test("generator-utils: generatePassword respects length", () => {
   }
 });
 
-Deno.test("generator-utils: generatePassword ensures min constraints", () => {
+test("generator-utils: generatePassword ensures min constraints", () => {
   const pwd = generatePassword({
     length: 20,
     uppercase: true,
@@ -46,7 +47,7 @@ Deno.test("generator-utils: generatePassword ensures min constraints", () => {
   }
 });
 
-Deno.test("generator-utils: generatePassphrase respects word count", () => {
+test("generator-utils: generatePassphrase respects word count", () => {
   const phrase = generatePassphrase({
     numWords: 5,
     wordSeparator: "-",
@@ -60,7 +61,7 @@ Deno.test("generator-utils: generatePassphrase respects word count", () => {
   }
 });
 
-Deno.test("generator-utils: generatePassphrase includes numbers if requested", () => {
+test("generator-utils: generatePassphrase includes numbers if requested", () => {
   const phrase = generatePassphrase({
     numWords: 5,
     wordSeparator: "-",
@@ -73,7 +74,7 @@ Deno.test("generator-utils: generatePassphrase includes numbers if requested", (
   }
 });
 
-Deno.test("generator-utils: getRandomBoundedInt stays strictly within bounds [0, max-1]", () => {
+test("generator-utils: getRandomBoundedInt stays strictly within bounds [0, max-1]", () => {
   for (let i = 0; i < 100; i++) {
     const val = getRandomBoundedInt(10);
     assertEquals(val >= 0 && val < 10, true);

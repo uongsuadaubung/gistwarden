@@ -2,7 +2,8 @@ import {
   assert,
   assertEquals,
   assertNotEquals,
-} from "https://deno.land/std@0.224.0/assert/mod.ts";
+  test,
+} from "./assert.ts";
 import {
   arrayBufferToBase64,
   decryptData,
@@ -31,7 +32,7 @@ import {
 import { Fido2CredentialSchema } from "@gistwarden/domain";
 import { ImportItemSchema } from "@gistwarden/repository";
 
-Deno.test("Crypto - Key derivation, Encryption and Decryption", async () => {
+test("Crypto - Key derivation, Encryption and Decryption", async () => {
   const password = "SuperSecretPassword123";
   const salt = generateSalt();
 
@@ -79,7 +80,7 @@ Deno.test("Crypto - Key derivation, Encryption and Decryption", async () => {
   assert(wrongDecryptedRes.isErr());
 });
 
-Deno.test("Passkey Crypto - Keypair and base64url conversion", async () => {
+test("Passkey Crypto - Keypair and base64url conversion", async () => {
   // 1. Create keypair
   const keyPairRes = await createPasskeyKeyPair();
   if (keyPairRes.isErr()) throw new Error(keyPairRes.error);
@@ -100,7 +101,7 @@ Deno.test("Passkey Crypto - Keypair and base64url conversion", async () => {
   assertEquals(decodedRes._unsafeUnwrap(), testBytes);
 });
 
-Deno.test("Passkey Crypto - signature conversion and validation", async () => {
+test("Passkey Crypto - signature conversion and validation", async () => {
   // 1. Generate signature components (R and S)
   const keyPairRes = await createPasskeyKeyPair();
   if (keyPairRes.isErr()) throw new Error(keyPairRes.error);
@@ -152,7 +153,7 @@ Deno.test("Passkey Crypto - signature conversion and validation", async () => {
   assertEquals(verified, true);
 });
 
-Deno.test("Passkey Crypto - generatePasskeyRegisterResponse with AAGUID and COSE ES256", async () => {
+test("Passkey Crypto - generatePasskeyRegisterResponse with AAGUID and COSE ES256", async () => {
   const regRes = await generatePasskeyRegisterResponse(
     {
       rp: { id: "example.com", name: "Example RP" },
@@ -175,7 +176,7 @@ Deno.test("Passkey Crypto - generatePasskeyRegisterResponse with AAGUID and COSE
   assertEquals(AAGUID.length, 16);
 });
 
-Deno.test("TOTP - parseTotpSecret utility", () => {
+test("TOTP - parseTotpSecret utility", () => {
   const secret1 = "RA226YVGYO3SYFWO";
   const secret2 = "  ra226yvgyo3syfwo  ";
   const secret3 =
@@ -188,7 +189,7 @@ Deno.test("TOTP - parseTotpSecret utility", () => {
   assertEquals(parseTotpSecret(secret4), "RA226YVGYO3SYFWO");
 });
 
-Deno.test("FIDO2 Schema - parse Bitwarden exported credentials format", () => {
+test("FIDO2 Schema - parse Bitwarden exported credentials format", () => {
   const bitwardenFormat = {
     credentialId: "5f3a9e22-8bf1-4d3f-a39c-b17d74f26190",
     keyType: "public-key",
@@ -213,7 +214,7 @@ Deno.test("FIDO2 Schema - parse Bitwarden exported credentials format", () => {
   assertEquals(parsed.creationDate, "2026-07-15T03:00:00.000Z");
 });
 
-Deno.test("Passkey Crypto - getRawCredentialId format parsing", () => {
+test("Passkey Crypto - getRawCredentialId format parsing", () => {
   // Test UUID format (e.g. "bc7cdc36-1657-44a4-aa04-e4cecf774343")
   const uuid = "bc7cdc36-1657-44a4-aa04-e4cecf774343";
   const expectedBytes = new Uint8Array([
@@ -251,7 +252,7 @@ Deno.test("Passkey Crypto - getRawCredentialId format parsing", () => {
   assertEquals(parsedPrefixedBytesRes._unsafeUnwrap(), expectedBytes);
 });
 
-Deno.test("FIDO2 Schema - parse empty fields (name and counter) like struct.json", () => {
+test("FIDO2 Schema - parse empty fields (name and counter) like struct.json", () => {
   const fidoFormat = {
     credentialId: "",
     keyType: "",
@@ -274,7 +275,7 @@ Deno.test("FIDO2 Schema - parse empty fields (name and counter) like struct.json
   assertEquals(parsed.credentialId, "");
 });
 
-Deno.test("Import Schema - validate Login and SecureNote separately", () => {
+test("Import Schema - validate Login and SecureNote separately", () => {
   const rawLogin = {
     type: 1,
     name: "",
@@ -313,7 +314,7 @@ Deno.test("Import Schema - validate Login and SecureNote separately", () => {
   assertEquals(parsedNote.name, "");
 });
 
-Deno.test("Crypto - parseSshKey for OpenSSH keys", async () => {
+test("Crypto - parseSshKey for OpenSSH keys", async () => {
   // 1. Invalid key text
   const invalidRes = await parseSshKey("invalid key content");
   assertEquals(invalidRes.isErr(), true);
@@ -528,7 +529,7 @@ VJo4zyr0vAWCc9LlxDAAAABm5vbmFtZQECAwQ=
   }
 });
 
-Deno.test("Crypto - DerivedKey Lifecycle & Memory Clearing", async () => {
+test("Crypto - DerivedKey Lifecycle & Memory Clearing", async () => {
   const salt = generateSalt();
   const deriveRes = await deriveKey("MasterPassword123", salt);
   assert(deriveRes.isOk());
@@ -546,7 +547,7 @@ Deno.test("Crypto - DerivedKey Lifecycle & Memory Clearing", async () => {
   assertEquals(clearedKey, null);
 });
 
-Deno.test("Crypto - SSH & ASN.1 Reader Edge Cases & Malformed Inputs", async () => {
+test("Crypto - SSH & ASN.1 Reader Edge Cases & Malformed Inputs", async () => {
   // 1. Empty key string
   const emptyRes = await parseSshKey("");
   assertEquals(emptyRes.isErr(), true);

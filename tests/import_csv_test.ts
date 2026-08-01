@@ -1,11 +1,11 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, test } from "./assert.ts";
 import { isLoginItem, parseCSV, type VaultItem } from "@gistwarden/domain";
 import {
   parseAndValidateBitwardenCsv,
   parseAndValidateBrowserCsv,
 } from "../packages/ui/src/features/sync/csv-import.ts";
 
-Deno.test("CSV Parser - RFC 4180 parsing", () => {
+test("CSV Parser - RFC 4180 parsing", () => {
   // 1. Simple parsing
   const simpleCsv =
     `url,username,password\nhttps://google.com,manh,kien\nhttps://facebook.com,kien,manh`;
@@ -30,7 +30,7 @@ Deno.test("CSV Parser - RFC 4180 parsing", () => {
   assertEquals(parsedEscaped[1][1], 'this is a "special" note');
 });
 
-Deno.test("CSV Import - Parse different password manager exports", () => {
+test("CSV Import - Parse different password manager exports", () => {
   const existingItems: VaultItem[] = [];
 
   // 1. Firefox CSV format

@@ -2,7 +2,7 @@
 
 [![SolidJS](https://img.shields.io/badge/SolidJS-1.9-2c4f7c?style=for-the-badge&logo=solid&logoColor=white)](https://solidjs.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Deno](https://img.shields.io/badge/Deno-2.x-black?style=for-the-badge&logo=deno&logoColor=white)](https://deno.com)
+[![Bun](https://img.shields.io/badge/Bun-1.x-black?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![Esbuild](https://img.shields.io/badge/Esbuild-0.28-ffcf00?style=for-the-badge&logo=esbuild&logoColor=black)](https://esbuild.github.io)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285f4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](https://opensource.org/licenses/ISC)
@@ -168,37 +168,30 @@ Gists cá nhân của bạn. Thực hiện theo các bước đơn giản sau:
 
 ## 🏗️ Các lệnh phát triển và đóng gói
 
-Dự án sử dụng **Deno** nguyên bản để phát triển, kiểm tra cú pháp, định dạng và
-biên dịch.
+Dự án sử dụng **Bun** nguyên bản để phát triển, kiểm tra cú pháp và đóng gói.
 
 ### 1. Đóng gói Extension
 
 Biên dịch mã nguồn, SCSS và đóng gói thành các tệp ZIP hoàn chỉnh:
 
 ```bash
-deno task build
+bun run build
 ```
 
 ### 2. Chế độ Watch (Tự động biên dịch khi sửa file)
 
 ```bash
-deno task watch
+bun run watch
 ```
 
-### 3. Kiểm tra cú pháp (Linter)
+### 3. Kiểm tra kiểu (TypeCheck)
 
 ```bash
-deno task lint
+bun run typecheck
 ```
 
-### 4. Tự động định dạng mã nguồn (Formatter)
+### 4. Chạy bộ kiểm thử (Unit Tests)
 
 ```bash
-deno task fmt
-```
-
-### 5. Chạy bộ kiểm thử (Unit Tests)
-
-```bash
-deno task test
+bun run test
 ```

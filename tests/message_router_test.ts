@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, test } from "./assert.ts";
 import { z } from "zod";
 import { MessageRouter } from "../apps/extension/src/extension/message-router.ts";
 import { defineRoute } from "@gistwarden/orchestrator";
@@ -14,7 +14,7 @@ Object.defineProperty(globalThis, "chrome", {
   configurable: true,
 });
 
-Deno.test("MessageRouter - route registration and payload validation", async () => {
+test("MessageRouter - route registration and payload validation", async () => {
   const router = new MessageRouter();
 
   const TestMsgSchema = z.object({
@@ -57,7 +57,7 @@ Deno.test("MessageRouter - route registration and payload validation", async () 
   assertEquals(res3.handled, false);
 });
 
-Deno.test("MessageRouter - defineRoute contract registration", async () => {
+test("MessageRouter - defineRoute contract registration", async () => {
   const router = new MessageRouter();
 
   const testContractRoute = defineRoute({
@@ -90,7 +90,7 @@ Deno.test("MessageRouter - defineRoute contract registration", async () => {
   assertEquals(res.response, { success: true, count: 5 });
 });
 
-Deno.test("MessageRouter - internalOnly authorization check", async () => {
+test("MessageRouter - internalOnly authorization check", async () => {
   const router = new MessageRouter();
 
   const InternalMsgSchema = z.object({

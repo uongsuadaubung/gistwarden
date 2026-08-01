@@ -1,3 +1,5 @@
+import { writeFileSync } from "node:fs";
+
 const RAW_URL =
   "https://raw.githubusercontent.com/duyet/vietnamese-wordlist/master/Viet74K.txt";
 
@@ -48,7 +50,7 @@ export const VIETNAMESE_WORDLIST: string[] = ${
 `;
 
   const targetPath = "./packages/domain/src/vietnamese-wordlist.ts";
-  await Deno.writeTextFile(targetPath, fileContent);
+  writeFileSync(targetPath, fileContent, "utf8");
   console.log(`Successfully written to ${targetPath}`);
 } catch (err) {
   console.error("Failed to process Vietnamese wordlist:", err);
