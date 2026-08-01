@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Gistwarden - Encrypted Password & Vault Manager",
   "private": true,
+  "sideEffects": false,
   "type": "module",
   "scripts": {
     "build": "bun run scripts/build.ts dev",
