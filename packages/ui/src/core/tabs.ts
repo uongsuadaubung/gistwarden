@@ -1,7 +1,7 @@
 /**
  * Utility functions for interacting with Chrome tabs
  */
-import { err, ok, Result, ResultAsync } from "neverthrow";
+import { err, ok, Result } from "neverthrow";
 import { type TranslationKey } from "@gistwarden/domain";
 
 export async function getCurrentTab(): Promise<
@@ -33,15 +33,13 @@ export async function sendMessageToTab(
     return err("tab_error_send_message");
   }
 
-  const sendRes = await ResultAsync.fromPromise(
-    chrome.tabs.sendMessage(tabId, message),
-    (e): TranslationKey => {
-      console.warn("Failed to send message to tab:", e);
-      return "tab_error_send_message";
-    },
-  );
-  if (sendRes.isErr()) return err(sendRes.error);
-  return ok(sendRes.value);
+  try {
+    const res = await chrome.tabs.sendMessage(tabId, message);
+    return ok(res);
+  } catch (e) {
+    console.warn("Failed to send message to tab:", e);
+    return err("tab_error_send_message");
+  }
 }
 
 /**
@@ -58,16 +56,14 @@ export async function captureVisibleTab(
   }
 
   const opts = options || { format: "png" };
-  const captureRes = await ResultAsync.fromPromise(
-    chrome.tabs.captureVisibleTab(opts),
-    (e): TranslationKey => {
-      console.warn("Failed to capture visible tab:", e);
-      return "tab_error_capture";
-    },
-  );
-  if (captureRes.isErr()) return err(captureRes.error);
-  if (!captureRes.value) return err("tab_error_capture");
-  return ok(captureRes.value);
+  try {
+    const res = await chrome.tabs.captureVisibleTab(opts);
+    if (!res) return err("tab_error_capture");
+    return ok(res);
+  } catch (e) {
+    console.warn("Failed to capture visible tab:", e);
+    return err("tab_error_capture");
+  }
 }
 
 /**
@@ -77,27 +73,22 @@ export async function openTab(
   url: string,
 ): Promise<Result<chrome.tabs.Tab | null, TranslationKey>> {
   if (typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.create) {
-    return Result.fromThrowable(
-      () => {
-        window.open(url, "_blank");
-        return null;
-      },
-      (e): TranslationKey => {
-        console.warn("Failed to open URL in window.open:", e);
-        return "tab_error_open";
-      },
-    )();
+    try {
+      window.open(url, "_blank");
+      return ok(null);
+    } catch (e) {
+      console.warn("Failed to open URL in window.open:", e);
+      return err("tab_error_open");
+    }
   }
 
-  const createRes = await ResultAsync.fromPromise(
-    chrome.tabs.create({ url }),
-    (e): TranslationKey => {
-      console.warn("Failed to open tab via chrome.tabs:", e);
-      return "tab_error_open";
-    },
-  );
-  if (createRes.isErr()) return err(createRes.error);
-  return ok(createRes.value);
+  try {
+    const tab = await chrome.tabs.create({ url });
+    return ok(tab);
+  } catch (e) {
+    console.warn("Failed to open tab via chrome.tabs:", e);
+    return err("tab_error_open");
+  }
 }
 
 /**
@@ -111,13 +102,12 @@ export async function openPopup(): Promise<Result<void, TranslationKey>> {
     return err("tab_error_open");
   }
 
-  const openRes = await ResultAsync.fromPromise(
-    chrome.action.openPopup(),
-    (e): TranslationKey => {
-      console.warn("Failed to open extension popup:", e);
-      return "tab_error_open";
-    },
-  );
-  if (openRes.isErr()) return err(openRes.error);
-  return ok();
+  try {
+    await chrome.action.openPopup();
+    return ok();
+  } catch (e) {
+    console.warn("Failed to open extension popup:", e);
+    return err("tab_error_open");
+  }
 }
+

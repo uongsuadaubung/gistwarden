@@ -1,4 +1,3 @@
-import { ResultAsync } from "neverthrow";
 import {
   APP_NAME,
   MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
@@ -166,22 +165,18 @@ import {
       attestation: options.publicKey.attestation,
     };
 
-    const createRes = await ResultAsync.fromPromise(
-      sendToContentScript(
+    let response;
+    try {
+      response = await sendToContentScript(
         MSG_FIDO2_CREDENTIAL_CREATION_REQUEST,
         serializedOptions,
-      ),
-      (e) => e,
-    );
-
-    if (createRes.isErr()) {
-      const err = createRes.error;
-      if (err instanceof Error && err.message === "fallback") {
+      );
+    } catch (e) {
+      if (e instanceof Error && e.message === "fallback") {
         return originalCredentials.create(options);
       }
-      return Promise.reject(err);
+      return Promise.reject(e);
     }
-    const response = createRes.value;
 
     // Reconstruct PublicKeyCredential response by creating plain object first to avoid getter collision
     const credential = {
@@ -253,22 +248,18 @@ import {
       timeout: options.publicKey.timeout,
     };
 
-    const getRes = await ResultAsync.fromPromise(
-      sendToContentScript(
+    let response;
+    try {
+      response = await sendToContentScript(
         MSG_FIDO2_CREDENTIAL_GET_REQUEST,
         serializedOptions,
-      ),
-      (e) => e,
-    );
-
-    if (getRes.isErr()) {
-      const err = getRes.error;
-      if (err instanceof Error && err.message === "fallback") {
+      );
+    } catch (e) {
+      if (e instanceof Error && e.message === "fallback") {
         return originalCredentials.get(options);
       }
-      return Promise.reject(err);
+      return Promise.reject(e);
     }
-    const response = getRes.value;
 
     // Reconstruct PublicKeyCredential response by creating plain object first to avoid getter collision
     const credential = {

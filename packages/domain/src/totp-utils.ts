@@ -26,7 +26,7 @@ export function parseTotpSecret(rawSecret: string): string {
 }
 
 /**
- * Giải mã mã QR an toàn từ screenshot hoặc file ảnh, trả về ResultAsync.
+ * Giải mã mã QR an toàn từ screenshot hoặc file ảnh, trả về Result.
  */
 export async function safeDecodeQr(
   imageSource: Parameters<typeof qrcodeParser>[0],

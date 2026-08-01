@@ -13,7 +13,6 @@ import {
   SESSION_KEY_DERIVED_KEY,
   sessionManager,
 } from "@gistwarden/domain";
-import { ResultAsync } from "neverthrow";
 import { notifyBackground } from "./messaging.ts";
 
 export async function persistSessionKey(
@@ -41,25 +40,23 @@ export async function restoreSessionKeyFromStorage(): Promise<
     const bufferRes = base64ToArrayBuffer(base64);
     if (bufferRes.isErr()) return null;
     const buffer = bufferRes.value;
-    const importRes = await ResultAsync.fromPromise(
-      crypto.subtle.importKey(
+    try {
+      const importedKey = await crypto.subtle.importKey(
         "raw",
         buffer,
         { name: "AES-GCM", length: 256 },
         true,
         ["encrypt", "decrypt"],
-      ),
-      (e) => e,
-    );
-    if (importRes.isErr()) {
+      );
+      sessionManager.setKey(importedKey);
+      return importedKey;
+    } catch (e) {
       console.error(
         "[Crypto] Failed to import key from session storage:",
-        importRes.error,
+        e,
       );
       return null;
     }
-    sessionManager.setKey(importRes.value);
-    return importRes.value;
   }
   return null;
 }

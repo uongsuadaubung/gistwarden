@@ -1,4 +1,3 @@
-import { Result } from "neverthrow";
 import { getBaseDomain, getHostname } from "./domain-utils.ts";
 import { UriMatchMode, type VaultItem } from "./vault-schemas.ts";
 import { isLoginItem, VaultItemType } from "./vault-types.ts";
@@ -38,10 +37,11 @@ export function isSingleUriMatch(
 
   if (effectiveMode === UriMatchMode.Regex) {
     if (sUri.length > 250) return false;
-    const regexResult = Result.fromThrowable(
-      () => new RegExp(sUri, "i").test(cUrl),
-    )();
-    return regexResult.isOk() ? regexResult.value : false;
+    try {
+      return new RegExp(sUri, "i").test(cUrl);
+    } catch {
+      return false;
+    }
   }
 
   const targetBase = getBaseDomain(cUrl);

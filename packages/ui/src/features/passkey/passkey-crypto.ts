@@ -1,4 +1,4 @@
-import { err, ok, Result, ResultAsync } from "neverthrow";
+import { err, ok, Result } from "neverthrow";
 import type { Fido2Credential } from "@gistwarden/domain";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { safeParseUrl } from "@/core/domain-utils.ts";
@@ -78,42 +78,42 @@ export function bufferToBase64Url(buffer: ArrayBuffer | Uint8Array): string {
 export function base64UrlToBuffer(
   str: string,
 ): Result<Uint8Array, TranslationKey> {
-  return Result.fromThrowable(
-    () => Uint8Array.fromBase64(str.trim(), { alphabet: "base64url" }),
-    (): TranslationKey => "toast_error",
-  )();
+  try {
+    const res = Uint8Array.fromBase64(str.trim(), { alphabet: "base64url" });
+    return ok(res);
+  } catch {
+    return err("toast_error");
+  }
 }
 
 // --- Crypto Suble Wrappers ---
 
-export function exportKeyJwkAsync(
+export async function exportKeyJwkAsync(
   key: CryptoKey,
   errKey: TranslationKey,
-): ResultAsync<JsonWebKey, TranslationKey> {
-  return ResultAsync.fromPromise(
-    crypto.subtle.exportKey("jwk", key),
-    (e): TranslationKey => {
-      console.error("[Passkey Crypto] exportKey JWK error:", e);
-      return errKey;
-    },
-  );
+): Promise<Result<JsonWebKey, TranslationKey>> {
+  try {
+    const res = await crypto.subtle.exportKey("jwk", key);
+    return ok(res);
+  } catch (e) {
+    console.error("[Passkey Crypto] exportKey JWK error:", e);
+    return err(errKey);
+  }
 }
 
-export function exportKeyBufferAsync(
+export async function exportKeyBufferAsync(
   format: "pkcs8" | "spki" | "raw",
   key: CryptoKey,
   errKey: TranslationKey,
-): ResultAsync<ArrayBuffer, TranslationKey> {
-  return ResultAsync.fromPromise(
-    crypto.subtle.exportKey(format, key),
-    (e): TranslationKey => {
-      console.error(`[Passkey Crypto] exportKey ${format} error:`, e);
-      return errKey;
-    },
-  ).andThen((val) => {
+): Promise<Result<ArrayBuffer, TranslationKey>> {
+  try {
+    const val = await crypto.subtle.exportKey(format, key);
     if (val instanceof ArrayBuffer) return ok(val);
     return err(errKey);
-  });
+  } catch (e) {
+    console.error(`[Passkey Crypto] exportKey ${format} error:`, e);
+    return err(errKey);
+  }
 }
 
 export interface ImportKeyAsyncOptions {
@@ -130,39 +130,39 @@ export interface ImportKeyAsyncOptions {
   errKey: TranslationKey;
 }
 
-export function importKeyAsync(
+export async function importKeyAsync(
   options: ImportKeyAsyncOptions,
-): ResultAsync<CryptoKey, TranslationKey> {
-  return ResultAsync.fromPromise(
-    crypto.subtle.importKey(
+): Promise<Result<CryptoKey, TranslationKey>> {
+  try {
+    const res = await crypto.subtle.importKey(
       options.format,
       options.keyData,
       options.algorithm,
       options.extractable,
       options.keyUsages,
-    ),
-    (e): TranslationKey => {
-      console.error("[Passkey Crypto] importKey error:", e);
-      return options.errKey;
-    },
-  );
+    );
+    return ok(res);
+  } catch (e) {
+    console.error("[Passkey Crypto] importKey error:", e);
+    return err(options.errKey);
+  }
 }
 
-export function digestAsync(
+export async function digestAsync(
   algorithm: AlgorithmIdentifier,
   data: BufferSource,
   errKey: TranslationKey,
-): ResultAsync<ArrayBuffer, TranslationKey> {
-  return ResultAsync.fromPromise(
-    crypto.subtle.digest(algorithm, data),
-    (e): TranslationKey => {
-      console.error("[Passkey Crypto] digest error:", e);
-      return errKey;
-    },
-  );
+): Promise<Result<ArrayBuffer, TranslationKey>> {
+  try {
+    const res = await crypto.subtle.digest(algorithm, data);
+    return ok(res);
+  } catch (e) {
+    console.error("[Passkey Crypto] digest error:", e);
+    return err(errKey);
+  }
 }
 
-export function signAsync(
+export async function signAsync(
   algorithm:
     | AlgorithmIdentifier
     | RsaPssParams
@@ -171,14 +171,14 @@ export function signAsync(
   key: CryptoKey,
   data: BufferSource,
   errKey: TranslationKey,
-): ResultAsync<ArrayBuffer, TranslationKey> {
-  return ResultAsync.fromPromise(
-    crypto.subtle.sign(algorithm, key, data),
-    (e): TranslationKey => {
-      console.error("[Passkey Crypto] sign error:", e);
-      return errKey;
-    },
-  );
+): Promise<Result<ArrayBuffer, TranslationKey>> {
+  try {
+    const res = await crypto.subtle.sign(algorithm, key, data);
+    return ok(res);
+  } catch (e) {
+    console.error("[Passkey Crypto] sign error:", e);
+    return err(errKey);
+  }
 }
 
 // ---------------------------
@@ -186,20 +186,20 @@ export function signAsync(
 export async function createPasskeyKeyPair(): Promise<
   Result<CryptoKeyPair, TranslationKey>
 > {
-  return await ResultAsync.fromPromise(
-    crypto.subtle.generateKey(
+  try {
+    const res = await crypto.subtle.generateKey(
       {
         name: "ECDSA",
         namedCurve: "P-256",
       },
       true,
       ["sign"],
-    ),
-    (e): TranslationKey => {
-      console.error("[Passkey Crypto] Key generation error:", e);
-      return "fido2_error_create_failed";
-    },
-  );
+    );
+    return ok(res as CryptoKeyPair);
+  } catch (e) {
+    console.error("[Passkey Crypto] Key generation error:", e);
+    return err("fido2_error_create_failed");
+  }
 }
 
 // AAGUID (Authenticator Attestation GUID) đại diện duy nhất cho Gistwarden Authenticator (16 bytes)
@@ -317,12 +317,13 @@ export function getRawCredentialId(
   const clean = credId.trim();
   if (clean.includes("-") && clean.length === 36) {
     const hex = clean.replace(/-/g, "");
-    const parseRes = Result.fromThrowable(
-      () => Uint8Array.fromHex(hex),
-      (): TranslationKey => "toast_error",
-    )();
-    if (parseRes.isOk() && parseRes.value.length === 16) {
-      return ok(parseRes.value);
+    try {
+      const bytes = Uint8Array.fromHex(hex);
+      if (bytes.length === 16) {
+        return ok(bytes);
+      }
+    } catch {
+      // Ignore hex parse error and fall back
     }
   }
 

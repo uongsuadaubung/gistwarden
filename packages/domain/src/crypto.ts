@@ -264,30 +264,23 @@ function parseLegacyRsaPem(base64Str: string): Uint8Array | null {
   if (bytesRes.isErr()) return null;
   const bytes = new Uint8Array(bytesRes.value);
 
-  const asnRes = Result.fromThrowable(
-    () => {
-      const asn1 = new Asn1Reader(bytes);
-      const seq = asn1.readSequence();
-      if (!seq) return null;
-      const _version = seq.readIntegerBytes();
-      const modulus = seq.readIntegerBytes();
-      const publicExponent = seq.readIntegerBytes();
-      return { modulus, publicExponent };
-    },
-    (e) => {
-      logger.crypto.error("[parseLegacyRsaPem Error]", e);
-      return null;
-    },
-  )();
-
-  if (
-    asnRes.isErr() || !asnRes.value || !asnRes.value.modulus ||
-    !asnRes.value.publicExponent
-  ) {
+  let modulus: Uint8Array | null = null;
+  let publicExponent: Uint8Array | null = null;
+  try {
+    const asn1 = new Asn1Reader(bytes);
+    const seq = asn1.readSequence();
+    if (!seq) return null;
+    const _version = seq.readIntegerBytes();
+    modulus = seq.readIntegerBytes();
+    publicExponent = seq.readIntegerBytes();
+  } catch (e) {
+    logger.crypto.error("[parseLegacyRsaPem Error]", e);
     return null;
   }
 
-  const { modulus, publicExponent } = asnRes.value;
+  if (!modulus || !publicExponent) {
+    return null;
+  }
 
   const keyTypeBytes = new Uint8Array([
     0,

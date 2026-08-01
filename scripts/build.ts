@@ -214,6 +214,7 @@ async function buildTargetDirectory(outputDir: string) {
     entrypoints: extEntryPoints,
     outdir: outputDir,
     target: "browser",
+    format: "iife",
     naming: "[name].[ext]",
     plugins: [solidPlugin()],
     define: { "process.env.NODE_ENV": JSON.stringify("production") },

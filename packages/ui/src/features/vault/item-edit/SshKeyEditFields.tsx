@@ -5,7 +5,6 @@ import { UploadIcon } from "@/icons/svg/index.ts";
 import { parseSshKey } from "@/core/crypto.ts";
 import FormField from "@/components/ui/FormField.tsx";
 import type { ItemEditFormState } from "@/features/vault/item-edit/vault-edit-helper.ts";
-import { ResultAsync } from "neverthrow";
 
 interface SshKeyEditFieldsProps {
   formState: ItemEditFormState;
@@ -20,20 +19,15 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
 
   const handlePasteSshKey = async () => {
     setErrorMsg("");
-    const readClipboardRes = await ResultAsync.fromPromise(
-      navigator.clipboard.readText(),
-      (err) => {
-        console.error("Clipboard read error:", err);
-        return "Failed to read from clipboard or clipboard access denied";
-      },
-    );
-
-    if (readClipboardRes.isErr()) {
-      setErrorMsg(readClipboardRes.error);
+    let text = "";
+    try {
+      text = await navigator.clipboard.readText();
+    } catch (err) {
+      console.error("Clipboard read error:", err);
+      setErrorMsg("Failed to read from clipboard or clipboard access denied");
       return;
     }
 
-    const text = readClipboardRes.value;
     const parsedRes = await parseSshKey(text);
     if (parsedRes.isOk()) {
       const parsed = parsedRes.value;
