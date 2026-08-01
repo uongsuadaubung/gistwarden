@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, test } from "./assert.ts";
 import {
   mergeVaultItems,
   mergeVaultPayload,
@@ -140,7 +140,7 @@ const createMockSshKey = (
   },
 });
 
-Deno.test("Vault Merge - Login item revision conflict resolution", () => {
+test("Vault Merge - Login item revision conflict resolution", () => {
   const localLogin = createMockLogin(
     "login-1",
     "Login Local Edit",
@@ -159,7 +159,7 @@ Deno.test("Vault Merge - Login item revision conflict resolution", () => {
   assertEquals(merged[0].name, "Login Local Edit");
 });
 
-Deno.test("Vault Merge - SecureNote item remote revision takes precedence when newer", () => {
+test("Vault Merge - SecureNote item remote revision takes precedence when newer", () => {
   const localNote = createMockSecureNote(
     "note-1",
     "Old Local Note",
@@ -178,7 +178,7 @@ Deno.test("Vault Merge - SecureNote item remote revision takes precedence when n
   assertEquals(merged[0].name, "New Remote Note");
 });
 
-Deno.test("Vault Merge - Card item created on local after lastSync is retained", () => {
+test("Vault Merge - Card item created on local after lastSync is retained", () => {
   const lastSyncTime = new Date("2026-07-24T10:00:00.000Z").getTime();
   const localCard = createMockCard(
     "card-1",
@@ -193,7 +193,7 @@ Deno.test("Vault Merge - Card item created on local after lastSync is retained",
   assertEquals(merged[0].type, VaultItemType.Card);
 });
 
-Deno.test("Vault Merge - Identity item created on local before lastSync and missing on remote is dropped", () => {
+test("Vault Merge - Identity item created on local before lastSync and missing on remote is dropped", () => {
   const lastSyncTime = new Date("2026-07-24T12:00:00.000Z").getTime();
   const localIdentity = createMockIdentity(
     "identity-1",
@@ -206,7 +206,7 @@ Deno.test("Vault Merge - Identity item created on local before lastSync and miss
   assertEquals(merged.length, 0);
 });
 
-Deno.test("Vault Merge - SshKey item created on remote is automatically added", () => {
+test("Vault Merge - SshKey item created on remote is automatically added", () => {
   const lastSyncTime = new Date("2026-07-24T10:00:00.000Z").getTime();
   const remoteSshKey = createMockSshKey(
     "ssh-1",
@@ -221,7 +221,7 @@ Deno.test("Vault Merge - SshKey item created on remote is automatically added", 
   assertEquals(merged[0].type, VaultItemType.SshKey);
 });
 
-Deno.test("Vault Merge - Mixed collection of all 5 Vault item types", () => {
+test("Vault Merge - Mixed collection of all 5 Vault item types", () => {
   const lastSyncTime = new Date("2026-07-24T10:00:00.000Z").getTime();
 
   const localLogin = createMockLogin(
@@ -293,7 +293,7 @@ Deno.test("Vault Merge - Mixed collection of all 5 Vault item types", () => {
   assertEquals(itemMap.has("id-identity"), false);
 });
 
-Deno.test("Vault Merge - Item deleted on local is dropped even if present on remote", () => {
+test("Vault Merge - Item deleted on local is dropped even if present on remote", () => {
   const lastSyncTime = new Date("2026-07-24T12:00:00.000Z").getTime();
   const remoteItem = createMockLogin(
     "item-deleted-locally",
@@ -311,7 +311,7 @@ Deno.test("Vault Merge - Item deleted on local is dropped even if present on rem
   );
 });
 
-Deno.test("Vault Merge - Trash array handles deleted items across devices", () => {
+test("Vault Merge - Trash array handles deleted items across devices", () => {
   const item1 = createMockLogin(
     "item-1",
     "Active Login",

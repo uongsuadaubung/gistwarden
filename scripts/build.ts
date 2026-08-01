@@ -9,11 +9,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import * as esbuild from "esbuild";
-import type { PluginBuild } from "esbuild";
 import AdmZip from "adm-zip";
+import { SolidPlugin as solidPlugin } from "bun-plugin-solid";
 
-import { solidPlugin } from "esbuild-plugin-solid";
 const startTime = performance.now();
 const projectRoot = join(import.meta.dirname || ".", "..");
 const distDir = join(projectRoot, "dist");
@@ -25,9 +23,10 @@ const webSrcDir = join(projectRoot, "apps", "web", "src");
 const uiDir = join(projectRoot, "packages", "ui", "src");
 
 // Determine build target from arguments: "extension" (default), "web", or "all"
+const args = process.argv.slice(2);
 const targetArg =
-  Deno.args.find((a) => ["extension", "web", "all"].includes(a)) || "extension";
-const isWatch = Deno.args.includes("--watch");
+  args.find((a) => ["extension", "web", "all"].includes(a)) || "extension";
+const isWatch = args.includes("--watch");
 
 const buildExtension = targetArg === "extension" || targetArg === "all";
 const buildWeb = targetArg === "web" || targetArg === "all";
@@ -46,6 +45,17 @@ if (!isWatch) {
   }
 }
 
+function bundleCss(entryPath: string): string {
+  if (!existsSync(entryPath)) return "";
+  const dir = join(entryPath, "..");
+  let content = readFileSync(entryPath, "utf8");
+  content = content.replace(/@import\s+["'](\.\/[^"']+)["'];/g, (_, relPath) => {
+    const importedFilePath = join(dir, relPath);
+    return bundleCss(importedFilePath);
+  });
+  return content;
+}
+
 function copyAssets() {
   console.log(`Copying assets (${targetArg.toUpperCase()} mode)...`);
 
@@ -58,6 +68,7 @@ function copyAssets() {
   );
   const appName = appNameMatch ? appNameMatch[1] : "Gistwarden";
   const appNameLower = appName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const bundledAppCss = bundleCss(join(uiDir, "styles", "app.css"));
 
   function copyDirRecursive(src: string, dest: string) {
     if (!existsSync(src)) return;
@@ -111,6 +122,10 @@ function copyAssets() {
       copyDirRecursive(join(extSrcDir, "icons"), join(targetDir, "icons"));
       copyDirRecursive(join(uiDir, "images"), join(targetDir, "images"));
       copyDirRecursive(join(extSrcDir, "images"), join(targetDir, "images"));
+
+      // Copy bundled CSS assets
+      writeFileSync(join(targetDir, "popup.css"), bundledAppCss);
+      writeFileSync(join(targetDir, "guide.css"), bundledAppCss);
     };
 
     copyExtensionAssets(chromeDir);
@@ -120,9 +135,11 @@ function copyAssets() {
   if (buildWeb) {
     const webHtmlPath = join(webSrcDir, "index.html");
     if (existsSync(webHtmlPath)) {
-      const webHtmlContent = readFileSync(webHtmlPath, "utf8");
+      let webHtmlContent = readFileSync(webHtmlPath, "utf8");
+      webHtmlContent = webHtmlContent.replace("web-entry.tsx", "web-entry.js");
       writeFileSync(join(webDistDir, "index.html"), webHtmlContent);
     }
+    writeFileSync(join(webDistDir, "web.css"), bundledAppCss);
   }
 
   console.log("✓ Assets copied successfully.");
@@ -147,254 +164,118 @@ async function createZipPackages() {
     console.log("✓ ZIP packaging successful.");
   } catch (zipErr) {
     console.error("ZIP packaging failed:", zipErr);
-    Deno.exit(1);
+    process.exit(1);
   }
 }
 
-async function runCommandOrExit(name: string, args: string[]) {
+async function runCommandOrExit(name: string, command: string, cmdArgs: string[]) {
   console.log(`Running ${name}...`);
-  const cmd = new Deno.Command(Deno.execPath(), {
-    args,
+  const proc = Bun.spawn([command, ...cmdArgs], {
     stdout: "inherit",
     stderr: "inherit",
+    cwd: projectRoot,
   });
-  const { code } = await cmd.output();
-  if (code !== 0) {
+  const exitCode = await proc.exited;
+  if (exitCode !== 0) {
     console.error(`❌ ${name} failed. Stopping build.`);
-    Deno.exit(code);
+    process.exit(exitCode ?? 1);
   }
-  console.log(`✓ ${name} passed.\n`);
+  console.log(`✓ ${name} passed.`);
 }
 
 async function runVerifications() {
   console.log("=====================================");
-  console.log("Chạy kiểm tra song song (Lint, Check, Test)...");
+  console.log("Chạy kiểm tra song song với Bun (TypeCheck, Test)...");
   try {
     await Promise.all([
-      runCommandOrExit("deno lint", ["lint"]),
-      runCommandOrExit("deno check", ["check"]),
-      runCommandOrExit("deno test", ["test", "-A", "--no-check"]),
+      runCommandOrExit("bun typecheck", "bun", ["run", "typecheck"]),
+      runCommandOrExit("bun test", "bun", ["test"]),
     ]);
     console.log("=====================================");
     console.log("Hoàn thành tất cả các bước kiểm tra!\n");
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(errorMsg);
-    Deno.exit(1);
+    process.exit(1);
+  }
+}
+
+async function buildTargetDirectory(outputDir: string) {
+  const extEntryPoints = [
+    join(extSrcDir, "extension/background.ts"),
+    join(extSrcDir, "extension/fido2-content-script.ts"),
+    join(extSrcDir, "extension/fido2-page-script.ts"),
+    join(extSrcDir, "extension/autofill-content-script.ts"),
+    join(extSrcDir, "popup-entry.tsx"),
+    join(extSrcDir, "guide-entry.tsx"),
+  ];
+
+  const buildResult = await Bun.build({
+    entrypoints: extEntryPoints,
+    outdir: outputDir,
+    target: "browser",
+    naming: "[name].[ext]",
+    plugins: [solidPlugin()],
+    define: { "process.env.NODE_ENV": JSON.stringify("production") },
+  });
+
+  if (!buildResult.success) {
+    console.error(`Bun.build failed for ${outputDir}:`, buildResult.logs);
+    process.exit(1);
+  }
+
+  // Rename popup-entry.js -> popup.js & guide-entry.js -> guide.js
+  const popupEntryJs = join(outputDir, "popup-entry.js");
+  const popupJs = join(outputDir, "popup.js");
+  if (existsSync(popupEntryJs)) {
+    if (existsSync(popupJs)) rmSync(popupJs);
+    copyFileSync(popupEntryJs, popupJs);
+    rmSync(popupEntryJs);
+  }
+
+  const guideEntryJs = join(outputDir, "guide-entry.js");
+  const guideJs = join(outputDir, "guide.js");
+  if (existsSync(guideEntryJs)) {
+    if (existsSync(guideJs)) rmSync(guideJs);
+    copyFileSync(guideEntryJs, guideJs);
+    rmSync(guideEntryJs);
   }
 }
 
 async function runBuild() {
   copyAssets();
+  console.log(`Bundling with Bun.build (${targetArg.toUpperCase()})...`);
 
-  const pathAliasPlugin = {
-    name: "path-alias",
-    setup(build: PluginBuild) {
-      build.onResolve({ filter: /^@gistwarden\/domain/ }, () => {
-        return { path: join(projectRoot, "packages", "domain", "mod.ts") };
-      });
-      build.onResolve({ filter: /^@gistwarden\/repository/ }, () => {
-        return { path: join(projectRoot, "packages", "repository", "mod.ts") };
-      });
-      build.onResolve({ filter: /^@gistwarden\/network/ }, () => {
-        return { path: join(projectRoot, "packages", "network", "mod.ts") };
-      });
-      build.onResolve({ filter: /^@gistwarden\/orchestrator/ }, () => {
-        return {
-          path: join(projectRoot, "packages", "orchestrator", "mod.ts"),
-        };
-      });
-      build.onResolve({ filter: /^@gistwarden\/ui/ }, () => {
-        return { path: join(projectRoot, "packages", "ui", "mod.ts") };
-      });
-      build.onResolve({ filter: /^zxcvbn$/ }, () => {
-        const p1 = join(
-          projectRoot,
-          "node_modules",
-          ".deno",
-          "@zxcvbn-ts+core@3.0.4",
-          "node_modules",
-          "@zxcvbn-ts",
-          "core",
-          "dist",
-          "index.esm.js",
-        );
-        const p2 = join(
-          projectRoot,
-          "node_modules",
-          "@zxcvbn-ts",
-          "core",
-          "dist",
-          "index.esm.js",
-        );
-        return { path: existsSync(p1) ? p1 : p2 };
-      });
-      build.onResolve({ filter: /^@\// }, (args) => {
-        const rel = args.path.substring(2);
-        if (
-          rel.startsWith("core/crypto") || rel.startsWith("core/totp-utils") ||
-          rel.startsWith("core/session-manager") ||
-          rel.startsWith("core/types") || rel.startsWith("core/constants") ||
-          rel.startsWith("core/generator-utils") ||
-          rel.startsWith("core/domain-utils") ||
-          rel.startsWith("core/cbor-utils") ||
-          rel.startsWith("core/wordlist") ||
-          rel.startsWith("core/csv-parser") ||
-          rel.startsWith("core/json-utils") ||
-          rel.startsWith("core/i18n") || rel.startsWith("core/locales")
-        ) {
-          return {
-            path: join(
-              projectRoot,
-              "packages",
-              "domain",
-              "src",
-              rel.substring(5),
-            ),
-          };
-        }
-        if (
-          rel.startsWith("core/storage") ||
-          rel.startsWith("core/storage-schemas")
-        ) {
-          return {
-            path: join(
-              projectRoot,
-              "packages",
-              "repository",
-              "src",
-              rel.substring(5),
-            ),
-          };
-        }
-        if (rel.startsWith("core/fetch-utils")) {
-          return {
-            path: join(
-              projectRoot,
-              "packages",
-              "network",
-              "src",
-              "fetch-utils.ts",
-            ),
-          };
-        }
-        if (rel.startsWith("providers/")) {
-          return {
-            path: join(
-              projectRoot,
-              "packages",
-              "network",
-              "src",
-              rel.substring(10),
-            ),
-          };
-        }
-        if (
-          rel.startsWith("core/session-usecases") ||
-          rel.startsWith("core/app-init") ||
-          rel.startsWith("core/messaging") ||
-          rel.startsWith("core/messaging-contracts") ||
-          rel.startsWith("core/alarms") || rel.startsWith("core/idle") ||
-          rel.startsWith("core/ui-service")
-        ) {
-          return {
-            path: join(
-              projectRoot,
-              "packages",
-              "orchestrator",
-              "src",
-              rel.substring(5),
-            ),
-          };
-        }
-        if (rel.startsWith("extension/")) {
-          return { path: join(extSrcDir, rel) };
-        }
-        return { path: join(uiDir, rel) };
-      });
-    },
-  };
-
-  const builds: Promise<unknown>[] = [];
-
-  if (buildExtension) {
-    const extEntryPoints = [
-      { in: join(extSrcDir, "extension/background.ts"), out: "background" },
-      {
-        in: join(extSrcDir, "extension/fido2-content-script.ts"),
-        out: "fido2-content-script",
-      },
-      {
-        in: join(extSrcDir, "extension/fido2-page-script.ts"),
-        out: "fido2-page-script",
-      },
-      {
-        in: join(extSrcDir, "extension/autofill-content-script.ts"),
-        out: "autofill-content-script",
-      },
-      { in: join(extSrcDir, "popup-entry.tsx"), out: "popup" },
-      { in: join(extSrcDir, "guide-entry.tsx"), out: "guide" },
-      { in: join(uiDir, "styles", "app.css"), out: "popup" },
-      { in: join(uiDir, "styles", "app.css"), out: "guide" },
-    ];
-
-    const extBuildOptions: esbuild.BuildOptions = {
-      entryPoints: extEntryPoints,
-      bundle: true,
-      outdir: chromeDir,
-      format: "esm",
-      target: "es2022",
-      sourcemap: false,
-      minify: false,
-      plugins: [solidPlugin(), pathAliasPlugin],
-      define: { "process.env.NODE_ENV": '"production"' },
-    };
-
-    if (isWatch) {
-      const ctxChrome = await esbuild.context(extBuildOptions);
-      const ctxFirefox = await esbuild.context({
-        ...extBuildOptions,
-        outdir: firefoxDir,
-      });
-      await ctxChrome.watch();
-      await ctxFirefox.watch();
-    } else {
-      builds.push(esbuild.build(extBuildOptions));
-      builds.push(esbuild.build({ ...extBuildOptions, outdir: firefoxDir }));
-    }
-  }
-
-  if (buildWeb) {
-    const webBuildOptions: esbuild.BuildOptions = {
-      entryPoints: [
-        { in: join(webSrcDir, "web-entry.tsx"), out: "web-entry" },
-        { in: join(uiDir, "styles", "app.css"), out: "web" },
-      ],
-      bundle: true,
-      outdir: webDistDir,
-      format: "esm",
-      target: "es2022",
-      sourcemap: false,
-      minify: false,
-      plugins: [solidPlugin(), pathAliasPlugin],
-      define: { "process.env.NODE_ENV": '"production"' },
-    };
-
-    if (isWatch) {
-      const ctxWeb = await esbuild.context(webBuildOptions);
-      await ctxWeb.watch();
-    } else {
-      builds.push(esbuild.build(webBuildOptions));
-    }
-  }
-
-  console.log(`Bundling esbuild targets (${targetArg.toUpperCase()})...`);
   try {
-    if (!isWatch) {
-      await Promise.all(builds);
-      console.log("✓ Bundling successful.");
-      if (buildExtension) await createZipPackages();
+    if (buildExtension) {
+      await Promise.all([
+        buildTargetDirectory(chromeDir),
+        buildTargetDirectory(firefoxDir),
+      ]);
+    }
 
+    if (buildWeb) {
+      const webResult = await Bun.build({
+        entrypoints: [join(webSrcDir, "web-entry.tsx")],
+        outdir: webDistDir,
+        target: "browser",
+        naming: "[name].[ext]",
+        plugins: [solidPlugin()],
+        define: { "process.env.NODE_ENV": JSON.stringify("production") },
+      });
+
+      if (!webResult.success) {
+        console.error("Bun.build failed for web:", webResult.logs);
+        process.exit(1);
+      }
+    }
+
+    console.log("✓ Bundling with Bun.build successful.");
+    if (!isWatch && buildExtension) {
+      await createZipPackages();
+    }
+
+    if (!isWatch) {
       console.log("\nDone! Output files in /dist:");
       if (buildExtension) {
         console.log("  - chrome/        (unpacked Extension)");
@@ -405,14 +286,10 @@ async function runBuild() {
       if (buildWeb) {
         console.log("  - web/           (standalone Web App)");
       }
-      esbuild.stop();
-    } else {
-      console.log("Watching for changes...");
     }
   } catch (e) {
-    console.error("Esbuild bundling failed:", e);
-    esbuild.stop();
-    if (!isWatch) Deno.exit(1);
+    console.error("Bun.build failed:", e);
+    if (!isWatch) process.exit(1);
   }
 }
 

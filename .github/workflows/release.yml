@@ -15,16 +15,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: denoland/setup-deno@v2
+      - uses: oven-sh/setup-bun@v2
         with:
-          deno-version: v2.x
+          bun-version: latest
 
       - name: Bump version and commit
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          deno task bump-version
+          bun run bump-version
 
           if [ -n "$(git status --porcelain apps/extension/src/manifest.json)" ]; then
             git add apps/extension/src/manifest.json
@@ -50,7 +50,7 @@ jobs:
           fi
 
           echo "New version detected: $TAG_NAME. Building extension packages..."
-          deno task build
+          bun run build
 
           # Create and rename output files
           CHROME_FILE="gistwarden-chrome-${TAG_NAME}.zip"

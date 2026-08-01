@@ -1,3 +1,5 @@
+import { writeFileSync } from "fs";
+
 const url = "https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt";
 console.log("Fetching EFF large wordlist from:", url);
 
@@ -30,8 +32,8 @@ try {
 export const wordlist: string[] = ${JSON.stringify(words, null, 2)};
 `;
 
-  await Deno.writeTextFile("./src/shared/wordlist.ts", content);
-  console.log("Saved to ./src/shared/wordlist.ts");
+  writeFileSync("./packages/domain/src/wordlist.ts", content, "utf8");
+  console.log("Saved to ./packages/domain/src/wordlist.ts");
 } catch (error) {
   console.error("Error fetching wordlist:", error);
 }

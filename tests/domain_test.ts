@@ -1,7 +1,7 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, test } from "./assert.ts";
 import { getBaseDomain, getHostname } from "@gistwarden/domain";
 
-Deno.test("Domain Utils - getHostname", () => {
+test("Domain Utils - getHostname", () => {
   assertEquals(
     getHostname("https://auth.github.com/login?foo=bar"),
     "auth.github.com",
@@ -14,7 +14,7 @@ Deno.test("Domain Utils - getHostname", () => {
   assertEquals(getHostname("http://127.0.0.1:8080/api"), "127.0.0.1");
 });
 
-Deno.test("Domain Utils - getBaseDomain via tldts Public Suffix List", () => {
+test("Domain Utils - getBaseDomain via tldts Public Suffix List", () => {
   assertEquals(getBaseDomain("auth.github.com"), "github.com");
   assertEquals(
     getBaseDomain("https://sub.google.com.vn/path"),

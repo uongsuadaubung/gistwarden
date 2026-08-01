@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, test } from "./assert.ts";
 import { Window } from "happy-dom";
 import { performAutofill } from "../apps/extension/src/extension/autofill-core.ts";
 
@@ -20,7 +20,7 @@ function setupDOM(html: string) {
   return window.document;
 }
 
-Deno.test("Autofill - standard login form", () => {
+test("Autofill - standard login form", () => {
   const doc = setupDOM(`
     <form id="login">
       <input type="text" name="username" id="user" />
@@ -46,7 +46,7 @@ Deno.test("Autofill - standard login form", () => {
   }
 });
 
-Deno.test("Autofill - form without form tags (just inputs)", () => {
+test("Autofill - form without form tags (just inputs)", () => {
   const doc = setupDOM(`
     <div>
       <input type="text" id="username" />
@@ -72,7 +72,7 @@ Deno.test("Autofill - form without form tags (just inputs)", () => {
   }
 });
 
-Deno.test("Autofill - only username fallback", () => {
+test("Autofill - only username fallback", () => {
   const doc = setupDOM(`
     <div>
       <input type="text" id="user_id" name="username" />
@@ -90,7 +90,7 @@ Deno.test("Autofill - only username fallback", () => {
   }
 });
 
-Deno.test("Autofill - no matching fields", () => {
+test("Autofill - no matching fields", () => {
   const _doc = setupDOM(`
     <div>
       <div id="not-an-input">Hello</div>

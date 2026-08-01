@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, test } from "./assert.ts";
 import {
   findMatchingFido2Accounts,
   findMatchingFido2Credentials,
@@ -49,7 +49,7 @@ const mockVaultItems: VaultItem[] = [
   },
 ];
 
-Deno.test("fido2-service: findMatchingFido2Accounts matches by URI", () => {
+test("fido2-service: findMatchingFido2Accounts matches by URI", () => {
   const matches = findMatchingFido2Accounts(
     mockVaultItems,
     "github.com",
@@ -59,7 +59,7 @@ Deno.test("fido2-service: findMatchingFido2Accounts matches by URI", () => {
   assertEquals(matches[0].name, "GitHub");
 });
 
-Deno.test("fido2-service: findMatchingFido2Accounts ignores items without matching URI", () => {
+test("fido2-service: findMatchingFido2Accounts ignores items without matching URI", () => {
   const matches = findMatchingFido2Accounts(
     mockVaultItems,
     "example.com",
@@ -69,7 +69,7 @@ Deno.test("fido2-service: findMatchingFido2Accounts ignores items without matchi
   assertEquals(matches.length, 0);
 });
 
-Deno.test("fido2-service: findMatchingFido2Credentials matches rpId", () => {
+test("fido2-service: findMatchingFido2Credentials matches rpId", () => {
   const creds = findMatchingFido2Credentials(mockVaultItems, "github.com");
   assertEquals(creds.length, 1);
   assertEquals(creds[0].credential.credentialId, "cred1");

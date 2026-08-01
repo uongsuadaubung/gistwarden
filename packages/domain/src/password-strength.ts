@@ -1,14 +1,18 @@
-import { zxcvbn, zxcvbnOptions } from "zxcvbn";
+import { Options, ZxcvbnFactory } from "@zxcvbn-ts/core";
 import { ENGLISH_WORDLIST } from "./wordlist.ts";
 import { VIETNAMESE_WORDLIST } from "./vietnamese-wordlist.ts";
 
-// Register custom English wordlist (EFF 30k) + Vietnamese wordlist (59k)
-zxcvbnOptions.setOptions({
+const options = new Options({
   dictionary: {
     english: ENGLISH_WORDLIST,
     vietnamese: VIETNAMESE_WORDLIST,
   },
 });
+
+const zxcvbnFactory = new ZxcvbnFactory(options);
+export const zxcvbnOptions = options;
+export const zxcvbn = (pass: string, userInputs?: string[]) =>
+  zxcvbnFactory.check(pass, userInputs);
 
 export interface PasswordStrengthResult {
   score: 0 | 1 | 2 | 3 | 4;

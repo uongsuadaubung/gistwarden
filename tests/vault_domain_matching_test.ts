@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, test } from "./assert.ts";
 import {
   filterMatchingDomainItems,
   isMatchingDomain,
@@ -33,7 +33,7 @@ function createMockLoginItem(
   };
 }
 
-Deno.test("Vault Domain Matching - Strictly uses item.login.uris, ignores item.name", () => {
+test("Vault Domain Matching - Strictly uses item.login.uris, ignores item.name", () => {
   const noUriItem = createMockLoginItem("1", "panel.io", []);
   assertEquals(
     isMatchingDomain(noUriItem, "panel.io"),
@@ -58,7 +58,7 @@ Deno.test("Vault Domain Matching - Strictly uses item.login.uris, ignores item.n
   );
 });
 
-Deno.test("Vault Domain Matching - Single URI Match Engine (isSingleUriMatch)", () => {
+test("Vault Domain Matching - Single URI Match Engine (isSingleUriMatch)", () => {
   // 1. UriMatchMode.Domain (0 - Default Base Domain)
   assertEquals(
     isSingleUriMatch(
@@ -189,7 +189,7 @@ Deno.test("Vault Domain Matching - Single URI Match Engine (isSingleUriMatch)", 
   );
 });
 
-Deno.test("Vault Domain Matching - Vault item with multiple URIs and custom match policies", () => {
+test("Vault Domain Matching - Vault item with multiple URIs and custom match policies", () => {
   const itemWithPolicies = createMockLoginItem("item-1", "Multi-URI Item", [
     { uri: "https://never-match.com", match: UriMatchMode.Never },
     { uri: "https://exact.com/login", match: UriMatchMode.Exact },
@@ -214,7 +214,7 @@ Deno.test("Vault Domain Matching - Vault item with multiple URIs and custom matc
   assertEquals(isMatchingDomain(itemWithPolicies, "other.example.com"), false);
 });
 
-Deno.test("Vault Domain Matching - filterMatchingDomainItems strictly matches by URI and sorts exact matches first", () => {
+test("Vault Domain Matching - filterMatchingDomainItems strictly matches by URI and sorts exact matches first", () => {
   const items = [
     createMockLoginItem("1", "panel.io", []), // No URI
     createMockLoginItem("2", "Base Match Item", [{
