@@ -8,7 +8,8 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { zipSync } from "fflate";
 import { SolidPlugin as solidPlugin } from "bun-plugin-solid";
 
 const startTime = performance.now();
@@ -144,17 +145,28 @@ function copyAssets() {
   console.log("✓ Assets copied successfully.");
 }
 
-async function zipFolderNative(sourceDir: string, outputFile: string): Promise<void> {
-  const entries = readdirSync(sourceDir);
-  if (entries.length === 0) return;
-  const proc = Bun.spawn(["tar", "-a", "-c", "-f", outputFile, "-C", sourceDir, ...entries], {
-    stdout: "ignore",
-    stderr: "inherit",
-  });
-  const exitCode = await proc.exited;
-  if (exitCode !== 0 || !existsSync(outputFile)) {
-    throw new Error(`Failed to create ZIP package for ${sourceDir}`);
+function getFolderFilesRecursive(dir: string, baseDir: string): Record<string, Uint8Array> {
+  const files: Record<string, Uint8Array> = {};
+  const entries = readdirSync(dir);
+  for (const entry of entries) {
+    const fullPath = join(dir, entry);
+    const relPath = relative(baseDir, fullPath).replace(/\\/g, "/");
+    if (statSync(fullPath).isDirectory()) {
+      Object.assign(files, getFolderFilesRecursive(fullPath, baseDir));
+    } else {
+      files[relPath] = new Uint8Array(readFileSync(fullPath));
+    }
   }
+  return files;
+}
+
+async function zipFolderNative(sourceDir: string, outputFile: string): Promise<void> {
+  if (!existsSync(sourceDir)) return;
+  const filesMap = getFolderFilesRecursive(sourceDir, sourceDir);
+  if (Object.keys(filesMap).length === 0) return;
+  const compressionLevel = isFastDev ? 1 : 9;
+  const zipped = zipSync(filesMap, { level: compressionLevel });
+  writeFileSync(outputFile, zipped);
 }
 
 async function createZipPackages() {
