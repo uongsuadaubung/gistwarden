@@ -101,15 +101,17 @@ function copyAssets() {
           manifestObj.action.default_title = appName;
 
           if (isFirefox) {
-            delete manifestObj.background.service_worker;
-            manifestObj.background.scripts = [
-              "background.js",
-              "fido2-content-script.js",
-            ];
+            manifestObj.background = {
+              scripts: ["background.js"],
+              type: "module",
+            };
             manifestObj.browser_specific_settings = {
               gecko: {
-                id: `${appNameLower}@gistwarden.org`,
-                strict_min_version: "109.0",
+                id: `${appNameLower}@uongsuadaubung.github.io`,
+                strict_min_version: "142.0",
+                data_collection_permissions: {
+                  required: ["none"],
+                },
               },
             };
           }
