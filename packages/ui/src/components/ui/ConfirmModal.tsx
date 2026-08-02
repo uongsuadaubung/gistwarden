@@ -20,10 +20,9 @@ export const ConfirmModal: Component = () => {
             <h4 class="confirm-modal-title">
               {uiStore.confirmModal.title || t("confirm_title")}
             </h4>
-            <p
-              class="confirm-modal-message"
-              innerHTML={uiStore.confirmModal.message}
-            />
+            <p class="confirm-modal-message">
+              {uiStore.confirmModal.message}
+            </p>
             <div class="confirm-modal-actions">
               <Button
                 variant="secondary"

@@ -52,7 +52,7 @@ export const GithubSetupForm: Component<GithubSetupFormProps> = (props) => {
                 value={token()}
                 onInput={(e) => setToken(e.currentTarget.value)}
               />
-              <span class="login-pat-help" innerHTML={t("login_pat_help")} />
+              <span class="login-pat-help">{t("login_pat_help")}</span>
             </div>
 
             <Button
