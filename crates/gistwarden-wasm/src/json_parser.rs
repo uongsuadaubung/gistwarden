@@ -54,12 +54,12 @@ pub fn parse_json_import(
             f.get("name").and_then(|v| v.as_str()),
         ) {
             let key = name.to_lowercase().trim().to_string();
-            if !folder_map.contains_key(&key) {
+            if let std::collections::hash_map::Entry::Vacant(entry) = folder_map.entry(key) {
                 let folder_obj = serde_json::json!({
                     "id": id,
                     "name": name,
                 });
-                folder_map.insert(key, folder_obj.clone());
+                entry.insert(folder_obj.clone());
                 combined_folders.push(folder_obj);
             }
         }
@@ -176,12 +176,10 @@ pub fn parse_json_import(
             let mut key = format!("||{}", name);
             if let Some(login) = item.get("login") {
                 let username = login.get("username").and_then(|v| v.as_str()).unwrap_or("");
-                if let Some(uris) = login.get("uris").and_then(|u| u.as_array()) {
-                    if let Some(first_uri) = uris.first() {
-                        let main_uri = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("");
-                        if !main_uri.is_empty() {
-                            key = format!("{}|{}", main_uri, username);
-                        }
+                if let Some(first_uri) = login.get("uris").and_then(|u| u.as_array()).and_then(|uris| uris.first()) {
+                    let main_uri = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("");
+                    if !main_uri.is_empty() {
+                        key = format!("{}|{}", main_uri, username);
                     }
                 }
             }
@@ -201,12 +199,10 @@ pub fn parse_json_import(
             let mut k = format!("||{}", name);
             if let Some(login) = new_item.get("login") {
                 let username = login.get("username").and_then(|v| v.as_str()).unwrap_or("");
-                if let Some(uris) = login.get("uris").and_then(|u| u.as_array()) {
-                    if let Some(first_uri) = uris.first() {
-                        let main_uri = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("");
-                        if !main_uri.is_empty() {
-                            k = format!("{}|{}", main_uri, username);
-                        }
+                if let Some(first_uri) = login.get("uris").and_then(|u| u.as_array()).and_then(|uris| uris.first()) {
+                    let main_uri = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("");
+                    if !main_uri.is_empty() {
+                        k = format!("{}|{}", main_uri, username);
                     }
                 }
             }
@@ -215,51 +211,45 @@ pub fn parse_json_import(
             format!("||{}", name)
         };
 
-        if !existing_map.contains_key(&key) {
+        if let std::collections::hash_map::Entry::Vacant(entry) = existing_map.entry(key.clone()) {
             final_items.push(new_item.clone());
-            existing_map.insert(key, new_item);
+            entry.insert(new_item);
             added_count += 1;
         } else if item_type == 1 {
-            // Check for fido2 credentials merge
-            if let Some(new_fido) = new_item.get("login").and_then(|l| l.get("fido2Credentials")).and_then(|f| f.as_array()) {
-                if !new_fido.is_empty() {
-                    if let Some(existing_item) = final_items.iter_mut().find(|i| {
-                        let i_type = i.get("type").and_then(|v| v.as_u64()).unwrap_or(1);
-                        if i_type != 1 { return false; }
-                        let i_name = i.get("name").and_then(|v| v.as_str()).unwrap_or("");
-                        let mut i_k = format!("||{}", i_name);
-                        if let Some(l) = i.get("login") {
-                            let un = l.get("username").and_then(|v| v.as_str()).unwrap_or("");
-                            if let Some(uris) = l.get("uris").and_then(|u| u.as_array()) {
-                                if let Some(first_uri) = uris.first() {
-                                    let mu = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("");
-                                    if !mu.is_empty() { i_k = format!("{}|{}", mu, un); }
-                                }
-                            }
-                        }
-                        i_k == key
-                    }) {
-                        if let Some(login_obj) = existing_item.get_mut("login") {
-                            let mut merged_fido: Vec<Value> = login_obj
-                                .get("fido2Credentials")
-                                .and_then(|f| f.as_array())
-                                .cloned()
-                                .unwrap_or_default();
+            let new_fido = new_item.get("login").and_then(|l| l.get("fido2Credentials")).and_then(|f| f.as_array()).filter(|arr| !arr.is_empty());
+            let target_login = final_items.iter_mut().find(|i| {
+                let i_type = i.get("type").and_then(|v| v.as_u64()).unwrap_or(1);
+                if i_type != 1 { return false; }
+                let i_name = i.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                let mut i_k = format!("||{}", i_name);
+                if let Some(l) = i.get("login") {
+                    let un = l.get("username").and_then(|v| v.as_str()).unwrap_or("");
+                    if let Some(first_uri) = l.get("uris").and_then(|u| u.as_array()).and_then(|uris| uris.first()) {
+                        let mu = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("");
+                        if !mu.is_empty() { i_k = format!("{}|{}", mu, un); }
+                    }
+                }
+                i_k == key
+            }).and_then(|i| i.get_mut("login"));
 
-                            for nf in new_fido {
-                                if let Some(cred_id) = nf.get("credentialId").and_then(|v| v.as_str()) {
-                                    let exists = merged_fido.iter().any(|ef| {
-                                        ef.get("credentialId").and_then(|v| v.as_str()) == Some(cred_id)
-                                    });
-                                    if !exists {
-                                        merged_fido.push(nf.clone());
-                                    }
-                                }
-                            }
-                            login_obj["fido2Credentials"] = serde_json::Value::Array(merged_fido);
+            if let Some((new_fido, login_obj)) = new_fido.zip(target_login) {
+                let mut merged_fido: Vec<Value> = login_obj
+                    .get("fido2Credentials")
+                    .and_then(|f| f.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+
+                for nf in new_fido {
+                    if let Some(cred_id) = nf.get("credentialId").and_then(|v| v.as_str()) {
+                        let exists = merged_fido.iter().any(|ef| {
+                            ef.get("credentialId").and_then(|v| v.as_str()) == Some(cred_id)
+                        });
+                        if !exists {
+                            merged_fido.push(nf.clone());
                         }
                     }
                 }
+                login_obj["fido2Credentials"] = serde_json::Value::Array(merged_fido);
             }
         }
     }

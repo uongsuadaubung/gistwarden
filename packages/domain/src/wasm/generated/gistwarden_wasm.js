@@ -614,22 +614,15 @@ export function get_random_bounded_int(max) {
 }
 
 /**
- * @param {number} length
- * @param {boolean} uppercase
- * @param {boolean} lowercase
- * @param {boolean} numbers
- * @param {boolean} specials
- * @param {boolean} avoid_ambiguous
- * @param {number} min_numbers
- * @param {number} min_specials
+ * @param {any} opts_val
  * @returns {string}
  */
-export function generate_password(length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials) {
+export function generate_password(opts_val) {
     let deferred2_0;
     let deferred2_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.generate_password(retptr, length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials);
+        wasm.generate_password(retptr, addHeapObject(opts_val));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
@@ -742,30 +735,11 @@ export function get_base_domain(input) {
 }
 
 /**
- * @param {string} stored_uri
- * @param {string} current_url
- * @param {number | null | undefined} match_mode
- * @param {number | null | undefined} override_mode
- * @param {string} target_host
- * @param {string} item_host
- * @param {string} target_base
- * @param {string} item_base
+ * @param {any} opts_val
  * @returns {boolean}
  */
-export function is_single_uri_match(stored_uri, current_url, match_mode, override_mode, target_host, item_host, target_base, item_base) {
-    const ptr0 = passStringToWasm0(stored_uri, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-    const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passStringToWasm0(current_url, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-    const len1 = WASM_VECTOR_LEN;
-    const ptr2 = passStringToWasm0(target_host, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-    const len2 = WASM_VECTOR_LEN;
-    const ptr3 = passStringToWasm0(item_host, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-    const len3 = WASM_VECTOR_LEN;
-    const ptr4 = passStringToWasm0(target_base, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-    const len4 = WASM_VECTOR_LEN;
-    const ptr5 = passStringToWasm0(item_base, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-    const len5 = WASM_VECTOR_LEN;
-    const ret = wasm.is_single_uri_match(ptr0, len0, ptr1, len1, isLikeNone(match_mode) ? 0xFFFFFF : match_mode, isLikeNone(override_mode) ? 0xFFFFFF : override_mode, ptr2, len2, ptr3, len3, ptr4, len4, ptr5, len5);
+export function is_single_uri_match(opts_val) {
+    const ret = wasm.is_single_uri_match(addHeapObject(opts_val));
     return ret !== 0;
 }
 
@@ -1795,6 +1769,10 @@ function __wbg_get_imports() {
         const ret = getObject(arg0)[arg1 >>> 0];
         return addHeapObject(ret);
     };
+    imports.wbg.__wbg_getwithrefkey_1dc361bd10053bfe = function(arg0, arg1) {
+        const ret = getObject(arg0)[getObject(arg1)];
+        return addHeapObject(ret);
+    };
     imports.wbg.__wbg_instanceof_ArrayBuffer_e14585432e3737fc = function(arg0) {
         let result;
         try {
@@ -1952,6 +1930,10 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_versions_4e31226f5e8dc909 = function(arg0) {
         const ret = getObject(arg0).versions;
         return addHeapObject(ret);
+    };
+    imports.wbg.__wbindgen_as_number = function(arg0) {
+        const ret = +getObject(arg0);
+        return ret;
     };
     imports.wbg.__wbindgen_bigint_from_i64 = function(arg0) {
         const ret = arg0;

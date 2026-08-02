@@ -1,6 +1,19 @@
 use rand::RngCore;
+use serde::Deserialize;
 
 static EFF_WORDLIST_RAW: &str = include_str!("wordlist.txt");
+
+#[derive(Debug, Deserialize, Default)]
+pub struct PasswordOptions {
+    pub length: usize,
+    pub uppercase: bool,
+    pub lowercase: bool,
+    pub numbers: bool,
+    pub specials: bool,
+    pub avoid_ambiguous: bool,
+    pub min_numbers: usize,
+    pub min_specials: usize,
+}
 
 pub fn get_random_bounded_int(max: u32) -> u32 {
     if max <= 1 {
@@ -17,22 +30,19 @@ pub fn get_random_bounded_int(max: u32) -> u32 {
     }
 }
 
-pub fn generate_password(
-    length: usize,
-    uppercase: bool,
-    lowercase: bool,
-    numbers: bool,
-    specials: bool,
-    avoid_ambiguous: bool,
-    min_numbers: usize,
-    min_specials: usize,
-) -> Result<String, String> {
+fn get_random_char(s: &str) -> char {
+    let chars: Vec<char> = s.chars().collect();
+    let idx = get_random_bounded_int(chars.len() as u32) as usize;
+    chars[idx]
+}
+
+pub fn generate_password(opts: &PasswordOptions) -> Result<String, String> {
     let mut available_u = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".to_string();
     let mut available_l = "abcdefghijklmnopqrstuvwxyz".to_string();
     let mut available_n = "0123456789".to_string();
     let mut available_s = "!@#$%^&*()_+-=[]{}|;:,.<>?".to_string();
 
-    if avoid_ambiguous {
+    if opts.avoid_ambiguous {
         let ambiguous_chars = ['I', 'l', '1', 'O', '0', 'o'];
         available_u.retain(|c| !ambiguous_chars.contains(&c));
         available_l.retain(|c| !ambiguous_chars.contains(&c));
@@ -41,55 +51,37 @@ pub fn generate_password(
     }
 
     let mut charset = String::new();
-    if uppercase { charset.push_str(&available_u); }
-    if lowercase { charset.push_str(&available_l); }
-    if numbers { charset.push_str(&available_n); }
-    if specials { charset.push_str(&available_s); }
+    if opts.uppercase { charset.push_str(&available_u); }
+    if opts.lowercase { charset.push_str(&available_l); }
+    if opts.numbers { charset.push_str(&available_n); }
+    if opts.specials { charset.push_str(&available_s); }
 
     if charset.is_empty() {
         return Err("gen_error_charset_empty".to_string());
     }
 
-    let min_num = if numbers { min_numbers } else { 0 };
-    let min_spec = if specials { min_specials } else { 0 };
-
-    if min_num + min_spec > length {
+    if opts.min_numbers + opts.min_specials > opts.length {
         return Err("gen_error_min_exceeds_length".to_string());
     }
 
-    let mut result_chars: Vec<char> = Vec::with_capacity(length);
 
-    let get_random_char = |s: &str| -> Option<char> {
-        let chars: Vec<char> = s.chars().collect();
-        if chars.is_empty() {
-            None
-        } else {
-            let idx = get_random_bounded_int(chars.len() as u32) as usize;
-            Some(chars[idx])
-        }
-    };
+    let mut result_chars: Vec<char> = Vec::with_capacity(opts.length);
 
-    if numbers && min_num > 0 && !available_n.is_empty() {
-        for _ in 0..min_num {
-            if let Some(ch) = get_random_char(&available_n) {
-                result_chars.push(ch);
-            }
+    if opts.numbers && opts.min_numbers > 0 && !available_n.is_empty() {
+        for _ in 0..opts.min_numbers {
+            result_chars.push(get_random_char(&available_n));
         }
     }
 
-    if specials && min_spec > 0 && !available_s.is_empty() {
-        for _ in 0..min_spec {
-            if let Some(ch) = get_random_char(&available_s) {
-                result_chars.push(ch);
-            }
+    if opts.specials && opts.min_specials > 0 && !available_s.is_empty() {
+        for _ in 0..opts.min_specials {
+            result_chars.push(get_random_char(&available_s));
         }
     }
 
-    let remaining = length.saturating_sub(result_chars.len());
+    let remaining = opts.length.saturating_sub(result_chars.len());
     for _ in 0..remaining {
-        if let Some(ch) = get_random_char(&charset) {
-            result_chars.push(ch);
-        }
+        result_chars.push(get_random_char(&charset));
     }
 
     // Fisher-Yates Shuffle using CSPRNG Rejection Sampling
@@ -111,7 +103,7 @@ pub fn generate_passphrase(
     include_number: bool,
     custom_wordlist: Option<Vec<String>>,
 ) -> Result<String, String> {
-    if num_words < 3 || num_words > 20 {
+    if !(3..=20).contains(&num_words) {
         return Err("gen_error_invalid_words_count".to_string());
     }
 

@@ -301,16 +301,16 @@ export function generatePasswordWasm(
   minNumbers: number,
   minSpecials: number,
 ): string {
-  return wasm.generate_password(
+  return wasm.generate_password({
     length,
     uppercase,
     lowercase,
     numbers,
     specials,
-    avoidAmbiguous,
-    minNumbers,
-    minSpecials,
-  );
+    avoid_ambiguous: avoidAmbiguous,
+    min_numbers: minNumbers,
+    min_specials: minSpecials,
+  });
 }
 
 /**
@@ -507,16 +507,16 @@ export function isSingleUriMatchWasm(
   targetBase: string = "",
   itemBase: string = "",
 ): boolean {
-  return wasm.is_single_uri_match(
-    storedUri,
-    currentUrl,
-    matchMode ?? null,
-    overrideMode ?? null,
-    targetHost,
-    itemHost,
-    targetBase,
-    itemBase,
-  );
+  return wasm.is_single_uri_match({
+    stored_uri: storedUri,
+    current_url: currentUrl,
+    match_mode: matchMode ?? null,
+    override_mode: overrideMode ?? null,
+    target_host: targetHost,
+    item_host: itemHost,
+    target_base: targetBase,
+    item_base: itemBase,
+  });
 }
 
 export function filterVaultItemsByQueryWasm(
