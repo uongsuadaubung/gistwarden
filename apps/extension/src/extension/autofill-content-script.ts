@@ -12,8 +12,6 @@ import {
   type SubmittedCredentials,
 } from "@/extension/autofill-core.ts";
 import { showNotificationBar } from "@/features/notification/index.ts";
-import { getBaseDomain } from "@/core/domain-utils.ts";
-import { generateTotpSafe } from "@/core/totp-utils.ts";
 import { writeClipboardText } from "@/core/clipboard-utils.ts";
 import { getLocalItem, isRecord } from "@/core/storage.ts";
 import {
@@ -24,6 +22,7 @@ import {
 import {
   checkAutofillSuggestionRoute,
   checkPendingNotificationRoute,
+  generateTotpRoute,
 } from "@gistwarden/orchestrator";
 import {
   type AutofillMatchingAccount,
@@ -65,8 +64,9 @@ setupFormSubmitMonitoring((creds: SubmittedCredentials) => {
 // Setup monitoring for focus on login input fields to show Autofill Suggestion Toast (when unlocked)
 let autofillDismissedForTab = false;
 let isProgrammaticAutofilling = false;
-const currentDomain = window.location.hostname ||
-  getBaseDomain(window.location.href);
+const currentDomain = window.location.hostname
+  ? window.location.hostname.replace(/^www\./i, "")
+  : window.location.host;
 
 setupAutofillFocusMonitoring(async () => {
   if (autofillDismissedForTab || isProgrammaticAutofilling) return;
@@ -110,9 +110,11 @@ setupAutofillFocusMonitoring(async () => {
       performAutofill(u, p, autoSubmit);
 
       if (tSecret) {
-        const totpRes = generateTotpSafe(tSecret);
-        if (totpRes.isOk()) {
-          writeClipboardText(totpRes.value);
+        const totpRes = await sendBackgroundMessage(generateTotpRoute, {
+          secret: tSecret,
+        });
+        if (totpRes.isOk() && totpRes.value.success && totpRes.value.code) {
+          await writeClipboardText(totpRes.value.code);
         }
       }
 

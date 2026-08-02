@@ -5,7 +5,7 @@ import {
 } from "../packages/ui/src/features/sync/csv-export.ts";
 import { parseCSV, type VaultItem, VaultItemType } from "@gistwarden/domain";
 
-test("Export CSV - Browser CSV format", () => {
+test("Export CSV - Browser CSV format", async () => {
   const items: VaultItem[] = [
     {
       id: "1",
@@ -39,8 +39,8 @@ test("Export CSV - Browser CSV format", () => {
     },
   ];
 
-  const csv = exportToBrowserCsv(items);
-  const rows = parseCSV(csv);
+  const csv = await exportToBrowserCsv(items);
+  const rows = await parseCSV(csv);
   assertEquals(rows.length, 2); // Header + 1 login row (note is ignored)
   assertEquals(rows[0], ["name", "url", "username", "password", "note"]);
 
@@ -52,7 +52,7 @@ test("Export CSV - Browser CSV format", () => {
   assertEquals(loginRow[4], "Line1\nLine2");
 });
 
-test("Export CSV - Bitwarden CSV format", () => {
+test("Export CSV - Bitwarden CSV format", async () => {
   const items: VaultItem[] = [
     {
       id: "1",
@@ -90,8 +90,8 @@ test("Export CSV - Bitwarden CSV format", () => {
     },
   ];
 
-  const csv = exportToBitwardenCsv(items);
-  const rows = parseCSV(csv);
+  const csv = await exportToBitwardenCsv(items);
+  const rows = await parseCSV(csv);
 
   assertEquals(rows.length, 3); // Header + Login + Note
   assertEquals(rows[0], [

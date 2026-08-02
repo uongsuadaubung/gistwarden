@@ -4,6 +4,7 @@ import {
 } from "@gistwarden/network";
 import {
   hashPasswordSHA1PrefixSuffix,
+  parseHibpResponseWasm,
   type TranslationKey,
 } from "@gistwarden/domain";
 
@@ -22,15 +23,8 @@ export async function checkPasswordHIBPUseCase(
       return { count: 0, errorKey: fetchRes.error };
     }
 
-    const text = fetchRes.value;
-    const lines = text.split("\n");
-    for (const line of lines) {
-      const [lineSuffix, countStr] = line.trim().split(":");
-      if (lineSuffix === suffix) {
-        return { count: parseInt(countStr, 10) || 0 };
-      }
-    }
-    return { count: 0 };
+    const count = parseHibpResponseWasm(fetchRes.value, suffix);
+    return { count };
   } catch {
     return { count: 0, errorKey: "report_error_network" };
   }

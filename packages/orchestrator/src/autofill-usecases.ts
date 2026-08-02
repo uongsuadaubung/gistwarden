@@ -204,7 +204,6 @@ export async function checkAutofillSuggestionUseCase(
   const matches = filterMatchingDomainItems(
     vaultData.items,
     domainStr,
-    VaultItemType.Login,
   );
 
   const matchingAccounts = matches

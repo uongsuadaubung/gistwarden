@@ -17,6 +17,10 @@ import {
 import { ExtensionSettingsSchema } from "@/core/storage-schemas.ts";
 import { syncLockStateBadge } from "@/extension/background-badge.ts";
 import { setupAlarmsListener } from "@/extension/background-alarms.ts";
+import { initWasmAsync } from "@gistwarden/domain";
+
+// Warm up WASM asynchronously on extension background startup
+initWasmAsync().catch(() => {});
 
 new MessageRouter()
   .use(registerAutofillRoutes)

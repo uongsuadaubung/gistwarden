@@ -367,3 +367,16 @@ export const checkDataBreachRoute = defineRoute({
     errorKey: TranslationKeySchema.optional(),
   }),
 });
+
+export const generateTotpRoute = defineRoute({
+  type: "GENERATE_TOTP",
+  payloadSchema: z.object({
+    type: z.literal("GENERATE_TOTP"),
+    secret: z.string(),
+  }),
+  responseSchema: z.object({
+    success: z.boolean(),
+    code: z.string().optional(),
+    errorKey: TranslationKeySchema.optional(),
+  }),
+});

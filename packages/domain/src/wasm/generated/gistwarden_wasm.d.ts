@@ -1,0 +1,118 @@
+/* tslint:disable */
+/* eslint-disable */
+export function greet(name: string): string;
+export function generate_passphrase(num_words: number, word_separator: string, capitalize: boolean, include_number: boolean, wordlist?: string[] | null): string;
+export function get_hostname(input: string): string;
+export function get_base_domain(input: string): string;
+export function parse_bitwarden_csv_import(csv_text: string, existing_folders_json: string): string;
+export function estimate_password_strength(password: string, user_inputs_json: string): string;
+export function merge_vault_payload(local_json: string, remote_json: string, last_sync_timestamp: bigint): string;
+export function merge_folders(local_folders_json: string, remote_folders_json: string): string;
+export function merge_vault_items(local_items_json: string, remote_items_json: string, last_sync_timestamp: bigint): string;
+export function parse_json_import(json_text: string, existing_items_json: string, existing_folders_json: string): string;
+export function export_to_json(items_json: string, folders_json: string): string;
+export function filter_matching_domain_items(items_json: string, domain_or_url: string, override_mode?: number | null): string;
+export function parse_hibp_response(response_text: string, suffix: string): number;
+export function is_single_uri_match(stored_uri: string, current_url: string, match_mode: number | null | undefined, override_mode: number | null | undefined, target_host: string, item_host: string, target_base: string, item_base: string): boolean;
+export function filter_vault_items_by_query(items_json: string, search_query: string, filter_type: string): string;
+export function decode_qr_code(width: number, height: number, rgba_bytes: Uint8Array): string;
+export function decode_qr_from_bytes(image_bytes: Uint8Array): string;
+export function parse_csv(text: string): string;
+export function unparse_csv(rows_json: string): string;
+export function export_to_browser_csv(items_json: string): string;
+export function export_to_bitwarden_csv(items_json: string, folders_json: string): string;
+export function parse_browser_csv_import(csv_text: string): string;
+export function fast_xor(data: Uint8Array, key: Uint8Array): Uint8Array;
+export function parse_totp_secret(raw_secret: string): string;
+export function generate_totp_code(secret_base32: string, timestamp_ms: bigint, period_secs: bigint): string;
+export function cbor_encode_length(major_type: number, length: number): Uint8Array;
+export function cbor_text_string(s: string): Uint8Array;
+export function cbor_byte_string(bytes: Uint8Array): Uint8Array;
+export function cbor_map_header(num_pairs: number): Uint8Array;
+export function cbor_positive_int(n: number): Uint8Array;
+export function cbor_negative_int(n: number): Uint8Array;
+export function concat_bytes(chunks: Array<any>): Uint8Array;
+export function get_random_bounded_int(max: number): number;
+export function generate_password(length: number, uppercase: boolean, lowercase: boolean, numbers: boolean, specials: boolean, avoid_ambiguous: boolean, min_numbers: number, min_specials: number): string;
+export function derive_key_argon2id(password: string, salt: Uint8Array, iterations?: number | null, memory_kib?: number | null, hash_length?: number | null): Uint8Array;
+export function hash_password_argon2id(password: string, salt: Uint8Array, iterations?: number | null, memory_kib?: number | null): string;
+export function sha1_prefix_suffix(password: string): string;
+export function hmac_sha256(message: string, secret_key: string): string;
+export function p1363_to_der(signature: Uint8Array): Uint8Array;
+export function parse_ssh_key(private_key_text: string): string[];
+export function pack_attestation_object(auth_data: Uint8Array): Uint8Array;
+export function encode_cose_ec2_public_key(x: Uint8Array, y: Uint8Array): Uint8Array;
+
+export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
+
+export interface InitOutput {
+  readonly memory: WebAssembly.Memory;
+  readonly cbor_byte_string: (a: number, b: number, c: number) => void;
+  readonly cbor_encode_length: (a: number, b: number, c: number) => void;
+  readonly cbor_map_header: (a: number, b: number) => void;
+  readonly cbor_negative_int: (a: number, b: number) => void;
+  readonly cbor_positive_int: (a: number, b: number) => void;
+  readonly cbor_text_string: (a: number, b: number, c: number) => void;
+  readonly concat_bytes: (a: number, b: number) => void;
+  readonly decode_qr_code: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly decode_qr_from_bytes: (a: number, b: number, c: number) => void;
+  readonly derive_key_argon2id: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
+  readonly encode_cose_ec2_public_key: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly estimate_password_strength: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly export_to_bitwarden_csv: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly export_to_browser_csv: (a: number, b: number, c: number) => void;
+  readonly export_to_json: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly fast_xor: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly filter_matching_domain_items: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+  readonly filter_vault_items_by_query: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+  readonly generate_passphrase: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
+  readonly generate_password: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
+  readonly generate_totp_code: (a: number, b: number, c: number, d: bigint, e: bigint) => void;
+  readonly get_base_domain: (a: number, b: number, c: number) => void;
+  readonly get_hostname: (a: number, b: number, c: number) => void;
+  readonly get_random_bounded_int: (a: number) => number;
+  readonly greet: (a: number, b: number, c: number) => void;
+  readonly hash_password_argon2id: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+  readonly hmac_sha256: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly is_single_uri_match: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number) => number;
+  readonly merge_folders: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly merge_vault_items: (a: number, b: number, c: number, d: number, e: number, f: bigint) => void;
+  readonly merge_vault_payload: (a: number, b: number, c: number, d: number, e: number, f: bigint) => void;
+  readonly p1363_to_der: (a: number, b: number, c: number) => void;
+  readonly pack_attestation_object: (a: number, b: number, c: number) => void;
+  readonly parse_bitwarden_csv_import: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly parse_browser_csv_import: (a: number, b: number, c: number) => void;
+  readonly parse_csv: (a: number, b: number, c: number) => void;
+  readonly parse_hibp_response: (a: number, b: number, c: number, d: number) => number;
+  readonly parse_json_import: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+  readonly parse_ssh_key: (a: number, b: number, c: number) => void;
+  readonly parse_totp_secret: (a: number, b: number, c: number) => void;
+  readonly sha1_prefix_suffix: (a: number, b: number, c: number) => void;
+  readonly unparse_csv: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_0: (a: number) => void;
+  readonly __wbindgen_export_1: (a: number, b: number) => number;
+  readonly __wbindgen_export_2: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
+  readonly __wbindgen_export_3: (a: number, b: number, c: number) => void;
+}
+
+export type SyncInitInput = BufferSource | WebAssembly.Module;
+/**
+* Instantiates the given `module`, which can either be bytes or
+* a precompiled `WebAssembly.Module`.
+*
+* @param {{ module: SyncInitInput }} module - Passing `SyncInitInput` directly is deprecated.
+*
+* @returns {InitOutput}
+*/
+export function initSync(module: { module: SyncInitInput } | SyncInitInput): InitOutput;
+
+/**
+* If `module_or_path` is {RequestInfo} or {URL}, makes a request and
+* for everything else, calls `WebAssembly.instantiate` directly.
+*
+* @param {{ module_or_path: InitInput | Promise<InitInput> }} module_or_path - Passing `InitInput` directly is deprecated.
+*
+* @returns {Promise<InitOutput>}
+*/
+export default function __wbg_init (module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>): Promise<InitOutput>;

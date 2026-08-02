@@ -9,8 +9,8 @@ import {
   getRandomBoundedInt,
 } from "@gistwarden/domain";
 
-test("generator-utils: generatePassword respects length", () => {
-  const pwd = generatePassword({
+test("generator-utils: generatePassword respects length", async () => {
+  const pwd = await generatePassword({
     length: 20,
     uppercase: true,
     lowercase: true,
@@ -26,8 +26,8 @@ test("generator-utils: generatePassword respects length", () => {
   }
 });
 
-test("generator-utils: generatePassword ensures min constraints", () => {
-  const pwd = generatePassword({
+test("generator-utils: generatePassword ensures min constraints", async () => {
+  const pwd = await generatePassword({
     length: 20,
     uppercase: true,
     lowercase: true,
@@ -47,8 +47,8 @@ test("generator-utils: generatePassword ensures min constraints", () => {
   }
 });
 
-test("generator-utils: generatePassphrase respects word count", () => {
-  const phrase = generatePassphrase({
+test("generator-utils: generatePassphrase respects word count", async () => {
+  const phrase = await generatePassphrase({
     numWords: 5,
     wordSeparator: "-",
     capitalize: false,
@@ -61,8 +61,8 @@ test("generator-utils: generatePassphrase respects word count", () => {
   }
 });
 
-test("generator-utils: generatePassphrase includes numbers if requested", () => {
-  const phrase = generatePassphrase({
+test("generator-utils: generatePassphrase includes numbers if requested", async () => {
+  const phrase = await generatePassphrase({
     numWords: 5,
     wordSeparator: "-",
     capitalize: false,

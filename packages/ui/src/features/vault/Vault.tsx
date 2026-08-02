@@ -281,7 +281,6 @@ export const Vault: Component = () => {
     return filterMatchingDomainItems(
       accountStore.vaultItems,
       currentTabDomain(),
-      selectedFilterType(),
     );
   };
 
@@ -289,7 +288,7 @@ export const Vault: Component = () => {
     let items = filterVaultItemsByQuery(
       accountStore.vaultItems,
       search(),
-      selectedFilterType(),
+      String(selectedFilterType()),
     );
 
     if (showFilterPanel()) {
@@ -342,7 +341,7 @@ export const Vault: Component = () => {
       : "";
     if (!rawSecret.trim()) return;
 
-    const generateTotpResult = generateTotpSafe(
+    const generateTotpResult = await generateTotpSafe(
       rawSecret,
       settingsStore.timeOffset,
     );

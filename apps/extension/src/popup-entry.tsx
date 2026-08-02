@@ -1,4 +1,5 @@
 import { render } from "solid-js/web";
+import { initWasmAsync } from "@gistwarden/domain";
 import {
   type Component,
   createEffect,
@@ -80,6 +81,9 @@ import ReportDataBreach from "@/features/reports/ReportDataBreach.tsx";
 import ConfirmModal from "@/components/ui/ConfirmModal.tsx";
 import RepromptModal from "@/components/ui/RepromptModal.tsx";
 import { t } from "@/core/i18n.ts";
+
+// Warm up WASM asynchronously on popup startup
+initWasmAsync().catch(() => {});
 
 const RouterSyncHandler: Component = () => {
   const nav = useNavigate();

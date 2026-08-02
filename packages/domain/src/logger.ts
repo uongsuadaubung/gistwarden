@@ -1,16 +1,23 @@
-import { createConsola } from "consola";
-
-const baseLogger = createConsola({
-  level: 3,
-});
+function createTagLogger(tag: string) {
+  const prefix = `[Gistwarden] [${tag}]`;
+  return {
+    log: (...args: unknown[]) => console.log(prefix, ...args),
+    info: (...args: unknown[]) => console.info(prefix, ...args),
+    warn: (...args: unknown[]) => console.warn(prefix, ...args),
+    error: (...args: unknown[]) => console.error(prefix, ...args),
+    debug: (...args: unknown[]) => console.debug(prefix, ...args),
+    trace: (...args: unknown[]) => console.trace(prefix, ...args),
+    withTag: (subTag: string) => createTagLogger(`${tag}:${subTag}`),
+  };
+}
 
 export const logger = {
-  crypto: baseLogger.withTag("Crypto"),
-  storage: baseLogger.withTag("Storage"),
-  network: baseLogger.withTag("Network"),
-  messaging: baseLogger.withTag("Messaging"),
-  auth: baseLogger.withTag("Auth"),
-  vault: baseLogger.withTag("Vault"),
-  fido2: baseLogger.withTag("Fido2"),
-  app: baseLogger.withTag("App"),
+  crypto: createTagLogger("Crypto"),
+  storage: createTagLogger("Storage"),
+  network: createTagLogger("Network"),
+  messaging: createTagLogger("Messaging"),
+  auth: createTagLogger("Auth"),
+  vault: createTagLogger("Vault"),
+  fido2: createTagLogger("Fido2"),
+  app: createTagLogger("App"),
 };

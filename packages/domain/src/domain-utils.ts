@@ -1,8 +1,12 @@
-import { getDomain, getHostname as tldtsGetHostname } from "tldts";
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "./i18n.ts";
 import { isLoginItem } from "./vault-types.ts";
 import type { VaultItem } from "./vault-schemas.ts";
+import {
+  getBaseDomainWasm,
+  getHostnameWasm,
+  initWasmAsync,
+} from "./wasm/index.ts";
 
 /**
  * Phân tích URL an toàn sử dụng neverthrow Result.
@@ -17,34 +21,28 @@ export function safeParseUrl(url: string): Result<URL, TranslationKey> {
 }
 
 /**
- * Trích xuất Hostname từ một URL hoặc chuỗi tên miền (đã loại bỏ www., protocol, port, path).
+ * Trích xuất Hostname từ một URL hoặc chuỗi tên miền ủy quyền 100% cho Rust WASM.
  */
 export function getHostname(input: string): string {
-  if (!input) return "";
-  const host = tldtsGetHostname(input);
-  if (!host) return "";
-  return host.startsWith("www.") ? host.slice(4) : host;
+  return getHostnameWasm(input);
+}
+
+export async function getHostnameAsync(input: string): Promise<string> {
+  await initWasmAsync();
+  return getHostnameWasm(input);
 }
 
 /**
- * Trích xuất base domain (registered domain / eTLD+1) từ một URL hoặc Hostname sử dụng tldts
+ * Trích xuất base domain (registered domain / eTLD+1) từ một URL hoặc Hostname ủy quyền 100% cho Rust WASM
  * dựa trên danh sách chuẩn Public Suffix List (PSL).
- *
- * Ví dụ:
- * - auth.github.com -> github.com
- * - google.com.vn -> google.com.vn
- * - sub.google.com.vn -> google.com.vn
- * - sub.k12.wa.us -> k12.wa.us
- * - localhost -> localhost
- * - 127.0.0.1 -> 127.0.0.1
  */
 export function getBaseDomain(input: string): string {
-  if (!input) return "";
-  const domain = getDomain(input);
-  if (domain) {
-    return domain;
-  }
-  return getHostname(input);
+  return getBaseDomainWasm(input);
+}
+
+export async function getBaseDomainAsync(input: string): Promise<string> {
+  await initWasmAsync();
+  return getBaseDomainWasm(input);
 }
 
 /**
