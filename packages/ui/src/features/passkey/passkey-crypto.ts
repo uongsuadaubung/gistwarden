@@ -6,6 +6,7 @@ import {
   encodeCoseEC2PublicKey,
   packAttestationObject,
 } from "@/core/cbor-utils.ts";
+import { p1363ToDerWasm } from "@/core/crypto.ts";
 
 // IANA COSE Key Parameters & Algorithm Identifiers (RFC 8152 / RFC 9052)
 export const COSE_KEY_PARAM_KTY = 1;
@@ -26,47 +27,18 @@ export const AUTH_DATA_FLAG_BS = 0x10; // Backup State (Bit 4)
 export const AUTH_DATA_FLAG_AT = 0x40; // Attested Credential Data Present (Bit 6)
 
 /**
- * Hàm hỗ trợ mã hóa số nguyên dưới dạng cấu trúc DER Integer (ASN.1 DER Tag 0x02).
- */
-function encodeDerInteger(bytes: Uint8Array): Uint8Array {
-  let start = 0;
-  while (start < bytes.length - 1 && bytes[start] === 0) {
-    start++;
-  }
-  const trimmed = bytes.subarray(start);
-  const needsZero = (trimmed[0] & 0x80) !== 0;
-  const len = trimmed.length + (needsZero ? 1 : 0);
-  const res = new Uint8Array(2 + len);
-  res[0] = 0x02;
-  res[1] = len;
-  if (needsZero) {
-    res[2] = 0x00;
-    res.set(trimmed, 3);
-  } else {
-    res.set(trimmed, 2);
-  }
-  return res;
-}
-
-/**
  * Chuyển đổi định dạng chữ ký ECDSA từ chuẩn IEEE P1363 (chuỗi nhị phân thô (r || s) 64-byte)
- * sang định dạng ASN.1 DER (RFC 3279 / RFC 5758 / X.509 DER structure).
+ * sang định dạng ASN.1 DER (RFC 3279 / RFC 5758 / X.509 DER structure) ủy quyền cho Rust WebAssembly.
  */
 export function p1363ToDer(
   signature: Uint8Array,
 ): Result<Uint8Array, TranslationKey> {
-  if (signature.length !== 64) {
+  try {
+    const der = p1363ToDerWasm(signature);
+    return ok(der);
+  } catch (e: unknown) {
     return err("toast_error");
   }
-  const rBytes = encodeDerInteger(signature.subarray(0, 32));
-  const sBytes = encodeDerInteger(signature.subarray(32, 64));
-  const bodyLen = rBytes.length + sBytes.length;
-  const dst = new Uint8Array(2 + bodyLen);
-  dst[0] = 0x30;
-  dst[1] = bodyLen;
-  dst.set(rBytes, 2);
-  dst.set(sBytes, 2 + rBytes.length);
-  return ok(dst);
 }
 
 // Helpers for Base64URL conversions using native Uint8Array built-ins
@@ -195,7 +167,10 @@ export async function createPasskeyKeyPair(): Promise<
       true,
       ["sign"],
     );
-    return ok(res as CryptoKeyPair);
+    if (res && "publicKey" in res && "privateKey" in res) {
+      return ok(res);
+    }
+    return err("fido2_error_create_failed");
   } catch (e) {
     console.error("[Passkey Crypto] Key generation error:", e);
     return err("fido2_error_create_failed");

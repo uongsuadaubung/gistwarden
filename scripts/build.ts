@@ -1,3 +1,37 @@
+/**
+ * ============================================================================
+ * GISTWARDEN BUILD SCRIPT & CLI DOCUMENTATION
+ * ============================================================================
+ * 
+ * Mô tả:
+ * Script đóng gói đa mục tiêu cho Gistwarden hỗ trợ 4 chế độ build chính:
+ * 
+ * 1. `dev` (Development Mode - Mặc định):
+ *    - Build duy nhất thư mục `dist/chrome` (Unpacked Extension cho Chrome/Edge).
+ *    - Nén `dist/chrome` sang `chrome.zip` bằng mức nén nhanh nhất (`Fastest`).
+ *    - Copy `chrome.zip` sang `firefox.zip` và tráo file `manifest.json` chuẩn Firefox vào.
+ *    - Xóa file tạm `chrome.zip` (vì Chrome chạy trực tiếp thư mục `dist/chrome`).
+ *    - Đầu ra: `dist/chrome/` và `dist/firefox.zip`.
+ * 
+ * 2. `extension` (Extension Release Mode):
+ *    - Build thư mục `dist/chrome` và copy sang thư mục `dist/firefox`.
+ *    - Tạo file `manifest.json` chuẩn cho Firefox trong `dist/firefox`.
+ *    - Nén cả 2 thư mục thành `dist/chrome.zip` và `dist/firefox.zip`.
+ *    - Đầu ra: `dist/chrome/`, `dist/firefox/`, `dist/chrome.zip`, `dist/firefox.zip`.
+ * 
+ * 3. `web` (Web Application Mode):
+ *    - Build ứng dụng Web độc lập vào thư mục `dist/web`.
+ *    - Đầu ra: `dist/web/`.
+ * 
+ * 4. `all` (Full Release Mode):
+ *    - Thực hiện cả 2 quy trình `extension` và `web` với mức nén cao nhất (`Optimal`).
+ *    - Đầu ra: `dist/chrome/`, `dist/firefox/`, `dist/chrome.zip`, `dist/firefox.zip`, `dist/web/`.
+ * 
+ * Cú pháp chạy:
+ *   bun run build [dev | extension | web | all]
+ * ============================================================================
+ */
+
 import {
   copyFileSync,
   existsSync,
@@ -8,8 +42,8 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join, relative } from "node:path";
-import { zipSync } from "fflate";
+import { execSync } from "node:child_process";
+import { join } from "node:path";
 import * as esbuild from "esbuild";
 import { solidPlugin } from "esbuild-plugin-solid";
 
@@ -23,23 +57,33 @@ const extSrcDir = join(projectRoot, "apps", "extension", "src");
 const webSrcDir = join(projectRoot, "apps", "web", "src");
 const uiDir = join(projectRoot, "packages", "ui", "src");
 
-// Determine build target and flags from arguments
+// Determine build target and flags from CLI arguments
 const args = process.argv.slice(2);
-const validTargets = ["extension", "chrome", "firefox", "web", "all", "dev"];
-const targetArg = args.find((a) => validTargets.includes(a)) || "extension";
-const isFastDev = args.includes("--fast") || targetArg === "dev";
+const validTargets = ["dev", "extension", "web", "all"];
+const targetArg = args.find((a) => validTargets.includes(a)) || "dev";
 
-const buildChrome = ["extension", "chrome", "all", "dev"].includes(targetArg);
-const buildFirefox = ["extension", "firefox", "all", "dev"].includes(targetArg);
-const buildWeb = ["web", "all"].includes(targetArg);
+const isDevMode = targetArg === "dev";
+const isExtensionMode = targetArg === "extension";
+const isWebMode = targetArg === "web";
+const isAllMode = targetArg === "all";
+
+const isFastDev = isDevMode || args.includes("--fast");
+const isHighCompression = isAllMode || (isExtensionMode && !args.includes("--fast"));
+
+const buildChrome = isDevMode || isExtensionMode || isAllMode;
+const buildFirefox = isDevMode || isExtensionMode || isAllMode;
+const buildWeb = isWebMode || isAllMode;
 const buildExtension = buildChrome || buildFirefox;
 
 // Clean and create target output directories
 if (buildExtension) {
-  [chromeDir, firefoxDir].forEach((dir) => {
-    if (existsSync(dir)) rmSync(dir, { recursive: true });
-    mkdirSync(dir, { recursive: true });
-  });
+  if (existsSync(chromeDir)) rmSync(chromeDir, { recursive: true });
+  mkdirSync(chromeDir, { recursive: true });
+
+  if (isExtensionMode || isAllMode) {
+    if (existsSync(firefoxDir)) rmSync(firefoxDir, { recursive: true });
+    mkdirSync(firefoxDir, { recursive: true });
+  }
 }
 if (buildWeb) {
   if (existsSync(webDistDir)) rmSync(webDistDir, { recursive: true });
@@ -57,6 +101,45 @@ function bundleCss(entryPath: string): string {
   return content;
 }
 
+function getFirefoxManifestContent(): string {
+  const filePath = join(extSrcDir, "manifest.json");
+  if (!existsSync(filePath)) return "";
+  let content = readFileSync(filePath, "utf8");
+  const manifestObj = JSON.parse(content);
+  const constantsContent = readFileSync(
+    join(projectRoot, "packages", "domain", "src", "constants.ts"),
+    "utf8",
+  );
+  const appNameMatch = constantsContent.match(
+    /export const APP_NAME = "([^"]+)";/,
+  );
+  const appName = appNameMatch ? appNameMatch[1] : "Gistwarden";
+  const appNameLower = appName.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  manifestObj.name = appName;
+  manifestObj.action.default_title = appName;
+  manifestObj.background = {
+    scripts: ["background.js"],
+    type: "module",
+  };
+  manifestObj.browser_specific_settings = {
+    gecko: {
+      id: `${appNameLower}@uongsuadaubung.github.io`,
+      strict_min_version: "142.0",
+      data_collection_permissions: {
+        required: ["none"],
+      },
+    },
+  };
+  manifestObj.web_accessible_resources = [
+    {
+      resources: ["gistwarden_wasm_bg.wasm"],
+      matches: ["<all_urls>"],
+    },
+  ];
+  return JSON.stringify(manifestObj, null, 2);
+}
+
 function copyAssets() {
   console.log(`Copying assets (${targetArg.toUpperCase()} mode)...`);
 
@@ -68,7 +151,6 @@ function copyAssets() {
     /export const APP_NAME = "([^"]+)";/,
   );
   const appName = appNameMatch ? appNameMatch[1] : "Gistwarden";
-  const appNameLower = appName.toLowerCase().replace(/[^a-z0-9]/g, "");
   const bundledAppCss = bundleCss(join(uiDir, "styles", "app.css"));
 
   function copyDirRecursive(src: string, dest: string) {
@@ -90,33 +172,27 @@ function copyAssets() {
 
   if (buildExtension) {
     const assets = ["manifest.json", "popup.html", "guide.html"];
-    const copyExtensionAssets = (targetDir: string, isFirefox = false) => {
+    const copyExtensionAssetsToDir = (targetDir: string, isFirefox = false) => {
       assets.forEach((file) => {
         const filePath = join(extSrcDir, file);
         if (!existsSync(filePath)) return;
         let content = readFileSync(filePath, "utf8");
 
         if (file === "manifest.json") {
-          const manifestObj = JSON.parse(content);
-          manifestObj.name = appName;
-          manifestObj.action.default_title = appName;
-
           if (isFirefox) {
-            manifestObj.background = {
-              scripts: ["background.js"],
-              type: "module",
-            };
-            manifestObj.browser_specific_settings = {
-              gecko: {
-                id: `${appNameLower}@uongsuadaubung.github.io`,
-                strict_min_version: "142.0",
-                data_collection_permissions: {
-                  required: ["none"],
-                },
+            content = getFirefoxManifestContent();
+          } else {
+            const manifestObj = JSON.parse(content);
+            manifestObj.name = appName;
+            manifestObj.action.default_title = appName;
+            manifestObj.web_accessible_resources = [
+              {
+                resources: ["gistwarden_wasm_bg.wasm"],
+                matches: ["<all_urls>"],
               },
-            };
+            ];
+            content = JSON.stringify(manifestObj, null, 2);
           }
-          content = JSON.stringify(manifestObj, null, 2);
         }
         writeFileSync(join(targetDir, file), content);
       });
@@ -126,13 +202,28 @@ function copyAssets() {
       copyDirRecursive(join(uiDir, "images"), join(targetDir, "images"));
       copyDirRecursive(join(extSrcDir, "images"), join(targetDir, "images"));
 
-      // Copy bundled CSS assets
       writeFileSync(join(targetDir, "popup.css"), bundledAppCss);
       writeFileSync(join(targetDir, "guide.css"), bundledAppCss);
+
+      const wasmBinaryPath = join(
+        projectRoot,
+        "packages",
+        "domain",
+        "src",
+        "wasm",
+        "generated",
+        "gistwarden_wasm_bg.wasm",
+      );
+      if (existsSync(wasmBinaryPath)) {
+        copyFileSync(wasmBinaryPath, join(targetDir, "gistwarden_wasm_bg.wasm"));
+      }
     };
 
-    copyExtensionAssets(chromeDir);
-    copyExtensionAssets(firefoxDir, true);
+    copyExtensionAssetsToDir(chromeDir, false);
+
+    if (isExtensionMode || isAllMode) {
+      copyExtensionAssetsToDir(firefoxDir, true);
+    }
   }
 
   if (buildWeb) {
@@ -148,28 +239,49 @@ function copyAssets() {
   console.log("✓ Assets copied successfully.");
 }
 
-function getFolderFilesRecursive(dir: string, baseDir: string): Record<string, Uint8Array> {
-  const files: Record<string, Uint8Array> = {};
-  const entries = readdirSync(dir);
-  for (const entry of entries) {
-    const fullPath = join(dir, entry);
-    const relPath = relative(baseDir, fullPath).replace(/\\/g, "/");
-    if (statSync(fullPath).isDirectory()) {
-      Object.assign(files, getFolderFilesRecursive(fullPath, baseDir));
-    } else {
-      files[relPath] = new Uint8Array(readFileSync(fullPath));
-    }
-  }
-  return files;
-}
-
 async function zipFolderNative(sourceDir: string, outputFile: string): Promise<void> {
   if (!existsSync(sourceDir)) return;
-  const filesMap = getFolderFilesRecursive(sourceDir, sourceDir);
-  if (Object.keys(filesMap).length === 0) return;
-  const compressionLevel = isFastDev ? 1 : 9;
-  const zipped = zipSync(filesMap, { level: compressionLevel });
-  writeFileSync(outputFile, zipped);
+  if (existsSync(outputFile)) {
+    try {
+      rmSync(outputFile, { force: true });
+    } catch {
+      // Ignore transient file handle lock
+    }
+  }
+
+  const zipLevelFlag = isHighCompression ? "-9" : "-1";
+
+  try {
+    if (process.platform === "win32") {
+      const winSourceDir = sourceDir.replace(/\//g, "\\");
+      const winOutput = outputFile.replace(/\//g, "\\");
+      execSync(`tar.exe -a -c -f "${winOutput}" -C "${winSourceDir}" *`, { stdio: "ignore" });
+    } else {
+      execSync(`zip ${zipLevelFlag} -r -q "${outputFile}" *`, { cwd: sourceDir, stdio: "ignore" });
+    }
+  } catch (err: any) {
+    const errorDetails = err?.stderr?.toString() || err?.stdout?.toString() || err?.message || String(err);
+    console.warn(`[Build] Warning: Native zip creation failed:`, errorDetails);
+  }
+}
+
+function swapManifestInZip(zipPath: string, manifestFilePath: string): void {
+  if (process.platform === "win32") {
+    const winZipPath = zipPath.replace(/\//g, "\\");
+    const winManifestPath = manifestFilePath.replace(/\//g, "\\");
+    const psScript = `
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $zip = [System.IO.Compression.ZipFile]::Open('${winZipPath}', 'Update')
+    $entry = $zip.GetEntry('manifest.json')
+    if ($entry) { $entry.Delete() }
+    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, '${winManifestPath}', 'manifest.json')
+    $zip.Dispose()
+    `;
+    const encoded = Buffer.from(psScript, "utf16le").toString("base64");
+    execSync(`powershell -NoProfile -EncodedCommand ${encoded}`, { stdio: "ignore" });
+  } else {
+    execSync(`zip -j -q "${zipPath}" "${manifestFilePath}"`, { stdio: "ignore" });
+  }
 }
 
 async function createZipPackages() {
@@ -178,27 +290,36 @@ async function createZipPackages() {
   const chromeZipPath = join(distDir, "chrome.zip");
   const firefoxZipPath = join(distDir, "firefox.zip");
 
-  const tasks: Promise<void>[] = [];
-
-  // Skip chrome.zip in dev mode (Chrome uses unpacked dist/chrome)
-  if (buildChrome && !isFastDev && !args.includes("--no-zip-chrome")) {
-    tasks.push(zipFolderNative(chromeDir, chromeZipPath));
-  }
-
-  // Always create firefox.zip when building firefox (including dev mode)
-  if (buildFirefox && !args.includes("--no-zip-firefox")) {
-    tasks.push(zipFolderNative(firefoxDir, firefoxZipPath));
-  }
-
-  if (tasks.length > 0) {
-    console.log("Creating ZIP packages...");
-    try {
-      await Promise.all(tasks);
-      console.log("✓ ZIP packaging successful.");
-    } catch (zipErr) {
-      console.error("ZIP packaging failed:", zipErr);
-      process.exit(1);
+  console.log("Creating ZIP packages...");
+  try {
+    if (isDevMode) {
+      // DEV MODE: Fast path - Zip chrome folder ONCE, copy to firefox.zip and swap manifest in 0.05s!
+      await zipFolderNative(chromeDir, chromeZipPath);
+      const tempFfManifest = join(distDir, "_firefox_manifest.json");
+      writeFileSync(tempFfManifest, getFirefoxManifestContent());
+      if (existsSync(firefoxZipPath)) {
+        try {
+          rmSync(firefoxZipPath, { force: true });
+        } catch {
+          // Ignore
+        }
+      }
+      copyFileSync(chromeZipPath, firefoxZipPath);
+      swapManifestInZip(firefoxZipPath, tempFfManifest);
+      if (existsSync(tempFfManifest)) rmSync(tempFfManifest);
+      if (existsSync(chromeZipPath)) rmSync(chromeZipPath);
+    } else {
+      // EXTENSION / ALL MODE: Compress both chromeDir and firefoxDir
+      await Promise.all([
+        zipFolderNative(chromeDir, chromeZipPath),
+        zipFolderNative(firefoxDir, firefoxZipPath),
+      ]);
     }
+
+    console.log("✓ ZIP packaging successful.");
+  } catch (zipErr) {
+    console.error("ZIP packaging failed:", zipErr);
+    process.exit(1);
   }
 }
 
@@ -216,7 +337,7 @@ async function runCommandOrExit(name: string, command: string, cmdArgs: string[]
   ]);
 
   if (exitCode !== 0) {
-    console.error(`\n❌ ${name} failed! Error output:\n`);
+    console.error(`❌ ${name} failed! Error output:\n`);
     if (stdoutStr.trim()) console.error(stdoutStr);
     if (stderrStr.trim()) console.error(stderrStr);
     process.exit(exitCode ?? 1);
@@ -224,13 +345,14 @@ async function runCommandOrExit(name: string, command: string, cmdArgs: string[]
 }
 
 async function runVerifications() {
-  console.log("Running TypeCheck & Tests...");
+  console.log("Running Lint, TypeCheck & Tests...");
   try {
     await Promise.all([
+      runCommandOrExit("bun lint", "bun", ["run", "lint"]),
       runCommandOrExit("bun typecheck", "bun", ["run", "typecheck"]),
       runCommandOrExit("bun test", "bun", ["test"]),
     ]);
-    console.log("✓ TypeCheck & Tests passed.");
+    console.log("✓ Lint, TypeCheck & Tests passed.");
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(errorMsg);
@@ -258,6 +380,7 @@ async function buildTargetDirectory(outputDir: string) {
     format: "esm",
     target: "es2022",
     plugins: [solidPlugin()],
+    minify: !isFastDev,
     define: { "process.env.NODE_ENV": '"production"' },
   });
 
@@ -268,7 +391,9 @@ async function buildTargetDirectory(outputDir: string) {
     format: "iife",
     target: "es2022",
     plugins: [solidPlugin()],
+    minify: !isFastDev,
     define: { "process.env.NODE_ENV": '"production"' },
+    logOverride: { "empty-import-meta": "silent" },
   });
 }
 
@@ -278,11 +403,14 @@ async function runBuild() {
   try {
     if (buildExtension) {
       await buildTargetDirectory(chromeDir);
-      readdirSync(chromeDir).forEach((file) => {
-        if (file.endsWith(".js")) {
-          copyFileSync(join(chromeDir, file), join(firefoxDir, file));
-        }
-      });
+
+      if (isExtensionMode || isAllMode) {
+        readdirSync(chromeDir).forEach((file) => {
+          if (file.endsWith(".js")) {
+            copyFileSync(join(chromeDir, file), join(firefoxDir, file));
+          }
+        });
+      }
     }
 
     if (buildWeb) {
@@ -293,6 +421,7 @@ async function runBuild() {
         format: "esm",
         target: "es2022",
         plugins: [solidPlugin()],
+        minify: !isFastDev,
         define: { "process.env.NODE_ENV": '"production"' },
       });
     }
@@ -303,17 +432,21 @@ async function runBuild() {
     }
 
     console.log("\nDone! Output files in /dist:");
-    if (buildExtension) {
-      if (buildChrome) console.log("  - chrome/        (unpacked Extension)");
-      if (buildFirefox) console.log("  - firefox/       (unpacked Extension)");
-      if (buildChrome && !isFastDev && !args.includes("--no-zip-chrome")) {
-        console.log("  - chrome.zip     (packed Chrome ZIP)");
-      }
-      if (buildFirefox && !args.includes("--no-zip-firefox")) {
-        console.log("  - firefox.zip    (packed Firefox ZIP)");
-      }
-    }
-    if (buildWeb) {
+    if (isDevMode) {
+      console.log("  - chrome/        (unpacked Extension)");
+      console.log("  - firefox.zip    (packed Firefox ZIP)");
+    } else if (isExtensionMode) {
+      console.log("  - chrome/        (unpacked Extension)");
+      console.log("  - firefox/       (unpacked Extension)");
+      console.log("  - chrome.zip     (packed Chrome ZIP)");
+      console.log("  - firefox.zip    (packed Firefox ZIP)");
+    } else if (isWebMode) {
+      console.log("  - web/           (standalone Web App)");
+    } else if (isAllMode) {
+      console.log("  - chrome/        (unpacked Extension)");
+      console.log("  - firefox/       (unpacked Extension)");
+      console.log("  - chrome.zip     (packed Chrome ZIP)");
+      console.log("  - firefox.zip    (packed Firefox ZIP)");
       console.log("  - web/           (standalone Web App)");
     }
   } catch (e) {

@@ -8,6 +8,7 @@ import {
   checkAutofillSuggestionUseCase,
   checkPendingNotificationRoute,
   credentialsSubmittedRoute,
+  generateTotpRoute,
   pendingNotificationManager,
   processSubmittedCredentialsUseCase,
   saveCredentialActionRoute,
@@ -19,8 +20,10 @@ import {
   type CheckPendingNotificationMsg,
   type CheckPendingNotificationResponse,
   type CredentialsSubmittedMsg,
+  generateTotpSafe,
   type SaveCredentialActionMsg,
   type SaveCredentialActionResponse,
+  type TranslationKey,
 } from "@gistwarden/domain";
 
 export async function handleSaveCredentialAction(
@@ -91,10 +94,21 @@ export async function handleSaveCredentialActionRoute(
   return { success: true };
 }
 
+export async function handleGenerateTotp(
+  payload: { secret: string },
+): Promise<{ success: boolean; code?: string; errorKey?: TranslationKey }> {
+  const totpRes = await generateTotpSafe(payload.secret);
+  if (totpRes.isOk()) {
+    return { success: true, code: totpRes.value };
+  }
+  return { success: false, errorKey: totpRes.error };
+}
+
 export function registerAutofillRoutes(router: MessageRouter): void {
   router
     .register(checkAutofillSuggestionRoute, handleCheckAutofillSuggestion)
     .register(checkPendingNotificationRoute, handleCheckPendingNotification)
     .register(credentialsSubmittedRoute, handleCredentialsSubmitted)
-    .register(saveCredentialActionRoute, handleSaveCredentialActionRoute);
+    .register(saveCredentialActionRoute, handleSaveCredentialActionRoute)
+    .register(generateTotpRoute, handleGenerateTotp);
 }

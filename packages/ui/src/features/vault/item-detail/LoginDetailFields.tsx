@@ -36,7 +36,7 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
     return circumference - (totpRemaining() / 30) * circumference;
   };
 
-  const updateTotp = () => {
+  const updateTotp = async () => {
     const rawSecret = props.item.login.totp || "";
     const epoch = Math.floor((Date.now() + settingsStore.timeOffset) / 1000);
     const remaining = 30 - (epoch % 30);
@@ -47,7 +47,7 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
       return;
     }
 
-    const generateRes = generateTotpSafe(rawSecret, settingsStore.timeOffset);
+    const generateRes = await generateTotpSafe(rawSecret, settingsStore.timeOffset);
 
     if (generateRes.isOk()) {
       const rawCode = generateRes.value;

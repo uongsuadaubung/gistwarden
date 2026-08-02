@@ -1,5 +1,3 @@
-import { getBaseDomain } from "@/core/domain-utils.ts";
-
 export interface SubmittedCredentials {
   domain: string;
   url: string;
@@ -297,7 +295,9 @@ export function extractSubmittedCredentials(
   }
 
   const currentUrl = window.location.href;
-  const domain = getBaseDomain(currentUrl);
+  const domain = window.location.hostname
+    ? window.location.hostname.replace(/^www\./i, "")
+    : window.location.host;
 
   return {
     domain,

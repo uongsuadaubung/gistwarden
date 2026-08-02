@@ -58,11 +58,11 @@ export const Generator: Component = () => {
     }
   };
 
-  const handleGeneratePassword = () => {
+  const handleGeneratePassword = async () => {
     const finalLen = Number(length());
     if (isNaN(finalLen) || finalLen < 9 || finalLen > 128) return;
 
-    const res = generatePassword({
+    const res = await generatePassword({
       length: finalLen,
       uppercase: uppercase(),
       lowercase: lowercase(),
@@ -80,11 +80,11 @@ export const Generator: Component = () => {
     }
   };
 
-  const handleGeneratePassphrase = () => {
+  const handleGeneratePassphrase = async () => {
     const finalWords = Number(numWords());
     if (isNaN(finalWords) || finalWords < 3 || finalWords > 20) return;
 
-    const res = generatePassphrase({
+    const res = await generatePassphrase({
       numWords: finalWords,
       wordSeparator: wordSeparator(),
       capitalize: capitalize(),

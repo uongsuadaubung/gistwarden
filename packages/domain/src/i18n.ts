@@ -802,6 +802,17 @@ type Lang = z.infer<typeof LangSchema>;
 
 export type TranslationKey = keyof Lang;
 
+export function isTranslationKey(key: string): key is TranslationKey {
+  return typeof key === "string" && key in en;
+}
+
+export function toTranslationKey(
+  key: string,
+  fallback: TranslationKey = "btn_save",
+): TranslationKey {
+  return isTranslationKey(key) ? key : fallback;
+}
+
 const dictionaries: Record<SupportLanguage, unknown> = {
   [SupportLanguage.En]: en,
   [SupportLanguage.Vi]: vi,

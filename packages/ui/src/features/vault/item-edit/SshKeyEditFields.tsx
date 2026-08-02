@@ -1,10 +1,11 @@
-import { type Component, createSignal, Show } from "solid-js";
+import { type Component, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import Input from "@/components/ui/Input.tsx";
 import { UploadIcon } from "@/icons/svg/index.ts";
 import { parseSshKey } from "@/core/crypto.ts";
 import FormField from "@/components/ui/FormField.tsx";
 import type { ItemEditFormState } from "@/features/vault/item-edit/vault-edit-helper.ts";
+import { showToast } from "@/core/ui-service.ts";
 
 interface SshKeyEditFieldsProps {
   formState: ItemEditFormState;
@@ -15,16 +16,13 @@ interface SshKeyEditFieldsProps {
 }
 
 export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
-  const [errorMsg, setErrorMsg] = createSignal("");
-
   const handlePasteSshKey = async () => {
-    setErrorMsg("");
     let text = "";
     try {
       text = await navigator.clipboard.readText();
     } catch (err) {
       console.error("Clipboard read error:", err);
-      setErrorMsg("Failed to read from clipboard or clipboard access denied");
+      showToast(t("ssh_invalid_key"), "error");
       return;
     }
 
@@ -34,8 +32,9 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
       props.updateForm("sshPrivateKey", text);
       props.updateForm("sshPublicKey", parsed.publicKey);
       props.updateForm("sshFingerprint", parsed.keyFingerprint);
+      showToast(t("toast_success"), "success");
     } else {
-      setErrorMsg(t("ssh_invalid_key"));
+      showToast(t("ssh_invalid_key"), "error");
     }
   };
 
@@ -43,9 +42,6 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
     <>
       <div class="detail-section-title">{t("vault_item_ssh_key")}</div>
       <div class="card mb-16">
-        <Show when={errorMsg()}>
-          <div class="alert alert-danger mb-12 m-16">{errorMsg()}</div>
-        </Show>
 
         {/* Private Key */}
         <FormField id="ssh-private-key" label={t("detail_ssh_private_key")}>

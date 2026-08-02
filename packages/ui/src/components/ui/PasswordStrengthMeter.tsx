@@ -1,4 +1,4 @@
-import { type Component, createMemo } from "solid-js";
+import { type Component, createSignal, createEffect } from "solid-js";
 import { evaluatePasswordStrength } from "@gistwarden/domain";
 import { t } from "@/core/i18n.ts";
 
@@ -22,41 +22,54 @@ interface StrengthResult {
 export const PasswordStrengthMeter: Component<PasswordStrengthMeterProps> = (
   props,
 ) => {
-  const strength = createMemo<StrengthResult>(() => {
-    const res = evaluatePasswordStrength(props.password);
+  const [strength, setStrength] = createSignal<StrengthResult>({
+    score: 0,
+    label: "pwd_strength_very_weak",
+    className: "pwd-strength-very-weak",
+  });
+
+  createEffect(async () => {
+    const res = await evaluatePasswordStrength(props.password);
+    let item: StrengthResult;
     switch (res.score) {
       case 0:
-        return {
+        item = {
           score: 0,
           label: "pwd_strength_very_weak",
           className: "pwd-strength-very-weak",
         };
+        break;
       case 1:
-        return {
+        item = {
           score: 1,
           label: "pwd_strength_weak",
           className: "pwd-strength-weak",
         };
+        break;
       case 2:
-        return {
+        item = {
           score: 2,
           label: "pwd_strength_fair",
           className: "pwd-strength-fair",
         };
+        break;
       case 3:
-        return {
+        item = {
           score: 3,
           label: "pwd_strength_strong",
           className: "pwd-strength-strong",
         };
+        break;
       case 4:
       default:
-        return {
+        item = {
           score: 4,
           label: "pwd_strength_very_strong",
           className: "pwd-strength-very-strong",
         };
+        break;
     }
+    setStrength(item);
   });
 
   return (

@@ -79,12 +79,11 @@ export const ItemEdit: Component = () => {
 
   const handleScanQr = async () => {
     setScanning(true);
-    setError("");
 
     // 1. Capture the visible tab as a PNG data URL
     const screenshotRes = await captureVisibleTab({ format: "png" });
     if (screenshotRes.isErr()) {
-      setError(t("edit_qr_error_fail"));
+      showToast(t("edit_qr_error_fail"), "error");
       setScanning(false);
       return;
     }
@@ -94,7 +93,7 @@ export const ItemEdit: Component = () => {
     const scanRes = await safeDecodeQr(screenshot);
 
     if (scanRes.isErr()) {
-      setError(t(scanRes.error));
+      showToast(t(scanRes.error), "error");
       setScanning(false);
       return;
     }
@@ -109,21 +108,17 @@ export const ItemEdit: Component = () => {
         updateForm("totpSecret", decodedStr); // Lưu toàn bộ URL để đồng bộ với định dạng cũ và Bitwarden
         showToast(t("edit_qr_success"), "success");
       } else {
-        setError(t("edit_qr_error_no_match"));
+        showToast(t("edit_qr_error_no_match"), "error");
       }
     } else {
-      setError(t("edit_qr_error_no_match"));
+      showToast(t("edit_qr_error_no_match"), "error");
     }
     setScanning(false);
   };
 
   const handleDelete = async () => {
     if (!uiStore.selectedItem?.id) return;
-    setError("");
-    const success = await deleteVaultItemWithConfirm(uiStore.selectedItem);
-    if (!success && uiStore.toastType === "error") {
-      setError(uiStore.toastMessage);
-    }
+    await deleteVaultItemWithConfirm(uiStore.selectedItem);
   };
 
   const handleDeleteFidoCredential = async (credId: string) => {
