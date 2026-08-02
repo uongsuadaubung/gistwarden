@@ -2,9 +2,9 @@ import {
   callWasmAndValidate,
   type Folder,
   FolderSchema,
-  mergeFoldersWasm,
-  mergeVaultItemsWasm,
-  mergeVaultPayloadWasm,
+  mergeFoldersWasmJs,
+  mergeVaultItemsWasmJs,
+  mergeVaultPayloadWasmJs,
   type VaultItem,
   VaultListSchema,
   type VaultPayload,
@@ -16,7 +16,7 @@ export function mergeFolders(
   remoteFolders: readonly Folder[],
 ): Folder[] {
   return callWasmAndValidate(
-    () => mergeFoldersWasm(JSON.stringify(localFolders), JSON.stringify(remoteFolders)),
+    () => mergeFoldersWasmJs(localFolders, remoteFolders),
     FolderSchema.array(),
     [],
   );
@@ -28,7 +28,7 @@ export function mergeVaultItems(
   lastSyncTimestamp: number,
 ): VaultItem[] {
   return callWasmAndValidate(
-    () => mergeVaultItemsWasm(JSON.stringify(localItems), JSON.stringify(remoteItems), lastSyncTimestamp),
+    () => mergeVaultItemsWasmJs(localItems, remoteItems, lastSyncTimestamp),
     VaultListSchema,
     [],
   );
@@ -41,7 +41,7 @@ export function mergeVaultPayload(
 ): VaultPayload {
   const fallback: VaultPayload = { folders: [], items: [], trash: [] };
   return callWasmAndValidate(
-    () => mergeVaultPayloadWasm(JSON.stringify(localPayload), JSON.stringify(remotePayload), lastSyncTimestamp),
+    () => mergeVaultPayloadWasmJs(localPayload, remotePayload, lastSyncTimestamp),
     VaultPayloadSchema,
     fallback,
   );
