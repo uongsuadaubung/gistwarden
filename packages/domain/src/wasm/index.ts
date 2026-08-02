@@ -419,6 +419,33 @@ export function batchParseHibpResponseWasm(
   );
 }
 
+export function generateAuthDataWasm(
+  rpId: string,
+  counter: number,
+  userPresent: boolean,
+  userVerified: boolean,
+  credentialId?: Uint8Array | null,
+  keyX?: Uint8Array | null,
+  keyY?: Uint8Array | null,
+): Uint8Array {
+  return wasm.generate_auth_data(
+    rpId,
+    counter,
+    userPresent,
+    userVerified,
+    credentialId ?? null,
+    keyX ?? null,
+    keyY ?? null,
+  );
+}
+
+export function generateAssertionSignatureBaseWasm(
+  authData: Uint8Array,
+  clientDataHash: Uint8Array,
+): Uint8Array {
+  return wasm.generate_assertion_signature_base(authData, clientDataHash);
+}
+
 export function isSingleUriMatchWasm(
   storedUri: string,
   currentUrl: string,

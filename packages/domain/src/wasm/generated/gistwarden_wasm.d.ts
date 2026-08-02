@@ -1,9 +1,11 @@
 /* tslint:disable */
 /* eslint-disable */
 export function greet(name: string): string;
+export function get_random_bounded_int(max: number): number;
+export function generate_password(length: number, uppercase: boolean, lowercase: boolean, numbers: boolean, specials: boolean, avoid_ambiguous: boolean, min_numbers: number, min_specials: number): string;
 export function generate_passphrase(num_words: number, word_separator: string, capitalize: boolean, include_number: boolean, wordlist?: string[] | null): string;
-export function get_hostname(input: string): string;
-export function get_base_domain(input: string): string;
+export function export_to_bitwarden_csv(items_json: string, folders_json: string): string;
+export function parse_browser_csv_import(csv_text: string): string;
 export function parse_bitwarden_csv_import(csv_text: string, existing_folders_json: string): string;
 export function estimate_password_strength(password: string, user_inputs_json: string): string;
 export function merge_vault_payload(local_json: string, remote_json: string, last_sync_timestamp: bigint): string;
@@ -11,8 +13,8 @@ export function merge_folders(local_folders_json: string, remote_folders_json: s
 export function merge_vault_items(local_items_json: string, remote_items_json: string, last_sync_timestamp: bigint): string;
 export function parse_json_import(json_text: string, existing_items_json: string, existing_folders_json: string): string;
 export function export_to_json(items_json: string, folders_json: string): string;
-export function filter_matching_domain_items(items_json: string, domain_or_url: string, override_mode?: number | null): string;
-export function filter_matching_domain_items_js(items_val: any, domain_or_url: string, override_mode?: number | null): any;
+export function get_hostname(input: string): string;
+export function get_base_domain(input: string): string;
 export function is_single_uri_match(stored_uri: string, current_url: string, match_mode: number | null | undefined, override_mode: number | null | undefined, target_host: string, item_host: string, target_base: string, item_base: string): boolean;
 export function filter_vault_items_by_query(items_json: string, search_query: string, filter_type: string): string;
 export function decode_qr_code(width: number, height: number, rgba_bytes: Uint8Array): string;
@@ -20,8 +22,8 @@ export function decode_qr_from_bytes(image_bytes: Uint8Array): string;
 export function parse_csv(text: string): string;
 export function unparse_csv(rows_json: string): string;
 export function export_to_browser_csv(items_json: string): string;
-export function export_to_bitwarden_csv(items_json: string, folders_json: string): string;
-export function parse_browser_csv_import(csv_text: string): string;
+export function filter_matching_domain_items(items_json: string, domain_or_url: string, override_mode?: number | null): string;
+export function filter_matching_domain_items_js(items_val: any, domain_or_url: string, override_mode?: number | null): any;
 export function filter_vault_items_by_query_js(items_val: any, search_query: string, filter_type: string): any;
 export function merge_vault_payload_js(local_val: any, remote_val: any, last_sync_timestamp: bigint): any;
 export function merge_folders_js(local_val: any, remote_val: any): any;
@@ -31,6 +33,8 @@ export function batch_parse_hibp_response(response_text: string, suffixes_json: 
 export function fast_xor(data: Uint8Array, key: Uint8Array): Uint8Array;
 export function parse_totp_secret(raw_secret: string): string;
 export function generate_totp_code(secret_base32: string, timestamp_ms: bigint, period_secs: bigint): string;
+export function generate_auth_data(rp_id: string, counter: number, user_present: boolean, user_verified: boolean, credential_id?: Uint8Array | null, key_x?: Uint8Array | null, key_y?: Uint8Array | null): Uint8Array;
+export function generate_assertion_signature_base(auth_data: Uint8Array, client_data_hash: Uint8Array): Uint8Array;
 export function cbor_encode_length(major_type: number, length: number): Uint8Array;
 export function cbor_text_string(s: string): Uint8Array;
 export function cbor_byte_string(bytes: Uint8Array): Uint8Array;
@@ -38,8 +42,6 @@ export function cbor_map_header(num_pairs: number): Uint8Array;
 export function cbor_positive_int(n: number): Uint8Array;
 export function cbor_negative_int(n: number): Uint8Array;
 export function concat_bytes(chunks: Array<any>): Uint8Array;
-export function get_random_bounded_int(max: number): number;
-export function generate_password(length: number, uppercase: boolean, lowercase: boolean, numbers: boolean, specials: boolean, avoid_ambiguous: boolean, min_numbers: number, min_specials: number): string;
 export function derive_key_argon2id(password: string, salt: Uint8Array, iterations?: number | null, memory_kib?: number | null, hash_length?: number | null): Uint8Array;
 export function hash_password_argon2id(password: string, salt: Uint8Array, iterations?: number | null, memory_kib?: number | null): string;
 export function sha1_prefix_suffix(password: string): string;
@@ -74,6 +76,8 @@ export interface InitOutput {
   readonly filter_matching_domain_items_js: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly filter_vault_items_by_query: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
   readonly filter_vault_items_by_query_js: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+  readonly generate_assertion_signature_base: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly generate_auth_data: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number) => void;
   readonly generate_passphrase: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
   readonly generate_password: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
   readonly generate_totp_code: (a: number, b: number, c: number, d: bigint, e: bigint) => void;

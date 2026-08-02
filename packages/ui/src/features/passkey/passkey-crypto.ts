@@ -4,6 +4,8 @@ import type { TranslationKey } from "@/core/i18n.ts";
 import { safeParseUrl } from "@/core/domain-utils.ts";
 import {
   encodeCoseEC2PublicKey,
+  generateAssertionSignatureBase,
+  generateAuthData as generateAuthDataWasm,
   packAttestationObject,
 } from "@/core/cbor-utils.ts";
 import { p1363ToDerWasm } from "@/core/crypto.ts";
@@ -192,48 +194,10 @@ interface GenerateAuthDataParams {
 export async function generateAuthData(
   params: GenerateAuthDataParams,
 ): Promise<Result<Uint8Array, TranslationKey>> {
-  const authData: number[] = [];
+  let keyX: Uint8Array | undefined;
+  let keyY: Uint8Array | undefined;
 
-  // 1. rpIdHash (32 bytes)
-  const rpIdBytes = new TextEncoder().encode(params.rpId);
-  const rpIdHashRes = await digestAsync(
-    "SHA-256",
-    rpIdBytes,
-    "fido2_error_create_failed",
-  );
-  if (rpIdHashRes.isErr()) return err(rpIdHashRes.error);
-  const rpIdHash = new Uint8Array(rpIdHashRes.value);
-  authData.push(...rpIdHash);
-
-  // 2. flags (1 byte) according to W3C WebAuthn Spec Section 6.1
-  let flags = 0;
-  if (params.userPresent) flags |= AUTH_DATA_FLAG_UP;
-  if (params.userVerified) flags |= AUTH_DATA_FLAG_UV;
-  if (params.publicKey) flags |= AUTH_DATA_FLAG_AT; // Has attested credential data
-  flags |= AUTH_DATA_FLAG_BE; // Backup eligibility
-  flags |= AUTH_DATA_FLAG_BS; // Backup state
-  authData.push(flags);
-
-  // 3. signCount (4 bytes)
-  const counterBytes = new Uint8Array(4);
-  new DataView(counterBytes.buffer).setUint32(0, params.counter, false);
-  authData.push(...counterBytes);
-
-  // 4. attestedCredentialData (if applicable)
   if (params.publicKey && params.credentialId) {
-    // aaguid (16 bytes đại diện cho Gistwarden Passkey Authenticator)
-    authData.push(...AAGUID);
-
-    // credentialIdLength (2 bytes)
-    const credIdLen = params.credentialId.length;
-    const credIdLenBytes = new Uint8Array(2);
-    new DataView(credIdLenBytes.buffer).setUint16(0, credIdLen, false);
-    authData.push(...credIdLenBytes);
-
-    // credentialId
-    authData.push(...params.credentialId);
-
-    // Export public key as JWK to get X and Y coordinates
     const jwkRes = await exportKeyJwkAsync(
       params.publicKey,
       "fido2_error_create_failed",
@@ -244,18 +208,24 @@ export async function generateAuthData(
 
     const keyXRes = base64UrlToBuffer(jwk.x);
     if (keyXRes.isErr()) return err(keyXRes.error);
-    const keyX = keyXRes.value;
+    keyX = keyXRes.value;
 
     const keyYRes = base64UrlToBuffer(jwk.y);
     if (keyYRes.isErr()) return err(keyYRes.error);
-    const keyY = keyYRes.value;
-
-    // Mã hóa cấu trúc COSE EC2 Key (RFC 8152 / RFC 9052) theo chuẩn CBOR Map
-    const coseBytes = encodeCoseEC2PublicKey(keyX, keyY);
-    authData.push(...coseBytes);
+    keyY = keyYRes.value;
   }
 
-  return ok(new Uint8Array(authData));
+  const authData = generateAuthDataWasm(
+    params.rpId,
+    params.counter,
+    params.userPresent,
+    params.userVerified,
+    params.credentialId,
+    keyX,
+    keyY,
+  );
+
+  return ok(authData);
 }
 
 // Generate assertion signature
@@ -264,9 +234,7 @@ export async function generateAssertionSignature(
   clientDataHash: Uint8Array,
   privateKey: CryptoKey,
 ): Promise<Result<Uint8Array, TranslationKey>> {
-  const sigBase = new Uint8Array(authData.length + clientDataHash.length);
-  sigBase.set(authData, 0);
-  sigBase.set(clientDataHash, authData.length);
+  const sigBase = generateAssertionSignatureBase(authData, clientDataHash);
 
   const sigRes = await signAsync(
     {
@@ -274,7 +242,7 @@ export async function generateAssertionSignature(
       hash: { name: "SHA-256" },
     },
     privateKey,
-    sigBase,
+    new Uint8Array(sigBase),
     "fido2_error_assert_failed",
   );
   if (sigRes.isErr()) return err(sigRes.error);
