@@ -338,21 +338,19 @@ pub fn filter_matching_domain_items(
     matcher::filter_matching_domain_items(items_json, domain_or_url, override_mode)
 }
 
+
+
 #[wasm_bindgen]
 pub fn filter_matching_domain_items_js(
     items_val: JsValue,
     domain_or_url: &str,
     override_mode: Option<u8>,
 ) -> Result<JsValue, JsValue> {
-    let items_json = match js_sys::JSON::stringify(&items_val) {
-        Ok(s) => String::from(s),
-        Err(_) => "[]".to_string(),
-    };
-    let res_str = matcher::filter_matching_domain_items(&items_json, domain_or_url, override_mode)
-        .map_err(|e| JsValue::from_str(&e))?;
-    let res_val: serde_json::Value = serde_json::from_str(&res_str)
-        .map_err(|e| JsValue::from_str(&e.to_string()))?;
-    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
+    use serde::Serialize;
+    let items: Vec<serde_json::Value> = serde_wasm_bindgen::from_value(items_val)?;
+    let filtered = matcher::filter_matching_domain_items_values(items, domain_or_url, override_mode);
+    let serializer = serde_wasm_bindgen::Serializer::json_compatible();
+    filtered.serialize(&serializer).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
@@ -361,15 +359,11 @@ pub fn filter_vault_items_by_query_js(
     search_query: &str,
     filter_type: &str,
 ) -> Result<JsValue, JsValue> {
-    let items_json = match js_sys::JSON::stringify(&items_val) {
-        Ok(s) => String::from(s),
-        Err(_) => "[]".to_string(),
-    };
-    let res_str = matcher::filter_vault_items_by_query(&items_json, search_query, filter_type)
-        .map_err(|e| JsValue::from_str(&e))?;
-    let res_val: serde_json::Value = serde_json::from_str(&res_str)
-        .map_err(|e| JsValue::from_str(&e.to_string()))?;
-    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
+    use serde::Serialize;
+    let items: Vec<serde_json::Value> = serde_wasm_bindgen::from_value(items_val)?;
+    let filtered = matcher::filter_vault_items_by_query_values(items, search_query, filter_type);
+    let serializer = serde_wasm_bindgen::Serializer::json_compatible();
+    filtered.serialize(&serializer).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
@@ -378,19 +372,12 @@ pub fn merge_vault_payload_js(
     remote_val: JsValue,
     last_sync_timestamp: u64,
 ) -> Result<JsValue, JsValue> {
-    let local_json = match js_sys::JSON::stringify(&local_val) {
-        Ok(s) => String::from(s),
-        Err(_) => "{}".to_string(),
-    };
-    let remote_json = match js_sys::JSON::stringify(&remote_val) {
-        Ok(s) => String::from(s),
-        Err(_) => "{}".to_string(),
-    };
-    let res_str = sync::merge_vault_payload(&local_json, &remote_json, last_sync_timestamp)
-        .map_err(|e| JsValue::from_str(&e))?;
-    let res_val: serde_json::Value = serde_json::from_str(&res_str)
-        .map_err(|e| JsValue::from_str(&e.to_string()))?;
-    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
+    use serde::Serialize;
+    let local_payload: serde_json::Value = serde_wasm_bindgen::from_value(local_val)?;
+    let remote_payload: serde_json::Value = serde_wasm_bindgen::from_value(remote_val)?;
+    let res_val = sync::merge_vault_payload_values(local_payload, remote_payload, last_sync_timestamp);
+    let serializer = serde_wasm_bindgen::Serializer::json_compatible();
+    res_val.serialize(&serializer).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
@@ -398,19 +385,12 @@ pub fn merge_folders_js(
     local_val: JsValue,
     remote_val: JsValue,
 ) -> Result<JsValue, JsValue> {
-    let local_json = match js_sys::JSON::stringify(&local_val) {
-        Ok(s) => String::from(s),
-        Err(_) => "[]".to_string(),
-    };
-    let remote_json = match js_sys::JSON::stringify(&remote_val) {
-        Ok(s) => String::from(s),
-        Err(_) => "[]".to_string(),
-    };
-    let res_str = sync::merge_folders(&local_json, &remote_json)
-        .map_err(|e| JsValue::from_str(&e))?;
-    let res_val: serde_json::Value = serde_json::from_str(&res_str)
-        .map_err(|e| JsValue::from_str(&e.to_string()))?;
-    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
+    use serde::Serialize;
+    let local_folders: Vec<serde_json::Value> = serde_wasm_bindgen::from_value(local_val)?;
+    let remote_folders: Vec<serde_json::Value> = serde_wasm_bindgen::from_value(remote_val)?;
+    let merged = sync::merge_folders_values(local_folders, remote_folders);
+    let serializer = serde_wasm_bindgen::Serializer::json_compatible();
+    merged.serialize(&serializer).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
@@ -419,19 +399,12 @@ pub fn merge_vault_items_js(
     remote_val: JsValue,
     last_sync_timestamp: u64,
 ) -> Result<JsValue, JsValue> {
-    let local_json = match js_sys::JSON::stringify(&local_val) {
-        Ok(s) => String::from(s),
-        Err(_) => "[]".to_string(),
-    };
-    let remote_json = match js_sys::JSON::stringify(&remote_val) {
-        Ok(s) => String::from(s),
-        Err(_) => "[]".to_string(),
-    };
-    let res_str = sync::merge_vault_items(&local_json, &remote_json, last_sync_timestamp)
-        .map_err(|e| JsValue::from_str(&e))?;
-    let res_val: serde_json::Value = serde_json::from_str(&res_str)
-        .map_err(|e| JsValue::from_str(&e.to_string()))?;
-    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
+    use serde::Serialize;
+    let local_items: Vec<serde_json::Value> = serde_wasm_bindgen::from_value(local_val)?;
+    let remote_items: Vec<serde_json::Value> = serde_wasm_bindgen::from_value(remote_val)?;
+    let merged = sync::merge_vault_items_values(local_items, remote_items, last_sync_timestamp);
+    let serializer = serde_wasm_bindgen::Serializer::json_compatible();
+    merged.serialize(&serializer).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
