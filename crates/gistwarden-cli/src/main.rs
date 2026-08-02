@@ -53,8 +53,7 @@ fn get_target_layer_from_import(import_path: &str) -> (u8, &'static str) {
         || import_path.contains("/apps/")
     {
         (6, "App (L6)")
-    } else if import_path.starts_with("@/") {
-        let rel = &import_path[2..];
+    } else if let Some(rel) = import_path.strip_prefix("@/") {
         if rel.starts_with("core/crypto")
             || rel.starts_with("core/totp-utils")
             || rel.starts_with("core/session-manager")
@@ -215,7 +214,7 @@ impl<'a> Visit<'a> for AstLinterVisitor<'a> {
             self.add_issue(
                 expr.span,
                 "no-as-assertion",
-                format!("Do not use 'as' type assertions. Use proper type guards, schema parsing, or type narrowing instead."),
+                "Do not use 'as' type assertions. Use proper type guards, schema parsing, or type narrowing instead.".to_string(),
             );
         }
         walk::walk_ts_as_expression(self, expr);
@@ -281,8 +280,8 @@ impl<'a> Visit<'a> for AstLinterVisitor<'a> {
     }
 
     fn visit_call_expression(&mut self, expr: &CallExpression<'a>) {
-        if let Expression::Identifier(ident) = &expr.callee {
-            if ident.name == "fetch" {
+        if let Expression::Identifier(ident) = &expr.callee
+            && ident.name == "fetch" {
                 if self.file_layer == 1 {
                     self.add_issue(
                         expr.span,
@@ -297,7 +296,6 @@ impl<'a> Visit<'a> for AstLinterVisitor<'a> {
                     );
                 }
             }
-        }
         walk::walk_call_expression(self, expr);
     }
 
@@ -329,51 +327,44 @@ impl<'a> Visit<'a> for AstLinterVisitor<'a> {
             }
         }
 
-        if self.file_layer == 5 && object_name == "chrome" {
-            if let Some(prop) = expr.static_property_name() {
-                if prop == "storage" {
+        if self.file_layer == 5 && object_name == "chrome"
+            && let Some(prop) = expr.static_property_name()
+                && prop == "storage" {
                     self.add_issue(
                         expr.span(),
                         "ui-boundary",
                         "[UI Rule] Direct access to 'chrome.storage' is forbidden in UI layer. Delegate data storage operations to Repository/Orchestrator layer.".to_string(),
                     );
                 }
-            }
-        }
 
         walk::walk_member_expression(self, expr);
     }
 
     fn visit_variable_declarator(&mut self, decl: &VariableDeclarator<'a>) {
         if let BindingPatternKind::BindingIdentifier(_) = &decl.id.kind {
-        } else if let BindingPatternKind::ObjectPattern(_) = &decl.id.kind {
-            if let Some(Expression::Identifier(ident)) = &decl.init {
-                if ident.name == "props" {
+        } else if let BindingPatternKind::ObjectPattern(_) = &decl.id.kind
+            && let Some(Expression::Identifier(ident)) = &decl.init
+                && ident.name == "props" {
                     self.add_issue(
                         decl.span,
                         "no-props-destructuring",
                         "Do not destructure 'props' in SolidJS as it breaks reactivity. Access properties directly (e.g., props.title) or use 'splitProps'.".to_string(),
                     );
                 }
-            }
-        }
         walk::walk_variable_declarator(self, decl);
     }
 
     fn visit_jsx_attribute(&mut self, attr: &JSXAttribute<'a>) {
-        if self.normalized_path.ends_with(".tsx") {
-            if let JSXAttributeName::Identifier(ident) = &attr.name {
-                if ident.name == "style" {
-                    if let Some(JSXAttributeValue::ExpressionContainer(_)) = &attr.value {
+        if self.normalized_path.ends_with(".tsx")
+            && let JSXAttributeName::Identifier(ident) = &attr.name
+                && ident.name == "style"
+                    && let Some(JSXAttributeValue::ExpressionContainer(_)) = &attr.value {
                         self.add_issue(
                             attr.span,
                             "no-inline-style",
                             "Do not use inline 'style' object/string. Move styles to SCSS/CSS files instead.".to_string(),
                         );
                     }
-                }
-            }
-        }
         walk::walk_jsx_attribute(self, attr);
     }
 }

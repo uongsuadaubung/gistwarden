@@ -1,18 +1,23 @@
 use regex::RegexBuilder;
 use serde_json::Value as JsonValue;
 
-pub fn is_single_uri_match(
-    stored_uri: &str,
-    current_url: &str,
-    match_mode: Option<u8>,
-    override_mode: Option<u8>,
-    target_host: &str,
-    item_host: &str,
-    target_base: &str,
-    item_base: &str,
-) -> bool {
-    let s_uri = stored_uri.trim();
-    let c_url = current_url.trim();
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize, Default)]
+pub struct UriMatchOptions {
+    pub stored_uri: String,
+    pub current_url: String,
+    pub match_mode: Option<u8>,
+    pub override_mode: Option<u8>,
+    pub target_host: Option<String>,
+    pub item_host: Option<String>,
+    pub target_base: Option<String>,
+    pub item_base: Option<String>,
+}
+
+pub fn is_single_uri_match(opts: &UriMatchOptions) -> bool {
+    let s_uri = opts.stored_uri.trim();
+    let c_url = opts.current_url.trim();
 
     if s_uri.is_empty() || c_url.is_empty() {
         return false;
@@ -25,7 +30,7 @@ pub fn is_single_uri_match(
     // 3: Exact
     // 4: Regex
     // 5: Never
-    let mode = match_mode.or(override_mode).unwrap_or(0);
+    let mode = opts.match_mode.or(opts.override_mode).unwrap_or(0);
 
     if mode == 5 {
         // Never
@@ -44,7 +49,9 @@ pub fn is_single_uri_match(
 
     if mode == 1 {
         // Host
-        return !target_host.is_empty() && !item_host.is_empty() && target_host.eq_ignore_ascii_case(item_host);
+        let t_host = opts.target_host.as_deref().unwrap_or("");
+        let i_host = opts.item_host.as_deref().unwrap_or("");
+        return !t_host.is_empty() && !i_host.is_empty() && t_host.eq_ignore_ascii_case(i_host);
     }
 
     if mode == 4 {
@@ -59,7 +66,9 @@ pub fn is_single_uri_match(
     }
 
     // Default (mode == 0 Domain): compare base domains
-    !target_base.is_empty() && !item_base.is_empty() && target_base.eq_ignore_ascii_case(item_base)
+    let t_base = opts.target_base.as_deref().unwrap_or("");
+    let i_base = opts.item_base.as_deref().unwrap_or("");
+    !t_base.is_empty() && !i_base.is_empty() && t_base.eq_ignore_ascii_case(i_base)
 }
 
 pub fn filter_vault_items_by_query_values(
@@ -70,12 +79,10 @@ pub fn filter_vault_items_by_query_values(
     let q = search_query.trim().to_lowercase();
 
     // 1. Filter by item type
-    if !filter_type.is_empty() && filter_type != "all" {
-        if let Ok(target_type) = filter_type.parse::<u64>() {
-            items.retain(|item| {
-                item.get("type").and_then(|t| t.as_u64()) == Some(target_type)
-            });
-        }
+    if let Ok(target_type) = filter_type.parse::<u64>() {
+        items.retain(|item| {
+            item.get("type").and_then(|t| t.as_u64()) == Some(target_type)
+        });
     }
 
     // 2. Filter by search query
@@ -104,21 +111,18 @@ pub fn filter_vault_items_by_query_values(
 
                     if let Some(uris) = login.get("uris").and_then(|u| u.as_array()) {
                         for u_obj in uris {
-                            if let Some(uri) = u_obj.get("uri").and_then(|v| v.as_str()) {
-                                if uri.to_lowercase().contains(&q) {
-                                    return true;
-                                }
+                            if u_obj.get("uri").and_then(|v| v.as_str()).map(|u| u.to_lowercase().contains(&q)).unwrap_or(false) {
+                                return true;
                             }
                         }
                     }
                 }
             }
 
-            let notes_match = item.get("notes")
+            item.get("notes")
                 .and_then(|n| n.as_str())
                 .map(|n| n.to_lowercase().contains(&q))
-                .unwrap_or(false);
-            notes_match
+                .unwrap_or(false)
         });
     }
 
@@ -254,21 +258,22 @@ pub fn filter_matching_domain_items_values(
             let match_mode = u_obj.get("match").and_then(|v| v.as_u64()).map(|v| v as u8);
             let item_host = crate::domain::get_hostname(uri);
             let item_base = crate::domain::get_base_domain(uri);
-
-            if is_single_uri_match(
-                uri,
-                domain_or_url,
+            let opts = UriMatchOptions {
+                stored_uri: uri.to_string(),
+                current_url: domain_or_url.to_string(),
                 match_mode,
                 override_mode,
-                &target_host,
-                &item_host,
-                &target_base,
-                &item_base,
-            ) {
+                target_host: Some(target_host.clone()),
+                item_host: Some(item_host.clone()),
+                target_base: Some(target_base.clone()),
+                item_base: Some(item_base),
+            };
+
+            if is_single_uri_match(&opts) {
                 is_matched = true;
 
-                let effective_mode = match_mode.or(override_mode).unwrap_or(0);
-                if effective_mode != 5 && !target_host.is_empty() && item_host.eq_ignore_ascii_case(&target_host) {
+                let mode_val = opts.match_mode.or(opts.override_mode).unwrap_or(0);
+                if mode_val != 5 && !target_host.is_empty() && item_host.eq_ignore_ascii_case(&target_host) {
                     is_exact = true;
                     break;
                 }

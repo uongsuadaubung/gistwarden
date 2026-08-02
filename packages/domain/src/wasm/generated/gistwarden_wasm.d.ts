@@ -16,11 +16,11 @@ export function estimate_password_strength(password: string, user_inputs_json: s
 export function cbor_negative_int(n: number): Uint8Array;
 export function concat_bytes(chunks: Array<any>): Uint8Array;
 export function get_random_bounded_int(max: number): number;
-export function generate_password(length: number, uppercase: boolean, lowercase: boolean, numbers: boolean, specials: boolean, avoid_ambiguous: boolean, min_numbers: number, min_specials: number): string;
+export function generate_password(opts_val: any): string;
 export function generate_passphrase(num_words: number, word_separator: string, capitalize: boolean, include_number: boolean, wordlist?: string[] | null): string;
 export function get_hostname(input: string): string;
 export function get_base_domain(input: string): string;
-export function is_single_uri_match(stored_uri: string, current_url: string, match_mode: number | null | undefined, override_mode: number | null | undefined, target_host: string, item_host: string, target_base: string, item_base: string): boolean;
+export function is_single_uri_match(opts_val: any): boolean;
 export function filter_vault_items_by_query(items_json: string, search_query: string, filter_type: string): string;
 export function merge_vault_payload(local_json: string, remote_json: string, last_sync_timestamp: bigint): string;
 export function merge_folders(local_folders_json: string, remote_folders_json: string): string;
@@ -88,7 +88,7 @@ export interface InitOutput {
   readonly generate_assertion_signature_base: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly generate_auth_data: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number) => void;
   readonly generate_passphrase: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
-  readonly generate_password: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
+  readonly generate_password: (a: number, b: number) => void;
   readonly generate_random_bytes: (a: number, b: number) => void;
   readonly generate_totp_code: (a: number, b: number, c: number, d: bigint, e: bigint) => void;
   readonly get_base_domain: (a: number, b: number, c: number) => void;
@@ -97,7 +97,7 @@ export interface InitOutput {
   readonly greet: (a: number, b: number, c: number) => void;
   readonly hash_password_argon2id: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
   readonly hmac_sha256: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly is_single_uri_match: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number) => number;
+  readonly is_single_uri_match: (a: number) => number;
   readonly merge_folders: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly merge_folders_js: (a: number, b: number, c: number) => void;
   readonly merge_vault_items: (a: number, b: number, c: number, d: number, e: number, f: bigint) => void;

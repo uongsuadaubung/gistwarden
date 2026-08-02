@@ -57,7 +57,7 @@ fn chrono_like_parse(s: &str) -> Result<u64, ()> {
     for m in 1..month {
         days_since_epoch += days_in_months[m as usize];
     }
-    if month > 2 && (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {
+    if month > 2 && (year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400))) {
         days_since_epoch += 1;
     }
     days_since_epoch += day.saturating_sub(1);
@@ -85,17 +85,19 @@ pub fn merge_vault_payload_values(
     // 1. Merge Folders
     let mut folder_map: HashMap<String, Value> = HashMap::new();
     for f in &local_folders {
-        if let Some(id) = f.get("id").and_then(|v| v.as_str()) {
-            if f.get("name").and_then(|v| v.as_str()).is_some() {
-                folder_map.insert(id.to_string(), f.clone());
-            }
+        if let (Some(id), Some(_)) = (
+            f.get("id").and_then(|v| v.as_str()),
+            f.get("name").and_then(|v| v.as_str()),
+        ) {
+            folder_map.insert(id.to_string(), f.clone());
         }
     }
     for f in &remote_folders {
-        if let Some(id) = f.get("id").and_then(|v| v.as_str()) {
-            if f.get("name").and_then(|v| v.as_str()).is_some() && !folder_map.contains_key(id) {
-                folder_map.insert(id.to_string(), f.clone());
-            }
+        if let (Some(id), Some(_)) = (
+            f.get("id").and_then(|v| v.as_str()),
+            f.get("name").and_then(|v| v.as_str()),
+        ) {
+            folder_map.entry(id.to_string()).or_insert_with(|| f.clone());
         }
     }
 
@@ -119,7 +121,7 @@ pub fn merge_vault_payload_values(
         .unwrap_or_default();
 
     let mut trash_map: HashMap<String, Value> = HashMap::new();
-    for t_item in local_trash.into_iter().chain(remote_trash.into_iter()) {
+    for t_item in local_trash.into_iter().chain(remote_trash) {
         let item_id = match t_item
             .get("item")
             .and_then(|i| i.get("id"))
@@ -202,7 +204,7 @@ pub fn merge_vault_payload_values(
             None => continue,
         };
 
-        if !item_map.contains_key(&id) {
+        if let std::collections::hash_map::Entry::Vacant(entry) = item_map.entry(id.clone()) {
             let remote_item = remote_items
                 .iter()
                 .find(|r| r.get("id").and_then(|v| v.as_str()) == Some(&id));
@@ -216,7 +218,7 @@ pub fn merge_vault_payload_values(
                     || local_creation_time > last_sync_timestamp
                     || local_rev_time > last_sync_timestamp
                 {
-                    item_map.insert(id, local_item.clone());
+                    entry.insert(local_item.clone());
                 }
             }
         }
@@ -270,17 +272,19 @@ pub fn merge_folders_values(
 ) -> Vec<Value> {
     let mut folder_map: HashMap<String, Value> = HashMap::new();
     for f in &local {
-        if let Some(id) = f.get("id").and_then(|v| v.as_str()) {
-            if f.get("name").and_then(|v| v.as_str()).is_some() {
-                folder_map.insert(id.to_string(), f.clone());
-            }
+        if let (Some(id), Some(_)) = (
+            f.get("id").and_then(|v| v.as_str()),
+            f.get("name").and_then(|v| v.as_str()),
+        ) {
+            folder_map.insert(id.to_string(), f.clone());
         }
     }
     for f in &remote {
-        if let Some(id) = f.get("id").and_then(|v| v.as_str()) {
-            if f.get("name").and_then(|v| v.as_str()).is_some() && !folder_map.contains_key(id) {
-                folder_map.insert(id.to_string(), f.clone());
-            }
+        if let (Some(id), Some(_)) = (
+            f.get("id").and_then(|v| v.as_str()),
+            f.get("name").and_then(|v| v.as_str()),
+        ) {
+            folder_map.entry(id.to_string()).or_insert_with(|| f.clone());
         }
     }
 
@@ -355,7 +359,7 @@ pub fn merge_vault_items_values(
             None => continue,
         };
 
-        if !item_map.contains_key(&id) {
+        if let std::collections::hash_map::Entry::Vacant(entry) = item_map.entry(id.clone()) {
             let remote_item = remote_items
                 .iter()
                 .find(|r| r.get("id").and_then(|v| v.as_str()) == Some(&id));
@@ -369,7 +373,7 @@ pub fn merge_vault_items_values(
                     || local_creation_time > last_sync_timestamp
                     || local_rev_time > last_sync_timestamp
                 {
-                    item_map.insert(id, local_item.clone());
+                    entry.insert(local_item.clone());
                 }
             }
         }

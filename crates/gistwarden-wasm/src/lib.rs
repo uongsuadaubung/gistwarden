@@ -190,26 +190,10 @@ pub fn get_random_bounded_int(max: u32) -> u32 {
 }
 
 #[wasm_bindgen]
-pub fn generate_password(
-    length: usize,
-    uppercase: bool,
-    lowercase: bool,
-    numbers: bool,
-    specials: bool,
-    avoid_ambiguous: bool,
-    min_numbers: usize,
-    min_specials: usize,
-) -> Result<String, String> {
-    generator::generate_password(
-        length,
-        uppercase,
-        lowercase,
-        numbers,
-        specials,
-        avoid_ambiguous,
-        min_numbers,
-        min_specials,
-    )
+pub fn generate_password(opts_val: JsValue) -> Result<String, String> {
+    let opts: generator::PasswordOptions =
+        serde_wasm_bindgen::from_value(opts_val).map_err(|e| e.to_string())?;
+    generator::generate_password(&opts)
 }
 
 #[wasm_bindgen]
@@ -240,26 +224,10 @@ pub fn get_base_domain(input: &str) -> String {
 }
 
 #[wasm_bindgen]
-pub fn is_single_uri_match(
-    stored_uri: &str,
-    current_url: &str,
-    match_mode: Option<u8>,
-    override_mode: Option<u8>,
-    target_host: &str,
-    item_host: &str,
-    target_base: &str,
-    item_base: &str,
-) -> bool {
-    matcher::is_single_uri_match(
-        stored_uri,
-        current_url,
-        match_mode,
-        override_mode,
-        target_host,
-        item_host,
-        target_base,
-        item_base,
-    )
+pub fn is_single_uri_match(opts_val: JsValue) -> bool {
+    let opts: matcher::UriMatchOptions =
+        serde_wasm_bindgen::from_value(opts_val).unwrap_or_default();
+    matcher::is_single_uri_match(&opts)
 }
 
 #[wasm_bindgen]

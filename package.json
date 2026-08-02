@@ -13,6 +13,7 @@
     "build:all": "bun run scripts/build.ts all",
     "build:wasm": "cargo build --manifest-path crates/gistwarden-wasm/Cargo.toml --target wasm32-unknown-unknown --release && wasm-bindgen crates/gistwarden-wasm/target/wasm32-unknown-unknown/release/gistwarden_wasm.wasm --out-dir packages/domain/src/wasm/generated --target web && bun run scripts/embed_wasm.ts",
     "check:wasm": "cargo check --manifest-path crates/gistwarden-wasm/Cargo.toml --target wasm32-unknown-unknown",
+    "lint:wasm": "cargo clippy --manifest-path crates/gistwarden-wasm/Cargo.toml --target wasm32-unknown-unknown -- -D warnings",
     "test": "bun test tests/",
     "typecheck": "tsc --noEmit",
     "lint": "cargo run --manifest-path crates/gistwarden-cli/Cargo.toml --release",

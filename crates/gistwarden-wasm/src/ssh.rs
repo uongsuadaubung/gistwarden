@@ -15,16 +15,16 @@ pub fn parse_ssh_key(private_key_text: &str) -> Result<Vec<String>, String> {
 
     // 1. Parse OpenSSH Private Key via ssh-key crate (RustCrypto)
     if let Ok(priv_key) = PrivateKey::from_openssh(trimmed) {
+        let fingerprint = priv_key.public_key().fingerprint(HashAlg::Sha256).to_string();
         if let Ok(public_key) = priv_key.public_key().to_openssh() {
-            let fingerprint = priv_key.public_key().fingerprint(HashAlg::Sha256).to_string();
             return Ok(vec![public_key.to_string(), fingerprint]);
         }
     }
 
     // 2. Parse OpenSSH Public Key via ssh-key crate (RustCrypto)
     if let Ok(pub_key) = PublicKey::from_openssh(trimmed) {
+        let fingerprint = pub_key.fingerprint(HashAlg::Sha256).to_string();
         if let Ok(public_key) = pub_key.to_openssh() {
-            let fingerprint = pub_key.fingerprint(HashAlg::Sha256).to_string();
             return Ok(vec![public_key.to_string(), fingerprint]);
         }
     }
@@ -32,11 +32,9 @@ pub fn parse_ssh_key(private_key_text: &str) -> Result<Vec<String>, String> {
     // 3. Direct Public Key string line format (e.g. "ssh-ed25519 AAAAC3Nza... comment")
     if trimmed.starts_with("ssh-") || trimmed.starts_with("ecdsa-") || trimmed.starts_with("sk-") {
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
-        if parts.len() >= 2 {
-            if let Ok(blob) = BASE64.decode(parts[1].as_bytes()) {
-                let fingerprint = compute_sha256_fingerprint(&blob);
-                return Ok(vec![trimmed.to_string(), fingerprint]);
-            }
+        if let Some(blob) = parts.get(1).and_then(|k| BASE64.decode(k.as_bytes()).ok()) {
+            let fingerprint = compute_sha256_fingerprint(&blob);
+            return Ok(vec![trimmed.to_string(), fingerprint]);
         }
     }
 

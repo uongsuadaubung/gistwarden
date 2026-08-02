@@ -52,7 +52,7 @@ pub fn export_to_browser_csv(items_json: &str) -> Result<String, String> {
         .from_writer(Vec::new());
 
     writer
-        .write_record(&["name", "url", "username", "password", "note"])
+        .write_record(["name", "url", "username", "password", "note"])
         .map_err(|e| e.to_string())?;
 
     for item in items {
@@ -67,17 +67,15 @@ pub fn export_to_browser_csv(items_json: &str) -> Result<String, String> {
             let mut password = "";
 
             if let Some(login) = item.get("login") {
-                if let Some(uris) = login.get("uris").and_then(|u| u.as_array()) {
-                    if let Some(first_uri) = uris.first() {
-                        uri = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("");
-                    }
+                if let Some(first_uri) = login.get("uris").and_then(|u| u.as_array()).and_then(|uris| uris.first()) {
+                    uri = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("");
                 }
                 username = login.get("username").and_then(|v| v.as_str()).unwrap_or("");
                 password = login.get("password").and_then(|v| v.as_str()).unwrap_or("");
             }
 
             writer
-                .write_record(&[name, uri, username, password, notes])
+                .write_record([name, uri, username, password, notes])
                 .map_err(|e| e.to_string())?;
         }
     }
@@ -105,7 +103,7 @@ pub fn export_to_bitwarden_csv(items_json: &str, folders_json: &str) -> Result<S
         .from_writer(Vec::new());
 
     writer
-        .write_record(&[
+        .write_record([
             "folder",
             "favorite",
             "type",
@@ -123,75 +121,66 @@ pub fn export_to_bitwarden_csv(items_json: &str, folders_json: &str) -> Result<S
 
     for item in items {
         let item_type = item.get("type").and_then(|v| v.as_u64()).unwrap_or(0);
-        if item_type == 1 || item_type == 2 {
-            // 1: Login, 2: SecureNote
-            let type_str = if item_type == 1 { "login" } else { "note" };
-            let favorite_str = if item.get("favorite").and_then(|v| v.as_bool()).unwrap_or(false) {
-                "1"
-            } else {
-                "0"
-            };
-            let reprompt_str = if item.get("reprompt").and_then(|v| v.as_u64()).unwrap_or(0) == 1 {
-                "1"
-            } else {
-                "0"
-            };
 
-            let folder_id = item.get("folderId").and_then(|v| v.as_str()).unwrap_or("");
-            let folder_name = folder_map.get(folder_id).map(|s| s.as_str()).unwrap_or("");
+        let folder_id = item.get("folderId").and_then(|v| v.as_str()).unwrap_or("");
+        let folder_name = folder_map.get(folder_id).map(|s| s.as_str()).unwrap_or("");
 
-            let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("");
-            let notes = item.get("notes").and_then(|v| v.as_str()).unwrap_or("");
+        let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("");
+        let notes = item.get("notes").and_then(|v| v.as_str()).unwrap_or("");
+        let favorite_str = if item.get("favorite").and_then(|v| v.as_bool()).unwrap_or(false) { "1" } else { "0" };
+        let type_str = match item_type {
+            1 => "login",
+            2 => "note",
+            3 => "card",
+            4 => "identity",
+            _ => "login",
+        };
 
-            let fields_str = if let Some(fields) = item.get("fields").and_then(|f| f.as_array()) {
-                fields
-                    .iter()
-                    .map(|f_obj| {
-                        let fname = f_obj.get("name").and_then(|v| v.as_str()).unwrap_or("");
-                        let fval = f_obj.get("value").and_then(|v| v.as_str()).unwrap_or("");
-                        format!("{}:{}", fname, fval)
-                    })
-                    .collect::<Vec<String>>()
-                    .join("\n")
-            } else {
-                String::new()
-            };
+        let reprompt_str = if item.get("reprompt").and_then(|v| v.as_u64()).unwrap_or(0) == 1 { "1" } else { "0" };
 
-            let mut uri = String::new();
-            let mut username = String::new();
-            let mut password = String::new();
-            let mut totp = String::new();
-
-            if item_type == 1 {
-                if let Some(login) = item.get("login") {
-                    if let Some(uris) = login.get("uris").and_then(|u| u.as_array()) {
-                        if let Some(first_uri) = uris.first() {
-                            uri = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                        }
-                    }
-                    username = login.get("username").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    password = login.get("password").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    totp = login.get("totp").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let mut fields_str = String::new();
+        if let Some(fields) = item.get("fields").and_then(|v| v.as_array()) {
+            let mut lines: Vec<String> = Vec::new();
+            for f in fields {
+                let fn_str = f.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                let fv_str = f.get("value").and_then(|v| v.as_str()).unwrap_or("");
+                if !fn_str.is_empty() {
+                    lines.push(format!("{}:{}", fn_str, fv_str));
                 }
             }
-
-            writer
-                .write_record(&[
-                    folder_name,
-                    favorite_str,
-                    type_str,
-                    name,
-                    notes,
-                    &fields_str,
-                    reprompt_str,
-                    "",
-                    &uri,
-                    &username,
-                    &password,
-                    &totp,
-                ])
-                .map_err(|e| e.to_string())?;
+            fields_str = lines.join("\n");
         }
+
+        let mut uri = String::new();
+        let mut username = String::new();
+        let mut password = String::new();
+        let mut totp = String::new();
+
+        if let Some(login) = item.get("login").filter(|_| item_type == 1) {
+            if let Some(first_uri) = login.get("uris").and_then(|u| u.as_array()).and_then(|uris| uris.first()) {
+                uri = first_uri.get("uri").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            }
+            username = login.get("username").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            password = login.get("password").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            totp = login.get("totp").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        }
+
+        writer
+            .write_record([
+                folder_name,
+                favorite_str,
+                type_str,
+                name,
+                notes,
+                &fields_str,
+                reprompt_str,
+                "",
+                &uri,
+                &username,
+                &password,
+                &totp,
+            ])
+            .map_err(|e| e.to_string())?;
     }
 
     let bytes = writer.into_inner().map_err(|e| e.to_string())?;
@@ -244,8 +233,7 @@ pub fn parse_browser_csv_import(csv_text: &str) -> Result<String, String> {
 
     let mut new_vault_items: Vec<Value> = Vec::new();
 
-    for r in 1..rows.len() {
-        let row = &rows[r];
+    for row in rows.iter().skip(1) {
         if row.is_empty() || (row.len() == 1 && row[0].is_empty()) {
             continue;
         }
@@ -376,8 +364,7 @@ pub fn parse_bitwarden_csv_import(
 
     let mut new_vault_items: Vec<Value> = Vec::new();
 
-    for r in 1..rows.len() {
-        let row = &rows[r];
+    for row in rows.iter().skip(1) {
         if row.is_empty() || (row.len() == 1 && row[0].is_empty()) {
             continue;
         }
@@ -408,20 +395,16 @@ pub fn parse_bitwarden_csv_import(
         let reprompt_val = reprompt_idx.and_then(|i| row.get(i)).map(|s| if s == "1" || s == "true" { 1 } else { 0 }).unwrap_or(0);
 
         let mut custom_fields: Vec<Value> = Vec::new();
-        if let Some(f_i) = fields_idx {
-            if let Some(fields_str) = row.get(f_i) {
-                for line in fields_str.lines() {
-                    if let Some(colon_idx) = line.find(':') {
-                        if colon_idx > 0 {
-                            let fname = line[..colon_idx].trim();
-                            let fval = line[colon_idx + 1..].trim();
-                            custom_fields.push(serde_json::json!({
-                                "name": fname,
-                                "value": fval,
-                                "type": 0
-                            }));
-                        }
-                    }
+        if let Some(fields_str) = fields_idx.and_then(|i| row.get(i)) {
+            for line in fields_str.lines() {
+                if let Some(colon_idx) = line.find(':').filter(|&idx| idx > 0) {
+                    let fname = line[..colon_idx].trim();
+                    let fval = line[colon_idx + 1..].trim();
+                    custom_fields.push(serde_json::json!({
+                        "name": fname,
+                        "value": fval,
+                        "type": 0
+                    }));
                 }
             }
         }
