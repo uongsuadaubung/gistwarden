@@ -1,3 +1,4 @@
+// High-performance Rust WASM module for Gistwarden
 pub mod cbor;
 pub mod crypto;
 pub mod csv_parser;
@@ -309,6 +310,102 @@ pub fn filter_matching_domain_items(
     override_mode: Option<u8>,
 ) -> Result<String, String> {
     matcher::filter_matching_domain_items(items_json, domain_or_url, override_mode)
+}
+
+#[wasm_bindgen]
+pub fn filter_matching_domain_items_js(
+    items_val: JsValue,
+    domain_or_url: &str,
+    override_mode: Option<u8>,
+) -> Result<JsValue, JsValue> {
+    let items_json = match js_sys::JSON::stringify(&items_val) {
+        Ok(s) => String::from(s),
+        Err(_) => "[]".to_string(),
+    };
+    let res_str = matcher::filter_matching_domain_items(&items_json, domain_or_url, override_mode)
+        .map_err(|e| JsValue::from_str(&e))?;
+    let res_val: serde_json::Value = serde_json::from_str(&res_str)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn filter_vault_items_by_query_js(
+    items_val: JsValue,
+    search_query: &str,
+    filter_type: &str,
+) -> Result<JsValue, JsValue> {
+    let items_json = match js_sys::JSON::stringify(&items_val) {
+        Ok(s) => String::from(s),
+        Err(_) => "[]".to_string(),
+    };
+    let res_str = matcher::filter_vault_items_by_query(&items_json, search_query, filter_type)
+        .map_err(|e| JsValue::from_str(&e))?;
+    let res_val: serde_json::Value = serde_json::from_str(&res_str)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn merge_vault_payload_js(
+    local_val: JsValue,
+    remote_val: JsValue,
+    last_sync_timestamp: u64,
+) -> Result<JsValue, JsValue> {
+    let local_json = match js_sys::JSON::stringify(&local_val) {
+        Ok(s) => String::from(s),
+        Err(_) => "{}".to_string(),
+    };
+    let remote_json = match js_sys::JSON::stringify(&remote_val) {
+        Ok(s) => String::from(s),
+        Err(_) => "{}".to_string(),
+    };
+    let res_str = sync::merge_vault_payload(&local_json, &remote_json, last_sync_timestamp)
+        .map_err(|e| JsValue::from_str(&e))?;
+    let res_val: serde_json::Value = serde_json::from_str(&res_str)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn merge_folders_js(
+    local_val: JsValue,
+    remote_val: JsValue,
+) -> Result<JsValue, JsValue> {
+    let local_json = match js_sys::JSON::stringify(&local_val) {
+        Ok(s) => String::from(s),
+        Err(_) => "[]".to_string(),
+    };
+    let remote_json = match js_sys::JSON::stringify(&remote_val) {
+        Ok(s) => String::from(s),
+        Err(_) => "[]".to_string(),
+    };
+    let res_str = sync::merge_folders(&local_json, &remote_json)
+        .map_err(|e| JsValue::from_str(&e))?;
+    let res_val: serde_json::Value = serde_json::from_str(&res_str)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+#[wasm_bindgen]
+pub fn merge_vault_items_js(
+    local_val: JsValue,
+    remote_val: JsValue,
+    last_sync_timestamp: u64,
+) -> Result<JsValue, JsValue> {
+    let local_json = match js_sys::JSON::stringify(&local_val) {
+        Ok(s) => String::from(s),
+        Err(_) => "[]".to_string(),
+    };
+    let remote_json = match js_sys::JSON::stringify(&remote_val) {
+        Ok(s) => String::from(s),
+        Err(_) => "[]".to_string(),
+    };
+    let res_str = sync::merge_vault_items(&local_json, &remote_json, last_sync_timestamp)
+        .map_err(|e| JsValue::from_str(&e))?;
+    let res_val: serde_json::Value = serde_json::from_str(&res_str)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+    serde_wasm_bindgen::to_value(&res_val).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]

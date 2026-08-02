@@ -256,13 +256,10 @@ pub fn merge_vault_payload(
     serde_json::to_string(&output).map_err(|e| e.to_string())
 }
 
-pub fn merge_folders(
-    local_folders_json: &str,
-    remote_folders_json: &str,
-) -> Result<String, String> {
-    let local: Vec<Value> = serde_json::from_str(local_folders_json).map_err(|e| e.to_string())?;
-    let remote: Vec<Value> = serde_json::from_str(remote_folders_json).map_err(|e| e.to_string())?;
-
+pub fn merge_folders_values(
+    local: Vec<Value>,
+    remote: Vec<Value>,
+) -> Vec<Value> {
     let mut folder_map: HashMap<String, Value> = HashMap::new();
     for f in &local {
         if let Some(id) = f.get("id").and_then(|v| v.as_str()) {
@@ -285,17 +282,24 @@ pub fn merge_folders(
         let name_b = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
         name_a.to_lowercase().cmp(&name_b.to_lowercase())
     });
-    serde_json::to_string(&merged_folders).map_err(|e| e.to_string())
+    merged_folders
 }
 
-pub fn merge_vault_items(
-    local_items_json: &str,
-    remote_items_json: &str,
-    last_sync_timestamp: u64,
+pub fn merge_folders(
+    local_folders_json: &str,
+    remote_folders_json: &str,
 ) -> Result<String, String> {
-    let local_items: Vec<Value> = serde_json::from_str(local_items_json).map_err(|e| e.to_string())?;
-    let remote_items: Vec<Value> = serde_json::from_str(remote_items_json).map_err(|e| e.to_string())?;
+    let local: Vec<Value> = serde_json::from_str(local_folders_json).map_err(|e| e.to_string())?;
+    let remote: Vec<Value> = serde_json::from_str(remote_folders_json).map_err(|e| e.to_string())?;
+    let merged = merge_folders_values(local, remote);
+    serde_json::to_string(&merged).map_err(|e| e.to_string())
+}
 
+pub fn merge_vault_items_values(
+    local_items: Vec<Value>,
+    remote_items: Vec<Value>,
+    last_sync_timestamp: u64,
+) -> Vec<Value> {
     let mut local_map: HashMap<String, Value> = HashMap::new();
     for item in &local_items {
         if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
@@ -369,5 +373,16 @@ pub fn merge_vault_items(
         let name_b = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
         name_a.to_lowercase().cmp(&name_b.to_lowercase())
     });
-    serde_json::to_string(&merged_items).map_err(|e| e.to_string())
+    merged_items
+}
+
+pub fn merge_vault_items(
+    local_items_json: &str,
+    remote_items_json: &str,
+    last_sync_timestamp: u64,
+) -> Result<String, String> {
+    let local_items: Vec<Value> = serde_json::from_str(local_items_json).map_err(|e| e.to_string())?;
+    let remote_items: Vec<Value> = serde_json::from_str(remote_items_json).map_err(|e| e.to_string())?;
+    let merged = merge_vault_items_values(local_items, remote_items, last_sync_timestamp);
+    serde_json::to_string(&merged).map_err(|e| e.to_string())
 }

@@ -62,14 +62,11 @@ pub fn is_single_uri_match(
     !target_base.is_empty() && !item_base.is_empty() && target_base.eq_ignore_ascii_case(item_base)
 }
 
-pub fn filter_vault_items_by_query(
-    items_json: &str,
+pub fn filter_vault_items_by_query_values(
+    mut items: Vec<JsonValue>,
     search_query: &str,
     filter_type: &str,
-) -> Result<String, String> {
-    let mut items: Vec<JsonValue> = serde_json::from_str(items_json)
-        .map_err(|e| format!("JSON parse error: {}", e))?;
-
+) -> Vec<JsonValue> {
     let q = search_query.trim().to_lowercase();
 
     // 1. Filter by item type
@@ -106,20 +103,22 @@ pub fn filter_vault_items_by_query(
                     }
 
                     if let Some(uris) = login.get("uris").and_then(|u| u.as_array()) {
-                        let uri_match = uris.iter().any(|u_obj| {
-                            u_obj.get("uri")
-                                .and_then(|u| u.as_str())
-                                .map(|u| u.to_lowercase().contains(&q))
-                                .unwrap_or(false)
-                        });
-                        if uri_match {
-                            return true;
+                        for u_obj in uris {
+                            if let Some(uri) = u_obj.get("uri").and_then(|v| v.as_str()) {
+                                if uri.to_lowercase().contains(&q) {
+                                    return true;
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            false
+            let notes_match = item.get("notes")
+                .and_then(|n| n.as_str())
+                .map(|n| n.to_lowercase().contains(&q))
+                .unwrap_or(false);
+            notes_match
         });
     }
 
@@ -130,7 +129,18 @@ pub fn filter_vault_items_by_query(
         name_a.to_lowercase().cmp(&name_b.to_lowercase())
     });
 
-    serde_json::to_string(&items).map_err(|e| format!("JSON serialize error: {}", e))
+    items
+}
+
+pub fn filter_vault_items_by_query(
+    items_json: &str,
+    search_query: &str,
+    filter_type: &str,
+) -> Result<String, String> {
+    let items: Vec<JsonValue> = serde_json::from_str(items_json)
+        .map_err(|e| format!("JSON parse error: {}", e))?;
+    let filtered = filter_vault_items_by_query_values(items, search_query, filter_type);
+    serde_json::to_string(&filtered).map_err(|e| format!("JSON serialize error: {}", e))
 }
 
 pub fn parse_hibp_response(response_text: &str, suffix: &str) -> u32 {
@@ -156,16 +166,13 @@ pub fn parse_hibp_response(response_text: &str, suffix: &str) -> u32 {
     0
 }
 
-pub fn filter_matching_domain_items(
-    items_json: &str,
+pub fn filter_matching_domain_items_values(
+    items: Vec<JsonValue>,
     domain_or_url: &str,
     override_mode: Option<u8>,
-) -> Result<String, String> {
-    let items: Vec<JsonValue> = serde_json::from_str(items_json)
-        .map_err(|e| format!("JSON parse error: {}", e))?;
-
+) -> Vec<JsonValue> {
     if domain_or_url.trim().is_empty() {
-        return Ok("[]".to_string());
+        return Vec::new();
     }
 
     let target_host = crate::domain::get_hostname(domain_or_url);
@@ -229,5 +236,16 @@ pub fn filter_matching_domain_items(
     }
 
     exact_matches.extend(other_matches);
-    serde_json::to_string(&exact_matches).map_err(|e| format!("JSON serialize error: {}", e))
+    exact_matches
+}
+
+pub fn filter_matching_domain_items(
+    items_json: &str,
+    domain_or_url: &str,
+    override_mode: Option<u8>,
+) -> Result<String, String> {
+    let items: Vec<JsonValue> = serde_json::from_str(items_json)
+        .map_err(|e| format!("JSON parse error: {}", e))?;
+    let res = filter_matching_domain_items_values(items, domain_or_url, override_mode);
+    serde_json::to_string(&res).map_err(|e| format!("JSON serialize error: {}", e))
 }
