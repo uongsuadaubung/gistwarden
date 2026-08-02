@@ -1,4 +1,5 @@
 import {
+  callWasmAndValidate,
   type Folder,
   FolderSchema,
   mergeFoldersWasm,
@@ -14,13 +15,11 @@ export function mergeFolders(
   localFolders: readonly Folder[],
   remoteFolders: readonly Folder[],
 ): Folder[] {
-  const raw = mergeFoldersWasm(
-    JSON.stringify(localFolders),
-    JSON.stringify(remoteFolders),
+  return callWasmAndValidate(
+    () => mergeFoldersWasm(JSON.stringify(localFolders), JSON.stringify(remoteFolders)),
+    FolderSchema.array(),
+    [],
   );
-  if (!raw) return [];
-  const parsed = FolderSchema.array().safeParse(JSON.parse(raw));
-  return parsed.success ? parsed.data : [];
 }
 
 export function mergeVaultItems(
@@ -28,14 +27,11 @@ export function mergeVaultItems(
   remoteItems: readonly VaultItem[],
   lastSyncTimestamp: number,
 ): VaultItem[] {
-  const raw = mergeVaultItemsWasm(
-    JSON.stringify(localItems),
-    JSON.stringify(remoteItems),
-    lastSyncTimestamp,
+  return callWasmAndValidate(
+    () => mergeVaultItemsWasm(JSON.stringify(localItems), JSON.stringify(remoteItems), lastSyncTimestamp),
+    VaultListSchema,
+    [],
   );
-  if (!raw) return [];
-  const parsed = VaultListSchema.safeParse(JSON.parse(raw));
-  return parsed.success ? parsed.data : [];
 }
 
 export function mergeVaultPayload(
@@ -43,12 +39,10 @@ export function mergeVaultPayload(
   remotePayload: Partial<VaultPayload>,
   lastSyncTimestamp: number,
 ): VaultPayload {
-  const raw = mergeVaultPayloadWasm(
-    JSON.stringify(localPayload),
-    JSON.stringify(remotePayload),
-    lastSyncTimestamp,
+  const fallback: VaultPayload = { folders: [], items: [], trash: [] };
+  return callWasmAndValidate(
+    () => mergeVaultPayloadWasm(JSON.stringify(localPayload), JSON.stringify(remotePayload), lastSyncTimestamp),
+    VaultPayloadSchema,
+    fallback,
   );
-  if (!raw) return { folders: [], items: [], trash: [] };
-  const parsed = VaultPayloadSchema.safeParse(JSON.parse(raw));
-  return parsed.success ? parsed.data : { folders: [], items: [], trash: [] };
 }

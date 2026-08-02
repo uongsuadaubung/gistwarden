@@ -12,7 +12,7 @@ export function merge_vault_items(local_items_json: string, remote_items_json: s
 export function parse_json_import(json_text: string, existing_items_json: string, existing_folders_json: string): string;
 export function export_to_json(items_json: string, folders_json: string): string;
 export function filter_matching_domain_items(items_json: string, domain_or_url: string, override_mode?: number | null): string;
-export function parse_hibp_response(response_text: string, suffix: string): number;
+export function filter_matching_domain_items_js(items_val: any, domain_or_url: string, override_mode?: number | null): any;
 export function is_single_uri_match(stored_uri: string, current_url: string, match_mode: number | null | undefined, override_mode: number | null | undefined, target_host: string, item_host: string, target_base: string, item_base: string): boolean;
 export function filter_vault_items_by_query(items_json: string, search_query: string, filter_type: string): string;
 export function decode_qr_code(width: number, height: number, rgba_bytes: Uint8Array): string;
@@ -22,6 +22,11 @@ export function unparse_csv(rows_json: string): string;
 export function export_to_browser_csv(items_json: string): string;
 export function export_to_bitwarden_csv(items_json: string, folders_json: string): string;
 export function parse_browser_csv_import(csv_text: string): string;
+export function filter_vault_items_by_query_js(items_val: any, search_query: string, filter_type: string): any;
+export function merge_vault_payload_js(local_val: any, remote_val: any, last_sync_timestamp: bigint): any;
+export function merge_folders_js(local_val: any, remote_val: any): any;
+export function merge_vault_items_js(local_val: any, remote_val: any, last_sync_timestamp: bigint): any;
+export function parse_hibp_response(response_text: string, suffix: string): number;
 export function fast_xor(data: Uint8Array, key: Uint8Array): Uint8Array;
 export function parse_totp_secret(raw_secret: string): string;
 export function generate_totp_code(secret_base32: string, timestamp_ms: bigint, period_secs: bigint): string;
@@ -64,7 +69,9 @@ export interface InitOutput {
   readonly export_to_json: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly fast_xor: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly filter_matching_domain_items: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+  readonly filter_matching_domain_items_js: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly filter_vault_items_by_query: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+  readonly filter_vault_items_by_query_js: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
   readonly generate_passphrase: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
   readonly generate_password: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
   readonly generate_totp_code: (a: number, b: number, c: number, d: bigint, e: bigint) => void;
@@ -76,8 +83,11 @@ export interface InitOutput {
   readonly hmac_sha256: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly is_single_uri_match: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number) => number;
   readonly merge_folders: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly merge_folders_js: (a: number, b: number, c: number) => void;
   readonly merge_vault_items: (a: number, b: number, c: number, d: number, e: number, f: bigint) => void;
+  readonly merge_vault_items_js: (a: number, b: number, c: number, d: bigint) => void;
   readonly merge_vault_payload: (a: number, b: number, c: number, d: number, e: number, f: bigint) => void;
+  readonly merge_vault_payload_js: (a: number, b: number, c: number, d: bigint) => void;
   readonly p1363_to_der: (a: number, b: number, c: number) => void;
   readonly pack_attestation_object: (a: number, b: number, c: number) => void;
   readonly parse_bitwarden_csv_import: (a: number, b: number, c: number, d: number, e: number) => void;
@@ -89,9 +99,9 @@ export interface InitOutput {
   readonly parse_totp_secret: (a: number, b: number, c: number) => void;
   readonly sha1_prefix_suffix: (a: number, b: number, c: number) => void;
   readonly unparse_csv: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_0: (a: number) => void;
-  readonly __wbindgen_export_1: (a: number, b: number) => number;
-  readonly __wbindgen_export_2: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_export_0: (a: number, b: number) => number;
+  readonly __wbindgen_export_1: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_export_2: (a: number) => void;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
   readonly __wbindgen_export_3: (a: number, b: number, c: number) => void;
 }

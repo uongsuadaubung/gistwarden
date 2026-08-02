@@ -3,6 +3,7 @@
  * Nạp 100% file `.wasm` trực tiếp từ mô đun Rust compiled.
  */
 
+import type { z } from "zod";
 import * as wasmBindgen from "./generated/gistwarden_wasm";
 import type { Folder, VaultItem } from "../vault-schemas.ts";
 
@@ -458,6 +459,89 @@ export function estimatePasswordStrengthWasm(
   const raw = wasm.estimate_password_strength(pass, inputsJson);
   if (!raw) return { score: 0, entropy: 0, guesses: 1 };
   return JSON.parse(raw);
+}
+
+/**
+ * Generic Helper to execute WASM functions, parse JSON/JsValue, and validate using Zod schemas.
+ * Eliminates repetitive JSON.parse and safeParse boilerplate across the codebase.
+ */
+export function callWasmAndValidate<T>(
+  fn: () => unknown,
+  schema: z.ZodType<T>,
+  fallback: T,
+): T {
+  try {
+    const raw = fn();
+    if (raw === undefined || raw === null || raw === "") return fallback;
+    const parsedData = typeof raw === "string" ? JSON.parse(raw) : raw;
+    const validated = schema.safeParse(parsedData);
+    if (!validated.success) {
+      console.warn("[WASM Helper] Zod validation failed:", validated.error);
+      return fallback;
+    }
+    return validated.data;
+  } catch (e) {
+    console.warn("[WASM Helper] WASM execution failed:", e);
+    return fallback;
+  }
+}
+
+export function filterMatchingDomainItemsWasmJs(
+  items: unknown,
+  domainOrUrl: string,
+  overrideMode?: number | null,
+): unknown {
+  return (wasm as unknown as Record<string, Function>).filter_matching_domain_items_js(
+    items,
+    domainOrUrl,
+    overrideMode ?? null,
+  );
+}
+
+export function filterVaultItemsByQueryWasmJs(
+  items: unknown,
+  searchQuery: string,
+  filterType: string,
+): unknown {
+  return (wasm as unknown as Record<string, Function>).filter_vault_items_by_query_js(
+    items,
+    searchQuery,
+    filterType,
+  );
+}
+
+export function mergeVaultPayloadWasmJs(
+  localPayload: unknown,
+  remotePayload: unknown,
+  lastSyncTimestamp: number = 0,
+): unknown {
+  return (wasm as unknown as Record<string, Function>).merge_vault_payload_js(
+    localPayload,
+    remotePayload,
+    BigInt(lastSyncTimestamp),
+  );
+}
+
+export function mergeFoldersWasmJs(
+  localFolders: unknown,
+  remoteFolders: unknown,
+): unknown {
+  return (wasm as unknown as Record<string, Function>).merge_folders_js(
+    localFolders,
+    remoteFolders,
+  );
+}
+
+export function mergeVaultItemsWasmJs(
+  localItems: unknown,
+  remoteItems: unknown,
+  lastSyncTimestamp: number = 0,
+): unknown {
+  return (wasm as unknown as Record<string, Function>).merge_vault_items_js(
+    localItems,
+    remoteItems,
+    BigInt(lastSyncTimestamp),
+  );
 }
 
 export function mergeVaultPayloadWasm(

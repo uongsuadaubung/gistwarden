@@ -2,6 +2,7 @@ import { getBaseDomain, getHostname } from "./domain-utils.ts";
 import { UriMatchMode, type VaultItem, VaultListSchema } from "./vault-schemas.ts";
 import { isLoginItem, VaultItemType } from "./vault-types.ts";
 import {
+  callWasmAndValidate,
   filterMatchingDomainItemsWasm,
   filterVaultItemsByQueryWasm,
   initWasmAsync,
@@ -97,15 +98,11 @@ export function filterMatchingDomainItems(
   overrideDefaultMode?: UriMatchMode,
 ): VaultItem[] {
   if (!domainOrUrl || !items || items.length === 0) return [];
-  const itemsJson = JSON.stringify(items);
-  const raw = filterMatchingDomainItemsWasm(
-    itemsJson,
-    domainOrUrl,
-    overrideDefaultMode,
+  return callWasmAndValidate(
+    () => filterMatchingDomainItemsWasm(JSON.stringify(items), domainOrUrl, overrideDefaultMode),
+    VaultListSchema,
+    [],
   );
-  if (!raw) return [];
-  const parsed = VaultListSchema.safeParse(JSON.parse(raw));
-  return parsed.success ? parsed.data : [];
 }
 
 export function filterVaultItemsByQuery(
@@ -116,9 +113,9 @@ export function filterVaultItemsByQuery(
   if (!items || items.length === 0) return [];
   if (!searchQuery && filterType === "all") return items;
 
-  const itemsJson = JSON.stringify(items);
-  const raw = filterVaultItemsByQueryWasm(itemsJson, searchQuery, filterType);
-  if (!raw) return [];
-  const parsed = VaultListSchema.safeParse(JSON.parse(raw));
-  return parsed.success ? parsed.data : [];
+  return callWasmAndValidate(
+    () => filterVaultItemsByQueryWasm(JSON.stringify(items), searchQuery, filterType),
+    VaultListSchema,
+    [],
+  );
 }
