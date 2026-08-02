@@ -31,6 +31,8 @@
     "@types/node": "^26.1.2",
     "bun-plugin-solid": "^1.0.0",
     "bun-types": "^1.3.14",
+    "esbuild": "^0.28.1",
+    "esbuild-plugin-solid": "^0.6.0",
     "typescript": "^7.0.2"
   }
 }
