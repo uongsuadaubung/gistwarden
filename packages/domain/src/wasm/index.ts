@@ -9,6 +9,12 @@ import type { Folder, VaultItem } from "../vault-schemas.ts";
 
 let isWasmLoaded = false;
 let initPromise: Promise<boolean> | null = null;
+const fnCache = new Map<string | symbol, (...args: unknown[]) => unknown>();
+
+function markWasmLoaded(): void {
+  isWasmLoaded = true;
+  fnCache.clear();
+}
 
 export function ensureWasmInitialized(): boolean {
   if (isWasmLoaded) return true;
@@ -17,11 +23,12 @@ export function ensureWasmInitialized(): boolean {
     if (typeof process !== "undefined" && process.versions?.node) {
       const fs = require("node:fs");
       const path = require("node:path");
-      const wasmPath = path.join(__dirname, "generated", "gistwarden_wasm_bg.wasm");
+      const currentDir = import.meta.dirname ?? (typeof __dirname !== "undefined" ? __dirname : ".");
+      const wasmPath = path.join(currentDir, "generated", "gistwarden_wasm_bg.wasm");
       if (fs.existsSync(wasmPath)) {
         const bytes = fs.readFileSync(wasmPath);
         wasmBindgen.initSync({ module: bytes });
-        isWasmLoaded = true;
+        markWasmLoaded();
         return true;
       }
     }
@@ -43,7 +50,7 @@ export async function initWasmAsync(): Promise<boolean> {
         const res = await fetch(wasmUrl);
         const bytes = await res.arrayBuffer();
         wasmBindgen.initSync({ module: bytes });
-        isWasmLoaded = true;
+        markWasmLoaded();
         return true;
       }
     } catch (e) {
@@ -65,7 +72,6 @@ if (typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function
  * Memoized Fast-Path Proxy Guard around Rust WASM bindings.
  * Zero-allocation fast-path when WASM is initialized, cached closures when pending.
  */
-const fnCache = new Map<string | symbol, (...args: unknown[]) => unknown>();
 
 export const wasm: typeof wasmBindgen = new Proxy(wasmBindgen, {
   get(target, prop, receiver) {

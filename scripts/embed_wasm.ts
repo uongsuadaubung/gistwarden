@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const projectRoot = join(__dirname, "..");
+const currentDir = import.meta.dirname ?? (typeof __dirname !== "undefined" ? __dirname : ".");
+const projectRoot = join(currentDir, "..");
 const wasmDir = join(
   projectRoot,
   "packages",
