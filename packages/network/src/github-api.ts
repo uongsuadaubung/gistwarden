@@ -1,12 +1,5 @@
 import { z } from "zod";
 import {
-  DEFAULT_GITHUB_CONFIG,
-  getAccountSettings,
-  getGithubToken,
-  GithubUserSchema,
-  updateAccountSettings,
-} from "@gistwarden/repository";
-import {
   APP_NAME,
   safeJsonParse,
   safeParseUrl,
@@ -14,11 +7,17 @@ import {
 } from "@gistwarden/domain";
 import { err, ok, Result } from "neverthrow";
 import { fetchText } from "./fetch-utils.ts";
+import type { SyncOptions, SyncResult } from "./sync-provider-types.ts";
 
 const GITHUB_API_BASE = "https://api.github.com";
 
 const GIST_DESCRIPTION = `${APP_NAME.toLowerCase()}_vault`;
 const GIST_FILE_NAME = `${APP_NAME.toLowerCase()}.json`;
+
+const GithubUserSchema = z.object({
+  login: z.string(),
+  avatar_url: z.string(),
+});
 
 const GistFileSchema = z.object({
   content: z.string().optional(),
@@ -39,15 +38,15 @@ export type GistType = z.infer<typeof GistSchema>;
 async function githubRequest(
   path: string,
   options: RequestInit = {},
+  authToken?: string,
 ): Promise<Result<unknown, TranslationKey>> {
-  const token = await getGithubToken();
-  if (!token) return err("github_error_missing_token");
+  if (!authToken) return err("github_error_missing_token");
 
   const res = await fetchText(`${GITHUB_API_BASE}${path}`, {
     ...options,
     cache: "no-store",
     headers: {
-      "Authorization": `token ${token}`,
+      "Authorization": `token ${authToken}`,
       "Accept": "application/vnd.github.v3+json",
       ...(options.headers || {}),
     },
@@ -96,8 +95,10 @@ export async function validateToken(
   });
 }
 
-export async function findGistId(): Promise<Result<string, TranslationKey>> {
-  const reqRes = await githubRequest("/gists");
+export async function findGistId(
+  token: string,
+): Promise<Result<string, TranslationKey>> {
+  const reqRes = await githubRequest("/gists", {}, token);
   if (reqRes.isErr()) {
     return err(reqRes.error);
   }
@@ -113,19 +114,24 @@ export async function findGistId(): Promise<Result<string, TranslationKey>> {
 
 export async function createGist(
   content: string,
+  token: string,
 ): Promise<Result<GistType, TranslationKey>> {
-  const reqRes = await githubRequest("/gists", {
-    method: "POST",
-    body: JSON.stringify({
-      description: GIST_DESCRIPTION,
-      public: false,
-      files: {
-        [GIST_FILE_NAME]: {
-          content,
+  const reqRes = await githubRequest(
+    "/gists",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        description: GIST_DESCRIPTION,
+        public: false,
+        files: {
+          [GIST_FILE_NAME]: {
+            content,
+          },
         },
-      },
-    }),
-  });
+      }),
+    },
+    token,
+  );
   if (reqRes.isErr()) {
     return err(reqRes.error);
   }
@@ -139,29 +145,36 @@ export async function createGist(
 export async function updateGist(
   gistId: string,
   content: string,
+  token: string,
 ): Promise<Result<unknown, TranslationKey>> {
-  return await githubRequest(`/gists/${gistId}`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      description: GIST_DESCRIPTION,
-      files: {
-        [GIST_FILE_NAME]: {
-          content,
+  return await githubRequest(
+    `/gists/${gistId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        description: GIST_DESCRIPTION,
+        files: {
+          [GIST_FILE_NAME]: {
+            content,
+          },
         },
-      },
-    }),
-  });
+      }),
+    },
+    token,
+  );
 }
 
 export async function uploadToGist(
   content: string,
-): Promise<Result<void, TranslationKey>> {
-  const settingsRes = await getAccountSettings();
-  if (settingsRes.isErr()) return err(settingsRes.error);
-  let gistId = settingsRes.value.githubConfig.gistId;
+  apiOpts?: SyncOptions,
+): Promise<Result<SyncResult, TranslationKey>> {
+  const token = apiOpts?.token;
+  if (!token) return err("github_error_missing_token");
+
+  let gistId = apiOpts?.gistId;
 
   if (!gistId) {
-    const findRes = await findGistId();
+    const findRes = await findGistId(token);
     if (findRes.isErr()) {
       return err(findRes.error);
     }
@@ -169,37 +182,28 @@ export async function uploadToGist(
   }
 
   if (gistId) {
-    const updateRes = await updateGist(gistId, content);
+    const updateRes = await updateGist(gistId, content, token);
     if (updateRes.isErr()) {
       return err(updateRes.error);
     }
   } else {
-    const createRes = await createGist(content);
+    const createRes = await createGist(content, token);
     if (createRes.isErr()) {
       return err(createRes.error);
     }
     gistId = createRes.value.id;
   }
 
-  const currentGithubConfig = settingsRes.value.githubConfig;
-  const updatedGithubConfig = { ...currentGithubConfig, gistId };
-
-  const updateSettingsRes = await updateAccountSettings({
-    githubConfig: updatedGithubConfig,
-    lastSync: Date.now(),
-  });
-  if (updateSettingsRes.isErr()) {
-    return err(updateSettingsRes.error);
-  }
-  return ok();
+  return ok({ gistId });
 }
 
 export async function getGist(
   gistId: string,
+  token?: string,
 ): Promise<Result<string, TranslationKey>> {
   if (!gistId) return err("github_error_missing_gist_id");
 
-  const reqRes = await githubRequest(`/gists/${gistId}`);
+  const reqRes = await githubRequest(`/gists/${gistId}`, {}, token);
   if (reqRes.isErr()) {
     return err(reqRes.error);
   }
@@ -219,7 +223,6 @@ export async function getGist(
   }
 
   if (file.raw_url) {
-    const token = await getGithubToken();
     const headers: Record<string, string> = {};
     if (token) {
       headers["Authorization"] = `token ${token}`;
@@ -243,10 +246,10 @@ export async function getGist(
 export async function downloadFromGistPublic(
   gistId: string,
   username?: string,
+  token?: string,
 ): Promise<Result<string, TranslationKey>> {
   if (!gistId) return err("github_error_missing_gist_id");
 
-  const token = await getGithubToken();
   const cacheBuster = `_t=${Date.now()}`;
 
   // Định dạng CDN URL chuẩn của GitHub: https://gist.githubusercontent.com/{username}/{gistId}/raw/gistwarden-vault.json
@@ -271,32 +274,33 @@ export async function downloadFromGistPublic(
   return ok(rawRes.value);
 }
 
-export async function downloadFromGist(): Promise<
-  Result<string, TranslationKey>
-> {
-  const settingsRes = await getAccountSettings();
-  const settings = settingsRes.isOk() ? settingsRes.value : null;
-  let gistId = settings?.githubConfig.gistId || "";
-  const username = settings?.githubConfig.username || "";
+export async function downloadFromGist(
+  apiOpts?: SyncOptions,
+): Promise<Result<SyncResult, TranslationKey>> {
+  const token = apiOpts?.token;
+  let gistId = apiOpts?.gistId || "";
+  const username = apiOpts?.username || "";
 
-  // 1. Nếu đã có gistId -> Thử tải qua Raw Gist CDN URL trước (Tốc độ cao, không tốn Rate Limit REST API)
+  // 1. Nếu đã có gistId -> Thử tải qua Raw Gist CDN URL trước
   if (gistId) {
-    const publicRes = await downloadFromGistPublic(gistId, username);
+    const publicRes = await downloadFromGistPublic(gistId, username, token);
     if (publicRes.isOk()) {
-      await updateAccountSettings({ lastSync: Date.now() });
-      return ok(publicRes.value);
+      return ok({ content: publicRes.value, gistId });
     }
 
     // Nếu CDN thất bại, thử dùng REST API với gistId hiện tại
-    const getRes = await getGist(gistId);
+    const getRes = await getGist(gistId, token);
     if (getRes.isOk()) {
-      await updateAccountSettings({ lastSync: Date.now() });
-      return ok(getRes.value);
+      return ok({ content: getRes.value, gistId });
     }
   }
 
-  // 2. Nếu chưa có gistId hoặc gistId cũ bị xóa -> Dùng REST API /gists để tìm Gist ID mới trên GitHub
-  const findRes = await findGistId();
+  // 2. Nếu chưa có gistId hoặc gistId cũ bị xóa -> Tìm Gist ID mới qua REST API
+  if (!token) {
+    return err("github_error_missing_token");
+  }
+
+  const findRes = await findGistId(token);
   if (findRes.isErr()) {
     return err(findRes.error);
   }
@@ -305,26 +309,24 @@ export async function downloadFromGist(): Promise<
     return err("github_error_gist_not_found");
   }
 
-  const downloadRes = await getGist(gistId);
+  const downloadRes = await getGist(gistId, token);
   if (downloadRes.isOk()) {
-    const updatedGithubConfig = {
-      ...(settings?.githubConfig || DEFAULT_GITHUB_CONFIG),
-      gistId,
-    };
-    await updateAccountSettings({
-      githubConfig: updatedGithubConfig,
-      lastSync: Date.now(),
-    });
+    return ok({ content: downloadRes.value, gistId });
   }
-  return downloadRes;
+  return err(downloadRes.error);
 }
 
 export async function deleteGist(
   gistId: string,
+  token?: string,
 ): Promise<Result<void, TranslationKey>> {
-  const reqRes = await githubRequest(`/gists/${gistId}`, {
-    method: "DELETE",
-  });
+  const reqRes = await githubRequest(
+    `/gists/${gistId}`,
+    {
+      method: "DELETE",
+    },
+    token,
+  );
   if (reqRes.isErr()) {
     return err(reqRes.error);
   }

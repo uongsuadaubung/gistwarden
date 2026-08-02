@@ -174,8 +174,15 @@ export function sha1PrefixSuffixWasm(password: string): {
   suffix: string;
 } {
   const raw = wasm.sha1_prefix_suffix(password);
-  const [prefix, suffix] = raw.split(":");
-  return { prefix, suffix };
+  if (raw.includes(":")) {
+    const [prefix, suffix] = raw.split(":");
+    return { prefix, suffix };
+  }
+  const hex = raw.toUpperCase();
+  return {
+    prefix: hex.slice(0, 5),
+    suffix: hex.slice(5),
+  };
 }
 
 /**
@@ -567,7 +574,7 @@ export function filterMatchingDomainItemsWasmJs(
   domainOrUrl: string,
   overrideMode?: number | null,
 ): unknown {
-  return (wasm as unknown as Record<string, Function>).filter_matching_domain_items_js(
+  return wasm.filter_matching_domain_items_js(
     items,
     domainOrUrl,
     overrideMode ?? null,
@@ -579,7 +586,7 @@ export function filterVaultItemsByQueryWasmJs(
   searchQuery: string,
   filterType: string,
 ): unknown {
-  return (wasm as unknown as Record<string, Function>).filter_vault_items_by_query_js(
+  return wasm.filter_vault_items_by_query_js(
     items,
     searchQuery,
     filterType,
@@ -591,7 +598,7 @@ export function mergeVaultPayloadWasmJs(
   remotePayload: unknown,
   lastSyncTimestamp: number = 0,
 ): unknown {
-  return (wasm as unknown as Record<string, Function>).merge_vault_payload_js(
+  return wasm.merge_vault_payload_js(
     localPayload,
     remotePayload,
     BigInt(lastSyncTimestamp),
@@ -602,7 +609,7 @@ export function mergeFoldersWasmJs(
   localFolders: unknown,
   remoteFolders: unknown,
 ): unknown {
-  return (wasm as unknown as Record<string, Function>).merge_folders_js(
+  return wasm.merge_folders_js(
     localFolders,
     remoteFolders,
   );
@@ -613,7 +620,7 @@ export function mergeVaultItemsWasmJs(
   remoteItems: unknown,
   lastSyncTimestamp: number = 0,
 ): unknown {
-  return (wasm as unknown as Record<string, Function>).merge_vault_items_js(
+  return wasm.merge_vault_items_js(
     localItems,
     remoteItems,
     BigInt(lastSyncTimestamp),

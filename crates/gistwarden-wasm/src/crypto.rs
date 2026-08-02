@@ -130,7 +130,12 @@ pub fn sha1_prefix_suffix(password: &str) -> Result<String, String> {
     let mut hasher = Sha1::new();
     hasher.update(password.as_bytes());
     let result = hasher.finalize();
-    Ok(data_encoding::HEXUPPER.encode(&result))
+    let hex = data_encoding::HEXUPPER.encode(&result);
+    if hex.len() >= 5 {
+        Ok(format!("{}:{}", &hex[..5], &hex[5..]))
+    } else {
+        Ok(hex)
+    }
 }
 
 pub fn hmac_sha256(message: &str, secret_key: &str) -> Result<String, String> {

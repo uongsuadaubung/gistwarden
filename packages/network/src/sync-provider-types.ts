@@ -8,13 +8,32 @@ export interface SyncValidationResult {
   avatarUrl: string;
 }
 
+export interface SyncOptions {
+  token?: string;
+  gistId?: string;
+  username?: string;
+}
+
+export interface SyncResult {
+  content?: string;
+  gistId?: string;
+}
+
 export interface ISyncProvider {
   readonly id: SyncProviderId;
   readonly name: string;
 
-  upload(content: string): Promise<Result<void, TranslationKey>>;
-  download(): Promise<Result<string, TranslationKey>>;
-  delete(targetId?: string): Promise<Result<void, TranslationKey>>;
+  upload(
+    content: string,
+    options?: SyncOptions,
+  ): Promise<Result<SyncResult, TranslationKey>>;
+  download(
+    options?: SyncOptions,
+  ): Promise<Result<SyncResult, TranslationKey>>;
+  delete(
+    targetId?: string,
+    options?: SyncOptions,
+  ): Promise<Result<void, TranslationKey>>;
   validateConfig(
     configToken?: string,
   ): Promise<Result<SyncValidationResult, TranslationKey>>;
