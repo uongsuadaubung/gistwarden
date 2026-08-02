@@ -188,6 +188,12 @@ impl<'a> Visit<'a> for AstLinterVisitor<'a> {
                 "strict-layer-boundaries",
                 format!("Layer Violation: Background Worker script must NOT import UI layer components/stores ('{}').", import_path),
             );
+        } else if self.file_layer == 3 && target_layer == 2 {
+            self.add_issue(
+                decl.span,
+                "strict-layer-boundaries",
+                format!("Layer Violation: Network Layer (L3) must NOT import Repository Layer (L2) directly ('{}').", import_path),
+            );
         } else if target_layer > 0 && self.file_layer > 0 && self.file_layer < target_layer {
             self.add_issue(
                 decl.span,

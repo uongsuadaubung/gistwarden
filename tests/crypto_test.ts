@@ -10,6 +10,7 @@ import {
   deriveKey,
   encryptData,
   generateSalt,
+  hashPasswordSHA1PrefixSuffix,
   parseSshKey,
   parseTotpSecret,
 } from "@gistwarden/domain";
@@ -468,4 +469,12 @@ b3BlbnNzaC1rZXktdjEA
   if (truncatedRes.isErr()) {
     assertEquals(truncatedRes.error, "ssh_invalid_key");
   }
+});
+
+test("Crypto - HIBP SHA-1 Prefix (5 chars) and Suffix (35 chars) Extraction", async () => {
+  const { prefix, suffix } = await hashPasswordSHA1PrefixSuffix("password");
+  assertEquals(prefix.length, 5);
+  assertEquals(suffix.length, 35);
+  assertEquals(prefix, "5BAA6");
+  assertEquals(suffix, "1E4C9B93F3F0682250B6CF8331B7EE68FD8");
 });

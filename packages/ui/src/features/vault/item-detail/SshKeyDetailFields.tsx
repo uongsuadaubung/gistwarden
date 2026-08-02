@@ -1,3 +1,4 @@
+import CopyableField from "@/components/ui/CopyableField.tsx";
 import { type Component, createSignal, Show } from "solid-js";
 import type { SshKeyVaultItem } from "@gistwarden/domain";
 import { t } from "@/core/i18n.ts";
@@ -61,52 +62,20 @@ export const SshKeyDetailFields: Component<SshKeyDetailFieldsProps> = (
         </div>
 
         {/* Public Key */}
-        <Show when={props.item.sshKey.publicKey}>
-          <div class="detail-row">
-            <div class="field-content">
-              <div class="field-label">{t("detail_ssh_public_key")}</div>
-              <div class="field-value text-break">
-                {props.item.sshKey.publicKey}
-              </div>
-            </div>
-            <button
-              type="button"
-              class="action-btn"
-              onClick={() =>
-                props.onCopy(
-                  props.item.sshKey.publicKey || "",
-                  t("detail_ssh_public_key"),
-                )}
-              title={t("btn_copy")}
-            >
-              <CopyIcon />
-            </button>
-          </div>
-        </Show>
+        <CopyableField
+          label={t("detail_ssh_public_key")}
+          value={props.item.sshKey.publicKey}
+          onCopy={props.onCopy}
+          copyTitle={t("btn_copy")}
+        />
 
         {/* Fingerprint */}
-        <Show when={props.item.sshKey.keyFingerprint}>
-          <div class="detail-row">
-            <div class="field-content">
-              <div class="field-label">{t("detail_ssh_fingerprint")}</div>
-              <div class="field-value text-break">
-                {props.item.sshKey.keyFingerprint}
-              </div>
-            </div>
-            <button
-              type="button"
-              class="action-btn"
-              onClick={() =>
-                props.onCopy(
-                  props.item.sshKey.keyFingerprint || "",
-                  t("detail_ssh_fingerprint"),
-                )}
-              title={t("btn_copy")}
-            >
-              <CopyIcon />
-            </button>
-          </div>
-        </Show>
+        <CopyableField
+          label={t("detail_ssh_fingerprint")}
+          value={props.item.sshKey.keyFingerprint}
+          onCopy={props.onCopy}
+          copyTitle={t("btn_copy")}
+        />
       </div>
     </>
   );

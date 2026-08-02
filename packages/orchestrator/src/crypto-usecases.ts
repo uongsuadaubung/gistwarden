@@ -5,6 +5,7 @@ import {
   SESSION_KEY_VERIFICATION_CIPHERTEXT,
   SESSION_KEY_VERIFICATION_IV,
   type TranslationKey,
+  zeroize,
 } from "@gistwarden/domain";
 import { getAccountSettings, getSessionItem } from "@gistwarden/repository";
 import { err, ok, Result } from "neverthrow";
@@ -30,6 +31,8 @@ export async function getOrDeriveKey(
   const salt = new Uint8Array(saltBufferRes.value);
 
   const deriveRes = await deriveKey(password, salt);
+  zeroize(salt);
+
   if (deriveRes.isErr()) {
     return err(deriveRes.error);
   }
@@ -67,11 +70,16 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
   if (saltBufferRes.isErr()) return false;
   const salt = new Uint8Array(saltBufferRes.value);
   const deriveRes = await deriveKey(password, salt);
+  zeroize(salt);
+
   if (deriveRes.isErr()) return false;
   const key = deriveRes.value;
 
-  const decryptedRes = await decryptData(ciphertextB64, ivB64, key);
-  if (decryptedRes.isErr()) return false;
-
-  return decryptedRes.value === "verification_token";
+  try {
+    const decryptedRes = await decryptData(ciphertextB64, ivB64, key);
+    if (decryptedRes.isErr()) return false;
+    return decryptedRes.value === "verification_token";
+  } finally {
+    zeroize(key);
+  }
 }

@@ -1,3 +1,4 @@
+import CopyableField from "@/components/ui/CopyableField.tsx";
 import {
   type Component,
   createSignal,
@@ -79,28 +80,13 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
       </div>
       <div class="card mb-16">
         {/* Username Field */}
-        <div class="detail-row">
-          <div class="field-content">
-            <div class="field-label">{t("edit_label_username")}</div>
-            <div class="field-value text-break">
-              {props.item.login.username || t("detail_no_value")}
-            </div>
-          </div>
-          <Show when={props.item.login.username}>
-            <button
-              type="button"
-              class="action-btn"
-              onClick={() =>
-                props.onCopy(
-                  props.item.login.username || "",
-                  t("edit_label_username"),
-                )}
-              title={t("detail_copy_username")}
-            >
-              <CopyIcon />
-            </button>
-          </Show>
-        </div>
+        <CopyableField
+          label={t("edit_label_username")}
+          value={props.item.login.username}
+          fallbackText={t("detail_no_value")}
+          onCopy={props.onCopy}
+          copyTitle={t("detail_copy_username")}
+        />
 
         {/* Password Field */}
         <div class="detail-row">

@@ -208,3 +208,11 @@ export async function hashPasswordSHA1PrefixSuffix(
   await initWasmAsync();
   return sha1PrefixSuffixWasm(password);
 }
+
+/**
+ * An toàn bộ nhớ: Ghi đè toàn bộ mảng byte bằng số 0 để xóa sạch khóa/mật khẩu khỏi RAM.
+ */
+export function zeroize(buffer: Uint8Array | ArrayBuffer): void {
+  const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  u8.fill(0);
+}
