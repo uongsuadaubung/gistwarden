@@ -454,22 +454,20 @@ export const Fido2Prompt: Component = () => {
                 <Show
                   when={matchingAccounts().length > 0}
                   fallback={
-                    <div
-                      class="prompt-subtitle"
-                      innerHTML={t("fido2_register_subtitle_new", {
+                    <div class="prompt-subtitle">
+                      {t("fido2_register_subtitle_new", {
                         rp: pendingReq()?.options.rp?.name ||
                           pendingReq()?.options.rp?.id || "",
                         user: pendingReq()?.options.user?.name || "",
                       })}
-                    />
+                    </div>
                   }
                 >
-                  <div
-                    class="prompt-subtitle"
-                    innerHTML={t("fido2_register_subtitle_choose", {
+                  <div class="prompt-subtitle">
+                    {t("fido2_register_subtitle_choose", {
                       user: pendingReq()?.options.user?.name || "",
                     })}
-                  />
+                  </div>
                 </Show>
 
                 <div class="passkey-list">
@@ -626,12 +624,11 @@ export const Fido2Prompt: Component = () => {
                   when={matchingCredentials().length === 0}
                   fallback={
                     <>
-                      <div
-                        class="prompt-subtitle"
-                        innerHTML={t("fido2_assert_subtitle", {
+                      <div class="prompt-subtitle">
+                        {t("fido2_assert_subtitle", {
                           rp: pendingReq()?.options.rpId || "",
                         })}
-                      />
+                      </div>
 
                       {/* Styled list of passkeys instead of select dropdown */}
                       <div class="passkey-list">
@@ -665,12 +662,11 @@ export const Fido2Prompt: Component = () => {
                     </>
                   }
                 >
-                  <div
-                    class="prompt-subtitle error-msg"
-                    innerHTML={t("fido2_assert_no_match", {
+                  <div class="prompt-subtitle error-msg">
+                    {t("fido2_assert_no_match", {
                       rp: pendingReq()?.options.rpId || "",
                     })}
-                  />
+                  </div>
                   <div class="prompt-footer single-btn">
                     <Button variant="secondary" block onClick={handleReject}>
                       {t("btn_close")}
