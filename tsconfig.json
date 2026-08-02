@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "jsxImportSource": "solid-js",
     "strict": true,
     "verbatimModuleSyntax": true,

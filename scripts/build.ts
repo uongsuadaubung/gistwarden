@@ -10,7 +10,8 @@ import {
 } from "node:fs";
 import { join, relative } from "node:path";
 import { zipSync } from "fflate";
-import { SolidPlugin as solidPlugin } from "bun-plugin-solid";
+import * as esbuild from "esbuild";
+import { solidPlugin } from "esbuild-plugin-solid";
 
 const startTime = performance.now();
 const projectRoot = join(import.meta.dirname || ".", "..");
@@ -238,51 +239,42 @@ async function runVerifications() {
 }
 
 async function buildTargetDirectory(outputDir: string) {
-  const extEntryPoints = [
-    join(extSrcDir, "extension/background.ts"),
-    join(extSrcDir, "extension/fido2-content-script.ts"),
-    join(extSrcDir, "extension/fido2-page-script.ts"),
-    join(extSrcDir, "extension/autofill-content-script.ts"),
-    join(extSrcDir, "popup-entry.tsx"),
-    join(extSrcDir, "guide-entry.tsx"),
+  const esmEntryPoints = [
+    { in: join(extSrcDir, "extension/background.ts"), out: "background" },
+    { in: join(extSrcDir, "popup-entry.tsx"), out: "popup" },
+    { in: join(extSrcDir, "guide-entry.tsx"), out: "guide" },
   ];
 
-  const buildResult = await Bun.build({
-    entrypoints: extEntryPoints,
+  const iifeEntryPoints = [
+    { in: join(extSrcDir, "extension/fido2-content-script.ts"), out: "fido2-content-script" },
+    { in: join(extSrcDir, "extension/fido2-page-script.ts"), out: "fido2-page-script" },
+    { in: join(extSrcDir, "extension/autofill-content-script.ts"), out: "autofill-content-script" },
+  ];
+
+  await esbuild.build({
+    entryPoints: esmEntryPoints,
+    bundle: true,
     outdir: outputDir,
-    target: "browser",
-    format: "iife",
-    naming: "[name].[ext]",
+    format: "esm",
+    target: "es2022",
     plugins: [solidPlugin()],
-    define: { "process.env.NODE_ENV": JSON.stringify("production") },
+    define: { "process.env.NODE_ENV": '"production"' },
   });
 
-  if (!buildResult.success) {
-    console.error(`Bun.build failed for ${outputDir}:`, buildResult.logs);
-    process.exit(1);
-  }
-
-  // Rename popup-entry.js -> popup.js & guide-entry.js -> guide.js
-  const popupEntryJs = join(outputDir, "popup-entry.js");
-  const popupJs = join(outputDir, "popup.js");
-  if (existsSync(popupEntryJs)) {
-    if (existsSync(popupJs)) rmSync(popupJs);
-    copyFileSync(popupEntryJs, popupJs);
-    rmSync(popupEntryJs);
-  }
-
-  const guideEntryJs = join(outputDir, "guide-entry.js");
-  const guideJs = join(outputDir, "guide.js");
-  if (existsSync(guideEntryJs)) {
-    if (existsSync(guideJs)) rmSync(guideJs);
-    copyFileSync(guideEntryJs, guideJs);
-    rmSync(guideEntryJs);
-  }
+  await esbuild.build({
+    entryPoints: iifeEntryPoints,
+    bundle: true,
+    outdir: outputDir,
+    format: "iife",
+    target: "es2022",
+    plugins: [solidPlugin()],
+    define: { "process.env.NODE_ENV": '"production"' },
+  });
 }
 
 async function runBuild() {
   copyAssets();
-  console.log(`Bundling with Bun.build (${targetArg.toUpperCase()})...`);
+  console.log(`Bundling with esbuild (${targetArg.toUpperCase()})...`);
   try {
     if (buildExtension) {
       await buildTargetDirectory(chromeDir);
@@ -294,22 +286,18 @@ async function runBuild() {
     }
 
     if (buildWeb) {
-      const webResult = await Bun.build({
-        entrypoints: [join(webSrcDir, "web-entry.tsx")],
+      await esbuild.build({
+        entryPoints: [{ in: join(webSrcDir, "web-entry.tsx"), out: "web-entry" }],
+        bundle: true,
         outdir: webDistDir,
-        target: "browser",
-        naming: "[name].[ext]",
+        format: "esm",
+        target: "es2022",
         plugins: [solidPlugin()],
-        define: { "process.env.NODE_ENV": JSON.stringify("production") },
+        define: { "process.env.NODE_ENV": '"production"' },
       });
-
-      if (!webResult.success) {
-        console.error("Bun.build failed for web:", webResult.logs);
-        process.exit(1);
-      }
     }
 
-    console.log("✓ Bundling with Bun.build successful.");
+    console.log("✓ Bundling successful.");
     if (buildExtension) {
       await createZipPackages();
     }

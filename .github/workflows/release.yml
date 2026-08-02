@@ -19,9 +19,6 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Upgrade Bun to Canary
-        run: bun upgrade --canary
-
       - name: Install dependencies
         run: bun install
 
