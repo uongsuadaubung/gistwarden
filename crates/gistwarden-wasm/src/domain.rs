@@ -13,8 +13,11 @@ pub fn get_hostname(input: &str) -> String {
         s.to_string()
     };
 
-    if let Some(host) = Url::parse(&input_with_scheme).ok().and_then(|u| u.host_str().map(|h| h.strip_prefix("www.").unwrap_or(h).to_string())) {
-        return host;
+    if let Ok(url) = Url::parse(&input_with_scheme) {
+        let host = url.host_str().map(|h| h.strip_prefix("www.").unwrap_or(h));
+        if let Some(h) = host {
+            return h.to_string();
+        }
     }
 
     String::new()

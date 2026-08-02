@@ -2,68 +2,12 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 fn parse_timestamp(date_str: Option<&str>) -> u64 {
-    let s = match date_str {
-        Some(val) if !val.trim().is_empty() => val.trim(),
-        _ => return 0,
-    };
-
-    if let Ok(ts) = chrono_like_parse(s) {
-        return ts;
-    }
-    0
-}
-
-fn chrono_like_parse(s: &str) -> Result<u64, ()> {
-    if s.len() < 19 {
-        return Err(());
-    }
-    let parts: Vec<&str> = s.split('T').collect();
-    if parts.len() != 2 {
-        return Err(());
-    }
-    let date_parts: Vec<u64> = parts[0].split('-').filter_map(|p| p.parse().ok()).collect();
-    if date_parts.len() != 3 {
-        return Err(());
-    }
-
-    let time_str = parts[1].trim_matches('Z');
-    let time_parts: Vec<&str> = time_str.split(':').collect();
-    if time_parts.len() < 3 {
-        return Err(());
-    }
-
-    let hour: u64 = time_parts[0].parse().map_err(|_| ())?;
-    let min: u64 = time_parts[1].parse().map_err(|_| ())?;
-
-    let sec_parts: Vec<&str> = time_parts[2].split('.').collect();
-    let sec: u64 = sec_parts[0].parse().map_err(|_| ())?;
-    let millis: u64 = if sec_parts.len() > 1 {
-        let ms_raw = sec_parts[1];
-        if ms_raw.len() >= 3 {
-            ms_raw[..3].parse().unwrap_or(0)
-        } else {
-            ms_raw.parse().unwrap_or(0) * 10u64.pow((3 - ms_raw.len()) as u32)
-        }
-    } else {
-        0
-    };
-
-    let year = date_parts[0];
-    let month = date_parts[1];
-    let day = date_parts[2];
-
-    let mut days_since_epoch = (year.saturating_sub(1970)) * 365 + (year.saturating_sub(1969)) / 4;
-    let days_in_months = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    for m in 1..month {
-        days_since_epoch += days_in_months[m as usize];
-    }
-    if month > 2 && (year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400))) {
-        days_since_epoch += 1;
-    }
-    days_since_epoch += day.saturating_sub(1);
-
-    let total_secs = days_since_epoch * 86400 + hour * 3600 + min * 60 + sec;
-    Ok(total_secs * 1000 + millis)
+    date_str
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.timestamp_millis().max(0) as u64)
+        .unwrap_or(0)
 }
 
 pub fn merge_vault_payload_values(
