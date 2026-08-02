@@ -8,6 +8,38 @@ use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;
 
+pub fn aes_gcm_encrypt(plaintext: &[u8], key_bytes: &[u8], iv_bytes: &[u8]) -> Result<Vec<u8>, String> {
+    use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit, Nonce};
+    if key_bytes.len() != 32 {
+        return Err("Encryption key must be 32 bytes".to_string());
+    }
+    if iv_bytes.len() != 12 {
+        return Err("IV must be 12 bytes".to_string());
+    }
+    let cipher = Aes256Gcm::new_from_slice(key_bytes).map_err(|e| e.to_string())?;
+    let nonce = Nonce::from_slice(iv_bytes);
+    cipher.encrypt(nonce, plaintext).map_err(|e| format!("AES-GCM Encryption failed: {}", e))
+}
+
+pub fn aes_gcm_decrypt(ciphertext_and_tag: &[u8], key_bytes: &[u8], iv_bytes: &[u8]) -> Result<Vec<u8>, String> {
+    use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit, Nonce};
+    if key_bytes.len() != 32 {
+        return Err("Decryption key must be 32 bytes".to_string());
+    }
+    if iv_bytes.len() != 12 {
+        return Err("IV must be 12 bytes".to_string());
+    }
+    let cipher = Aes256Gcm::new_from_slice(key_bytes).map_err(|e| e.to_string())?;
+    let nonce = Nonce::from_slice(iv_bytes);
+    cipher.decrypt(nonce, ciphertext_and_tag).map_err(|e| format!("AES-GCM Decryption failed: {}", e))
+}
+
+pub fn generate_random_bytes(length: usize) -> Vec<u8> {
+    let mut buf = vec![0u8; length];
+    let _ = getrandom::getrandom(&mut buf);
+    buf
+}
+
 pub const ARGON2_DEFAULT_ITERATIONS: u32 = 3;
 pub const ARGON2_DEFAULT_MEMORY_KIB: u32 = 65536; // 64MB
 pub const ARGON2_DEFAULT_HASH_LEN: usize = 32;

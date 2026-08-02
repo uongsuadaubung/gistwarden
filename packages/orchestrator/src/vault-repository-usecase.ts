@@ -13,7 +13,7 @@ import { EncryptedPayloadSchema, getSessionItem } from "@gistwarden/repository";
 import { getSessionKey } from "./crypto-usecases.ts";
 
 export type DecryptedVaultData = VaultPayload & {
-  key: CryptoKey;
+  key: Uint8Array;
   salt: string;
 };
 

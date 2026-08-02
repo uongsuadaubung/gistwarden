@@ -2,7 +2,10 @@ import { err, ok, Result } from "neverthrow";
 import { type TranslationKey } from "./i18n.ts";
 import { logger } from "./logger.ts";
 import {
+  aesGcmDecryptWasm,
+  aesGcmEncryptWasm,
   deriveKeyArgon2idWasm,
+  generateRandomBytesWasm,
   hashPasswordArgon2idWasm,
   hmacSha256Wasm,
   initWasmAsync,
@@ -16,51 +19,44 @@ export { p1363ToDerWasm };
 export async function deriveKey(
   password: string,
   salt: Uint8Array,
-): Promise<Result<CryptoKey, TranslationKey>> {
-  let keyBytes: Uint8Array;
+): Promise<Result<Uint8Array, TranslationKey>> {
   try {
     await initWasmAsync();
-    keyBytes = deriveKeyArgon2idWasm(password, salt);
+    const keyBytes = deriveKeyArgon2idWasm(password, salt);
+    return ok(keyBytes);
   } catch (e) {
     logger.crypto.error("Key derivation (argon2id WASM) failed:", e);
     return err("settings_error_mp_fail");
   }
-
-  const buffer = new ArrayBuffer(keyBytes.byteLength);
-  new Uint8Array(buffer).set(keyBytes);
-
-  return await importAesGcmKey(buffer, "settings_error_mp_fail");
 }
 
 export async function encryptData(
   data: string,
-  key: CryptoKey,
+  key: Uint8Array,
 ): Promise<Result<{ iv: string; ciphertext: string }, TranslationKey>> {
   const encoder = new TextEncoder();
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
-  let ciphertextBuffer: ArrayBuffer;
   try {
-    ciphertextBuffer = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      key,
+    const ciphertextBuffer = aesGcmEncryptWasm(
       encoder.encode(data),
+      key,
+      iv,
     );
+    const ivBase64 = arrayBufferToBase64(iv);
+    const ciphertextBase64 = arrayBufferToBase64(ciphertextBuffer);
+
+    return ok({ iv: ivBase64, ciphertext: ciphertextBase64 });
   } catch (e) {
-    logger.crypto.error("AES-GCM Encryption failed:", e);
+    logger.crypto.error("AES-GCM WASM Encryption failed:", e);
     return err("crypto_error_encrypt_failed");
   }
-
-  const ivBase64 = arrayBufferToBase64(iv.buffer);
-  const ciphertextBase64 = arrayBufferToBase64(ciphertextBuffer);
-
-  return ok({ iv: ivBase64, ciphertext: ciphertextBase64 });
 }
 
 export async function decryptData(
   ciphertextBase64: string,
   ivBase64: string,
-  key: CryptoKey,
+  key: Uint8Array,
 ): Promise<Result<string, TranslationKey>> {
   const decoder = new TextDecoder();
   const ivRes = base64ToArrayBuffer(ivBase64);
@@ -71,30 +67,59 @@ export async function decryptData(
   const iv = new Uint8Array(ivRes.value);
   const ciphertext = new Uint8Array(ciphertextRes.value);
 
-  let decryptedBuffer: ArrayBuffer;
   try {
-    decryptedBuffer = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv },
-      key,
+    const decryptedBuffer = aesGcmDecryptWasm(
       ciphertext,
+      key,
+      iv,
     );
+    return ok(decoder.decode(decryptedBuffer));
   } catch (e) {
     logger.crypto.error(
-      "AES-GCM Decryption failed (invalid Master Password / key):",
+      "AES-GCM WASM Decryption failed (invalid Master Password / key):",
       e,
     );
     return err("login_error_wrong_mp");
   }
+}
 
-  return ok(decoder.decode(decryptedBuffer));
+export async function batchDecryptData(
+  items: Array<{ ciphertextBase64: string; ivBase64: string }>,
+  key: Uint8Array,
+): Promise<Result<Array<Result<string, TranslationKey>>, TranslationKey>> {
+  const results: Array<Result<string, TranslationKey>> = [];
+
+  for (const item of items) {
+    const ivRes = base64ToArrayBuffer(item.ivBase64);
+    const ctRes = base64ToArrayBuffer(item.ciphertextBase64);
+    if (ivRes.isErr() || ctRes.isErr()) {
+      results.push(err("crypto_error_encrypt_failed"));
+      continue;
+    }
+    try {
+      const dec = aesGcmDecryptWasm(
+        new Uint8Array(ctRes.value),
+        key,
+        new Uint8Array(ivRes.value),
+      );
+      results.push(ok(new TextDecoder().decode(dec)));
+    } catch {
+      results.push(err("login_error_wrong_mp"));
+    }
+  }
+
+  return ok(results);
 }
 
 export function generateSalt(): Uint8Array {
-  return crypto.getRandomValues(new Uint8Array(16));
+  return generateRandomBytesWasm(16);
 }
 
-export function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  return new Uint8Array(buffer).toBase64();
+export function arrayBufferToBase64(
+  buffer: Uint8Array | ArrayBuffer,
+): string {
+  const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  return u8.toBase64();
 }
 
 export function base64ToArrayBuffer(
@@ -143,25 +168,6 @@ export async function hashValue(
   } catch (error) {
     logger.crypto.error("argon2id WASM hashing failed:", error);
     return err("login_error_wrong_pin");
-  }
-}
-
-export async function importAesGcmKey(
-  buffer: ArrayBuffer,
-  errorKey: TranslationKey,
-): Promise<Result<CryptoKey, TranslationKey>> {
-  try {
-    const key = await crypto.subtle.importKey(
-      "raw",
-      buffer,
-      { name: "AES-GCM", length: 256 },
-      true,
-      ["encrypt", "decrypt"],
-    );
-    return ok(key);
-  } catch (error) {
-    logger.crypto.error("Failed to import AES-GCM key:", error);
-    return err(errorKey);
   }
 }
 

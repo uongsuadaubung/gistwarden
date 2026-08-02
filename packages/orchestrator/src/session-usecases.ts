@@ -16,12 +16,11 @@ import {
 import { notifyBackground } from "./messaging.ts";
 
 export async function persistSessionKey(
-  key: CryptoKey | null,
+  key: Uint8Array | null,
 ): Promise<void> {
   sessionManager.setKey(key);
   if (key) {
-    const raw = await crypto.subtle.exportKey("raw", key);
-    const base64 = arrayBufferToBase64(raw);
+    const base64 = arrayBufferToBase64(key);
     await setSessionItem(SESSION_KEY_DERIVED_KEY, base64);
   } else {
     await removeSessionItem(SESSION_KEY_DERIVED_KEY);
@@ -29,7 +28,7 @@ export async function persistSessionKey(
 }
 
 export async function restoreSessionKeyFromStorage(): Promise<
-  CryptoKey | null
+  Uint8Array | null
 > {
   const currentKey = sessionManager.getKey();
   if (currentKey) return currentKey;
@@ -39,24 +38,9 @@ export async function restoreSessionKeyFromStorage(): Promise<
   if (typeof base64 === "string" && base64) {
     const bufferRes = base64ToArrayBuffer(base64);
     if (bufferRes.isErr()) return null;
-    const buffer = bufferRes.value;
-    try {
-      const importedKey = await crypto.subtle.importKey(
-        "raw",
-        buffer,
-        { name: "AES-GCM", length: 256 },
-        true,
-        ["encrypt", "decrypt"],
-      );
-      sessionManager.setKey(importedKey);
-      return importedKey;
-    } catch (e) {
-      console.error(
-        "[Crypto] Failed to import key from session storage:",
-        e,
-      );
-      return null;
-    }
+    const key = new Uint8Array(bufferRes.value);
+    sessionManager.setKey(key);
+    return key;
   }
   return null;
 }

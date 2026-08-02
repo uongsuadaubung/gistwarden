@@ -456,6 +456,26 @@ export function generateAssertionSignatureBaseWasm(
   return wasm.generate_assertion_signature_base(authData, clientDataHash);
 }
 
+export function aesGcmEncryptWasm(
+  plaintext: Uint8Array,
+  keyBytes: Uint8Array,
+  ivBytes: Uint8Array,
+): Uint8Array {
+  return wasm.aes_gcm_encrypt(plaintext, keyBytes, ivBytes);
+}
+
+export function aesGcmDecryptWasm(
+  ciphertextAndTag: Uint8Array,
+  keyBytes: Uint8Array,
+  ivBytes: Uint8Array,
+): Uint8Array {
+  return wasm.aes_gcm_decrypt(ciphertextAndTag, keyBytes, ivBytes);
+}
+
+export function generateRandomBytesWasm(length: number): Uint8Array {
+  return wasm.generate_random_bytes(length);
+}
+
 export function isSingleUriMatchWasm(
   storedUri: string,
   currentUrl: string,

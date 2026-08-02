@@ -40,8 +40,7 @@ test("Crypto - Key derivation, Encryption and Decryption", async () => {
   const keyRes = await deriveKey(password, salt);
   assert(keyRes.isOk());
   const key = keyRes.value;
-  assertEquals(key instanceof CryptoKey, true);
-  assertEquals(key.algorithm.name, "AES-GCM");
+  assertEquals(key instanceof Uint8Array, true);
 
   // 2. Encrypt
   const secretText = JSON.stringify({

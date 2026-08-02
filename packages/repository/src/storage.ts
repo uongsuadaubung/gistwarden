@@ -245,21 +245,8 @@ export async function getGithubToken(): Promise<string> {
         if (typeof base64 === "string" && base64) {
           const bufferRes = base64ToArrayBuffer(base64);
           if (bufferRes.isOk()) {
-            try {
-              key = await crypto.subtle.importKey(
-                "raw",
-                bufferRes.value,
-                { name: "AES-GCM", length: 256 },
-                true,
-                ["encrypt", "decrypt"],
-              );
-              sessionManager.setKey(key);
-            } catch (e) {
-              logger.storage.error(
-                "Failed to import session key for github token:",
-                e,
-              );
-            }
+            key = new Uint8Array(bufferRes.value);
+            sessionManager.setKey(key);
           }
         }
       }
