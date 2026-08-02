@@ -91,6 +91,32 @@ pub fn encode_cose_ec2_public_key(x: &[u8], y: &[u8]) -> Vec<u8> {
 }
 
 #[wasm_bindgen]
+pub fn generate_auth_data(
+    rp_id: &str,
+    counter: u32,
+    user_present: bool,
+    user_verified: bool,
+    credential_id: Option<Vec<u8>>,
+    key_x: Option<Vec<u8>>,
+    key_y: Option<Vec<u8>>,
+) -> Vec<u8> {
+    cbor::generate_auth_data(
+        rp_id,
+        counter,
+        user_present,
+        user_verified,
+        credential_id.as_deref(),
+        key_x.as_deref(),
+        key_y.as_deref(),
+    )
+}
+
+#[wasm_bindgen]
+pub fn generate_assertion_signature_base(auth_data: &[u8], client_data_hash: &[u8]) -> Vec<u8> {
+    cbor::generate_assertion_signature_base(auth_data, client_data_hash)
+}
+
+#[wasm_bindgen]
 pub fn cbor_encode_length(major_type: u8, length: usize) -> Vec<u8> {
     cbor::cbor_encode_length(major_type, length)
 }

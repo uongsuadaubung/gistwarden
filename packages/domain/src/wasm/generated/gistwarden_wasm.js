@@ -151,6 +151,51 @@ export function greet(name) {
     }
 }
 
+/**
+ * @param {number} max
+ * @returns {number}
+ */
+export function get_random_bounded_int(max) {
+    const ret = wasm.get_random_bounded_int(max);
+    return ret >>> 0;
+}
+
+/**
+ * @param {number} length
+ * @param {boolean} uppercase
+ * @param {boolean} lowercase
+ * @param {boolean} numbers
+ * @param {boolean} specials
+ * @param {boolean} avoid_ambiguous
+ * @param {number} min_numbers
+ * @param {number} min_specials
+ * @returns {string}
+ */
+export function generate_password(length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.generate_password(retptr, length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr1 = r0;
+        var len1 = r1;
+        if (r3) {
+            ptr1 = 0; len1 = 0;
+            throw takeObject(r2);
+        }
+        deferred2_0 = ptr1;
+        deferred2_1 = len1;
+        return getStringFromWasm0(ptr1, len1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export_3(deferred2_0, deferred2_1, 1);
+    }
+}
+
 function passArrayJsValueToWasm0(array, malloc) {
     const ptr = malloc(array.length * 4, 4) >>> 0;
     const mem = getDataViewMemory0();
@@ -198,48 +243,67 @@ export function generate_passphrase(num_words, word_separator, capitalize, inclu
 }
 
 /**
- * @param {string} input
+ * @param {string} items_json
+ * @param {string} folders_json
  * @returns {string}
  */
-export function get_hostname(input) {
-    let deferred2_0;
-    let deferred2_1;
+export function export_to_bitwarden_csv(items_json, folders_json) {
+    let deferred4_0;
+    let deferred4_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(input, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const ptr0 = passStringToWasm0(items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        wasm.get_hostname(retptr, ptr0, len0);
+        const ptr1 = passStringToWasm0(folders_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.export_to_bitwarden_csv(retptr, ptr0, len0, ptr1, len1);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        deferred2_0 = r0;
-        deferred2_1 = r1;
-        return getStringFromWasm0(r0, r1);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr3 = r0;
+        var len3 = r1;
+        if (r3) {
+            ptr3 = 0; len3 = 0;
+            throw takeObject(r2);
+        }
+        deferred4_0 = ptr3;
+        deferred4_1 = len3;
+        return getStringFromWasm0(ptr3, len3);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred2_0, deferred2_1, 1);
+        wasm.__wbindgen_export_3(deferred4_0, deferred4_1, 1);
     }
 }
 
 /**
- * @param {string} input
+ * @param {string} csv_text
  * @returns {string}
  */
-export function get_base_domain(input) {
-    let deferred2_0;
-    let deferred2_1;
+export function parse_browser_csv_import(csv_text) {
+    let deferred3_0;
+    let deferred3_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(input, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const ptr0 = passStringToWasm0(csv_text, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        wasm.get_base_domain(retptr, ptr0, len0);
+        wasm.parse_browser_csv_import(retptr, ptr0, len0);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        deferred2_0 = r0;
-        deferred2_1 = r1;
-        return getStringFromWasm0(r0, r1);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr2 = r0;
+        var len2 = r1;
+        if (r3) {
+            ptr2 = 0; len2 = 0;
+            throw takeObject(r2);
+        }
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred2_0, deferred2_1, 1);
+        wasm.__wbindgen_export_3(deferred3_0, deferred3_1, 1);
     }
 }
 
@@ -487,61 +551,48 @@ export function export_to_json(items_json, folders_json) {
 }
 
 /**
- * @param {string} items_json
- * @param {string} domain_or_url
- * @param {number | null} [override_mode]
+ * @param {string} input
  * @returns {string}
  */
-export function filter_matching_domain_items(items_json, domain_or_url, override_mode) {
-    let deferred4_0;
-    let deferred4_1;
+export function get_hostname(input) {
+    let deferred2_0;
+    let deferred2_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const ptr0 = passStringToWasm0(input, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(domain_or_url, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-        const len1 = WASM_VECTOR_LEN;
-        wasm.filter_matching_domain_items(retptr, ptr0, len0, ptr1, len1, isLikeNone(override_mode) ? 0xFFFFFF : override_mode);
+        wasm.get_hostname(retptr, ptr0, len0);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr3 = r0;
-        var len3 = r1;
-        if (r3) {
-            ptr3 = 0; len3 = 0;
-            throw takeObject(r2);
-        }
-        deferred4_0 = ptr3;
-        deferred4_1 = len3;
-        return getStringFromWasm0(ptr3, len3);
+        deferred2_0 = r0;
+        deferred2_1 = r1;
+        return getStringFromWasm0(r0, r1);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred4_0, deferred4_1, 1);
+        wasm.__wbindgen_export_3(deferred2_0, deferred2_1, 1);
     }
 }
 
 /**
- * @param {any} items_val
- * @param {string} domain_or_url
- * @param {number | null} [override_mode]
- * @returns {any}
+ * @param {string} input
+ * @returns {string}
  */
-export function filter_matching_domain_items_js(items_val, domain_or_url, override_mode) {
+export function get_base_domain(input) {
+    let deferred2_0;
+    let deferred2_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(domain_or_url, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const ptr0 = passStringToWasm0(input, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        wasm.filter_matching_domain_items_js(retptr, addHeapObject(items_val), ptr0, len0, isLikeNone(override_mode) ? 0xFFFFFF : override_mode);
+        wasm.get_base_domain(retptr, ptr0, len0);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        if (r2) {
-            throw takeObject(r1);
-        }
-        return takeObject(r0);
+        deferred2_0 = r0;
+        deferred2_1 = r1;
+        return getStringFromWasm0(r0, r1);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export_3(deferred2_0, deferred2_1, 1);
     }
 }
 
@@ -775,19 +826,20 @@ export function export_to_browser_csv(items_json) {
 
 /**
  * @param {string} items_json
- * @param {string} folders_json
+ * @param {string} domain_or_url
+ * @param {number | null} [override_mode]
  * @returns {string}
  */
-export function export_to_bitwarden_csv(items_json, folders_json) {
+export function filter_matching_domain_items(items_json, domain_or_url, override_mode) {
     let deferred4_0;
     let deferred4_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         const ptr0 = passStringToWasm0(items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(folders_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const ptr1 = passStringToWasm0(domain_or_url, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len1 = WASM_VECTOR_LEN;
-        wasm.export_to_bitwarden_csv(retptr, ptr0, len0, ptr1, len1);
+        wasm.filter_matching_domain_items(retptr, ptr0, len0, ptr1, len1, isLikeNone(override_mode) ? 0xFFFFFF : override_mode);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
@@ -808,33 +860,26 @@ export function export_to_bitwarden_csv(items_json, folders_json) {
 }
 
 /**
- * @param {string} csv_text
- * @returns {string}
+ * @param {any} items_val
+ * @param {string} domain_or_url
+ * @param {number | null} [override_mode]
+ * @returns {any}
  */
-export function parse_browser_csv_import(csv_text) {
-    let deferred3_0;
-    let deferred3_1;
+export function filter_matching_domain_items_js(items_val, domain_or_url, override_mode) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(csv_text, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const ptr0 = passStringToWasm0(domain_or_url, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        wasm.parse_browser_csv_import(retptr, ptr0, len0);
+        wasm.filter_matching_domain_items_js(retptr, addHeapObject(items_val), ptr0, len0, isLikeNone(override_mode) ? 0xFFFFFF : override_mode);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr2 = r0;
-        var len2 = r1;
-        if (r3) {
-            ptr2 = 0; len2 = 0;
-            throw takeObject(r2);
+        if (r2) {
+            throw takeObject(r1);
         }
-        deferred3_0 = ptr2;
-        deferred3_1 = len2;
-        return getStringFromWasm0(ptr2, len2);
+        return takeObject(r0);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred3_0, deferred3_1, 1);
     }
 }
 
@@ -1049,6 +1094,61 @@ export function generate_totp_code(secret_base32, timestamp_ms, period_secs) {
 }
 
 /**
+ * @param {string} rp_id
+ * @param {number} counter
+ * @param {boolean} user_present
+ * @param {boolean} user_verified
+ * @param {Uint8Array | null} [credential_id]
+ * @param {Uint8Array | null} [key_x]
+ * @param {Uint8Array | null} [key_y]
+ * @returns {Uint8Array}
+ */
+export function generate_auth_data(rp_id, counter, user_present, user_verified, credential_id, key_x, key_y) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(rp_id, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const len0 = WASM_VECTOR_LEN;
+        var ptr1 = isLikeNone(credential_id) ? 0 : passArray8ToWasm0(credential_id, wasm.__wbindgen_export_0);
+        var len1 = WASM_VECTOR_LEN;
+        var ptr2 = isLikeNone(key_x) ? 0 : passArray8ToWasm0(key_x, wasm.__wbindgen_export_0);
+        var len2 = WASM_VECTOR_LEN;
+        var ptr3 = isLikeNone(key_y) ? 0 : passArray8ToWasm0(key_y, wasm.__wbindgen_export_0);
+        var len3 = WASM_VECTOR_LEN;
+        wasm.generate_auth_data(retptr, ptr0, len0, counter, user_present, user_verified, ptr1, len1, ptr2, len2, ptr3, len3);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var v5 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v5;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * @param {Uint8Array} auth_data
+ * @param {Uint8Array} client_data_hash
+ * @returns {Uint8Array}
+ */
+export function generate_assertion_signature_base(auth_data, client_data_hash) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passArray8ToWasm0(auth_data, wasm.__wbindgen_export_0);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArray8ToWasm0(client_data_hash, wasm.__wbindgen_export_0);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.generate_assertion_signature_base(retptr, ptr0, len0, ptr1, len1);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var v3 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v3;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
  * @param {number} major_type
  * @param {number} length
  * @returns {Uint8Array}
@@ -1176,51 +1276,6 @@ export function concat_bytes(chunks) {
         return v1;
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-    }
-}
-
-/**
- * @param {number} max
- * @returns {number}
- */
-export function get_random_bounded_int(max) {
-    const ret = wasm.get_random_bounded_int(max);
-    return ret >>> 0;
-}
-
-/**
- * @param {number} length
- * @param {boolean} uppercase
- * @param {boolean} lowercase
- * @param {boolean} numbers
- * @param {boolean} specials
- * @param {boolean} avoid_ambiguous
- * @param {number} min_numbers
- * @param {number} min_specials
- * @returns {string}
- */
-export function generate_password(length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.generate_password(retptr, length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials);
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr1 = r0;
-        var len1 = r1;
-        if (r3) {
-            ptr1 = 0; len1 = 0;
-            throw takeObject(r2);
-        }
-        deferred2_0 = ptr1;
-        deferred2_1 = len1;
-        return getStringFromWasm0(ptr1, len1);
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred2_0, deferred2_1, 1);
     }
 }
 

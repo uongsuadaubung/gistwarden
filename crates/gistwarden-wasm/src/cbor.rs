@@ -94,3 +94,59 @@ pub fn encode_cose_ec2_public_key(x: &[u8], y: &[u8]) -> Vec<u8> {
     ciborium::into_writer(&map, &mut buf).expect("CBOR encoding failed");
     buf
 }
+
+pub const AAGUID: &[u8; 16] = b"LazyPasskeyGist1";
+
+pub fn generate_auth_data(
+    rp_id: &str,
+    counter: u32,
+    user_present: bool,
+    user_verified: bool,
+    credential_id: Option<&[u8]>,
+    key_x: Option<&[u8]>,
+    key_y: Option<&[u8]>,
+) -> Vec<u8> {
+    let mut auth_data = Vec::with_capacity(37 + credential_id.map_or(0, |c| c.len() + 16 + 2 + 77));
+
+    // 1. rpIdHash (32-byte SHA-256)
+    use sha2::{Digest, Sha256};
+    let rp_id_hash = Sha256::digest(rp_id.as_bytes());
+    auth_data.extend_from_slice(&rp_id_hash);
+
+    // 2. flags (1 byte) according to W3C WebAuthn Spec
+    let mut flags: u8 = 0;
+    if user_present {
+        flags |= 0x01; // UP (User Present)
+    }
+    if user_verified {
+        flags |= 0x04; // UV (User Verified)
+    }
+    if credential_id.is_some() && key_x.is_some() && key_y.is_some() {
+        flags |= 0x40; // AT (Attested Credential Data)
+    }
+    flags |= 0x08; // BE (Backup Eligibility)
+    flags |= 0x10; // BS (Backup State)
+    auth_data.push(flags);
+
+    // 3. signCount (4-byte big-endian)
+    auth_data.extend_from_slice(&counter.to_be_bytes());
+
+    // 4. attestedCredentialData (if creating credential)
+    if let (Some(cred_id), Some(x), Some(y)) = (credential_id, key_x, key_y) {
+        auth_data.extend_from_slice(AAGUID);
+        let cred_len = cred_id.len() as u16;
+        auth_data.extend_from_slice(&cred_len.to_be_bytes());
+        auth_data.extend_from_slice(cred_id);
+        let cose_bytes = encode_cose_ec2_public_key(x, y);
+        auth_data.extend_from_slice(&cose_bytes);
+    }
+
+    auth_data
+}
+
+pub fn generate_assertion_signature_base(auth_data: &[u8], client_data_hash: &[u8]) -> Vec<u8> {
+    let mut sig_base = Vec::with_capacity(auth_data.len() + client_data_hash.len());
+    sig_base.extend_from_slice(auth_data);
+    sig_base.extend_from_slice(client_data_hash);
+    sig_base
+}

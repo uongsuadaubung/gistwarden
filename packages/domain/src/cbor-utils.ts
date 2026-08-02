@@ -12,4 +12,6 @@ export {
   cborNegativeIntWasm as cborNegativeInt,
   packAttestationObjectWasm as packAttestationObject,
   encodeCoseEc2PublicKeyWasm as encodeCoseEC2PublicKey,
+  generateAuthDataWasm as generateAuthData,
+  generateAssertionSignatureBaseWasm as generateAssertionSignatureBase,
 } from "./wasm/index.ts";

@@ -81,3 +81,21 @@ test("Rust WASM - batchParseHibpResponseWasm multi-hash lookup", () => {
   assertEquals(parsed["0018A45C355782986202D0001CB42F35E56"], 2);
   assertEquals(parsed["UNKNOWN"], 0);
 });
+
+test("Rust WASM - generate_auth_data and generate_assertion_signature_base", () => {
+  const authData = wasm.generate_auth_data(
+    "localhost",
+    1,
+    true,
+    true,
+    null,
+    null,
+    null,
+  );
+  // 32-byte rpIdHash + 1-byte flags + 4-byte counter = 37 bytes
+  assertEquals(authData.length, 37);
+
+  const clientDataHash = new Uint8Array(32);
+  const sigBase = wasm.generate_assertion_signature_base(authData, clientDataHash);
+  assertEquals(sigBase.length, 37 + 32);
+});
