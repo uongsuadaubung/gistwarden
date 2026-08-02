@@ -3,7 +3,7 @@
  * Nạp 100% file `.wasm` trực tiếp từ mô đun Rust compiled.
  */
 
-import type { z } from "zod";
+import { z } from "zod";
 import * as wasmBindgen from "./generated/gistwarden_wasm";
 import type { Folder, VaultItem } from "../vault-schemas.ts";
 
@@ -406,6 +406,17 @@ export function parseHibpResponseWasm(
   suffix: string,
 ): number {
   return wasm.parse_hibp_response(responseText, suffix);
+}
+
+export function batchParseHibpResponseWasm(
+  responseText: string,
+  suffixes: readonly string[],
+): Record<string, number> {
+  return callWasmAndValidate(
+    () => wasm.batch_parse_hibp_response(responseText, JSON.stringify(suffixes)),
+    z.record(z.string(), z.number()),
+    {},
+  );
 }
 
 export function isSingleUriMatchWasm(

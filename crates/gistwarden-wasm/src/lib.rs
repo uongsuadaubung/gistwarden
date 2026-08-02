@@ -412,3 +412,8 @@ pub fn merge_vault_items_js(
 pub fn parse_hibp_response(response_text: &str, suffix: &str) -> u32 {
     matcher::parse_hibp_response(response_text, suffix)
 }
+
+#[wasm_bindgen]
+pub fn batch_parse_hibp_response(response_text: &str, suffixes_json: &str) -> String {
+    matcher::batch_parse_hibp_response(response_text, suffixes_json)
+}
