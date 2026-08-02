@@ -84,6 +84,16 @@ pub fn generate_random_bytes(length: usize) -> Vec<u8> {
 }
 
 #[wasm_bindgen]
+pub fn compress_deflate(data: &[u8]) -> Result<Vec<u8>, String> {
+    crypto::compress_deflate(data)
+}
+
+#[wasm_bindgen]
+pub fn decompress_deflate(data: &[u8]) -> Result<Vec<u8>, String> {
+    crypto::decompress_deflate(data)
+}
+
+#[wasm_bindgen]
 pub fn sha1_prefix_suffix(password: &str) -> Result<String, String> {
     crypto::sha1_prefix_suffix(password)
 }

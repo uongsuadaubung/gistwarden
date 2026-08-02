@@ -4,6 +4,8 @@ import { logger } from "./logger.ts";
 import {
   aesGcmDecryptWasm,
   aesGcmEncryptWasm,
+  compressDeflateWasm,
+  decompressDeflateWasm,
   deriveKeyArgon2idWasm,
   generateRandomBytesWasm,
   hashPasswordArgon2idWasm,
@@ -38,8 +40,10 @@ export async function encryptData(
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
   try {
+    const plaintextBytes = encoder.encode(data);
+    const compressedBytes = compressDeflateWasm(plaintextBytes);
     const ciphertextBuffer = aesGcmEncryptWasm(
-      encoder.encode(data),
+      compressedBytes,
       key,
       iv,
     );
@@ -73,7 +77,8 @@ export async function decryptData(
       key,
       iv,
     );
-    return ok(decoder.decode(decryptedBuffer));
+    const decompressedBytes = decompressDeflateWasm(decryptedBuffer);
+    return ok(decoder.decode(decompressedBytes));
   } catch (e) {
     logger.crypto.error(
       "AES-GCM WASM Decryption failed (invalid Master Password / key):",
@@ -102,7 +107,8 @@ export async function batchDecryptData(
         key,
         new Uint8Array(ivRes.value),
       );
-      results.push(ok(new TextDecoder().decode(dec)));
+      const decompressed = decompressDeflateWasm(dec);
+      results.push(ok(new TextDecoder().decode(decompressed)));
     } catch {
       results.push(err("login_error_wrong_mp"));
     }
