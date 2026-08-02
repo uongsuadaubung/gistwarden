@@ -17,14 +17,14 @@ export async function clearDerivedKey(): Promise<void> {
   await persistSessionKey(null);
 }
 
-export async function setDerivedKey(key: CryptoKey | null): Promise<void> {
+export async function setDerivedKey(key: Uint8Array | null): Promise<void> {
   await persistSessionKey(key);
 }
 
 export async function getOrDeriveKey(
   password: string,
   saltBase64: string,
-): Promise<Result<CryptoKey, TranslationKey>> {
+): Promise<Result<Uint8Array, TranslationKey>> {
   const saltBufferRes = base64ToArrayBuffer(saltBase64);
   if (saltBufferRes.isErr()) return err(saltBufferRes.error);
   const salt = new Uint8Array(saltBufferRes.value);
@@ -39,7 +39,7 @@ export async function getOrDeriveKey(
   return ok(key);
 }
 
-export async function getSessionKey(): Promise<CryptoKey | null> {
+export async function getSessionKey(): Promise<Uint8Array | null> {
   return await restoreSessionKeyFromStorage();
 }
 

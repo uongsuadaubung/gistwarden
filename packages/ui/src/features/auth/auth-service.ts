@@ -40,7 +40,6 @@ import {
   deriveKey,
   encryptData,
   generateSalt,
-  importAesGcmKey,
   logger,
 } from "@gistwarden/domain";
 import {
@@ -90,7 +89,7 @@ export interface SetupUnlockedSessionOptions {
 }
 
 async function setupUnlockedSession(
-  key: CryptoKey,
+  key: Uint8Array,
   vaultPayload: VaultPayload,
   options?: SetupUnlockedSessionOptions,
 ): Promise<Result<void, TranslationKey>> {
@@ -272,7 +271,7 @@ export async function fetchEncryptedVaultContent(): Promise<
 
 export async function decryptGistVault(
   content: string,
-  key: CryptoKey,
+  key: Uint8Array,
 ): Promise<
   Result<
     VaultPayload & {
@@ -443,7 +442,7 @@ export async function unlock(
   }
 
   let saltBase64 = accSettings.masterPasswordConfig.salt;
-  let key: CryptoKey | null = null;
+  let key: Uint8Array | null = null;
   clearDerivedKey();
 
   // A. Nếu có salt cục bộ, derive key và giải mã Token
@@ -566,7 +565,7 @@ export async function unlock(
 }
 
 export async function unlockVaultWithKey(
-  key: CryptoKey,
+  key: Uint8Array,
 ): Promise<Result<void, TranslationKey>> {
   const accSettingsRes = await getAccountSettings();
   if (accSettingsRes.isErr()) return err(accSettingsRes.error);
@@ -759,13 +758,7 @@ export async function unlockVaultWithPin(
     return await handlePinFailure(nextAttempts);
   }
 
-  const importRes = await importAesGcmKey(
-    bufferRes.value,
-    "login_error_wrong_pin",
-  );
-  if (importRes.isErr()) {
-    return await handlePinFailure(nextAttempts);
-  }
+  const keyBytes = new Uint8Array(bufferRes.value);
 
   // 5. Success! Reset failedAttempts to 0
   const resetMacRes = await computeHmac("0", currentConfig.salt);
@@ -778,7 +771,7 @@ export async function unlockVaultWithPin(
   setAccountStore("pinConfig", resetConfig);
   await updateAccountSettings({ pinConfig: resetConfig });
 
-  return await unlockVaultWithKey(importRes.value);
+  return await unlockVaultWithKey(keyBytes);
 }
 
 export async function lockVaultSession(): Promise<void> {

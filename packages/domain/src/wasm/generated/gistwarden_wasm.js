@@ -217,93 +217,149 @@ export function greet(name) {
 }
 
 /**
- * @param {number} max
- * @returns {number}
+ * @param {number} n
+ * @returns {Uint8Array}
  */
-export function get_random_bounded_int(max) {
-    const ret = wasm.get_random_bounded_int(max);
-    return ret >>> 0;
-}
-
-/**
- * @param {number} length
- * @param {boolean} uppercase
- * @param {boolean} lowercase
- * @param {boolean} numbers
- * @param {boolean} specials
- * @param {boolean} avoid_ambiguous
- * @param {number} min_numbers
- * @param {number} min_specials
- * @returns {string}
- */
-export function generate_password(length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials) {
-    let deferred2_0;
-    let deferred2_1;
+export function cbor_positive_int(n) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.generate_password(retptr, length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials);
+        wasm.cbor_positive_int(retptr, n);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr1 = r0;
-        var len1 = r1;
-        if (r3) {
-            ptr1 = 0; len1 = 0;
-            throw takeObject(r2);
-        }
-        deferred2_0 = ptr1;
-        deferred2_1 = len1;
-        return getStringFromWasm0(ptr1, len1);
+        var v1 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v1;
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred2_0, deferred2_1, 1);
     }
 }
 
-function passArrayJsValueToWasm0(array, malloc) {
-    const ptr = malloc(array.length * 4, 4) >>> 0;
-    const mem = getDataViewMemory0();
-    for (let i = 0; i < array.length; i++) {
-        mem.setUint32(ptr + 4 * i, addHeapObject(array[i]), true);
-    }
-    WASM_VECTOR_LEN = array.length;
-    return ptr;
-}
 /**
- * @param {number} num_words
- * @param {string} word_separator
- * @param {boolean} capitalize
- * @param {boolean} include_number
- * @param {string[] | null} [wordlist]
- * @returns {string}
+ * @param {number} n
+ * @returns {Uint8Array}
  */
-export function generate_passphrase(num_words, word_separator, capitalize, include_number, wordlist) {
-    let deferred4_0;
-    let deferred4_1;
+export function cbor_negative_int(n) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(word_separator, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        wasm.cbor_negative_int(retptr, n);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var v1 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v1;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * @param {Array<any>} chunks
+ * @returns {Uint8Array}
+ */
+export function concat_bytes(chunks) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.concat_bytes(retptr, addHeapObject(chunks));
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var v1 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v1;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * @param {string} text
+ * @returns {string}
+ */
+export function parse_csv(text) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        var ptr1 = isLikeNone(wordlist) ? 0 : passArrayJsValueToWasm0(wordlist, wasm.__wbindgen_export_0);
-        var len1 = WASM_VECTOR_LEN;
-        wasm.generate_passphrase(retptr, num_words, ptr0, len0, capitalize, include_number, ptr1, len1);
+        wasm.parse_csv(retptr, ptr0, len0);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
         var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr3 = r0;
-        var len3 = r1;
+        var ptr2 = r0;
+        var len2 = r1;
         if (r3) {
-            ptr3 = 0; len3 = 0;
+            ptr2 = 0; len2 = 0;
             throw takeObject(r2);
         }
-        deferred4_0 = ptr3;
-        deferred4_1 = len3;
-        return getStringFromWasm0(ptr3, len3);
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred4_0, deferred4_1, 1);
+        wasm.__wbindgen_export_3(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * @param {string} rows_json
+ * @returns {string}
+ */
+export function unparse_csv(rows_json) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(rows_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.unparse_csv(retptr, ptr0, len0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr2 = r0;
+        var len2 = r1;
+        if (r3) {
+            ptr2 = 0; len2 = 0;
+            throw takeObject(r2);
+        }
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export_3(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * @param {string} items_json
+ * @returns {string}
+ */
+export function export_to_browser_csv(items_json) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.export_to_browser_csv(retptr, ptr0, len0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr2 = r0;
+        var len2 = r1;
+        if (r3) {
+            ptr2 = 0; len2 = 0;
+            throw takeObject(r2);
+        }
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export_3(deferred3_0, deferred3_1, 1);
     }
 }
 
@@ -510,92 +566,77 @@ export function merge_folders(local_folders_json, remote_folders_json) {
 }
 
 /**
- * @param {string} local_items_json
- * @param {string} remote_items_json
- * @param {bigint} last_sync_timestamp
+ * @param {number} max
+ * @returns {number}
+ */
+export function get_random_bounded_int(max) {
+    const ret = wasm.get_random_bounded_int(max);
+    return ret >>> 0;
+}
+
+/**
+ * @param {number} length
+ * @param {boolean} uppercase
+ * @param {boolean} lowercase
+ * @param {boolean} numbers
+ * @param {boolean} specials
+ * @param {boolean} avoid_ambiguous
+ * @param {number} min_numbers
+ * @param {number} min_specials
  * @returns {string}
  */
-export function merge_vault_items(local_items_json, remote_items_json, last_sync_timestamp) {
-    let deferred4_0;
-    let deferred4_1;
+export function generate_password(length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials) {
+    let deferred2_0;
+    let deferred2_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(local_items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(remote_items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-        const len1 = WASM_VECTOR_LEN;
-        wasm.merge_vault_items(retptr, ptr0, len0, ptr1, len1, last_sync_timestamp);
+        wasm.generate_password(retptr, length, uppercase, lowercase, numbers, specials, avoid_ambiguous, min_numbers, min_specials);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
         var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr3 = r0;
-        var len3 = r1;
+        var ptr1 = r0;
+        var len1 = r1;
         if (r3) {
-            ptr3 = 0; len3 = 0;
+            ptr1 = 0; len1 = 0;
             throw takeObject(r2);
         }
-        deferred4_0 = ptr3;
-        deferred4_1 = len3;
-        return getStringFromWasm0(ptr3, len3);
+        deferred2_0 = ptr1;
+        deferred2_1 = len1;
+        return getStringFromWasm0(ptr1, len1);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred4_0, deferred4_1, 1);
+        wasm.__wbindgen_export_3(deferred2_0, deferred2_1, 1);
     }
 }
 
-/**
- * @param {string} json_text
- * @param {string} existing_items_json
- * @param {string} existing_folders_json
- * @returns {string}
- */
-export function parse_json_import(json_text, existing_items_json, existing_folders_json) {
-    let deferred5_0;
-    let deferred5_1;
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(json_text, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(existing_items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-        const len1 = WASM_VECTOR_LEN;
-        const ptr2 = passStringToWasm0(existing_folders_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-        const len2 = WASM_VECTOR_LEN;
-        wasm.parse_json_import(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr4 = r0;
-        var len4 = r1;
-        if (r3) {
-            ptr4 = 0; len4 = 0;
-            throw takeObject(r2);
-        }
-        deferred5_0 = ptr4;
-        deferred5_1 = len4;
-        return getStringFromWasm0(ptr4, len4);
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred5_0, deferred5_1, 1);
+function passArrayJsValueToWasm0(array, malloc) {
+    const ptr = malloc(array.length * 4, 4) >>> 0;
+    const mem = getDataViewMemory0();
+    for (let i = 0; i < array.length; i++) {
+        mem.setUint32(ptr + 4 * i, addHeapObject(array[i]), true);
     }
+    WASM_VECTOR_LEN = array.length;
+    return ptr;
 }
-
 /**
- * @param {string} items_json
- * @param {string} folders_json
+ * @param {number} num_words
+ * @param {string} word_separator
+ * @param {boolean} capitalize
+ * @param {boolean} include_number
+ * @param {string[] | null} [wordlist]
  * @returns {string}
  */
-export function export_to_json(items_json, folders_json) {
+export function generate_passphrase(num_words, word_separator, capitalize, include_number, wordlist) {
     let deferred4_0;
     let deferred4_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const ptr0 = passStringToWasm0(word_separator, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(folders_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-        const len1 = WASM_VECTOR_LEN;
-        wasm.export_to_json(retptr, ptr0, len0, ptr1, len1);
+        var ptr1 = isLikeNone(wordlist) ? 0 : passArrayJsValueToWasm0(wordlist, wasm.__wbindgen_export_0);
+        var len1 = WASM_VECTOR_LEN;
+        wasm.generate_passphrase(retptr, num_words, ptr0, len0, capitalize, include_number, ptr1, len1);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
@@ -797,95 +838,108 @@ export function decode_qr_from_bytes(image_bytes) {
 }
 
 /**
- * @param {string} text
+ * @param {string} local_items_json
+ * @param {string} remote_items_json
+ * @param {bigint} last_sync_timestamp
  * @returns {string}
  */
-export function parse_csv(text) {
-    let deferred3_0;
-    let deferred3_1;
+export function merge_vault_items(local_items_json, remote_items_json, last_sync_timestamp) {
+    let deferred4_0;
+    let deferred4_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const ptr0 = passStringToWasm0(local_items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        wasm.parse_csv(retptr, ptr0, len0);
+        const ptr1 = passStringToWasm0(remote_items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.merge_vault_items(retptr, ptr0, len0, ptr1, len1, last_sync_timestamp);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
         var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr2 = r0;
-        var len2 = r1;
+        var ptr3 = r0;
+        var len3 = r1;
         if (r3) {
-            ptr2 = 0; len2 = 0;
+            ptr3 = 0; len3 = 0;
             throw takeObject(r2);
         }
-        deferred3_0 = ptr2;
-        deferred3_1 = len2;
-        return getStringFromWasm0(ptr2, len2);
+        deferred4_0 = ptr3;
+        deferred4_1 = len3;
+        return getStringFromWasm0(ptr3, len3);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred3_0, deferred3_1, 1);
+        wasm.__wbindgen_export_3(deferred4_0, deferred4_1, 1);
     }
 }
 
 /**
- * @param {string} rows_json
+ * @param {string} json_text
+ * @param {string} existing_items_json
+ * @param {string} existing_folders_json
  * @returns {string}
  */
-export function unparse_csv(rows_json) {
-    let deferred3_0;
-    let deferred3_1;
+export function parse_json_import(json_text, existing_items_json, existing_folders_json) {
+    let deferred5_0;
+    let deferred5_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(rows_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const ptr0 = passStringToWasm0(json_text, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        wasm.unparse_csv(retptr, ptr0, len0);
+        const ptr1 = passStringToWasm0(existing_items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(existing_folders_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.parse_json_import(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
         var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr2 = r0;
-        var len2 = r1;
+        var ptr4 = r0;
+        var len4 = r1;
         if (r3) {
-            ptr2 = 0; len2 = 0;
+            ptr4 = 0; len4 = 0;
             throw takeObject(r2);
         }
-        deferred3_0 = ptr2;
-        deferred3_1 = len2;
-        return getStringFromWasm0(ptr2, len2);
+        deferred5_0 = ptr4;
+        deferred5_1 = len4;
+        return getStringFromWasm0(ptr4, len4);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred3_0, deferred3_1, 1);
+        wasm.__wbindgen_export_3(deferred5_0, deferred5_1, 1);
     }
 }
 
 /**
  * @param {string} items_json
+ * @param {string} folders_json
  * @returns {string}
  */
-export function export_to_browser_csv(items_json) {
-    let deferred3_0;
-    let deferred3_1;
+export function export_to_json(items_json, folders_json) {
+    let deferred4_0;
+    let deferred4_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         const ptr0 = passStringToWasm0(items_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
         const len0 = WASM_VECTOR_LEN;
-        wasm.export_to_browser_csv(retptr, ptr0, len0);
+        const ptr1 = passStringToWasm0(folders_json, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.export_to_json(retptr, ptr0, len0, ptr1, len1);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
         var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        var ptr2 = r0;
-        var len2 = r1;
+        var ptr3 = r0;
+        var len3 = r1;
         if (r3) {
-            ptr2 = 0; len2 = 0;
+            ptr3 = 0; len3 = 0;
             throw takeObject(r2);
         }
-        deferred3_0 = ptr2;
-        deferred3_1 = len2;
-        return getStringFromWasm0(ptr2, len2);
+        deferred4_0 = ptr3;
+        deferred4_1 = len3;
+        return getStringFromWasm0(ptr3, len3);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export_3(deferred3_0, deferred3_1, 1);
+        wasm.__wbindgen_export_3(deferred4_0, deferred4_1, 1);
     }
 }
 
@@ -1158,6 +1212,83 @@ export function generate_totp_code(secret_base32, timestamp_ms, period_secs) {
     }
 }
 
+function getArrayJsValueFromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    const mem = getDataViewMemory0();
+    const result = [];
+    for (let i = ptr; i < ptr + 4 * len; i += 4) {
+        result.push(takeObject(mem.getUint32(i, true)));
+    }
+    return result;
+}
+/**
+ * @param {string} private_key_text
+ * @returns {string[]}
+ */
+export function parse_ssh_key(private_key_text) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(private_key_text, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.parse_ssh_key(retptr, ptr0, len0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        if (r3) {
+            throw takeObject(r2);
+        }
+        var v2 = getArrayJsValueFromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 4, 4);
+        return v2;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * @param {Uint8Array} auth_data
+ * @returns {Uint8Array}
+ */
+export function pack_attestation_object(auth_data) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passArray8ToWasm0(auth_data, wasm.__wbindgen_export_0);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.pack_attestation_object(retptr, ptr0, len0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var v2 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v2;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * @param {Uint8Array} x
+ * @param {Uint8Array} y
+ * @returns {Uint8Array}
+ */
+export function encode_cose_ec2_public_key(x, y) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passArray8ToWasm0(x, wasm.__wbindgen_export_0);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArray8ToWasm0(y, wasm.__wbindgen_export_0);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.encode_cose_ec2_public_key(retptr, ptr0, len0, ptr1, len1);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var v3 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v3;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
 /**
  * @param {string} rp_id
  * @param {number} counter
@@ -1291,60 +1422,6 @@ export function cbor_map_header(num_pairs) {
 }
 
 /**
- * @param {number} n
- * @returns {Uint8Array}
- */
-export function cbor_positive_int(n) {
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.cbor_positive_int(retptr, n);
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var v1 = getArrayU8FromWasm0(r0, r1).slice();
-        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
-        return v1;
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-    }
-}
-
-/**
- * @param {number} n
- * @returns {Uint8Array}
- */
-export function cbor_negative_int(n) {
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.cbor_negative_int(retptr, n);
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var v1 = getArrayU8FromWasm0(r0, r1).slice();
-        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
-        return v1;
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-    }
-}
-
-/**
- * @param {Array<any>} chunks
- * @returns {Uint8Array}
- */
-export function concat_bytes(chunks) {
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.concat_bytes(retptr, addHeapObject(chunks));
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var v1 = getArrayU8FromWasm0(r0, r1).slice();
-        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
-        return v1;
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-    }
-}
-
-/**
  * @param {string} password
  * @param {Uint8Array} salt
  * @param {number | null} [iterations]
@@ -1408,6 +1485,86 @@ export function hash_password_argon2id(password, salt, iterations, memory_kib) {
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_export_3(deferred4_0, deferred4_1, 1);
+    }
+}
+
+/**
+ * @param {Uint8Array} plaintext
+ * @param {Uint8Array} key_bytes
+ * @param {Uint8Array} iv_bytes
+ * @returns {Uint8Array}
+ */
+export function aes_gcm_encrypt(plaintext, key_bytes, iv_bytes) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passArray8ToWasm0(plaintext, wasm.__wbindgen_export_0);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArray8ToWasm0(key_bytes, wasm.__wbindgen_export_0);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passArray8ToWasm0(iv_bytes, wasm.__wbindgen_export_0);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.aes_gcm_encrypt(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        if (r3) {
+            throw takeObject(r2);
+        }
+        var v4 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v4;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * @param {Uint8Array} ciphertext_and_tag
+ * @param {Uint8Array} key_bytes
+ * @param {Uint8Array} iv_bytes
+ * @returns {Uint8Array}
+ */
+export function aes_gcm_decrypt(ciphertext_and_tag, key_bytes, iv_bytes) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passArray8ToWasm0(ciphertext_and_tag, wasm.__wbindgen_export_0);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArray8ToWasm0(key_bytes, wasm.__wbindgen_export_0);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passArray8ToWasm0(iv_bytes, wasm.__wbindgen_export_0);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.aes_gcm_decrypt(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        if (r3) {
+            throw takeObject(r2);
+        }
+        var v4 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v4;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * @param {number} length
+ * @returns {Uint8Array}
+ */
+export function generate_random_bytes(length) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.generate_random_bytes(retptr, length);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var v1 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
+        return v1;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
     }
 }
 
@@ -1496,83 +1653,6 @@ export function p1363_to_der(signature) {
         var v2 = getArrayU8FromWasm0(r0, r1).slice();
         wasm.__wbindgen_export_3(r0, r1 * 1, 1);
         return v2;
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-    }
-}
-
-function getArrayJsValueFromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    const mem = getDataViewMemory0();
-    const result = [];
-    for (let i = ptr; i < ptr + 4 * len; i += 4) {
-        result.push(takeObject(mem.getUint32(i, true)));
-    }
-    return result;
-}
-/**
- * @param {string} private_key_text
- * @returns {string[]}
- */
-export function parse_ssh_key(private_key_text) {
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(private_key_text, wasm.__wbindgen_export_0, wasm.__wbindgen_export_1);
-        const len0 = WASM_VECTOR_LEN;
-        wasm.parse_ssh_key(retptr, ptr0, len0);
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
-        if (r3) {
-            throw takeObject(r2);
-        }
-        var v2 = getArrayJsValueFromWasm0(r0, r1).slice();
-        wasm.__wbindgen_export_3(r0, r1 * 4, 4);
-        return v2;
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-    }
-}
-
-/**
- * @param {Uint8Array} auth_data
- * @returns {Uint8Array}
- */
-export function pack_attestation_object(auth_data) {
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passArray8ToWasm0(auth_data, wasm.__wbindgen_export_0);
-        const len0 = WASM_VECTOR_LEN;
-        wasm.pack_attestation_object(retptr, ptr0, len0);
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var v2 = getArrayU8FromWasm0(r0, r1).slice();
-        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
-        return v2;
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-    }
-}
-
-/**
- * @param {Uint8Array} x
- * @param {Uint8Array} y
- * @returns {Uint8Array}
- */
-export function encode_cose_ec2_public_key(x, y) {
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passArray8ToWasm0(x, wasm.__wbindgen_export_0);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passArray8ToWasm0(y, wasm.__wbindgen_export_0);
-        const len1 = WASM_VECTOR_LEN;
-        wasm.encode_cose_ec2_public_key(retptr, ptr0, len0, ptr1, len1);
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var v3 = getArrayU8FromWasm0(r0, r1).slice();
-        wasm.__wbindgen_export_3(r0, r1 * 1, 1);
-        return v3;
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
     }

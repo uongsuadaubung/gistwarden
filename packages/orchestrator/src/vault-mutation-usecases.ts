@@ -287,7 +287,7 @@ export async function clearVaultUseCase(
 }
 
 export async function batchSavePayloads(
-  vaultData: { items: VaultItem[]; key: CryptoKey; salt: string },
+  vaultData: { items: VaultItem[]; key: Uint8Array; salt: string },
   payloads: SaveActionPayload[],
 ): Promise<boolean> {
   if (payloads.length === 0) return true;

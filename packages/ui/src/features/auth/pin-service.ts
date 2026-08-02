@@ -22,8 +22,7 @@ export async function setPinUnlock(
     return err("login_title_locked");
   }
 
-  const raw = await crypto.subtle.exportKey("raw", key);
-  const keyBytesB64 = arrayBufferToBase64(raw);
+  const keyBytesB64 = arrayBufferToBase64(key);
 
   const rawSalt = generateSalt();
   const pinSaltBase64 = rawSalt.toBase64();

@@ -1,10 +1,10 @@
-let inMemoryDerivedKey: CryptoKey | null = null;
+let inMemoryDerivedKey: Uint8Array | null = null;
 
-export function getSessionKeyInMemory(): CryptoKey | null {
+export function getSessionKeyInMemory(): Uint8Array | null {
   return inMemoryDerivedKey;
 }
 
-export function setSessionKeyInMemory(key: CryptoKey | null): void {
+export function setSessionKeyInMemory(key: Uint8Array | null): void {
   inMemoryDerivedKey = key;
 }
 

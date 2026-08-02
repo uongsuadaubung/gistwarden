@@ -27,7 +27,7 @@ import { mergeVaultPayload } from "./vault-merge-usecase.ts";
 export async function fetchAndMergeRemoteVaultUseCase(
   localItems: VaultItem[],
   localTrash: TrashVaultItem[],
-  key: CryptoKey,
+  key: Uint8Array,
   options?: {
     folders?: Folder[];
     lastSync?: number;
@@ -100,7 +100,7 @@ export async function fetchAndMergeRemoteVaultUseCase(
 
 export async function syncVaultToGist(
   items: VaultItem[],
-  key: CryptoKey,
+  key: Uint8Array,
   salt: string,
   options?: {
     trashItems?: TrashVaultItem[];

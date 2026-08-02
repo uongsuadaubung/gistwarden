@@ -153,7 +153,7 @@ async function resolveSavedViewAndItem(
 }
 
 async function loadAndDecryptVault(
-  key: CryptoKey,
+  key: Uint8Array,
   isFido2Prompt: boolean,
   params: URLSearchParams,
 ): Promise<void> {

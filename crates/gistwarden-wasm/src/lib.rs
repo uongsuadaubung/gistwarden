@@ -61,6 +61,29 @@ pub fn hash_password_argon2id(
 }
 
 #[wasm_bindgen]
+pub fn aes_gcm_encrypt(
+    plaintext: &[u8],
+    key_bytes: &[u8],
+    iv_bytes: &[u8],
+) -> Result<Vec<u8>, String> {
+    crypto::aes_gcm_encrypt(plaintext, key_bytes, iv_bytes)
+}
+
+#[wasm_bindgen]
+pub fn aes_gcm_decrypt(
+    ciphertext_and_tag: &[u8],
+    key_bytes: &[u8],
+    iv_bytes: &[u8],
+) -> Result<Vec<u8>, String> {
+    crypto::aes_gcm_decrypt(ciphertext_and_tag, key_bytes, iv_bytes)
+}
+
+#[wasm_bindgen]
+pub fn generate_random_bytes(length: usize) -> Vec<u8> {
+    crypto::generate_random_bytes(length)
+}
+
+#[wasm_bindgen]
 pub fn sha1_prefix_suffix(password: &str) -> Result<String, String> {
     crypto::sha1_prefix_suffix(password)
 }
