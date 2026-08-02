@@ -215,6 +215,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
+name = "coset"
+version = "0.3.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4c8cc80f631f8307b887faca24dcc3abc427cd0367f6eb6188f6e8f5b7ad8fb"
+dependencies = [
+ "ciborium",
+ "ciborium-io",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -573,6 +583,7 @@ dependencies = [
  "argon2",
  "chrono",
  "ciborium",
+ "coset",
  "csv",
  "data-encoding",
  "getrandom 0.2.17",

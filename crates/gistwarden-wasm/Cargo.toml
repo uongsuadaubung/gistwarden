@@ -22,6 +22,7 @@ pkcs1 = { version = "0.7.5", default-features = false, features = ["pem"] }
 rsa = { version = "0.9.10", default-features = false, features = ["pem"] }
 getrandom = { version = "0.2.17", default-features = false, features = ["js"] }
 ciborium = { version = "0.2", default-features = false }
+coset = "0.3"
 rand = { version = "0.8", default-features = false, features = ["std", "std_rng", "getrandom"] }
 regex = { version = "1.10", default-features = false, features = ["std", "perf", "unicode"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
