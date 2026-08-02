@@ -4,6 +4,7 @@ import { t } from "@gistwarden/domain";
 import { uiStore } from "../../core/store.ts";
 import { resolveConfirm } from "../../core/ui-service.ts";
 import Button from "./Button.tsx";
+import SafeHtml from "./SafeHtml.tsx";
 
 export const ConfirmModal: Component = () => {
   const boxClass = () => {
@@ -20,9 +21,11 @@ export const ConfirmModal: Component = () => {
             <h4 class="confirm-modal-title">
               {uiStore.confirmModal.title || t("confirm_title")}
             </h4>
-            <p class="confirm-modal-message">
-              {uiStore.confirmModal.message}
-            </p>
+            <SafeHtml
+              tag="p"
+              class="confirm-modal-message"
+              html={uiStore.confirmModal.message}
+            />
             <div class="confirm-modal-actions">
               <Button
                 variant="secondary"

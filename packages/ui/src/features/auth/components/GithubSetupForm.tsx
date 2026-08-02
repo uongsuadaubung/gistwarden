@@ -2,6 +2,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import { t } from "@/core/i18n.ts";
 import Button from "@/components/ui/Button.tsx";
 import Input from "@/components/ui/Input.tsx";
+import SafeHtml from "@/components/ui/SafeHtml.tsx";
 import { GithubIcon } from "@/icons/svg/index.ts";
 import { type LoginMethod } from "@/core/storage-schemas.ts";
 
@@ -52,7 +53,7 @@ export const GithubSetupForm: Component<GithubSetupFormProps> = (props) => {
                 value={token()}
                 onInput={(e) => setToken(e.currentTarget.value)}
               />
-              <span class="login-pat-help">{t("login_pat_help")}</span>
+              <SafeHtml class="login-pat-help" html={t("login_pat_help")} />
             </div>
 
             <Button
