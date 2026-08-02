@@ -31,9 +31,12 @@ pub fn get_random_bounded_int(max: u32) -> u32 {
 }
 
 fn get_random_char(s: &str) -> char {
-    let chars: Vec<char> = s.chars().collect();
-    let idx = get_random_bounded_int(chars.len() as u32) as usize;
-    chars[idx]
+    let bytes = s.as_bytes();
+    if bytes.is_empty() {
+        return ' ';
+    }
+    let idx = get_random_bounded_int(bytes.len() as u32) as usize;
+    bytes[idx] as char
 }
 
 pub fn generate_password(opts: &PasswordOptions) -> Result<String, String> {
