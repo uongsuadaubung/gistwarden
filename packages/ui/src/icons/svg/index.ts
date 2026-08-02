@@ -52,6 +52,7 @@ import {
   Trash2,
   Upload,
   User,
+  Vault,
   WandSparkles,
   X,
 } from "lucide-solid";
@@ -69,7 +70,7 @@ export const RefreshIcon = wrapLucide(RefreshCw);
 export const LockIcon = wrapLucide(Lock);
 export { default as AppIcon } from "@/icons/svg/AppIcon.tsx";
 export { default as GithubIcon } from "@/icons/svg/GithubIcon.tsx";
-export const VaultIcon = wrapLucide(Shield);
+export const VaultIcon = wrapLucide(Vault);
 export const ChevronDownIcon = wrapLucide(ChevronDown);
 export const ChevronLeftIcon = wrapLucide(ChevronLeft);
 export const ArrowLeftIcon = wrapLucide(ArrowLeft);
