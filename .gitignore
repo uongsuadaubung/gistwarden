@@ -3,3 +3,4 @@ dist/
 scratch/
 .agents/
 crates/gistwarden-wasm/target/
+crates/gistwarden-cli/target/

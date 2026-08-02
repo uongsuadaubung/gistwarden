@@ -15,7 +15,7 @@
     "check:wasm": "cargo check --manifest-path crates/gistwarden-wasm/Cargo.toml --target wasm32-unknown-unknown",
     "test": "bun test tests/",
     "typecheck": "tsc --noEmit",
-    "lint": "bun run scripts/custom_linter.ts",
+    "lint": "cargo run --manifest-path crates/gistwarden-cli/Cargo.toml --release",
     "bump-version": "bun run version.ts"
   },
   "dependencies": {
