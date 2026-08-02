@@ -53,11 +53,8 @@ export function getDomainFromItem(item: VaultItem): string | null {
     return null;
   }
   const uri = item.login.uris[0].uri;
-  let hostname = uri;
-  if (!/^https?:\/\//i.test(hostname)) {
-    hostname = "http://" + hostname;
-  }
-  return safeParseUrl(hostname).map((url) => url.hostname).unwrapOr(null);
+  const hostname = getHostnameWasm(uri);
+  return hostname.length > 0 ? hostname : null;
 }
 
 /**

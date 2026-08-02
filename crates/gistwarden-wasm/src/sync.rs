@@ -66,14 +66,11 @@ fn chrono_like_parse(s: &str) -> Result<u64, ()> {
     Ok(total_secs * 1000 + millis)
 }
 
-pub fn merge_vault_payload(
-    local_json: &str,
-    remote_json: &str,
+pub fn merge_vault_payload_values(
+    local: Value,
+    remote: Value,
     last_sync_timestamp: u64,
-) -> Result<String, String> {
-    let local: Value = serde_json::from_str(local_json).map_err(|e| e.to_string())?;
-    let remote: Value = serde_json::from_str(remote_json).map_err(|e| e.to_string())?;
-
+) -> Value {
     let local_folders = local
         .get("folders")
         .and_then(|v| v.as_array())
@@ -127,16 +124,18 @@ pub fn merge_vault_payload(
             .get("item")
             .and_then(|i| i.get("id"))
             .and_then(|v| v.as_str())
+            .or_else(|| t_item.get("id").and_then(|v| v.as_str()))
         {
-            Some(id) => id.to_string(),
+            Some(i) => i.to_string(),
             None => continue,
         };
 
         if let Some(existing) = trash_map.get(&item_id) {
             let existing_del_time =
                 parse_timestamp(existing.get("deletedDate").and_then(|v| v.as_str()));
-            let new_del_time = parse_timestamp(t_item.get("deletedDate").and_then(|v| v.as_str()));
-            if new_del_time >= existing_del_time {
+            let new_del_time =
+                parse_timestamp(t_item.get("deletedDate").and_then(|v| v.as_str()));
+            if new_del_time > existing_del_time {
                 trash_map.insert(item_id, t_item);
             }
         } else {
@@ -247,13 +246,22 @@ pub fn merge_vault_payload(
 
     let result_trash: Vec<Value> = trash_map.into_values().collect();
 
-    let output = serde_json::json!({
+    serde_json::json!({
         "folders": merged_folders,
         "items": final_items,
         "trash": result_trash,
-    });
+    })
+}
 
-    serde_json::to_string(&output).map_err(|e| e.to_string())
+pub fn merge_vault_payload(
+    local_json: &str,
+    remote_json: &str,
+    last_sync_timestamp: u64,
+) -> Result<String, String> {
+    let local: Value = serde_json::from_str(local_json).map_err(|e| e.to_string())?;
+    let remote: Value = serde_json::from_str(remote_json).map_err(|e| e.to_string())?;
+    let merged = merge_vault_payload_values(local, remote, last_sync_timestamp);
+    serde_json::to_string(&merged).map_err(|e| e.to_string())
 }
 
 pub fn merge_folders_values(

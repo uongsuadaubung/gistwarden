@@ -62,20 +62,30 @@ if (typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function
 }
 
 /**
- * Dynamic Proxy Guard around Rust WASM bindings.
- * AUTOMATICALLY ensures WASM module is initialized before calling ANY function export.
- * Eliminates manual initialization boilerplate on future WASM functions!
+ * Memoized Fast-Path Proxy Guard around Rust WASM bindings.
+ * Zero-allocation fast-path when WASM is initialized, cached closures when pending.
  */
+const fnCache = new Map<string | symbol, (...args: unknown[]) => unknown>();
+
 export const wasm: typeof wasmBindgen = new Proxy(wasmBindgen, {
-  get(_target, prop, receiver) {
-    const val = Reflect.get(wasmBindgen, prop, receiver);
-    if (typeof val === "function") {
-      return (...args: unknown[]) => {
-        ensureWasmInitialized();
-        return val.apply(wasmBindgen, args);
-      };
+  get(target, prop, receiver) {
+    if (isWasmLoaded) {
+      return Reflect.get(target, prop, receiver);
     }
-    return val;
+    let cached = fnCache.get(prop);
+    if (!cached) {
+      const val = Reflect.get(target, prop, receiver);
+      if (typeof val === "function") {
+        cached = (...args: unknown[]) => {
+          ensureWasmInitialized();
+          return val.apply(target, args);
+        };
+        fnCache.set(prop, cached);
+      } else {
+        return val;
+      }
+    }
+    return cached;
   },
 });
 

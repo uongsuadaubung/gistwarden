@@ -3,8 +3,8 @@ import { UriMatchMode, type VaultItem, VaultListSchema } from "./vault-schemas.t
 import { isLoginItem, VaultItemType } from "./vault-types.ts";
 import {
   callWasmAndValidate,
-  filterMatchingDomainItemsWasm,
-  filterVaultItemsByQueryWasm,
+  filterMatchingDomainItemsWasmJs,
+  filterVaultItemsByQueryWasmJs,
   initWasmAsync,
   isSingleUriMatchWasm,
 } from "./wasm/index.ts";
@@ -99,7 +99,7 @@ export function filterMatchingDomainItems(
 ): VaultItem[] {
   if (!domainOrUrl || !items || items.length === 0) return [];
   return callWasmAndValidate(
-    () => filterMatchingDomainItemsWasm(JSON.stringify(items), domainOrUrl, overrideDefaultMode),
+    () => filterMatchingDomainItemsWasmJs(items, domainOrUrl, overrideDefaultMode),
     VaultListSchema,
     [],
   );
@@ -114,7 +114,7 @@ export function filterVaultItemsByQuery(
   if (!searchQuery && filterType === "all") return items;
 
   return callWasmAndValidate(
-    () => filterVaultItemsByQueryWasm(JSON.stringify(items), searchQuery, filterType),
+    () => filterVaultItemsByQueryWasmJs(items, searchQuery, filterType),
     VaultListSchema,
     [],
   );
