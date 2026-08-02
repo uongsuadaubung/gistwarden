@@ -149,21 +149,70 @@ pub fn parse_hibp_response(response_text: &str, suffix: &str) -> u32 {
         return 0;
     }
 
-    for line in response_text.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            continue;
-        }
-        if let Some(colon_idx) = trimmed.find(':') {
-            let line_suffix = trimmed[..colon_idx].trim();
-            if line_suffix.eq_ignore_ascii_case(&s_upper) {
-                let count_str = trimmed[colon_idx + 1..].trim();
-                return count_str.parse::<u32>().unwrap_or(0);
-            }
+    let lines: Vec<&str> = response_text
+        .lines()
+        .map(|l| l.trim())
+        .filter(|l| !l.is_empty())
+        .collect();
+
+    if lines.is_empty() {
+        return 0;
+    }
+
+    // High-performance O(log N) Binary Search over sorted HIBP range response
+    let idx = lines.binary_search_by(|line| {
+        let line_suffix = line.split(':').next().unwrap_or("").trim();
+        line_suffix.to_ascii_uppercase().cmp(&s_upper)
+    });
+
+    if let Ok(found_idx) = idx {
+        let line = lines[found_idx];
+        if let Some(colon_idx) = line.find(':') {
+            return line[colon_idx + 1..].trim().parse::<u32>().unwrap_or(0);
         }
     }
 
     0
+}
+
+pub fn batch_parse_hibp_response(response_text: &str, suffixes_json: &str) -> String {
+    let suffixes: Vec<String> = match serde_json::from_str(suffixes_json) {
+        Ok(s) => s,
+        Err(_) => return "{}".to_string(),
+    };
+
+    let lines: Vec<&str> = response_text
+        .lines()
+        .map(|l| l.trim())
+        .filter(|l| !l.is_empty())
+        .collect();
+
+    let mut result_map = serde_json::Map::new();
+
+    for suffix in suffixes {
+        let s_upper = suffix.trim().to_uppercase();
+        if s_upper.is_empty() {
+            result_map.insert(suffix, serde_json::Value::Number(0.into()));
+            continue;
+        }
+
+        let count = match lines.binary_search_by(|line| {
+            let line_suffix = line.split(':').next().unwrap_or("").trim();
+            line_suffix.to_ascii_uppercase().cmp(&s_upper)
+        }) {
+            Ok(found_idx) => {
+                let line = lines[found_idx];
+                line.find(':')
+                    .map(|idx| line[idx + 1..].trim().parse::<u32>().unwrap_or(0))
+                    .unwrap_or(0)
+            }
+            Err(_) => 0,
+        };
+
+        result_map.insert(suffix, serde_json::Value::Number(count.into()));
+    }
+
+    serde_json::Value::Object(result_map).to_string()
 }
 
 pub fn filter_matching_domain_items_values(

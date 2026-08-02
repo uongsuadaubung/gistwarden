@@ -27,6 +27,7 @@ export function merge_vault_payload_js(local_val: any, remote_val: any, last_syn
 export function merge_folders_js(local_val: any, remote_val: any): any;
 export function merge_vault_items_js(local_val: any, remote_val: any, last_sync_timestamp: bigint): any;
 export function parse_hibp_response(response_text: string, suffix: string): number;
+export function batch_parse_hibp_response(response_text: string, suffixes_json: string): string;
 export function fast_xor(data: Uint8Array, key: Uint8Array): Uint8Array;
 export function parse_totp_secret(raw_secret: string): string;
 export function generate_totp_code(secret_base32: string, timestamp_ms: bigint, period_secs: bigint): string;
@@ -52,6 +53,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly batch_parse_hibp_response: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly cbor_byte_string: (a: number, b: number, c: number) => void;
   readonly cbor_encode_length: (a: number, b: number, c: number) => void;
   readonly cbor_map_header: (a: number, b: number) => void;
