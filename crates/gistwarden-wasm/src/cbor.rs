@@ -62,11 +62,17 @@ pub fn cbor_map_header(num_pairs: usize) -> Vec<u8> {
 }
 
 pub fn cbor_positive_int(n: usize) -> Vec<u8> {
-    cbor_encode_length(0, n)
+    let mut buf = Vec::new();
+    let val = Value::Integer((n as u64).into());
+    ciborium::into_writer(&val, &mut buf).expect("CBOR encoding failed");
+    buf
 }
 
 pub fn cbor_negative_int(n: usize) -> Vec<u8> {
-    cbor_encode_length(1, n)
+    let mut buf = Vec::new();
+    let val = Value::Integer((-1 - (n as i64)).into());
+    ciborium::into_writer(&val, &mut buf).expect("CBOR encoding failed");
+    buf
 }
 
 pub fn pack_attestation_object(auth_data: &[u8]) -> Vec<u8> {
@@ -82,16 +88,20 @@ pub fn pack_attestation_object(auth_data: &[u8]) -> Vec<u8> {
 }
 
 pub fn encode_cose_ec2_public_key(x: &[u8], y: &[u8]) -> Vec<u8> {
-    let map = Value::Map(vec![
-        (Value::Integer(1.into()), Value::Integer(2.into())), // 1(kty): 2(EC2)
-        (Value::Integer(3.into()), Value::Integer((-7).into())), // 3(alg): -7(ES256)
-        (Value::Integer((-1).into()), Value::Integer(1.into())), // -1(crv): 1(P-256)
-        (Value::Integer((-2).into()), Value::Bytes(x.to_vec())), // -2(x)
-        (Value::Integer((-3).into()), Value::Bytes(y.to_vec())), // -3(y)
-    ]);
+    use coset::{iana, AsCborValue, CoseKeyBuilder};
+
+    let key = CoseKeyBuilder::new_ec2_pub_key(
+        iana::EllipticCurve::P_256,
+        x.to_vec(),
+        y.to_vec(),
+    )
+    .algorithm(iana::Algorithm::ES256)
+    .build();
 
     let mut buf = Vec::new();
-    ciborium::into_writer(&map, &mut buf).expect("CBOR encoding failed");
+    if let Ok(cbor_val) = key.to_cbor_value() {
+        let _ = ciborium::into_writer(&cbor_val, &mut buf);
+    }
     buf
 }
 
