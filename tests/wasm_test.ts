@@ -1,5 +1,7 @@
 import { assertEquals, test } from "./assert.ts";
 import {
+  compressDeflateWasm,
+  decompressDeflateWasm,
   fastXorRust,
   greetFromRust,
   wasm,
@@ -98,4 +100,28 @@ test("Rust WASM - generate_auth_data and generate_assertion_signature_base", () 
   const clientDataHash = new Uint8Array(32);
   const sigBase = wasm.generate_assertion_signature_base(authData, clientDataHash);
   assertEquals(sigBase.length, 37 + 32);
+});
+
+test("Rust WASM - compressDeflateWasm and decompressDeflateWasm", () => {
+  const jsonPayload = JSON.stringify({
+    items: Array.from({ length: 50 }, (_, i) => ({
+      id: `item-${i}`,
+      name: `Account Test Name ${i}`,
+      username: `user_${i}@example.com`,
+      password: `super_secret_password_${i}_12345!`,
+      notes: `Detailed notes for item ${i} with long descriptive text`,
+    })),
+  });
+
+  const encoder = new TextEncoder();
+  const rawBytes = encoder.encode(jsonPayload);
+  const compressed = compressDeflateWasm(rawBytes);
+
+  // Assert compression ratio: compressed size should be significantly smaller (at least 60% reduction)
+  assertEquals(compressed.length < rawBytes.length * 0.4, true);
+
+  // Assert decompression restores original payload exactly
+  const decompressed = decompressDeflateWasm(compressed);
+  const decoder = new TextDecoder();
+  assertEquals(decoder.decode(decompressed), jsonPayload);
 });

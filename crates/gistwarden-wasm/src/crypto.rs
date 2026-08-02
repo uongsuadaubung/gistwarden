@@ -40,6 +40,33 @@ pub fn generate_random_bytes(length: usize) -> Vec<u8> {
     buf
 }
 
+pub fn compress_deflate(data: &[u8]) -> Result<Vec<u8>, String> {
+    use flate2::{write::ZlibEncoder, Compression};
+    use std::io::Write;
+
+    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+    encoder
+        .write_all(data)
+        .map_err(|e| format!("Deflate compression failed: {}", e))?;
+    encoder
+        .finish()
+        .map_err(|e| format!("Deflate compression finish failed: {}", e))
+}
+
+pub fn decompress_deflate(data: &[u8]) -> Result<Vec<u8>, String> {
+    use flate2::read::ZlibDecoder;
+    use std::io::Read;
+
+    if data.len() >= 2 && data[0] == 0x78 {
+        let mut decoder = ZlibDecoder::new(data);
+        let mut decompressed = Vec::new();
+        if decoder.read_to_end(&mut decompressed).is_ok() {
+            return Ok(decompressed);
+        }
+    }
+    Ok(data.to_vec())
+}
+
 pub const ARGON2_DEFAULT_ITERATIONS: u32 = 3;
 pub const ARGON2_DEFAULT_MEMORY_KIB: u32 = 65536; // 64MB
 pub const ARGON2_DEFAULT_HASH_LEN: usize = 32;

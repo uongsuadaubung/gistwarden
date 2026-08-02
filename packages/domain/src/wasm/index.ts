@@ -476,6 +476,14 @@ export function generateRandomBytesWasm(length: number): Uint8Array {
   return wasm.generate_random_bytes(length);
 }
 
+export function compressDeflateWasm(data: Uint8Array): Uint8Array {
+  return wasm.compress_deflate(data);
+}
+
+export function decompressDeflateWasm(data: Uint8Array): Uint8Array {
+  return wasm.decompress_deflate(data);
+}
+
 export function isSingleUriMatchWasm(
   storedUri: string,
   currentUrl: string,
