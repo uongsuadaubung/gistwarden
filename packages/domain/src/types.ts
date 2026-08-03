@@ -58,3 +58,25 @@ export function createSuccessPayloadResponseSchema<T extends z.ZodTypeAny>(
     }),
   ]);
 }
+
+// --- Branded (Nominal) Types for Domain Identifiers ---
+export const ItemIdSchema = z.string().brand<"ItemId">();
+export type ItemId = z.infer<typeof ItemIdSchema>;
+
+export const FolderIdSchema = z.string().brand<"FolderId">();
+export type FolderId = z.infer<typeof FolderIdSchema>;
+
+export const UserIdSchema = z.string().brand<"UserId">();
+export type UserId = z.infer<typeof UserIdSchema>;
+
+export function toItemId(id: string): ItemId {
+  return ItemIdSchema.parse(id);
+}
+
+export function toFolderId(id: string): FolderId {
+  return FolderIdSchema.parse(id);
+}
+
+export function toUserId(id: string): UserId {
+  return UserIdSchema.parse(id);
+}

@@ -3,6 +3,7 @@ import { ok, type Result } from "neverthrow";
 import {
   APP_NAME,
   LOCAL_STORAGE_KEY_THEME,
+  logger,
   MSG_USER_ACTIVITY,
   safeJsonParse,
   SESSION_KEY_ENCRYPTED_VAULT,
@@ -219,7 +220,7 @@ function applyInitialView(
 }
 
 export async function init(): Promise<void> {
-  console.log(`[Store] Initializing ${APP_NAME} Stores...`);
+  logger.app.info(`Initializing ${APP_NAME} Stores...`);
 
   await loadAllStores();
   await handleBrowserRestartCleanup(settingsStore.vaultTimeoutAction);

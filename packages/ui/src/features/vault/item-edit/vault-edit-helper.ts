@@ -117,7 +117,7 @@ export function getInitialFormState(
     notes: item.notes ?? "",
     favorite: item.favorite ?? false,
     reprompt: item.reprompt ?? 0,
-    fields: item.fields ? JSON.parse(JSON.stringify(item.fields)) : [],
+    fields: item.fields ? structuredClone(item.fields) : [],
   };
 
   if (isLoginItem(item)) {

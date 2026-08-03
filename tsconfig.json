@@ -6,6 +6,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "solid-js",
     "strict": true,
+    "noImplicitOverride": true,
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,

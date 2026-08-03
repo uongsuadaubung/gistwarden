@@ -56,7 +56,7 @@ test("fido2-service: findMatchingFido2Accounts matches by URI", () => {
     "https://github.com",
   );
   assertEquals(matches.length, 1);
-  assertEquals(matches[0].name, "GitHub");
+  assertEquals(matches[0]!.name, "GitHub");
 });
 
 test("fido2-service: findMatchingFido2Accounts ignores items without matching URI", () => {
@@ -72,5 +72,5 @@ test("fido2-service: findMatchingFido2Accounts ignores items without matching UR
 test("fido2-service: findMatchingFido2Credentials matches rpId", () => {
   const creds = findMatchingFido2Credentials(mockVaultItems, "github.com");
   assertEquals(creds.length, 1);
-  assertEquals(creds[0].credential.credentialId, "cred1");
+  assertEquals(creds[0]!.credential.credentialId, "cred1");
 });

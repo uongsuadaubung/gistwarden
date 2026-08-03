@@ -156,7 +156,7 @@ test("Vault Merge - Login item revision conflict resolution", () => {
 
   const merged = mergeVaultItems([localLogin], [remoteLogin], 1000);
   assertEquals(merged.length, 1);
-  assertEquals(merged[0].name, "Login Local Edit");
+  assertEquals(merged[0]!.name, "Login Local Edit");
 });
 
 test("Vault Merge - SecureNote item remote revision takes precedence when newer", () => {
@@ -175,7 +175,7 @@ test("Vault Merge - SecureNote item remote revision takes precedence when newer"
 
   const merged = mergeVaultItems([localNote], [remoteNote], 1000);
   assertEquals(merged.length, 1);
-  assertEquals(merged[0].name, "New Remote Note");
+  assertEquals(merged[0]!.name, "New Remote Note");
 });
 
 test("Vault Merge - Card item created on local after lastSync is retained", () => {
@@ -189,8 +189,8 @@ test("Vault Merge - Card item created on local after lastSync is retained", () =
 
   const merged = mergeVaultItems([localCard], [], lastSyncTime);
   assertEquals(merged.length, 1);
-  assertEquals(merged[0].id, "card-1");
-  assertEquals(merged[0].type, VaultItemType.Card);
+  assertEquals(merged[0]!.id, "card-1");
+  assertEquals(merged[0]!.type, VaultItemType.Card);
 });
 
 test("Vault Merge - Identity item created on local before lastSync and missing on remote is dropped", () => {
@@ -217,8 +217,8 @@ test("Vault Merge - SshKey item created on remote is automatically added", () =>
 
   const merged = mergeVaultItems([], [remoteSshKey], lastSyncTime);
   assertEquals(merged.length, 1);
-  assertEquals(merged[0].id, "ssh-1");
-  assertEquals(merged[0].type, VaultItemType.SshKey);
+  assertEquals(merged[0]!.id, "ssh-1");
+  assertEquals(merged[0]!.type, VaultItemType.SshKey);
 });
 
 test("Vault Merge - Mixed collection of all 5 Vault item types", () => {
@@ -343,7 +343,7 @@ test("Vault Merge - Trash array handles deleted items across devices", () => {
   const merged = mergeVaultPayload(localPayload, remotePayload, 0);
 
   assertEquals(merged.items.length, 1);
-  assertEquals(merged.items[0].id, "item-1");
+  assertEquals(merged.items[0]!.id, "item-1");
   assertEquals(merged.trash.length, 1);
-  assertEquals(merged.trash[0].item.id, "item-2");
+  assertEquals(merged.trash[0]!.item.id, "item-2");
 });

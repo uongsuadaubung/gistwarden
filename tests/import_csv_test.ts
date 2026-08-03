@@ -20,14 +20,14 @@ test("CSV Parser - RFC 4180 parsing", () => {
     `"url","username","password","note"\n"https://google.com","manh","kien","some, note with, commas"\n"https://facebook.com","kien","manh",""`;
   const parsedQuoted = parseCSV(quotedCsv);
   assertEquals(parsedQuoted.length, 3);
-  assertEquals(parsedQuoted[1][3], "some, note with, commas");
-  assertEquals(parsedQuoted[2][3], "");
+  assertEquals(parsedQuoted[1]![3], "some, note with, commas");
+  assertEquals(parsedQuoted[2]![3], "");
 
   // 3. Escaped quotes inside quotes
   const escapedQuotesCsv = `name,note\n"Edge","this is a ""special"" note"`;
   const parsedEscaped = parseCSV(escapedQuotesCsv);
   assertEquals(parsedEscaped.length, 2);
-  assertEquals(parsedEscaped[1][1], 'this is a "special" note');
+  assertEquals(parsedEscaped[1]![1], 'this is a "special" note');
 });
 
 test("CSV Import - Parse different password manager exports", () => {
@@ -43,8 +43,8 @@ test("CSV Import - Parse different password manager exports", () => {
   if (resFirefox.isOk()) {
     const val = resFirefox.value;
     assertEquals(val.importedCount, 2);
-    const item1 = val.combinedItems[0];
-    const item2 = val.combinedItems[1];
+    const item1 = val.combinedItems[0]!;
+    const item2 = val.combinedItems[1]!;
     if (isLoginItem(item1) && isLoginItem(item2)) {
       assertEquals(item1.name, "facebook.com"); // Domain name extracted
       assertEquals(item1.login.username, "kien");
@@ -67,7 +67,7 @@ test("CSV Import - Parse different password manager exports", () => {
   if (resChrome.isOk()) {
     const val = resChrome.value;
     assertEquals(val.importedCount, 1);
-    const item1 = val.combinedItems[0];
+    const item1 = val.combinedItems[0]!;
     if (isLoginItem(item1)) {
       assertEquals(item1.name, "Facebook");
       assertEquals(item1.login.username, "kien");
@@ -88,7 +88,7 @@ test("CSV Import - Parse different password manager exports", () => {
   if (resBw.isOk()) {
     const val = resBw.value;
     // Login item
-    const item1 = val.combinedItems[0];
+    const item1 = val.combinedItems[0]!;
     if (isLoginItem(item1)) {
       assertEquals(item1.name, "Facebook");
       assertEquals(item1.favorite, true);

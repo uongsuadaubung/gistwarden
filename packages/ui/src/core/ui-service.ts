@@ -10,6 +10,7 @@ import {
 } from "@gistwarden/repository";
 import {
   LOCAL_STORAGE_KEY_THEME,
+  logger,
   OAUTH_WORKER_URL,
   safeJsonParse,
   STORE_KEY_CONFIRM_MODAL,
@@ -148,7 +149,7 @@ export async function syncTimeOffset(): Promise<Result<void, TranslationKey>> {
     const serverTime = parseResult.data.unixtime * 1000;
     const localTime = Date.now();
     const offset = serverTime - localTime;
-    console.log(`[Store] Time sync successful. Offset: ${offset}ms`);
+    logger.app.info(`Time sync successful. Offset: ${offset}ms`);
     setSettingsStore("timeOffset", offset);
     const updateRes = await updateExtensionSettings({ timeOffset: offset });
     if (updateRes.isErr()) {

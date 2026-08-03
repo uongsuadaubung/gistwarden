@@ -229,6 +229,6 @@ test("Vault Domain Matching - filterMatchingDomainItems strictly matches by URI 
 
   // Only item 2 and item 3 are returned, and item 3 (exact host match) is sorted first
   assertEquals(matched.length, 2);
-  assertEquals(matched[0].id, "3");
-  assertEquals(matched[1].id, "2");
+  assertEquals(matched[0]!.id, "3");
+  assertEquals(matched[1]!.id, "2");
 });
