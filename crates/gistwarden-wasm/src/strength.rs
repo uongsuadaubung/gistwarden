@@ -1,3 +1,4 @@
+use crate::errors::WasmError;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -17,7 +18,7 @@ pub fn estimate_password_strength(password: &str, user_inputs_json: &str) -> Res
             entropy: 0.0,
             guesses: 1,
         };
-        return serde_json::to_string(&empty).map_err(|e| e.to_string());
+        return serde_json::to_string(&empty).map_err(|_| WasmError::VaultImportInvalid.to_string());
     }
 
     let user_inputs: Vec<String> = if user_inputs_json.is_empty() {
@@ -39,5 +40,6 @@ pub fn estimate_password_strength(password: &str, user_inputs_json: &str) -> Res
         guesses,
     };
 
-    serde_json::to_string(&output).map_err(|e| e.to_string())
+    serde_json::to_string(&output).map_err(|_| WasmError::VaultImportInvalid.to_string())
 }
+

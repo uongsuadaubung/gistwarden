@@ -1,5 +1,5 @@
 import { err, ok, Result } from "neverthrow";
-import { type TranslationKey } from "./i18n.ts";
+import { toTranslationKey, type TranslationKey } from "./i18n.ts";
 import { logger } from "./logger.ts";
 import {
   aesGcmDecryptWasm,
@@ -28,7 +28,10 @@ export async function deriveKey(
     return ok(keyBytes);
   } catch (e) {
     logger.crypto.error("Key derivation (argon2id WASM) failed:", e);
-    return err("settings_error_mp_fail");
+    const errKey = typeof e === "string"
+      ? e
+      : (e instanceof Error ? e.message : "");
+    return err(toTranslationKey(errKey, "settings_error_mp_fail"));
   }
 }
 
@@ -53,7 +56,10 @@ export async function encryptData(
     return ok({ iv: ivBase64, ciphertext: ciphertextBase64 });
   } catch (e) {
     logger.crypto.error("AES-GCM WASM Encryption failed:", e);
-    return err("crypto_error_encrypt_failed");
+    const errKey = typeof e === "string"
+      ? e
+      : (e instanceof Error ? e.message : "");
+    return err(toTranslationKey(errKey, "crypto_error_encrypt_failed"));
   }
 }
 
@@ -84,7 +90,10 @@ export async function decryptData(
       "AES-GCM WASM Decryption failed (invalid Master Password / key):",
       e,
     );
-    return err("login_error_wrong_mp");
+    const errKey = typeof e === "string"
+      ? e
+      : (e instanceof Error ? e.message : "");
+    return err(toTranslationKey(errKey, "login_error_wrong_mp"));
   }
 }
 
@@ -109,8 +118,11 @@ export async function batchDecryptData(
       );
       const decompressed = decompressDeflateWasm(dec);
       results.push(ok(new TextDecoder().decode(decompressed)));
-    } catch {
-      results.push(err("login_error_wrong_mp"));
+    } catch (e) {
+      const errKey = typeof e === "string"
+        ? e
+        : (e instanceof Error ? e.message : "");
+      results.push(err(toTranslationKey(errKey, "login_error_wrong_mp")));
     }
   }
 
@@ -151,7 +163,10 @@ export async function computeHmac(
     return ok(signature);
   } catch (e) {
     logger.crypto.error("HMAC computation failed:", e);
-    return err("crypto_error_encrypt_failed");
+    const errKey = typeof e === "string"
+      ? e
+      : (e instanceof Error ? e.message : "");
+    return err(toTranslationKey(errKey, "crypto_error_encrypt_failed"));
   }
 }
 
@@ -173,7 +188,10 @@ export async function hashValue(
     return ok(hash);
   } catch (error) {
     logger.crypto.error("argon2id WASM hashing failed:", error);
-    return err("login_error_wrong_pin");
+    const errKey = typeof error === "string"
+      ? error
+      : (error instanceof Error ? error.message : "");
+    return err(toTranslationKey(errKey, "login_error_wrong_pin"));
   }
 }
 
@@ -194,7 +212,10 @@ export async function parseSshKey(privateKeyText: string): Promise<
       keyFingerprint: res[1],
     });
   } catch (e) {
-    return err("ssh_invalid_key");
+    const errKey = typeof e === "string"
+      ? e
+      : (e instanceof Error ? e.message : "");
+    return err(toTranslationKey(errKey, "ssh_invalid_key"));
   }
 }
 

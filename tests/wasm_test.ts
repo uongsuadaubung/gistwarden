@@ -98,7 +98,10 @@ test("Rust WASM - generate_auth_data and generate_assertion_signature_base", () 
   assertEquals(authData.length, 37);
 
   const clientDataHash = new Uint8Array(32);
-  const sigBase = wasm.generate_assertion_signature_base(authData, clientDataHash);
+  const sigBase = wasm.generate_assertion_signature_base(
+    authData,
+    clientDataHash,
+  );
   assertEquals(sigBase.length, 37 + 32);
 });
 

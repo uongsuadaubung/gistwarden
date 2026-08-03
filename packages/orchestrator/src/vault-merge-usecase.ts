@@ -41,7 +41,8 @@ export function mergeVaultPayload(
 ): VaultPayload {
   const fallback: VaultPayload = { folders: [], items: [], trash: [] };
   return callWasmAndValidate(
-    () => mergeVaultPayloadWasmJs(localPayload, remotePayload, lastSyncTimestamp),
+    () =>
+      mergeVaultPayloadWasmJs(localPayload, remotePayload, lastSyncTimestamp),
     VaultPayloadSchema,
     fallback,
   );

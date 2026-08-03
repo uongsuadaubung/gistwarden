@@ -7,34 +7,29 @@ pub fn get_hostname(input: &str) -> String {
         return String::new();
     }
 
-    let input_with_scheme = if !s.contains("://") {
-        format!("http://{}", s)
+    let parsed_url = if s.contains("://") {
+        Url::parse(s)
     } else {
-        s.to_string()
+        Url::parse(&format!("http://{}", s))
     };
 
-    if let Ok(url) = Url::parse(&input_with_scheme) {
-        let host = url.host_str().map(|h| h.strip_prefix("www.").unwrap_or(h));
-        if let Some(h) = host {
-            return h.to_string();
+    if let Ok(url) = parsed_url {
+        if let Some(host) = url.host_str() {
+            let clean_host = host.strip_prefix("www.").unwrap_or(host);
+            return clean_host.to_string();
         }
     }
 
     String::new()
 }
 
-pub fn get_base_domain(input: &str) -> String {
-    let s = input.trim();
-    if s.is_empty() {
+pub fn get_base_domain_from_host(host: &str) -> String {
+    let h = host.trim();
+    if h.is_empty() {
         return String::new();
     }
 
-    let host = get_hostname(s);
-    if host.is_empty() {
-        return String::new();
-    }
-
-    if let Ok(domain) = parse_domain_name(&host) {
+    if let Ok(domain) = parse_domain_name(h) {
         if domain.is_private() {
             let suffix = domain.suffix();
             if !suffix.is_empty() {
@@ -46,5 +41,13 @@ pub fn get_base_domain(input: &str) -> String {
         }
     }
 
-    host
+    h.to_string()
+}
+
+pub fn get_base_domain(input: &str) -> String {
+    let host = get_hostname(input);
+    if host.is_empty() {
+        return String::new();
+    }
+    get_base_domain_from_host(&host)
 }

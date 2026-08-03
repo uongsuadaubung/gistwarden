@@ -1,8 +1,4 @@
-import {
-  assertEquals,
-  assertMatch,
-  test,
-} from "./assert.ts";
+import { assertEquals, assertMatch, test } from "./assert.ts";
 import {
   generatePassphrase,
   generatePassword,

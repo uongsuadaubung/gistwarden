@@ -23,8 +23,13 @@ export function ensureWasmInitialized(): boolean {
     if (typeof process !== "undefined" && process.versions?.node) {
       const fs = require("node:fs");
       const path = require("node:path");
-      const currentDir = import.meta.dirname ?? (typeof __dirname !== "undefined" ? __dirname : ".");
-      const wasmPath = path.join(currentDir, "generated", "gistwarden_wasm_bg.wasm");
+      const currentDir = import.meta.dirname ??
+        (typeof __dirname !== "undefined" ? __dirname : ".");
+      const wasmPath = path.join(
+        currentDir,
+        "generated",
+        "gistwarden_wasm_bg.wasm",
+      );
       if (fs.existsSync(wasmPath)) {
         const bytes = fs.readFileSync(wasmPath);
         wasmBindgen.initSync({ module: bytes });
@@ -45,7 +50,10 @@ export async function initWasmAsync(): Promise<boolean> {
 
   initPromise = (async () => {
     try {
-      if (typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function") {
+      if (
+        typeof chrome !== "undefined" &&
+        typeof chrome.runtime?.getURL === "function"
+      ) {
         const wasmUrl = chrome.runtime.getURL("gistwarden_wasm_bg.wasm");
         const res = await fetch(wasmUrl);
         const bytes = await res.arrayBuffer();
@@ -64,8 +72,12 @@ export async function initWasmAsync(): Promise<boolean> {
 }
 
 // Auto-trigger WASM preloading on module evaluation in extension contexts
-if (typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function") {
-  initWasmAsync().catch((e) => console.warn("[WASM Loader] Async preload warning:", e));
+if (
+  typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function"
+) {
+  initWasmAsync().catch((e) =>
+    console.warn("[WASM Loader] Async preload warning:", e)
+  );
 }
 
 /**
@@ -436,7 +448,8 @@ export function batchParseHibpResponseWasm(
   suffixes: readonly string[],
 ): Record<string, number> {
   return callWasmAndValidate(
-    () => wasm.batch_parse_hibp_response(responseText, JSON.stringify(suffixes)),
+    () =>
+      wasm.batch_parse_hibp_response(responseText, JSON.stringify(suffixes)),
     z.record(z.string(), z.number()),
     {},
   );
@@ -543,8 +556,9 @@ export function estimatePasswordStrengthWasm(
   pass: string,
   userInputs?: string[],
 ): { score: number; entropy: number; guesses: number } {
-  const inputsJson =
-    userInputs && userInputs.length > 0 ? JSON.stringify(userInputs) : "";
+  const inputsJson = userInputs && userInputs.length > 0
+    ? JSON.stringify(userInputs)
+    : "";
   const raw = wasm.estimate_password_strength(pass, inputsJson);
   if (!raw) return { score: 0, entropy: 0, guesses: 1 };
   return JSON.parse(raw);

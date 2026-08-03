@@ -110,4 +110,3 @@ export async function openPopup(): Promise<Result<void, TranslationKey>> {
     return err("tab_error_open");
   }
 }
-

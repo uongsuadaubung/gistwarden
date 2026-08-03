@@ -7,7 +7,6 @@
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285f4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](https://opensource.org/licenses/ISC)
 
-
 Gistwarden is an open-source browser extension designed to manage passwords,
 one-time passwords (TOTP), secure notes, and passkeys (FIDO2/WebAuthn) securely,
 privately, and completely free of charge.
@@ -195,4 +194,3 @@ Run standard cryptographic and utility test suites:
 ```bash
 bun test
 ```
-

@@ -1,4 +1,4 @@
-import { assertEquals, assert, test } from "./assert.ts";
+import { assert, assertEquals, test } from "./assert.ts";
 import { generateTotpSafe, parseTotpSecret } from "@gistwarden/domain";
 
 test("TOTP - RFC 6238 Standard Test Vectors", async () => {

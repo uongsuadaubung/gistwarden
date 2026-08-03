@@ -1,21 +1,28 @@
+use crate::errors::WasmError;
 use totp_rs::{Algorithm, Secret, TOTP};
+use url::Url;
 
 /**
  * Bóc tách secret key (Base32) ra khỏi định dạng otpauth:// URI hoặc chuỗi mã khóa bí mật thô.
  */
 pub fn parse_totp_secret(raw_secret: &str) -> String {
     let trimmed = raw_secret.trim();
-    let lower = trimmed.to_lowercase();
+    if trimmed.is_empty() {
+        return String::new();
+    }
 
-    let secret_str = if lower.contains("secret=") {
-        if let Some(pos) = lower.find("secret=") {
-            let rest = &trimmed[pos + 7..];
-            rest.split('&').next().unwrap_or(rest)
+    let secret_str = if trimmed.starts_with("otpauth://") || trimmed.contains("://") {
+        if let Ok(parsed_url) = Url::parse(trimmed) {
+            parsed_url
+                .query_pairs()
+                .find(|(k, _)| k.eq_ignore_ascii_case("secret"))
+                .map(|(_, v)| v.into_owned())
+                .unwrap_or_else(|| trimmed.to_string())
         } else {
-            trimmed
+            trimmed.to_string()
         }
     } else {
-        trimmed
+        trimmed.to_string()
     };
 
     secret_str
@@ -34,13 +41,13 @@ pub fn generate_totp_code(
 ) -> Result<String, String> {
     let clean_secret = parse_totp_secret(secret_base32);
     if clean_secret.is_empty() {
-        return Err("Empty TOTP secret".into());
+        return Err(WasmError::TotpInvalidSecret.to_string());
     }
 
     let step = if period_secs == 0 { 30 } else { period_secs };
     let secret_bytes = Secret::Encoded(clean_secret)
         .to_bytes()
-        .map_err(|e| format!("Invalid Base32 secret: {:?}", e))?;
+        .map_err(|_| WasmError::TotpInvalidSecret.to_string())?;
 
     let totp = TOTP::new_unchecked(Algorithm::SHA1, 6, 1, step, secret_bytes);
 

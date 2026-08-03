@@ -15,7 +15,11 @@ export const CopyableField: Component<CopyableFieldProps> = (props) => {
     <div class="detail-row">
       <div class="field-content">
         <div class="field-label">{props.label}</div>
-        <div class={`field-value text-break ${props.masked ? "password-font" : ""}`}>
+        <div
+          class={`field-value text-break ${
+            props.masked ? "password-font" : ""
+          }`}
+        >
           <Show when={Boolean(props.value)} fallback={props.fallbackText || ""}>
             {props.value}
           </Show>

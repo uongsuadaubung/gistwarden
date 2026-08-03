@@ -1,3 +1,4 @@
+use crate::errors::WasmError;
 use data_encoding::BASE64;
 use sha2::{Digest, Sha256};
 use ssh_key::{HashAlg, PrivateKey, PublicKey};
@@ -38,5 +39,5 @@ pub fn parse_ssh_key(private_key_text: &str) -> Result<Vec<String>, String> {
         }
     }
 
-    Err("ssh_invalid_key".to_string())
+    Err(WasmError::SshInvalidKey.to_string())
 }

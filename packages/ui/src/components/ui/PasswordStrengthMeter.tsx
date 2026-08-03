@@ -1,4 +1,4 @@
-import { type Component, createSignal, createEffect } from "solid-js";
+import { type Component, createEffect, createSignal } from "solid-js";
 import { evaluatePasswordStrength } from "@gistwarden/domain";
 import { t } from "@/core/i18n.ts";
 

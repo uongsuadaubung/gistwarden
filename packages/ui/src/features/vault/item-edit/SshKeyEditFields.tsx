@@ -42,7 +42,6 @@ export const SshKeyEditFields: Component<SshKeyEditFieldsProps> = (props) => {
     <>
       <div class="detail-section-title">{t("vault_item_ssh_key")}</div>
       <div class="card mb-16">
-
         {/* Private Key */}
         <FormField id="ssh-private-key" label={t("detail_ssh_private_key")}>
           <div class="pos-relative">

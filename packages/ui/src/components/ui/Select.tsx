@@ -109,7 +109,9 @@ export const Select: Component<SelectProps> = (props) => {
                 >
                   <div
                     class={`select-dropdown-item ${
-                      String(opt.value) === String(props.value) ? "selected" : ""
+                      String(opt.value) === String(props.value)
+                        ? "selected"
+                        : ""
                     } ${opt.disabled ? "disabled" : ""}`}
                     onClick={() => !opt.disabled && handleSelect(opt.value)}
                   >

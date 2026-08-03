@@ -102,4 +102,6 @@ function auditCodebase(): FileAudit[] {
 const auditResult = auditCodebase();
 const summaryPath = "scratch/function_audit.json";
 writeFileSync(summaryPath, JSON.stringify(auditResult, null, 2), "utf8");
-console.log(`✓ Audit complete. Saved ${auditResult.length} files to ${summaryPath}`);
+console.log(
+  `✓ Audit complete. Saved ${auditResult.length} files to ${summaryPath}`,
+);
