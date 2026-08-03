@@ -3,7 +3,13 @@ import {
   exportToBitwardenCsv,
   exportToBrowserCsv,
 } from "../packages/ui/src/features/sync/csv-export.ts";
-import { parseCSV, type VaultItem, VaultItemType } from "@gistwarden/domain";
+import {
+  CustomFieldType,
+  type Folder,
+  parseCSV,
+  type VaultItem,
+  VaultItemType,
+} from "@gistwarden/domain";
 
 test("Export CSV - Browser CSV format", async () => {
   const items: VaultItem[] = [
@@ -44,7 +50,7 @@ test("Export CSV - Browser CSV format", async () => {
   assertEquals(rows.length, 2); // Header + 1 login row (note is ignored)
   assertEquals(rows[0], ["name", "url", "username", "password", "note"]);
 
-  const loginRow = rows[1];
+  const loginRow = rows[1]!;
   assertEquals(loginRow[0], "Google, Inc.");
   assertEquals(loginRow[1], "https://google.com");
   assertEquals(loginRow[2], "user1");
@@ -60,22 +66,20 @@ test("Export CSV - Bitwarden CSV format", async () => {
       name: "Google",
       notes: "Note 1",
       favorite: true,
-      reprompt: 1,
+      reprompt: 0,
       fields: [
-        { type: 0, name: "custom1", value: "value1" },
-        { type: 0, name: "custom2", value: 'value"2' },
+        { type: CustomFieldType.Text, name: "custom1", value: "value1" },
+        { type: CustomFieldType.Text, name: "custom2", value: 'value"2' },
       ],
+      creationDate: "2026-01-01T00:00:00Z",
+      revisionDate: "2026-01-01T00:00:00Z",
       login: {
         username: "user1",
         password: "pass1",
-        uris: [{ uri: "https://google.com" }],
         totp: "secret123",
-        fido2Credentials: [],
-        passwordRevisionDate: null,
-        passwordHistory: [],
+        uris: [{ uri: "https://google.com", match: 1 }],
       },
-      creationDate: "",
-      revisionDate: "",
+      folderId: "1",
     },
     {
       id: "2",
@@ -85,15 +89,17 @@ test("Export CSV - Bitwarden CSV format", async () => {
       favorite: false,
       reprompt: 0,
       fields: [],
-      creationDate: "",
-      revisionDate: "",
+      creationDate: "2026-01-01T00:00:00Z",
+      revisionDate: "2026-01-01T00:00:00Z",
+      folderId: null,
     },
   ];
 
-  const csv = await exportToBitwardenCsv(items);
-  const rows = await parseCSV(csv);
+  const folders: Folder[] = [{ id: "1", name: "Folder 1" }];
 
-  assertEquals(rows.length, 3); // Header + Login + Note
+  const csv = await exportToBitwardenCsv(items, folders);
+  const rows = await parseCSV(csv);
+  assertEquals(rows.length, 3); // Header + 2 items
   assertEquals(rows[0], [
     "folder",
     "favorite",
@@ -110,14 +116,14 @@ test("Export CSV - Bitwarden CSV format", async () => {
   ]);
 
   // Login row verification
-  const loginRow = rows[1];
-  assertEquals(loginRow[0], "");
+  const loginRow = rows[1]!;
+  assertEquals(loginRow[0], "Folder 1");
   assertEquals(loginRow[1], "1");
   assertEquals(loginRow[2], "login");
   assertEquals(loginRow[3], "Google");
   assertEquals(loginRow[4], "Note 1");
   assertEquals(loginRow[5], 'custom1:value1\ncustom2:value"2');
-  assertEquals(loginRow[6], "1");
+  assertEquals(loginRow[6], "0");
   assertEquals(loginRow[7], "");
   assertEquals(loginRow[8], "https://google.com");
   assertEquals(loginRow[9], "user1");
@@ -125,7 +131,7 @@ test("Export CSV - Bitwarden CSV format", async () => {
   assertEquals(loginRow[11], "secret123");
 
   // Note row verification
-  const noteRow = rows[2];
+  const noteRow = rows[2]!;
   assertEquals(noteRow[0], "");
   assertEquals(noteRow[1], "0");
   assertEquals(noteRow[2], "note");

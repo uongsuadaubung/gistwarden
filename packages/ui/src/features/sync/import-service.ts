@@ -5,6 +5,7 @@ import {
   parseAndValidateBitwardenCsv,
   parseAndValidateBrowserCsv,
 } from "@/features/sync/csv-import.ts";
+import { logger } from "@gistwarden/domain";
 import { type TranslationKey } from "@/core/i18n.ts";
 import { err, ok, Result } from "neverthrow";
 import { persistAndReconcileVault } from "@/features/vault/vault-service.ts";
@@ -22,7 +23,7 @@ export async function importJsonData(
   }
   const importVal = importRes.value;
 
-  console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
+  logger.vault.info("Đang tải lên Gist...");
   const res = await persistAndReconcileVault(
     importVal.combinedItems,
     accountStore.trashItems,
@@ -32,7 +33,7 @@ export async function importJsonData(
     return err(res.error);
   }
 
-  console.log(`[${APP_NAME} Import] Import HOÀN TẤT thành công!`);
+  logger.vault.info("Import HOÀN TẤT thành công!");
   return ok(importVal.importedCount);
 }
 
@@ -51,7 +52,7 @@ export async function importCsvData(
     }
     const importVal = importRes.value;
 
-    console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
+    logger.vault.info("Đang tải lên Gist...");
     const res = await persistAndReconcileVault(
       importVal.combinedItems,
       accountStore.trashItems,
@@ -61,9 +62,7 @@ export async function importCsvData(
       return err(res.error);
     }
 
-    console.log(
-      `[${APP_NAME} Import] Import CSV Bitwarden HOÀN TẤT thành công!`,
-    );
+    logger.vault.info("Import CSV Bitwarden HOÀN TẤT thành công!");
     return ok(importVal.importedCount);
   } else {
     const importRes = parseAndValidateBrowserCsv(
@@ -75,7 +74,7 @@ export async function importCsvData(
     }
     const importVal = importRes.value;
 
-    console.log(`[${APP_NAME} Import] Đang tải lên Gist...`);
+    logger.vault.info("Đang tải lên Gist...");
     const res = await persistAndReconcileVault(
       importVal.combinedItems,
       accountStore.trashItems,
@@ -85,7 +84,7 @@ export async function importCsvData(
       return err(res.error);
     }
 
-    console.log(`[${APP_NAME} Import] Import CSV Browser HOÀN TẤT thành công!`);
+    logger.vault.info("Import CSV Browser HOÀN TẤT thành công!");
     return ok(importVal.importedCount);
   }
 }

@@ -2,8 +2,8 @@
 
 A curated, concise reference of production-grade Rust rules and principles,
 distilled from industry experts (Rust API Guidelines, _Rust for Rustaceans_ by
-Jon Gjengset, _Effective Rust_ by David Drysdale, and matklad's engineering
-rules).
+Jon Gjengset, _Effective Rust_ by David Drysdale, Mara Bos's _Rust Atomics and
+Locks_, and matklad's engineering rules).
 
 ---
 
@@ -194,13 +194,167 @@ rules).
 
 ---
 
+## 10. Asynchronous Programming & Concurrency Runtimes
+
+- **Tokio as the De Facto Standard Runtime:**
+  - For networked services, prefer `tokio` unless there is a specific reason
+    (embedded, single-threaded-only, minimal dependency footprint) to reach for
+    `async-std` or `smol`.
+- **Structured Concurrency Primitives:**
+  - Use `JoinSet` to manage a dynamic set of spawned tasks, `TaskTracker` to
+    track task lifecycles, and `CancellationToken` for cooperative, propagated
+    cancellation instead of ad-hoc `AtomicBool` flags.
+  - _(Source: Tokio ecosystem documentation & 2026 Async Rust guides)_
+- **Never Block the Async Runtime:**
+  - Never call blocking/CPU-bound code (sync file I/O, heavy computation,
+    `std::thread::sleep`) directly inside an `async fn`; offload it with
+    `tokio::task::spawn_blocking` to avoid starving the executor's thread pool.
+- **Cancellation Safety:**
+  - When racing futures with `tokio::select!`, verify each branch is safe to
+    drop mid-execution — partially completed side effects (partial writes, held
+    locks) are a common source of subtle bugs.
+- **Prefer Native Async Traits over Boxed Futures Where Possible:**
+  - With native `async fn` in traits and async closures available in modern
+    Rust, prefer them over manually boxing (`Pin<Box<dyn Future>>`) or reaching
+    for the `async-trait` crate, except where object safety (`dyn Trait`) is
+    specifically required.
+- **Async-Aware Observability:**
+  - Use `tracing` together with `tokio-console` for inspecting task scheduling,
+    stalls, and resource usage — plain `println!`/`log` do not capture the
+    concurrent structure of async execution.
+- **Relax Trait Bounds in Single-Threaded Contexts:**
+  - Don't default every async abstraction to `Send + Sync + 'static`; in
+    single-threaded or embedded async contexts, narrower bounds simplify code
+    and avoid unnecessary `Arc`/`Mutex` overhead.
+
+---
+
+## 11. Testing, Fuzzing & Verification
+
+- **Faster, More Reliable Test Runs:**
+  - Use `cargo-nextest` in CI instead of `cargo test` for better isolation (each
+    test in its own process), clearer failure output, and faster parallel
+    execution.
+- **Property-Based Testing:**
+  - For invariants that should hold across a wide input space (parsers,
+    serialization round-trips, math), use `proptest` or `quickcheck` rather than
+    relying solely on hand-picked example-based unit tests.
+- **Detecting Undefined Behavior in `unsafe` Code:**
+  - Run `cargo miri test` in CI for any crate containing `unsafe` blocks to
+    catch UB (uninitialized reads, data races, invalid pointer use) that normal
+    test runs cannot detect.
+- **Fuzzing Untrusted Input Boundaries:**
+  - Use `cargo-fuzz` (libFuzzer-based) on parsers, deserializers, and any code
+    that processes untrusted or external input.
+- **Snapshot Testing for Complex Output:**
+  - For large structured output (generated code, rendered templates, complex
+    data structures), use `insta` snapshot tests instead of manually asserting
+    on individual fields.
+
+---
+
+## 12. Dependency & Supply-Chain Management
+
+- **License and Advisory Policy Enforcement:**
+  - Use `cargo-deny` in CI to enforce license allowlists, ban duplicate or
+    explicitly disallowed crates, and check for security advisories in one pass.
+- **Vulnerability Scanning:**
+  - Run `cargo-audit` against the RustSec Advisory Database in CI to catch known
+    vulnerabilities in the dependency tree.
+- **SemVer Compliance Checks:**
+  - Run `cargo-semver-checks` (e.g. `cargo semver-checks`) before publishing to
+    catch accidental breaking changes against the last published version.
+    Configure per-lint `level` (`deny`/`warn`/`allow`) and `required-update`
+    (`major`/`minor`) at the workspace or package level rather than relying on
+    manual review alone.
+- **Pin and Verify MSRV:**
+  - Declare the Minimum Supported Rust Version via the `rust-version` field in
+    `Cargo.toml`, and verify it with a dedicated CI job pinned to that toolchain
+    — don't let MSRV drift silently as new syntax gets used.
+
+---
+
+## 13. Observability & Diagnostics
+
+- **Structured, Span-Based Logging:**
+  - Prefer the `tracing` crate over `log` for anything concurrent or async —
+    `tracing` captures causally-related spans (e.g. "this log line happened
+    during this request's handling on this task"), which plain flat log lines
+    cannot represent.
+- **Instrument Rather Than Manually Log:**
+  - Use `#[tracing::instrument]` on key functions to automatically capture
+    entry/exit, arguments, and timing, instead of scattering manual log/println
+    calls through the function body.
+
+---
+
+## 14. Generics, Dispatch & API Design
+
+- **Static Dispatch by Default, Dynamic Dispatch at Boundaries:**
+  - Prefer generics / `impl Trait` (static dispatch, monomorphized, inlinable)
+    in hot paths and internal APIs. Reach for `dyn Trait` (dynamic dispatch) at
+    plugin boundaries, heterogeneous collections, or where compile-time
+    monomorphization cost/binary size is a concern.
+- **Full Rust API Guidelines Naming Conventions:**
+  - Beyond casing (`C-CASE`), follow the full naming checklist: conversion
+    method prefixes encode cost and ownership (`as_` = cheap borrow, `to_` =
+    expensive/owned copy, `into_` = consuming conversion); getters omit a `get_`
+    prefix (`C-GETTER`); iterator constructors follow
+    `iter`/`iter_mut`/`into_iter` conventions (`C-ITER`).
+- **Builder Pattern for Complex Construction:**
+  - For structs with several optional or many-combination fields, prefer a
+    builder (`XyzBuilder`) over multiple constructor overloads or long
+    positional-argument constructors.
+
+---
+
+## 15. Module & Workspace Organization
+
+- **Cargo Workspaces for Layer Isolation:**
+  - Use a Cargo workspace to split a large project into focused crates whose
+    boundaries mirror the architectural isolation described in Section 4 (domain
+    crate, I/O/driver crates, application crate) rather than relying on
+    module-level discipline alone within one crate.
+- **Minimal Visibility by Default:**
+  - Default to `pub(crate)` (or narrower, e.g. `pub(super)`) and only widen to
+    `pub` when an item is intentionally part of the crate's external API — this
+    keeps the real public surface (and thus the semver contract) deliberate
+    rather than accidental.
+
+---
+
+## 16. Build Profiles, Binary Size & CI Optimization
+
+- **Cargo Release Profiles:**
+  - Configure split profiles in `Cargo.toml`: use `opt-level = 0` for fast local
+    dev/test cycles, and `opt-level = "z"` / `3` with LTO (`lto = true`) and
+    binary stripping (`strip = true`) for production release binaries.
+- **Dependency Caching in CI:**
+  - Use `swatinem/rust-cache` or `sccache` in CI build workflows to cache
+    compiled dependency artifacts across pipeline runs, cutting CI build
+    execution times by up to 70%.
+
+---
+
 ## Key References
 
 - [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
 - [Rust & WebAssembly Book](https://rustwasm.github.io/docs/book/) — Official
   Rust WASM Working Group
+- [Rust 2024 Edition Guide](https://doc.rust-lang.org/edition-guide/rust-2024/)
+  — Official Rust Edition Reference
+- [The Rust Performance Book](https://rust-lang.github.io/perf-book/) — Official
+  Performance Guidelines
 - _Rust for Rustaceans_ — Jon Gjengset
 - _Effective Rust: 35 Specific Ways to Improve Your Rust Code_ — David Drysdale
+- _Rust Atomics and Locks_ — Mara Bos
 - Aleksey Kladov (matklad) Blog —
   [matklad.github.io](https://matklad.github.io/)
 - [RustCrypto Working Group Documentation](https://github.com/RustCrypto)
+- [Tokio Ecosystem Documentation](https://tokio.rs/) & The Async Book
+- [cargo-nextest](https://nexte.st/) ·
+  [cargo-deny](https://embarkstudios.github.io/cargo-deny/) ·
+  [cargo-audit](https://github.com/RustSec/rustsec) ·
+  [cargo-semver-checks](https://github.com/obi1kenobi/cargo-semver-checks)
+- [tracing](https://docs.rs/tracing) &
+  [tokio-console](https://github.com/tokio-rs/console)
