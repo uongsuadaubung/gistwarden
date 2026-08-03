@@ -1,5 +1,9 @@
 import { getBaseDomain, getHostname } from "./domain-utils.ts";
-import { UriMatchMode, type VaultItem, VaultListSchema } from "./vault-schemas.ts";
+import {
+  UriMatchMode,
+  type VaultItem,
+  VaultListSchema,
+} from "./vault-schemas.ts";
 import { isLoginItem, VaultItemType } from "./vault-types.ts";
 import {
   callWasmAndValidate,
@@ -99,7 +103,8 @@ export function filterMatchingDomainItems(
 ): VaultItem[] {
   if (!domainOrUrl || !items || items.length === 0) return [];
   return callWasmAndValidate(
-    () => filterMatchingDomainItemsWasmJs(items, domainOrUrl, overrideDefaultMode),
+    () =>
+      filterMatchingDomainItemsWasmJs(items, domainOrUrl, overrideDefaultMode),
     VaultListSchema,
     [],
   );

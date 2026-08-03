@@ -6,15 +6,27 @@ export function assert(value: unknown, msg?: string): asserts value {
   }
 }
 
-export function assertEquals(actual: unknown, expected: unknown, _msg?: string): void {
+export function assertEquals(
+  actual: unknown,
+  expected: unknown,
+  _msg?: string,
+): void {
   expect(actual).toEqual(expected);
 }
 
-export function assertNotEquals(actual: unknown, expected: unknown, _msg?: string): void {
+export function assertNotEquals(
+  actual: unknown,
+  expected: unknown,
+  _msg?: string,
+): void {
   expect(actual).not.toEqual(expected);
 }
 
-export function assertMatch(actual: string, regexp: RegExp, _msg?: string): void {
+export function assertMatch(
+  actual: string,
+  regexp: RegExp,
+  _msg?: string,
+): void {
   expect(regexp.test(actual)).toBe(true);
 }
 
@@ -34,9 +46,10 @@ export async function assertRejects(
   }
 }
 
-export function test(name: string | { name: string }, fn: () => void | Promise<void>): void {
+export function test(
+  name: string | { name: string },
+  fn: () => void | Promise<void>,
+): void {
   const testName = typeof name === "string" ? name : name.name;
   bunTest(testName, fn);
 }
-
-

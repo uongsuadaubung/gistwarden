@@ -1,9 +1,4 @@
-import {
-  assert,
-  assertEquals,
-  assertNotEquals,
-  test,
-} from "./assert.ts";
+import { assert, assertEquals, assertNotEquals, test } from "./assert.ts";
 import {
   arrayBufferToBase64,
   decryptData,

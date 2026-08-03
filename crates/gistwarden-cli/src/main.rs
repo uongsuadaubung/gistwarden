@@ -107,19 +107,11 @@ fn get_target_layer_from_import(import_path: &str) -> (u8, &'static str) {
 }
 
 fn get_line_column(source_text: &str, byte_offset: u32) -> (usize, usize) {
-    let offset = byte_offset as usize;
-    let mut line = 1;
-    let mut last_line_start = 0;
-    for (i, b) in source_text.bytes().enumerate() {
-        if i >= offset {
-            break;
-        }
-        if b == b'\n' {
-            line += 1;
-            last_line_start = i + 1;
-        }
-    }
-    let column = offset.saturating_sub(last_line_start) + 1;
+    let offset = (byte_offset as usize).min(source_text.len());
+    let slice = &source_text.as_bytes()[..offset];
+    let line = slice.iter().filter(|&&b| b == b'\n').count() + 1;
+    let last_newline = slice.iter().rposition(|&b| b == b'\n').map_or(0, |pos| pos + 1);
+    let column = offset.saturating_sub(last_newline) + 1;
     (line, column)
 }
 

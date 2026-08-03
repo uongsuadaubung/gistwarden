@@ -1,81 +1,71 @@
+use crate::errors::WasmError;
 use ciborium::Value;
 use wasm_bindgen::JsCast;
 
 pub fn concat_bytes(chunks: js_sys::Array) -> Vec<u8> {
-    let len = chunks.length();
-    let mut total_len = 0;
-    for i in 0..len {
-        let val = chunks.get(i);
-        if let Ok(arr) = val.dyn_into::<js_sys::Uint8Array>() {
-            total_len += arr.length() as usize;
-        }
-    }
-    let mut out = Vec::with_capacity(total_len);
-    for i in 0..len {
-        let val = chunks.get(i);
-        if let Ok(arr) = val.dyn_into::<js_sys::Uint8Array>() {
-            out.extend_from_slice(&arr.to_vec());
-        }
+    let iter = chunks.iter().filter_map(|val| val.dyn_into::<js_sys::Uint8Array>().ok());
+    let mut out = Vec::new();
+    for arr in iter {
+        let prev_len = out.len();
+        let chunk_len = arr.length() as usize;
+        out.resize(prev_len + chunk_len, 0);
+        arr.copy_to(&mut out[prev_len..]);
     }
     out
 }
 
 pub fn cbor_encode_length(major_type: u8, length: usize) -> Vec<u8> {
     let mt = major_type << 5;
-    if length < 24 {
-        vec![mt | (length as u8)]
-    } else if length < 256 {
-        vec![mt | 24, length as u8]
-    } else if length < 65536 {
-        vec![
-            mt | 25,
-            ((length >> 8) & 0xff) as u8,
-            (length & 0xff) as u8,
-        ]
-    } else {
-        vec![
-            mt | 26,
-            ((length >> 24) & 0xff) as u8,
-            ((length >> 16) & 0xff) as u8,
-            ((length >> 8) & 0xff) as u8,
-            (length & 0xff) as u8,
-        ]
+    match length {
+        0..=23 => vec![mt | (length as u8)],
+        24..=255 => vec![mt | 24, length as u8],
+        256..=65535 => {
+            let b = (length as u16).to_be_bytes();
+            vec![mt | 25, b[0], b[1]]
+        }
+        _ => {
+            let b = (length as u32).to_be_bytes();
+            vec![mt | 26, b[0], b[1], b[2], b[3]]
+        }
     }
 }
 
-pub fn cbor_text_string(s: &str) -> Vec<u8> {
+pub fn cbor_text_string(s: &str) -> Result<Vec<u8>, String> {
     let mut buf = Vec::new();
     let val = Value::Text(s.to_string());
-    ciborium::into_writer(&val, &mut buf).expect("CBOR encoding failed");
-    buf
+    ciborium::into_writer(&val, &mut buf).map_err(|_| WasmError::Fido2CreateFailed.to_string())?;
+    Ok(buf)
 }
 
-pub fn cbor_byte_string(bytes: &[u8]) -> Vec<u8> {
+pub fn cbor_byte_string(bytes: &[u8]) -> Result<Vec<u8>, String> {
     let mut buf = Vec::new();
     let val = Value::Bytes(bytes.to_vec());
-    ciborium::into_writer(&val, &mut buf).expect("CBOR encoding failed");
-    buf
+    ciborium::into_writer(&val, &mut buf).map_err(|_| WasmError::Fido2CreateFailed.to_string())?;
+    Ok(buf)
 }
 
 pub fn cbor_map_header(num_pairs: usize) -> Vec<u8> {
     cbor_encode_length(5, num_pairs)
 }
 
-pub fn cbor_positive_int(n: usize) -> Vec<u8> {
+pub fn cbor_positive_int(n: usize) -> Result<Vec<u8>, String> {
     let mut buf = Vec::new();
     let val = Value::Integer((n as u64).into());
-    ciborium::into_writer(&val, &mut buf).expect("CBOR encoding failed");
-    buf
+    ciborium::into_writer(&val, &mut buf).map_err(|_| WasmError::Fido2CreateFailed.to_string())?;
+    Ok(buf)
 }
 
-pub fn cbor_negative_int(n: usize) -> Vec<u8> {
+pub fn cbor_negative_int(n: usize) -> Result<Vec<u8>, String> {
     let mut buf = Vec::new();
-    let val = Value::Integer((-1 - (n as i64)).into());
-    ciborium::into_writer(&val, &mut buf).expect("CBOR encoding failed");
-    buf
+    let neg_val: i128 = -1 - (n as i128);
+    let ciborium_int = ciborium::value::Integer::try_from(neg_val)
+        .map_err(|_| WasmError::Fido2CreateFailed.to_string())?;
+    let val = Value::Integer(ciborium_int);
+    ciborium::into_writer(&val, &mut buf).map_err(|_| WasmError::Fido2CreateFailed.to_string())?;
+    Ok(buf)
 }
 
-pub fn pack_attestation_object(auth_data: &[u8]) -> Vec<u8> {
+pub fn pack_attestation_object(auth_data: &[u8]) -> Result<Vec<u8>, String> {
     let map = Value::Map(vec![
         (Value::Text("fmt".to_string()), Value::Text("none".to_string())),
         (Value::Text("attStmt".to_string()), Value::Map(vec![])),
@@ -83,11 +73,11 @@ pub fn pack_attestation_object(auth_data: &[u8]) -> Vec<u8> {
     ]);
 
     let mut buf = Vec::new();
-    ciborium::into_writer(&map, &mut buf).expect("CBOR encoding failed");
-    buf
+    ciborium::into_writer(&map, &mut buf).map_err(|_| WasmError::Fido2CreateFailed.to_string())?;
+    Ok(buf)
 }
 
-pub fn encode_cose_ec2_public_key(x: &[u8], y: &[u8]) -> Vec<u8> {
+pub fn encode_cose_ec2_public_key(x: &[u8], y: &[u8]) -> Result<Vec<u8>, String> {
     use coset::{iana, AsCborValue, CoseKeyBuilder};
 
     let key = CoseKeyBuilder::new_ec2_pub_key(
@@ -99,10 +89,9 @@ pub fn encode_cose_ec2_public_key(x: &[u8], y: &[u8]) -> Vec<u8> {
     .build();
 
     let mut buf = Vec::new();
-    if let Ok(cbor_val) = key.to_cbor_value() {
-        let _ = ciborium::into_writer(&cbor_val, &mut buf);
-    }
-    buf
+    let cbor_val = key.to_cbor_value().map_err(|_| WasmError::Fido2CreateFailed.to_string())?;
+    ciborium::into_writer(&cbor_val, &mut buf).map_err(|_| WasmError::Fido2CreateFailed.to_string())?;
+    Ok(buf)
 }
 
 pub const AAGUID: &[u8; 16] = b"LazyPasskeyGist1";
@@ -147,8 +136,9 @@ pub fn generate_auth_data(
         let cred_len = cred_id.len() as u16;
         auth_data.extend_from_slice(&cred_len.to_be_bytes());
         auth_data.extend_from_slice(cred_id);
-        let cose_bytes = encode_cose_ec2_public_key(x, y);
-        auth_data.extend_from_slice(&cose_bytes);
+        if let Ok(cose_bytes) = encode_cose_ec2_public_key(x, y) {
+            auth_data.extend_from_slice(&cose_bytes);
+        }
     }
 
     auth_data

@@ -1,10 +1,10 @@
 import { err, ok, Result } from "neverthrow";
-import type { TranslationKey } from "./i18n.ts";
+import { toTranslationKey, type TranslationKey } from "./i18n.ts";
 import {
-  parseTotpSecretWasm,
-  generateTotpCodeWasm,
   decodeQrFromBytesWasm,
+  generateTotpCodeWasm,
   initWasmAsync,
+  parseTotpSecretWasm,
 } from "./wasm/index.ts";
 
 export type QrImageInput = Blob | File | Uint8Array | ArrayBuffer | string;
@@ -46,7 +46,10 @@ export async function safeDecodeQr(
     return code ? ok(code) : err("edit_qr_error_fail");
   } catch (e) {
     console.error("QR Code decoding error:", e);
-    return err("edit_qr_error_fail");
+    const errKey = typeof e === "string"
+      ? e
+      : (e instanceof Error ? e.message : "");
+    return err(toTranslationKey(errKey, "edit_qr_error_fail"));
   }
 }
 
@@ -64,6 +67,9 @@ export async function generateTotpSafe(
     return ok(generateTotpCodeWasm(secret, Date.now() + timeOffset));
   } catch (e) {
     console.error("TOTP Generation error:", e);
-    return err("totp_error_invalid_secret");
+    const errKey = typeof e === "string"
+      ? e
+      : (e instanceof Error ? e.message : "");
+    return err(toTranslationKey(errKey, "totp_error_invalid_secret"));
   }
 }

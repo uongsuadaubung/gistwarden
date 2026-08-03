@@ -13,7 +13,9 @@ export interface MoveToFolderModalProps {
 }
 
 export default function MoveToFolderModal(props: MoveToFolderModalProps) {
-  const [selectedFolderId, setSelectedFolderId] = createSignal<string>("no_folder");
+  const [selectedFolderId, setSelectedFolderId] = createSignal<string>(
+    "no_folder",
+  );
 
   createEffect(() => {
     if (props.isOpen) {
@@ -43,8 +45,9 @@ export default function MoveToFolderModal(props: MoveToFolderModalProps) {
       {(triggerClose) => {
         const handleSubmit = async (e: Event) => {
           e.preventDefault();
-          const targetId =
-            selectedFolderId() === "no_folder" ? null : selectedFolderId();
+          const targetId = selectedFolderId() === "no_folder"
+            ? null
+            : selectedFolderId();
           const success = await props.onConfirm(targetId);
           if (success) {
             triggerClose();

@@ -48,7 +48,10 @@ export const LoginDetailFields: Component<LoginDetailFieldsProps> = (props) => {
       return;
     }
 
-    const generateRes = await generateTotpSafe(rawSecret, settingsStore.timeOffset);
+    const generateRes = await generateTotpSafe(
+      rawSecret,
+      settingsStore.timeOffset,
+    );
 
     if (generateRes.isOk()) {
       const rawCode = generateRes.value;

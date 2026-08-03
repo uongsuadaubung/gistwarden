@@ -1,5 +1,7 @@
+use crate::errors::WasmError;
+use crate::types::{Folder, VaultItem, VaultPayload};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 fn parse_timestamp(date_str: Option<&str>) -> u64 {
     date_str
@@ -11,61 +13,16 @@ fn parse_timestamp(date_str: Option<&str>) -> u64 {
 }
 
 pub fn merge_vault_payload_values(
-    local: Value,
-    remote: Value,
+    local: VaultPayload,
+    remote: VaultPayload,
     last_sync_timestamp: u64,
-) -> Value {
-    let local_folders = local
-        .get("folders")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-    let remote_folders = remote
-        .get("folders")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-
+) -> VaultPayload {
     // 1. Merge Folders
-    let mut folder_map: HashMap<String, Value> = HashMap::new();
-    for f in &local_folders {
-        if let (Some(id), Some(_)) = (
-            f.get("id").and_then(|v| v.as_str()),
-            f.get("name").and_then(|v| v.as_str()),
-        ) {
-            folder_map.insert(id.to_string(), f.clone());
-        }
-    }
-    for f in &remote_folders {
-        if let (Some(id), Some(_)) = (
-            f.get("id").and_then(|v| v.as_str()),
-            f.get("name").and_then(|v| v.as_str()),
-        ) {
-            folder_map.entry(id.to_string()).or_insert_with(|| f.clone());
-        }
-    }
-
-    let mut merged_folders: Vec<Value> = folder_map.into_values().collect();
-    merged_folders.sort_by(|a, b| {
-        let name_a = a.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        let name_b = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        name_a.to_lowercase().cmp(&name_b.to_lowercase())
-    });
+    let merged_folders = merge_folders_values(local.folders, remote.folders);
 
     // 2. Merge Trash
-    let local_trash = local
-        .get("trash")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-    let remote_trash = remote
-        .get("trash")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-
     let mut trash_map: HashMap<String, Value> = HashMap::new();
-    for t_item in local_trash.into_iter().chain(remote_trash) {
+    for t_item in local.trash.into_iter().chain(remote.trash) {
         let item_id = match t_item
             .get("item")
             .and_then(|i| i.get("id"))
@@ -89,114 +46,35 @@ pub fn merge_vault_payload_values(
         }
     }
 
-    // 3. Merge Vault Items
-    let local_items = local
-        .get("items")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-    let remote_items = remote
-        .get("items")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-
-    let mut local_map: HashMap<String, Value> = HashMap::new();
-    for item in &local_items {
-        if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
-            local_map.insert(id.to_string(), item.clone());
-        }
-    }
-
-    let mut item_map: HashMap<String, Value> = HashMap::new();
-
-    for remote_item in &remote_items {
-        let id = match remote_item.get("id").and_then(|v| v.as_str()) {
-            Some(i) => i.to_string(),
-            None => continue,
-        };
-
-        if let Some(local_item) = local_map.get(&id) {
-            let local_rev_time =
-                parse_timestamp(local_item.get("revisionDate").and_then(|v| v.as_str()));
-            let remote_rev_time =
-                parse_timestamp(remote_item.get("revisionDate").and_then(|v| v.as_str()));
-
-            if local_rev_time >= remote_rev_time {
-                item_map.insert(id, local_item.clone());
-            } else {
-                item_map.insert(id, remote_item.clone());
-            }
-        } else {
-            let remote_creation_time =
-                parse_timestamp(remote_item.get("creationDate").and_then(|v| v.as_str()));
-            let remote_rev_time =
-                parse_timestamp(remote_item.get("revisionDate").and_then(|v| v.as_str()));
-
-            if last_sync_timestamp == 0
-                || remote_creation_time > last_sync_timestamp
-                || remote_rev_time > last_sync_timestamp
-            {
-                item_map.insert(id, remote_item.clone());
-            }
-        }
-    }
-
-    for local_item in &local_items {
-        let id = match local_item.get("id").and_then(|v| v.as_str()) {
-            Some(i) => i.to_string(),
-            None => continue,
-        };
-
-        if let std::collections::hash_map::Entry::Vacant(entry) = item_map.entry(id.clone()) {
-            let remote_item = remote_items
-                .iter()
-                .find(|r| r.get("id").and_then(|v| v.as_str()) == Some(&id));
-            if remote_item.is_none() {
-                let local_creation_time =
-                    parse_timestamp(local_item.get("creationDate").and_then(|v| v.as_str()));
-                let local_rev_time =
-                    parse_timestamp(local_item.get("revisionDate").and_then(|v| v.as_str()));
-
-                if last_sync_timestamp == 0
-                    || local_creation_time > last_sync_timestamp
-                    || local_rev_time > last_sync_timestamp
-                {
-                    entry.insert(local_item.clone());
-                }
-            }
-        }
-    }
+    // 3. Merge Vault Items using shared merge_vault_items_values
+    let candidate_items = merge_vault_items_values(local.items, remote.items, last_sync_timestamp);
 
     // Filter candidate items against trash
-    let mut final_items: Vec<Value> = Vec::new();
-    for (id, item) in item_map {
-        if let Some(trash_entry) = trash_map.get(&id) {
+    let mut final_items: Vec<VaultItem> = Vec::with_capacity(candidate_items.len());
+    for item in candidate_items {
+        let id = &item.id;
+        if let Some(trash_entry) = trash_map.get(id) {
             let del_time =
                 parse_timestamp(trash_entry.get("deletedDate").and_then(|v| v.as_str()));
-            let rev_time = parse_timestamp(item.get("revisionDate").and_then(|v| v.as_str()));
+            let rev_time = parse_timestamp(item.revision_date.as_deref());
             if del_time >= rev_time {
                 continue;
             } else {
-                trash_map.remove(&id);
+                trash_map.remove(id);
             }
         }
         final_items.push(item);
     }
 
-    final_items.sort_by(|a, b| {
-        let name_a = a.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        let name_b = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        name_a.to_lowercase().cmp(&name_b.to_lowercase())
-    });
+    final_items.sort_by(|a, b| crate::utils::cmp_ignore_case(&a.name, &b.name));
 
     let result_trash: Vec<Value> = trash_map.into_values().collect();
 
-    serde_json::json!({
-        "folders": merged_folders,
-        "items": final_items,
-        "trash": result_trash,
-    })
+    VaultPayload {
+        folders: merged_folders,
+        items: final_items,
+        trash: result_trash,
+    }
 }
 
 pub fn merge_vault_payload(
@@ -204,40 +82,30 @@ pub fn merge_vault_payload(
     remote_json: &str,
     last_sync_timestamp: u64,
 ) -> Result<String, String> {
-    let local: Value = serde_json::from_str(local_json).map_err(|e| e.to_string())?;
-    let remote: Value = serde_json::from_str(remote_json).map_err(|e| e.to_string())?;
+    let local: VaultPayload = serde_json::from_str(local_json).map_err(|_| WasmError::SyncInvalidFormat.to_string())?;
+    let remote: VaultPayload = serde_json::from_str(remote_json).map_err(|_| WasmError::SyncInvalidFormat.to_string())?;
     let merged = merge_vault_payload_values(local, remote, last_sync_timestamp);
-    serde_json::to_string(&merged).map_err(|e| e.to_string())
+    serde_json::to_string(&merged).map_err(|_| WasmError::SyncInvalidFormat.to_string())
 }
 
 pub fn merge_folders_values(
-    local: Vec<Value>,
-    remote: Vec<Value>,
-) -> Vec<Value> {
-    let mut folder_map: HashMap<String, Value> = HashMap::new();
-    for f in &local {
-        if let (Some(id), Some(_)) = (
-            f.get("id").and_then(|v| v.as_str()),
-            f.get("name").and_then(|v| v.as_str()),
-        ) {
-            folder_map.insert(id.to_string(), f.clone());
+    local: Vec<Folder>,
+    remote: Vec<Folder>,
+) -> Vec<Folder> {
+    let mut folder_map: HashMap<String, Folder> = HashMap::new();
+    for f in local {
+        if !f.id.is_empty() && !f.name.is_empty() {
+            folder_map.insert(f.id.clone(), f);
         }
     }
-    for f in &remote {
-        if let (Some(id), Some(_)) = (
-            f.get("id").and_then(|v| v.as_str()),
-            f.get("name").and_then(|v| v.as_str()),
-        ) {
-            folder_map.entry(id.to_string()).or_insert_with(|| f.clone());
+    for f in remote {
+        if !f.id.is_empty() && !f.name.is_empty() {
+            folder_map.entry(f.id.clone()).or_insert(f);
         }
     }
 
-    let mut merged_folders: Vec<Value> = folder_map.into_values().collect();
-    merged_folders.sort_by(|a, b| {
-        let name_a = a.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        let name_b = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        name_a.to_lowercase().cmp(&name_b.to_lowercase())
-    });
+    let mut merged_folders: Vec<Folder> = folder_map.into_values().collect();
+    merged_folders.sort_by(|a, b| crate::utils::cmp_ignore_case(&a.name, &b.name));
     merged_folders
 }
 
@@ -245,90 +113,72 @@ pub fn merge_folders(
     local_folders_json: &str,
     remote_folders_json: &str,
 ) -> Result<String, String> {
-    let local: Vec<Value> = serde_json::from_str(local_folders_json).map_err(|e| e.to_string())?;
-    let remote: Vec<Value> = serde_json::from_str(remote_folders_json).map_err(|e| e.to_string())?;
+    let local: Vec<Folder> = serde_json::from_str(local_folders_json).map_err(|_| WasmError::SyncInvalidFormat.to_string())?;
+    let remote: Vec<Folder> = serde_json::from_str(remote_folders_json).map_err(|_| WasmError::SyncInvalidFormat.to_string())?;
     let merged = merge_folders_values(local, remote);
-    serde_json::to_string(&merged).map_err(|e| e.to_string())
+    serde_json::to_string(&merged).map_err(|_| WasmError::SyncInvalidFormat.to_string())
 }
 
 pub fn merge_vault_items_values(
-    local_items: Vec<Value>,
-    remote_items: Vec<Value>,
+    local_items: Vec<VaultItem>,
+    remote_items: Vec<VaultItem>,
     last_sync_timestamp: u64,
-) -> Vec<Value> {
-    let mut local_map: HashMap<String, Value> = HashMap::new();
-    for item in &local_items {
-        if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
-            local_map.insert(id.to_string(), item.clone());
+) -> Vec<VaultItem> {
+    let mut local_map: HashMap<String, VaultItem> = HashMap::with_capacity(local_items.len());
+    for item in local_items {
+        if !item.id.is_empty() {
+            local_map.insert(item.id.clone(), item);
         }
     }
 
-    let mut item_map: HashMap<String, Value> = HashMap::new();
+    let mut item_map: HashMap<String, VaultItem> = HashMap::new();
+    let mut remote_ids: HashSet<String> = HashSet::with_capacity(remote_items.len());
 
-    for remote_item in &remote_items {
-        let id = match remote_item.get("id").and_then(|v| v.as_str()) {
-            Some(i) => i.to_string(),
-            None => continue,
-        };
+    for remote_item in remote_items {
+        if remote_item.id.is_empty() {
+            continue;
+        }
+        let id = remote_item.id.clone();
+        remote_ids.insert(id.clone());
 
-        if let Some(local_item) = local_map.get(&id) {
-            let local_rev_time =
-                parse_timestamp(local_item.get("revisionDate").and_then(|v| v.as_str()));
-            let remote_rev_time =
-                parse_timestamp(remote_item.get("revisionDate").and_then(|v| v.as_str()));
+        if let Some(local_item) = local_map.remove(&id) {
+            let local_rev_time = parse_timestamp(local_item.revision_date.as_deref());
+            let remote_rev_time = parse_timestamp(remote_item.revision_date.as_deref());
 
             if local_rev_time >= remote_rev_time {
-                item_map.insert(id, local_item.clone());
+                item_map.insert(id, local_item);
             } else {
-                item_map.insert(id, remote_item.clone());
+                item_map.insert(id, remote_item);
             }
         } else {
-            let remote_creation_time =
-                parse_timestamp(remote_item.get("creationDate").and_then(|v| v.as_str()));
-            let remote_rev_time =
-                parse_timestamp(remote_item.get("revisionDate").and_then(|v| v.as_str()));
+            let remote_creation_time = parse_timestamp(remote_item.creation_date.as_deref());
+            let remote_rev_time = parse_timestamp(remote_item.revision_date.as_deref());
 
             if last_sync_timestamp == 0
                 || remote_creation_time > last_sync_timestamp
                 || remote_rev_time > last_sync_timestamp
             {
-                item_map.insert(id, remote_item.clone());
+                item_map.insert(id, remote_item);
             }
         }
     }
 
-    for local_item in &local_items {
-        let id = match local_item.get("id").and_then(|v| v.as_str()) {
-            Some(i) => i.to_string(),
-            None => continue,
-        };
+    for (id, local_item) in local_map {
+        if !remote_ids.contains(&id) {
+            let local_creation_time = parse_timestamp(local_item.creation_date.as_deref());
+            let local_rev_time = parse_timestamp(local_item.revision_date.as_deref());
 
-        if let std::collections::hash_map::Entry::Vacant(entry) = item_map.entry(id.clone()) {
-            let remote_item = remote_items
-                .iter()
-                .find(|r| r.get("id").and_then(|v| v.as_str()) == Some(&id));
-            if remote_item.is_none() {
-                let local_creation_time =
-                    parse_timestamp(local_item.get("creationDate").and_then(|v| v.as_str()));
-                let local_rev_time =
-                    parse_timestamp(local_item.get("revisionDate").and_then(|v| v.as_str()));
-
-                if last_sync_timestamp == 0
-                    || local_creation_time > last_sync_timestamp
-                    || local_rev_time > last_sync_timestamp
-                {
-                    entry.insert(local_item.clone());
-                }
+            if last_sync_timestamp == 0
+                || local_creation_time > last_sync_timestamp
+                || local_rev_time > last_sync_timestamp
+            {
+                item_map.insert(id, local_item);
             }
         }
     }
 
-    let mut merged_items: Vec<Value> = item_map.into_values().collect();
-    merged_items.sort_by(|a, b| {
-        let name_a = a.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        let name_b = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        name_a.to_lowercase().cmp(&name_b.to_lowercase())
-    });
+    let mut merged_items: Vec<VaultItem> = item_map.into_values().collect();
+    merged_items.sort_by(|a, b| crate::utils::cmp_ignore_case(&a.name, &b.name));
     merged_items
 }
 
@@ -337,8 +187,8 @@ pub fn merge_vault_items(
     remote_items_json: &str,
     last_sync_timestamp: u64,
 ) -> Result<String, String> {
-    let local_items: Vec<Value> = serde_json::from_str(local_items_json).map_err(|e| e.to_string())?;
-    let remote_items: Vec<Value> = serde_json::from_str(remote_items_json).map_err(|e| e.to_string())?;
+    let local_items: Vec<VaultItem> = serde_json::from_str(local_items_json).map_err(|_| WasmError::SyncInvalidFormat.to_string())?;
+    let remote_items: Vec<VaultItem> = serde_json::from_str(remote_items_json).map_err(|_| WasmError::SyncInvalidFormat.to_string())?;
     let merged = merge_vault_items_values(local_items, remote_items, last_sync_timestamp);
-    serde_json::to_string(&merged).map_err(|e| e.to_string())
+    serde_json::to_string(&merged).map_err(|_| WasmError::SyncInvalidFormat.to_string())
 }

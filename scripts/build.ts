@@ -2,31 +2,31 @@
  * ============================================================================
  * GISTWARDEN BUILD SCRIPT & CLI DOCUMENTATION
  * ============================================================================
- * 
+ *
  * Mô tả:
  * Script đóng gói đa mục tiêu cho Gistwarden hỗ trợ 4 chế độ build chính:
- * 
+ *
  * 1. `dev` (Development Mode - Mặc định):
  *    - Build duy nhất thư mục `dist/chrome` (Unpacked Extension cho Chrome/Edge).
  *    - Nén `dist/chrome` sang `chrome.zip` bằng mức nén nhanh nhất (`Fastest`).
  *    - Copy `chrome.zip` sang `firefox.zip` và tráo file `manifest.json` chuẩn Firefox vào.
  *    - Xóa file tạm `chrome.zip` (vì Chrome chạy trực tiếp thư mục `dist/chrome`).
  *    - Đầu ra: `dist/chrome/` và `dist/firefox.zip`.
- * 
+ *
  * 2. `extension` (Extension Release Mode):
  *    - Build thư mục `dist/chrome` và copy sang thư mục `dist/firefox`.
  *    - Tạo file `manifest.json` chuẩn cho Firefox trong `dist/firefox`.
  *    - Nén cả 2 thư mục thành `dist/chrome.zip` và `dist/firefox.zip`.
  *    - Đầu ra: `dist/chrome/`, `dist/firefox/`, `dist/chrome.zip`, `dist/firefox.zip`.
- * 
+ *
  * 3. `web` (Web Application Mode):
  *    - Build ứng dụng Web độc lập vào thư mục `dist/web`.
  *    - Đầu ra: `dist/web/`.
- * 
+ *
  * 4. `all` (Full Release Mode):
  *    - Thực hiện cả 2 quy trình `extension` và `web` với mức nén cao nhất (`Optimal`).
  *    - Đầu ra: `dist/chrome/`, `dist/firefox/`, `dist/chrome.zip`, `dist/firefox.zip`, `dist/web/`.
- * 
+ *
  * Cú pháp chạy:
  *   bun run build [dev | extension | web | all]
  * ============================================================================
@@ -68,7 +68,8 @@ const isWebMode = targetArg === "web";
 const isAllMode = targetArg === "all";
 
 const isFastDev = isDevMode || args.includes("--fast");
-const isHighCompression = isAllMode || (isExtensionMode && !args.includes("--fast"));
+const isHighCompression = isAllMode ||
+  (isExtensionMode && !args.includes("--fast"));
 
 const buildChrome = isDevMode || isExtensionMode || isAllMode;
 const buildFirefox = isDevMode || isExtensionMode || isAllMode;
@@ -94,10 +95,13 @@ function bundleCss(entryPath: string): string {
   if (!existsSync(entryPath)) return "";
   const dir = join(entryPath, "..");
   let content = readFileSync(entryPath, "utf8");
-  content = content.replace(/@import\s+["'](\.\/[^"']+)["'];/g, (_, relPath) => {
-    const importedFilePath = join(dir, relPath);
-    return bundleCss(importedFilePath);
-  });
+  content = content.replace(
+    /@import\s+["'](\.\/[^"']+)["'];/g,
+    (_, relPath) => {
+      const importedFilePath = join(dir, relPath);
+      return bundleCss(importedFilePath);
+    },
+  );
   return content;
 }
 
@@ -215,7 +219,10 @@ function copyAssets() {
         "gistwarden_wasm_bg.wasm",
       );
       if (existsSync(wasmBinaryPath)) {
-        copyFileSync(wasmBinaryPath, join(targetDir, "gistwarden_wasm_bg.wasm"));
+        copyFileSync(
+          wasmBinaryPath,
+          join(targetDir, "gistwarden_wasm_bg.wasm"),
+        );
       }
     };
 
@@ -239,7 +246,10 @@ function copyAssets() {
   console.log("✓ Assets copied successfully.");
 }
 
-async function zipFolderNative(sourceDir: string, outputFile: string): Promise<void> {
+async function zipFolderNative(
+  sourceDir: string,
+  outputFile: string,
+): Promise<void> {
   if (!existsSync(sourceDir)) return;
   if (existsSync(outputFile)) {
     try {
@@ -255,12 +265,18 @@ async function zipFolderNative(sourceDir: string, outputFile: string): Promise<v
     if (process.platform === "win32") {
       const winSourceDir = sourceDir.replace(/\//g, "\\");
       const winOutput = outputFile.replace(/\//g, "\\");
-      execSync(`tar.exe -a -c -f "${winOutput}" -C "${winSourceDir}" *`, { stdio: "ignore" });
+      execSync(`tar.exe -a -c -f "${winOutput}" -C "${winSourceDir}" *`, {
+        stdio: "ignore",
+      });
     } else {
-      execSync(`zip ${zipLevelFlag} -r -q "${outputFile}" *`, { cwd: sourceDir, stdio: "ignore" });
+      execSync(`zip ${zipLevelFlag} -r -q "${outputFile}" *`, {
+        cwd: sourceDir,
+        stdio: "ignore",
+      });
     }
   } catch (err: any) {
-    const errorDetails = err?.stderr?.toString() || err?.stdout?.toString() || err?.message || String(err);
+    const errorDetails = err?.stderr?.toString() || err?.stdout?.toString() ||
+      err?.message || String(err);
     console.warn(`[Build] Warning: Native zip creation failed:`, errorDetails);
   }
 }
@@ -278,9 +294,13 @@ function swapManifestInZip(zipPath: string, manifestFilePath: string): void {
     $zip.Dispose()
     `;
     const encoded = Buffer.from(psScript, "utf16le").toString("base64");
-    execSync(`powershell -NoProfile -EncodedCommand ${encoded}`, { stdio: "ignore" });
+    execSync(`powershell -NoProfile -EncodedCommand ${encoded}`, {
+      stdio: "ignore",
+    });
   } else {
-    execSync(`zip -j -q "${zipPath}" "${manifestFilePath}"`, { stdio: "ignore" });
+    execSync(`zip -j -q "${zipPath}" "${manifestFilePath}"`, {
+      stdio: "ignore",
+    });
   }
 }
 
@@ -323,7 +343,11 @@ async function createZipPackages() {
   }
 }
 
-async function runCommandOrExit(name: string, command: string, cmdArgs: string[]) {
+async function runCommandOrExit(
+  name: string,
+  command: string,
+  cmdArgs: string[],
+) {
   const proc = Bun.spawn([command, ...cmdArgs], {
     stdout: "pipe",
     stderr: "pipe",
@@ -368,9 +392,18 @@ async function buildTargetDirectory(outputDir: string) {
   ];
 
   const iifeEntryPoints = [
-    { in: join(extSrcDir, "extension/fido2-content-script.ts"), out: "fido2-content-script" },
-    { in: join(extSrcDir, "extension/fido2-page-script.ts"), out: "fido2-page-script" },
-    { in: join(extSrcDir, "extension/autofill-content-script.ts"), out: "autofill-content-script" },
+    {
+      in: join(extSrcDir, "extension/fido2-content-script.ts"),
+      out: "fido2-content-script",
+    },
+    {
+      in: join(extSrcDir, "extension/fido2-page-script.ts"),
+      out: "fido2-page-script",
+    },
+    {
+      in: join(extSrcDir, "extension/autofill-content-script.ts"),
+      out: "autofill-content-script",
+    },
   ];
 
   await esbuild.build({
@@ -415,7 +448,10 @@ async function runBuild() {
 
     if (buildWeb) {
       await esbuild.build({
-        entryPoints: [{ in: join(webSrcDir, "web-entry.tsx"), out: "web-entry" }],
+        entryPoints: [{
+          in: join(webSrcDir, "web-entry.tsx"),
+          out: "web-entry",
+        }],
         bundle: true,
         outdir: webDistDir,
         format: "esm",
