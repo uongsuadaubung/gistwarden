@@ -97,12 +97,12 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/core/crypto.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/core/crypto.ts)**:
+1. **[`src/core/crypto.ts`](../../packages/domain/src/crypto.ts)**:
    Hàm tính toán mã TOTP HMAC-SHA1 (`generateTotpCode`, `parseTotpSecret`).
-2. **[`src/features/generator/generator-utils.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/generator/generator-utils.ts)**:
+2. **[`src/features/generator/generator-utils.ts`](../../packages/domain/src/generator-utils.ts)**:
    Bộ sinh Mật khẩu ngẫu nhiên (`generatePassword`), Cụm từ
    (`generatePassphrase`) và hàm sinh số ngẫu nhiên an toàn tuyệt đối
    (`getRandomBoundedInt`).
-3. **[`src/features/generator/Generator.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/generator/Generator.tsx)**:
+3. **[`src/features/generator/Generator.tsx`](../../packages/ui/src/features/generator/Generator.tsx)**:
    Component giao diện công cụ Generator, tùy chỉnh độ dài và thanh đánh giá độ
    mạnh Mật khẩu.

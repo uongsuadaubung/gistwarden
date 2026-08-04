@@ -107,7 +107,7 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Cần Cập Nhật
 
-1. **[`src/extension/background.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/extension/background.ts)**:
+1. **[`src/extension/background.ts`](../../apps/extension/src/extension/background.ts)**:
    Thêm bộ lọc `/^\d{6}$/.test(creds.password.trim())` trong
    `handleSubmittedCredentials` để tự động gạt bỏ các chuỗi 6 chữ số (mã TOTP
    2FA).

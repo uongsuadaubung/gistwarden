@@ -125,23 +125,23 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/core/crypto.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/core/crypto.ts)**:
+1. **[`src/core/crypto.ts`](../../packages/domain/src/crypto.ts)**:
    Hàm `deriveKey` sử dụng thuật toán **Argon2id (`hash-wasm`) với 3 vòng lặp
    (iterations) và 64MB RAM (`ARGON2_MEMORY = 65536`)**, cùng các hàm mã
    hóa/giải mã AES-GCM-256 (`encryptData`, `decryptData`).
-2. **[`src/features/auth/master-password-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/auth/master-password-service.ts)**:
+2. **[`src/features/auth/master-password-service.ts`](../../packages/ui/src/features/auth/master-password-service.ts)**:
    Quản lý khởi tạo Master Password, tạo `verificationCiphertext` xác thực.
-3. **[`src/features/auth/pin-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/auth/pin-service.ts)**:
+3. **[`src/features/auth/pin-service.ts`](../../packages/ui/src/features/auth/pin-service.ts)**:
    Mã hóa/Giải mã chìa khóa chính `DerivedKey` bằng Mã PIN (`setupPinUnlock`,
    `unlockWithPin`).
-4. **[`src/features/auth/auth-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/auth/auth-service.ts)**:
+4. **[`src/features/auth/auth-service.ts`](../../packages/ui/src/features/auth/auth-service.ts)**:
    Điều phối quá trình Đăng nhập (`login`), Mở khóa (`unlock`), Khóa kho
    (`lock`) và Đăng xuất (`logout`).
-5. **[`src/features/auth/session-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/auth/session-service.ts)**:
+5. **[`src/features/auth/session-service.ts`](../../packages/domain/src/session-manager.ts)**:
    Quản lý bộ đếm Vault Timeout Alarm (`ALARM_NAME_VAULT_TIMEOUT`) và lưu trữ
    Session Storage.
-6. **[`src/features/auth/components/MasterPasswordForm.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/auth/components/MasterPasswordForm.tsx)**:
+6. **[`src/features/auth/components/MasterPasswordForm.tsx`](../../packages/ui/src/features/auth/components/MasterPasswordForm.tsx)**:
    Component giao diện biểu mẫu nhập Master Password / PIN.
-7. **[`src/extension/background.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/extension/background.ts)**:
+7. **[`src/extension/background.ts`](../../apps/extension/src/extension/background.ts)**:
    Tự động xử lý Hàng chờ `processPendingUnapprovedCredentials` ngay khi mở khóa
    Vault.

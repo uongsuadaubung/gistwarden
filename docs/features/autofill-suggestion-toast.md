@@ -109,9 +109,9 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Cần Cập Nhật
 
-1. **[`src/features/notification/NotificationToast.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/notification/NotificationToast.tsx)**:
+1. **[`src/features/notification/NotificationToast.tsx`](../../packages/ui/src/features/notification/NotificationToast.tsx)**:
    Xử lý callback `onFill` và `onDismiss`.
-2. **[`src/extension/autofill-content-script.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/extension/autofill-content-script.ts)**:
+2. **[`src/extension/autofill-content-script.ts`](../../apps/extension/src/extension/autofill-content-script.ts)**:
    Thêm cờ `isProgrammaticAutofilling` với `setTimeout 500ms` khi điền dữ liệu.
    Chỉ khi nhấp nút `×` hoặc phím `Escape` mới gán
    `autofillDismissedForTab = true`. Khi người dùng tự nhấp chuột lại vào ô

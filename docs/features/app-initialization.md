@@ -120,17 +120,17 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/popup-entry.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/popup-entry.tsx)**:
+1. **[`src/popup-entry.tsx`](../../apps/extension/src/popup-entry.tsx)**:
    File khởi tạo chính của Cửa sổ Popup Extension.
-2. **[`src/guide-entry.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/guide-entry.tsx)**:
+2. **[`src/guide-entry.tsx`](../../apps/extension/src/guide-entry.tsx)**:
    File khởi tạo của Trang Hướng dẫn & Cài đặt mở rộng.
-3. **[`src/core/store.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/core/store.ts)**:
+3. **[`src/core/store.ts`](../../packages/ui/src/core/store.ts)**:
    Quản lý trạng thái toàn cục SolidJS Store (`store.isLocked`,
    `store.isLoaded`, `store.vaultItems`...).
-4. **[`src/core/i18n.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/core/i18n.ts)**:
+4. **[`src/core/i18n.ts`](../../packages/domain/src/i18n.ts)**:
    Nạp cấu hình ngôn ngữ từ Storage qua `initI18n()`.
-5. **[`src/features/auth/session-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/auth/session-service.ts)**:
+5. **[`src/features/auth/session-service.ts`](../../packages/domain/src/session-manager.ts)**:
    Quản lý chìa khóa và Vault cache trong `chrome.storage.session`.
-6. **[`src/extension/background.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/extension/background.ts)**:
+6. **[`src/extension/background.ts`](../../apps/extension/src/extension/background.ts)**:
    Lắng nghe sự kiện khởi động trình duyệt (`onStartup`/`onInstalled`) và tự
    động giải phóng Hàng chờ `processPendingUnapprovedCredentials`.
