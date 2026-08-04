@@ -111,12 +111,12 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/extension/autofill-core.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/extension/autofill-core.ts)**:
+1. **[`src/extension/autofill-core.ts`](../../apps/extension/src/extension/autofill-core.ts)**:
    Nhận diện trường DOM input, phân tích form và điền giá trị.
-2. **[`src/extension/autofill-content-script.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/extension/autofill-content-script.ts)**:
+2. **[`src/extension/autofill-content-script.ts`](../../apps/extension/src/extension/autofill-content-script.ts)**:
    Content script lắng nghe sự kiện IPC từ Background.
-3. **[`src/features/vault/vault-domain-matching.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/vault-domain-matching.ts)**:
+3. **[`src/features/vault/vault-domain-matching.ts`](../../packages/domain/src/vault-domain-matching.ts)**:
    Thuật toán khớp tên miền (`findMatchingVaultItems`).
-4. **[`src/core/domain-utils.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/core/domain-utils.ts)**:
+4. **[`src/core/domain-utils.ts`](../../packages/domain/src/domain-utils.ts)**:
    Hàm bóc tách BaseDomain bằng thư viện `tldts` (`getBaseDomain`,
    `getHostname`).

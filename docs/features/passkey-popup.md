@@ -110,20 +110,20 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/features/passkey/Fido2Prompt.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/passkey/Fido2Prompt.tsx)**:
+1. **[`src/features/passkey/Fido2Prompt.tsx`](../../packages/ui/src/features/passkey/Fido2Prompt.tsx)**:
    SolidJS Component giao diện Cửa sổ Popup FIDO2, quản lý mở khóa PIN/Master
    Password, chuyển đổi tab chọn tài khoản và Heartbeat 5s.
-2. **[`src/features/passkey/fido2-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/passkey/fido2-service.ts)**:
+2. **[`src/features/passkey/fido2-service.ts`](../../packages/ui/src/features/passkey/fido2-service.ts)**:
    Tìm kiếm tài khoản khớp Domain (`findMatchingFido2Accounts`), ghép nối
    Passkey (`findMatchingFido2Credentials`), điều phối lưu trữ Vault và gửi
    message phản hồi.
-3. **[`src/features/passkey/passkey-crypto.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/passkey/passkey-crypto.ts)**:
+3. **[`src/features/passkey/passkey-crypto.ts`](../../packages/ui/src/features/passkey/passkey-crypto.ts)**:
    Xử lý các thuật toán mật mã FIDO2: Sinh cặp khóa Web Crypto ECDSA (P-256),
    chuyển đổi định dạng COSE ES256, ký chữ ký số `secp256r1` (P256) và xử lý
    Base64URL.
-4. **[`src/features/passkey/PasskeySelectRow.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/passkey/PasskeySelectRow.tsx)**:
+4. **[`src/features/passkey/PasskeySelectRow.tsx`](../../packages/ui/src/features/passkey/PasskeySelectRow.tsx)**:
    Component hiển thị từng dòng Passkey trong danh sách lựa chọn.
-5. **[`src/extension/background.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/extension/background.ts)**:
+5. **[`src/extension/background.ts`](../../apps/extension/src/extension/background.ts)**:
    Lắng nghe cuộc gọi IPC FIDO2, lưu Yêu cầu chờ vào
    `SESSION_KEY_PENDING_FIDO2_REQUEST`, mở cửa sổ Popup
    (`FIDO2_PROMPT_HEIGHT = 650`) và trả về kết quả cho Content Script.

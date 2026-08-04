@@ -86,15 +86,15 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Cần Cập Nhật
 
-1. **[`src/core/storage.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/core/storage.ts)**:
+1. **[`src/core/storage.ts`](../../packages/repository/src/storage.ts)**:
    Thêm `autoSubmitOnAutofill: z.boolean().default(true)` vào `SettingsSchema`.
-2. **[`src/core/store.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/core/store.ts)**:
+2. **[`src/core/store.ts`](../../packages/ui/src/core/store.ts)**:
    Thêm thuộc tính `autoSubmitOnAutofill` vào trạng thái reactive store.
-3. **[`src/features/settings/AutofillOptions.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/settings/AutofillOptions.tsx)**:
+3. **[`src/features/settings/AutofillOptions.tsx`](../../packages/ui/src/features/settings/AutofillOptions.tsx)**:
    Trang Cài đặt mới cho phép bật/tắt Auto-submit.
-4. **[`src/extension/autofill-core.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/extension/autofill-core.ts)**:
+4. **[`src/extension/autofill-core.ts`](../../apps/extension/src/extension/autofill-core.ts)**:
    Bổ sung hàm `autoSubmitLogin` quét nút bấm và submit form theo phong cách
    Bitwarden.
-5. **[`src/extension/autofill-content-script.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/extension/autofill-content-script.ts)**:
+5. **[`src/extension/autofill-content-script.ts`](../../apps/extension/src/extension/autofill-content-script.ts)**:
    Truyền cấu hình `autoSubmitOnAutofill` vào `performAutofill` khi người dùng
    chọn tài khoản.

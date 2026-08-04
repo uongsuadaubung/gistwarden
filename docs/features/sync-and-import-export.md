@@ -158,19 +158,19 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/features/sync/sync-merge.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/sync-merge.ts)**:
+1. **[`src/features/sync/sync-merge.ts`](../../packages/ui/src/features/sync/sync-merge.ts)**:
    Hàm thuần khiết `mergeVaultItems` xử lý hợp nhất dữ liệu 3-way giữa Local và
    Remote.
-2. **[`src/features/sync/sync-utils.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/sync-utils.ts)**:
+2. **[`src/features/sync/sync-utils.ts`](../../packages/ui/src/features/sync/sync-utils.ts)**:
    Tích hợp pre-download check kiểm tra mật khẩu & gọi `mergeVaultItems` trước
    khi upload Gist.
-3. **[`src/features/sync/ExportAccounts.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/ExportAccounts.tsx)**:
+3. **[`src/features/sync/ExportAccounts.tsx`](../../packages/ui/src/features/sync/ExportAccounts.tsx)**:
    Giao diện và logic Xuất dữ liệu cả 3 định dạng: **JSON**, **Bitwarden CSV**,
    và **Browser CSV**.
-4. **[`src/features/sync/ImportAccounts.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/ImportAccounts.tsx)**:
+4. **[`src/features/sync/ImportAccounts.tsx`](../../packages/ui/src/features/sync/ImportAccounts.tsx)**:
    Giao diện Nhập dữ liệu tự động nhận diện file CSV và JSON.
-5. **[`src/features/sync/github-api.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/github-api.ts)**:
+5. **[`src/features/sync/github-api.ts`](../../packages/network/src/github-api.ts)**:
    Các hàm giao tiếp REST API của GitHub Gist (`createGist`, `updateGist`,
    `getGist`).
-6. **[`src/features/sync/sync-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/sync/sync-service.ts)**:
+6. **[`src/features/sync/sync-service.ts`](../../packages/ui/src/features/sync/sync-service.ts)**:
    Điều phối đồng bộ 2 chiều (`syncVault`, `downloadFromGist`).

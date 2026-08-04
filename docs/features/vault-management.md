@@ -106,13 +106,13 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/features/vault/Vault.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/Vault.tsx)**:
+1. **[`src/features/vault/Vault.tsx`](../../packages/ui/src/features/vault/Vault.tsx)**:
    Component giao diện trang Vault chính, tìm kiếm, lọc loại mục và thanh công
    cụ Bulk Select Mode.
-2. **[`src/features/vault/VaultItemRow.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/VaultItemRow.tsx)**:
+2. **[`src/features/vault/VaultItemRow.tsx`](../../packages/ui/src/features/vault/VaultItemRow.tsx)**:
    Component hiển thị từng dòng mục Vault kèm Checkbox chọn nhiều.
-3. **[`src/features/vault/ItemEdit.tsx`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/ItemEdit.tsx)**:
+3. **[`src/features/vault/ItemEdit.tsx`](../../packages/ui/src/features/vault/ItemEdit.tsx)**:
    Form thêm mới và chỉnh sửa thông tin các loại mục Vault.
-4. **[`src/features/vault/vault-service.ts`](file:///c:/Users/kien.hm/Desktop/totp%20generate/src/features/vault/vault-service.ts)**:
+4. **[`src/features/vault/vault-service.ts`](../../packages/ui/src/features/vault/vault-service.ts)**:
    Dịch vụ lưu mục (`saveItem`), xóa mục (`deleteItem`), nhân bản mục
    (`cloneItem`) và xóa hàng loạt.
