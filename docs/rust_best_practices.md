@@ -10,9 +10,7 @@ Locks_, and matklad's engineering rules).
 ## 1. Type System & State Modeling
 
 - **Make Invalid States Unrepresentable:**
-  - Use ADTs (`enum`) and the **Typestate Pattern** (compile-time state
-    machines) so invalid state transitions fail at compile time instead of
-    runtime.
+  - Use ADTs (`enum`) to model state machines so invalid state transitions fail at compile time instead of runtime. For Serde-serialized DTOs, use tagged enums rather than generic Typestate patterns (`struct Order<State>`) to keep serialization simple.
   - ❌ **Bad:**
     ```rust
     struct Order {
@@ -500,102 +498,16 @@ Locks_, and matklad's engineering rules).
 
 ---
 
-## 10. Asynchronous Programming & Concurrency Runtimes
+## 10. Single-Threaded WebAssembly Async & Non-Blocking Execution
 
-- **Tokio as the De Facto Standard Runtime:**
-  - For networked services, prefer `tokio` unless there is a specific reason
-    (embedded, single-threaded-only, minimal dependency footprint) to reach for
-    `async-std` or `smol`.
-  - ❌ **Bad:** Mixing `async_std::task::spawn` and `tokio::spawn` in the same codebase.
-  - ✅ **Good:** Standardizing on `tokio` for networked services.
+- **Single-Threaded WASM Execution (`wasm32-unknown-unknown`):**
+  - Client-side extension WASM modules execute inside the browser single-threaded environment without `std::thread`.
+  - Avoid multi-threaded async runtimes (such as `tokio` or `async-std`). Keep WASM functions synchronous where possible, or return `js_sys::Promise` / single-threaded futures.
+  - ❌ **Bad:** Pulling `tokio` runtime dependencies into single-threaded WASM extension crates.
+  - ✅ **Good:** Exporting synchronous WASM functions or using lightweight single-threaded WebAssembly futures without `Send + Sync` bounds.
 
-- **Structured Concurrency Primitives:**
-  - Use `JoinSet` to manage a dynamic set of spawned tasks, `TaskTracker` to
-    track task lifecycles, and `CancellationToken` for cooperative, propagated
-    cancellation instead of ad-hoc `AtomicBool` flags.
-  - _(Source: Tokio ecosystem documentation & 2026 Async Rust guides)_
-  - ❌ **Bad:** Spawning un-tracked tasks with `Arc<AtomicBool>` flags for cancellation:
-    ```rust
-    let running = Arc::new(AtomicBool::new(true));
-    tokio::spawn(async move { while running.load(Ordering::Relaxed) { ... } });
-    ```
-  - ✅ **Good:**
-    ```rust
-    use tokio_util::sync::CancellationToken;
-    let token = CancellationToken::new();
-    let cloned_token = token.clone();
-    tokio::spawn(async move {
-        tokio::select! {
-            _ = cloned_token.cancelled() => {}
-            _ = do_work() => {}
-        }
-    });
-    ```
-
-- **Never Block the Async Runtime:**
-  - Never call blocking/CPU-bound code (sync file I/O, heavy computation,
-    `std::thread::sleep`) directly inside an `async fn`; offload it with
-    `tokio::task::spawn_blocking` to avoid starving the executor's thread pool.
-  - ❌ **Bad:**
-    ```rust
-    async fn load_file() -> String {
-        std::thread::sleep(std::time::Duration::from_secs(1)); // Blocks reactor thread!
-        std::fs::read_to_string("data.txt").unwrap()
-    }
-    ```
-  - ✅ **Good:**
-    ```rust
-    async fn load_file() -> Result<String, std::io::Error> {
-        tokio::task::spawn_blocking(|| {
-            std::fs::read_to_string("data.txt")
-        }).await?
-    }
-    ```
-
-- **Cancellation Safety:**
-  - When racing futures with `tokio::select!`, verify each branch is safe to
-    drop mid-execution — partially completed side effects (partial writes, held
-    locks) are a common source of subtle bugs.
-  - ❌ **Bad:** Using `tokio::select!` on non-cancellation-safe async functions (like `AsyncWriteExt::write_all`), risking half-written payloads on cancellation.
-  - ✅ **Good:** Isolating non-cancellation-safe work in separate background tasks or verifying cancellation safety guarantees before selecting.
-
-- **Prefer Native Async Traits over Boxed Futures Where Possible:**
-  - With native `async fn` in traits and async closures available in modern
-    Rust, prefer them over manually boxing (`Pin<Box<dyn Future>>`) or reaching
-    for the `async-trait` crate, except where object safety (`dyn Trait`) is
-    specifically required.
-  - ❌ **Bad:**
-    ```rust
-    trait DataFetcher {
-        fn fetch(&self) -> Pin<Box<dyn Future<Output = String> + Send + '_>>;
-    }
-    ```
-  - ✅ **Good:**
-    ```rust
-    trait DataFetcher {
-        async fn fetch(&self) -> String;
-    }
-    ```
-
-- **Async-Aware Observability:**
-  - Use `tracing` together with `tokio-console` for inspecting task scheduling,
-    stalls, and resource usage — plain `println!`/`log` do not capture the
-    concurrent structure of async execution.
-  - ❌ **Bad:** `println!("Task {} running on thread {:?}", task_id, std::thread::current().id());`
-  - ✅ **Good:**
-    ```rust
-    #[tracing::instrument(fields(task_id = %task_id))]
-    async fn process_task(task_id: u64) {
-        tracing::info!("Processing task");
-    }
-    ```
-
-- **Relax Trait Bounds in Single-Threaded Contexts:**
-  - Don't default every async abstraction to `Send + Sync + 'static`; in
-    single-threaded or embedded async contexts, narrower bounds simplify code
-    and avoid unnecessary `Arc`/`Mutex` overhead.
-  - ❌ **Bad:** Forcing `Send + Sync + 'static` on WASM single-threaded futures.
-  - ✅ **Good:** Use standard single-threaded futures without `Send + Sync` bounds on `wasm32-unknown-unknown`.
+- **Prefer Native Async Traits over Boxed Futures:**
+  - In modern Rust 2024, use native `async fn` in traits instead of `#[async_trait]` macro dependencies where async traits are required.
 
 ---
 
