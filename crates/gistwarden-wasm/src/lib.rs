@@ -117,16 +117,6 @@ pub fn parse_ssh_key(private_key_text: &str) -> Result<Vec<String>, String> {
 }
 
 #[wasm_bindgen]
-pub fn pack_attestation_object(auth_data: &[u8]) -> Result<Vec<u8>, String> {
-    cbor::pack_attestation_object(auth_data)
-}
-
-#[wasm_bindgen]
-pub fn encode_cose_ec2_public_key(x: &[u8], y: &[u8]) -> Result<Vec<u8>, String> {
-    cbor::encode_cose_ec2_public_key(x, y)
-}
-
-#[wasm_bindgen]
 pub fn generate_auth_data(
     rp_id: &str,
     counter: u32,
@@ -150,41 +140,6 @@ pub fn generate_auth_data(
 #[wasm_bindgen]
 pub fn generate_assertion_signature_base(auth_data: &[u8], client_data_hash: &[u8]) -> Vec<u8> {
     cbor::generate_assertion_signature_base(auth_data, client_data_hash)
-}
-
-#[wasm_bindgen]
-pub fn cbor_encode_length(major_type: u8, length: usize) -> Vec<u8> {
-    cbor::cbor_encode_length(major_type, length)
-}
-
-#[wasm_bindgen]
-pub fn cbor_text_string(s: &str) -> Result<Vec<u8>, String> {
-    cbor::cbor_text_string(s)
-}
-
-#[wasm_bindgen]
-pub fn cbor_byte_string(bytes: &[u8]) -> Result<Vec<u8>, String> {
-    cbor::cbor_byte_string(bytes)
-}
-
-#[wasm_bindgen]
-pub fn cbor_map_header(num_pairs: usize) -> Vec<u8> {
-    cbor::cbor_map_header(num_pairs)
-}
-
-#[wasm_bindgen]
-pub fn cbor_positive_int(n: usize) -> Result<Vec<u8>, String> {
-    cbor::cbor_positive_int(n)
-}
-
-#[wasm_bindgen]
-pub fn cbor_negative_int(n: usize) -> Result<Vec<u8>, String> {
-    cbor::cbor_negative_int(n)
-}
-
-#[wasm_bindgen]
-pub fn concat_bytes(chunks: js_sys::Array) -> Vec<u8> {
-    cbor::concat_bytes(chunks)
 }
 
 #[wasm_bindgen]

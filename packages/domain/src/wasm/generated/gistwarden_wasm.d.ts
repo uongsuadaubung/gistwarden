@@ -7,21 +7,7 @@ export function aes_gcm_encrypt(plaintext: Uint8Array, key_bytes: Uint8Array, iv
 
 export function batch_parse_hibp_response(response_text: string, suffixes_json: string): string;
 
-export function cbor_byte_string(bytes: Uint8Array): Uint8Array;
-
-export function cbor_encode_length(major_type: number, length: number): Uint8Array;
-
-export function cbor_map_header(num_pairs: number): Uint8Array;
-
-export function cbor_negative_int(n: number): Uint8Array;
-
-export function cbor_positive_int(n: number): Uint8Array;
-
-export function cbor_text_string(s: string): Uint8Array;
-
 export function compress_deflate(data: Uint8Array): Uint8Array;
-
-export function concat_bytes(chunks: Array<any>): Uint8Array;
 
 export function decode_qr_code(width: number, height: number, rgba_bytes: Uint8Array): string;
 
@@ -30,8 +16,6 @@ export function decode_qr_from_bytes(image_bytes: Uint8Array): string;
 export function decompress_deflate(data: Uint8Array): Uint8Array;
 
 export function derive_key_argon2id(password: string, salt: Uint8Array, iterations?: number | null, memory_kib?: number | null, hash_length?: number | null): Uint8Array;
-
-export function encode_cose_ec2_public_key(x: Uint8Array, y: Uint8Array): Uint8Array;
 
 export function estimate_password_strength(password: string, user_inputs_json: string): string;
 
@@ -99,8 +83,6 @@ export function merge_vault_payload_js(local_val: any, remote_val: any, last_syn
 
 export function p1363_to_der(signature: Uint8Array): Uint8Array;
 
-export function pack_attestation_object(auth_data: Uint8Array): Uint8Array;
-
 export function parse_bitwarden_csv_import(csv_text: string, existing_folders_json: string): string;
 
 export function parse_browser_csv_import(csv_text: string): string;
@@ -126,19 +108,11 @@ export interface InitOutput {
     readonly aes_gcm_decrypt: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly aes_gcm_encrypt: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly batch_parse_hibp_response: (a: number, b: number, c: number, d: number, e: number) => void;
-    readonly cbor_byte_string: (a: number, b: number, c: number) => void;
-    readonly cbor_encode_length: (a: number, b: number, c: number) => void;
-    readonly cbor_map_header: (a: number, b: number) => void;
-    readonly cbor_negative_int: (a: number, b: number) => void;
-    readonly cbor_positive_int: (a: number, b: number) => void;
-    readonly cbor_text_string: (a: number, b: number, c: number) => void;
     readonly compress_deflate: (a: number, b: number, c: number) => void;
-    readonly concat_bytes: (a: number, b: number) => void;
     readonly decode_qr_code: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly decode_qr_from_bytes: (a: number, b: number, c: number) => void;
     readonly decompress_deflate: (a: number, b: number, c: number) => void;
     readonly derive_key_argon2id: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
-    readonly encode_cose_ec2_public_key: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly estimate_password_strength: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly export_to_bitwarden_csv: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly export_to_browser_csv: (a: number, b: number, c: number) => void;
@@ -172,7 +146,6 @@ export interface InitOutput {
     readonly merge_vault_payload: (a: number, b: number, c: number, d: number, e: number, f: bigint) => void;
     readonly merge_vault_payload_js: (a: number, b: number, c: number, d: bigint) => void;
     readonly p1363_to_der: (a: number, b: number, c: number) => void;
-    readonly pack_attestation_object: (a: number, b: number, c: number) => void;
     readonly parse_bitwarden_csv_import: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly parse_browser_csv_import: (a: number, b: number, c: number) => void;
     readonly parse_csv: (a: number, b: number, c: number) => void;
