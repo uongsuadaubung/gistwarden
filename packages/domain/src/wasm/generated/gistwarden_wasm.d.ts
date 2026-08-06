@@ -51,9 +51,17 @@ export function filter_vault_items_by_query(items_json: string, search_query: st
 
 export function filter_vault_items_by_query_js(items_val: any, search_query: string, filter_type: string): any;
 
+export function find_matching_fido2_accounts_js(vault_items_json: string, rp_id: string, origin: string): any;
+
+export function find_matching_fido2_credentials_js(vault_items_json: string, rp_id: string, allow_credentials_json: string): any;
+
 export function generate_assertion_signature_base(auth_data: Uint8Array, client_data_hash: Uint8Array): Uint8Array;
 
 export function generate_auth_data(rp_id: string, counter: number, user_present: boolean, user_verified: boolean, credential_id?: Uint8Array | null, key_x?: Uint8Array | null, key_y?: Uint8Array | null): Uint8Array;
+
+export function generate_passkey_assert_response_js(options_json: string, origin: string, cred_json: string): any;
+
+export function generate_passkey_register_response_js(options_json: string, origin: string): any;
 
 export function generate_passphrase(num_words: number, word_separator: string, capitalize: boolean, include_number: boolean, wordlist?: string[] | null): string;
 
@@ -140,8 +148,12 @@ export interface InitOutput {
     readonly filter_matching_domain_items_js: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly filter_vault_items_by_query: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly filter_vault_items_by_query_js: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+    readonly find_matching_fido2_accounts_js: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+    readonly find_matching_fido2_credentials_js: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly generate_assertion_signature_base: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly generate_auth_data: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number) => void;
+    readonly generate_passkey_assert_response_js: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+    readonly generate_passkey_register_response_js: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly generate_passphrase: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
     readonly generate_password: (a: number, b: number) => void;
     readonly generate_random_bytes: (a: number, b: number) => void;

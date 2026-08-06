@@ -16,14 +16,12 @@ import {
 } from "@gistwarden/orchestrator";
 import { clearUnlockedSessionState } from "@gistwarden/repository";
 import {
+  p1363ToDerWasm,
+} from "@gistwarden/domain";
+import {
   AAGUID,
-  base64UrlToBuffer,
-  bufferToBase64Url,
   COSE_ALG_ES256,
-  createPasskeyKeyPair,
   generatePasskeyRegisterResponse,
-  getRawCredentialId,
-  p1363ToDer,
 } from "../packages/ui/src/features/passkey/passkey-crypto.ts";
 import { Fido2CredentialSchema } from "@gistwarden/domain";
 import { ImportItemSchema } from "@gistwarden/repository";
@@ -77,30 +75,33 @@ test("Crypto - Key derivation, Encryption and Decryption", async () => {
 
 test("Passkey Crypto - Keypair and base64url conversion", async () => {
   // 1. Create keypair
-  const keyPairRes = await createPasskeyKeyPair();
-  if (keyPairRes.isErr()) throw new Error(keyPairRes.error);
-  const keyPair = keyPairRes.value;
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "ECDSA", namedCurve: "P-256" },
+    true,
+    ["sign", "verify"],
+  );
   assertEquals(keyPair.privateKey instanceof CryptoKey, true);
   assertEquals(keyPair.publicKey instanceof CryptoKey, true);
   assertEquals(keyPair.privateKey.algorithm.name, "ECDSA");
 
   // 2. Base64url conversion
   const testBytes = new Uint8Array([0, 1, 15, 255, 128, 64]);
-  const b64Url = bufferToBase64Url(testBytes);
+  const b64Url = testBytes.toBase64({ alphabet: "base64url", omitPadding: true });
   assertEquals(b64Url.includes("+"), false);
   assertEquals(b64Url.includes("/"), false);
   assertEquals(b64Url.includes("="), false);
 
-  const decodedRes = base64UrlToBuffer(b64Url);
-  assertEquals(decodedRes.isOk(), true);
-  assertEquals(decodedRes._unsafeUnwrap(), testBytes);
+  const decodedBytes = Uint8Array.fromBase64(b64Url, { alphabet: "base64url" });
+  assertEquals(decodedBytes, testBytes);
 });
 
 test("Passkey Crypto - signature conversion and validation", async () => {
   // 1. Generate signature components (R and S)
-  const keyPairRes = await createPasskeyKeyPair();
-  if (keyPairRes.isErr()) throw new Error(keyPairRes.error);
-  const keyPair = keyPairRes.value;
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "ECDSA", namedCurve: "P-256" },
+    true,
+    ["sign", "verify"],
+  );
   const testMessage = new TextEncoder().encode(
     "webauthn authentication challenge data",
   );
@@ -119,10 +120,8 @@ test("Passkey Crypto - signature conversion and validation", async () => {
   // Raw signature is P1363 (64 bytes for ES256)
   assertEquals(rawSignature.length, 64);
 
-  // Convert to ASN.1 DER format
-  const derSignatureRes = p1363ToDer(rawSignature);
-  assertEquals(derSignatureRes.isOk(), true);
-  const derSignature = derSignatureRes._unsafeUnwrap();
+  // Convert to ASN.1 DER format using Rust WASM
+  const derSignature = p1363ToDerWasm(rawSignature);
   assertEquals(derSignature[0], 0x30); // DER Sequence header
   assertEquals(derSignature.length > 64, true); // DER is typically 70-72 bytes due to headers/padding
 
@@ -230,21 +229,18 @@ test("Passkey Crypto - getRawCredentialId format parsing", () => {
     0x43,
     0x43,
   ]);
-  const parsedUuidBytesRes = getRawCredentialId(uuid);
-  assertEquals(parsedUuidBytesRes.isOk(), true);
-  assertEquals(parsedUuidBytesRes._unsafeUnwrap(), expectedBytes);
+  const parsedUuidBytes = Uint8Array.fromHex(uuid.replace(/-/g, ""));
+  assertEquals(parsedUuidBytes, expectedBytes);
 
   // Test base64url format
   const b64url = "vHzcNhZXRKSqBOTOz3dDQw";
-  const parsedB64urlBytesRes = getRawCredentialId(b64url);
-  assertEquals(parsedB64urlBytesRes.isOk(), true);
-  assertEquals(parsedB64urlBytesRes._unsafeUnwrap(), expectedBytes);
+  const parsedB64urlBytes = Uint8Array.fromBase64(b64url, { alphabet: "base64url" });
+  assertEquals(parsedB64urlBytes, expectedBytes);
 
   // Test "b64." prefixed format (used in some systems)
   const b64prefixed = "b64.vHzcNhZXRKSqBOTOz3dDQw";
-  const parsedPrefixedBytesRes = getRawCredentialId(b64prefixed);
-  assertEquals(parsedPrefixedBytesRes.isOk(), true);
-  assertEquals(parsedPrefixedBytesRes._unsafeUnwrap(), expectedBytes);
+  const parsedPrefixedBytes = Uint8Array.fromBase64(b64prefixed.slice(4), { alphabet: "base64url" });
+  assertEquals(parsedPrefixedBytes, expectedBytes);
 });
 
 test("FIDO2 Schema - parse empty fields (name and counter) like struct.json", () => {

@@ -4,6 +4,7 @@ pub mod crypto;
 pub mod csv_parser;
 pub mod domain;
 pub mod errors;
+pub mod fido2;
 pub mod generator;
 pub mod json_parser;
 pub mod matcher;
@@ -423,4 +424,32 @@ pub fn parse_hibp_response(response_text: &str, suffix: &str) -> u32 {
 #[wasm_bindgen]
 pub fn batch_parse_hibp_response(response_text: &str, suffixes_json: &str) -> String {
     matcher::batch_parse_hibp_response(response_text, suffixes_json)
+}
+
+#[wasm_bindgen]
+pub fn generate_passkey_register_response_js(options_json: &str, origin: &str) -> Result<JsValue, JsValue> {
+    let out = fido2::generate_passkey_register_response(options_json, origin)
+        .map_err(|e| JsValue::from_str(&e))?;
+    to_js_value(&out)
+}
+
+#[wasm_bindgen]
+pub fn generate_passkey_assert_response_js(options_json: &str, origin: &str, cred_json: &str) -> Result<JsValue, JsValue> {
+    let out = fido2::generate_passkey_assert_response(options_json, origin, cred_json)
+        .map_err(|e| JsValue::from_str(&e))?;
+    to_js_value(&out)
+}
+
+#[wasm_bindgen]
+pub fn find_matching_fido2_credentials_js(vault_items_json: &str, rp_id: &str, allow_credentials_json: &str) -> Result<JsValue, JsValue> {
+    let out = fido2::find_matching_fido2_credentials(vault_items_json, rp_id, allow_credentials_json)
+        .map_err(|e| JsValue::from_str(&e))?;
+    to_js_value(&out)
+}
+
+#[wasm_bindgen]
+pub fn find_matching_fido2_accounts_js(vault_items_json: &str, rp_id: &str, origin: &str) -> Result<JsValue, JsValue> {
+    let out = fido2::find_matching_fido2_accounts(vault_items_json, rp_id, origin)
+        .map_err(|e| JsValue::from_str(&e))?;
+    to_js_value(&out)
 }
