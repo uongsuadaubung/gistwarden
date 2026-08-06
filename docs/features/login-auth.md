@@ -125,8 +125,8 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/core/crypto.ts`](../../packages/domain/src/crypto.ts)**:
-   Hàm `deriveKey` sử dụng thuật toán **Argon2id (`hash-wasm`) với 3 vòng lặp
+1. **[`src/core/crypto.ts`](../../packages/domain/src/crypto.ts)**: Hàm
+   `deriveKey` sử dụng thuật toán **Argon2id (`hash-wasm`) với 3 vòng lặp
    (iterations) và 64MB RAM (`ARGON2_MEMORY = 65536`)**, cùng các hàm mã
    hóa/giải mã AES-GCM-256 (`encryptData`, `decryptData`).
 2. **[`src/features/auth/master-password-service.ts`](../../packages/ui/src/features/auth/master-password-service.ts)**:
