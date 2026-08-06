@@ -97,8 +97,8 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/core/crypto.ts`](../../packages/domain/src/crypto.ts)**:
-   Hàm tính toán mã TOTP HMAC-SHA1 (`generateTotpCode`, `parseTotpSecret`).
+1. **[`src/core/crypto.ts`](../../packages/domain/src/crypto.ts)**: Hàm tính
+   toán mã TOTP HMAC-SHA1 (`generateTotpCode`, `parseTotpSecret`).
 2. **[`src/features/generator/generator-utils.ts`](../../packages/domain/src/generator-utils.ts)**:
    Bộ sinh Mật khẩu ngẫu nhiên (`generatePassword`), Cụm từ
    (`generatePassphrase`) và hàm sinh số ngẫu nhiên an toàn tuyệt đối

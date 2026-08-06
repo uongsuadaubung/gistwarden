@@ -483,12 +483,27 @@ async function runBuild() {
       console.log("  - firefox/       (unpacked Extension)");
       console.log("  - chrome.zip     (packed Chrome ZIP)");
       console.log("  - firefox.zip    (packed Firefox ZIP)");
-      console.log("  - web/           (standalone Web App)");
     }
   } catch (e) {
     console.error("Bun.build failed:", e);
     process.exit(1);
   }
+}
+
+async function buildWasm() {
+  console.log("Building Rust WASM package (DEV mode)...");
+  try {
+    await runCommandOrExit("bun build:wasm", "bun", ["run", "build:wasm"]);
+    console.log("✓ Rust WASM built successfully.");
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("❌ Rust WASM build failed:", errorMsg);
+    process.exit(1);
+  }
+}
+
+if (isDevMode) {
+  await buildWasm();
 }
 
 if (!args.includes("--no-test")) {

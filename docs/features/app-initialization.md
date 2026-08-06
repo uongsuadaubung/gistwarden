@@ -120,15 +120,15 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Liên Quan
 
-1. **[`src/popup-entry.tsx`](../../apps/extension/src/popup-entry.tsx)**:
-   File khởi tạo chính của Cửa sổ Popup Extension.
-2. **[`src/guide-entry.tsx`](../../apps/extension/src/guide-entry.tsx)**:
-   File khởi tạo của Trang Hướng dẫn & Cài đặt mở rộng.
-3. **[`src/core/store.ts`](../../packages/ui/src/core/store.ts)**:
-   Quản lý trạng thái toàn cục SolidJS Store (`store.isLocked`,
-   `store.isLoaded`, `store.vaultItems`...).
-4. **[`src/core/i18n.ts`](../../packages/domain/src/i18n.ts)**:
-   Nạp cấu hình ngôn ngữ từ Storage qua `initI18n()`.
+1. **[`src/popup-entry.tsx`](../../apps/extension/src/popup-entry.tsx)**: File
+   khởi tạo chính của Cửa sổ Popup Extension.
+2. **[`src/guide-entry.tsx`](../../apps/extension/src/guide-entry.tsx)**: File
+   khởi tạo của Trang Hướng dẫn & Cài đặt mở rộng.
+3. **[`src/core/store.ts`](../../packages/ui/src/core/store.ts)**: Quản lý trạng
+   thái toàn cục SolidJS Store (`store.isLocked`, `store.isLoaded`,
+   `store.vaultItems`...).
+4. **[`src/core/i18n.ts`](../../packages/domain/src/i18n.ts)**: Nạp cấu hình
+   ngôn ngữ từ Storage qua `initI18n()`.
 5. **[`src/features/auth/session-service.ts`](../../packages/domain/src/session-manager.ts)**:
    Quản lý chìa khóa và Vault cache trong `chrome.storage.session`.
 6. **[`src/extension/background.ts`](../../apps/extension/src/extension/background.ts)**:

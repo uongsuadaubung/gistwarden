@@ -86,10 +86,10 @@ flowchart TD
 
 ## 📁 Danh Sách File Mã Nguồn Cần Cập Nhật
 
-1. **[`src/core/storage.ts`](../../packages/repository/src/storage.ts)**:
-   Thêm `autoSubmitOnAutofill: z.boolean().default(true)` vào `SettingsSchema`.
-2. **[`src/core/store.ts`](../../packages/ui/src/core/store.ts)**:
-   Thêm thuộc tính `autoSubmitOnAutofill` vào trạng thái reactive store.
+1. **[`src/core/storage.ts`](../../packages/repository/src/storage.ts)**: Thêm
+   `autoSubmitOnAutofill: z.boolean().default(true)` vào `SettingsSchema`.
+2. **[`src/core/store.ts`](../../packages/ui/src/core/store.ts)**: Thêm thuộc
+   tính `autoSubmitOnAutofill` vào trạng thái reactive store.
 3. **[`src/features/settings/AutofillOptions.tsx`](../../packages/ui/src/features/settings/AutofillOptions.tsx)**:
    Trang Cài đặt mới cho phép bật/tắt Auto-submit.
 4. **[`src/extension/autofill-core.ts`](../../apps/extension/src/extension/autofill-core.ts)**:
