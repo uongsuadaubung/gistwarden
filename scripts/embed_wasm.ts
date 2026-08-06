@@ -29,6 +29,10 @@ const redundantFiles = [
 for (const file of redundantFiles) {
   const filePath = join(wasmDir, file);
   if (existsSync(filePath)) {
-    unlinkSync(filePath);
+    try {
+      unlinkSync(filePath);
+    } catch {
+      // Ignore transient Windows file locks
+    }
   }
 }

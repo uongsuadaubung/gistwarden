@@ -44,4 +44,8 @@ pub enum WasmError {
 
     #[error("fido2_error_create_failed")]
     Fido2CreateFailed,
+    #[error("fido2_error_assert_failed")]
+    Fido2AssertFailed,
+    #[error("fido2_error_counter_update_failed")]
+    Fido2CounterUpdateFailed,
 }

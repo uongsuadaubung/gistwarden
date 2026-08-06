@@ -677,3 +677,53 @@ export function mergeVaultItemsWasm(
     BigInt(lastSyncTimestamp),
   );
 }
+
+export function generatePasskeyRegisterResponseWasm<TCred>(
+  options: unknown,
+  origin: string,
+): { newCred: TCred; result: Record<string, unknown> } {
+  const optionsJson = JSON.stringify(options);
+  return wasm.generate_passkey_register_response_js(optionsJson, origin);
+}
+
+export function generatePasskeyAssertResponseWasm<TCred>(
+  options: unknown,
+  origin: string,
+  cred: TCred,
+): {
+  result: Record<string, unknown>;
+  nextCounter: number;
+  updatedCredential: TCred;
+} {
+  const optionsJson = JSON.stringify(options);
+  const credJson = JSON.stringify(cred);
+  return wasm.generate_passkey_assert_response_js(
+    optionsJson,
+    origin,
+    credJson,
+  );
+}
+
+export function findMatchingFido2CredentialsWasm(
+  vaultItems: unknown,
+  rpId: string,
+  allowCredentials: unknown = [],
+): unknown {
+  return wasm.find_matching_fido2_credentials_js(
+    JSON.stringify(vaultItems),
+    rpId,
+    JSON.stringify(allowCredentials),
+  );
+}
+
+export function findMatchingFido2AccountsWasm(
+  vaultItems: unknown,
+  rpId: string,
+  origin: string,
+): unknown {
+  return wasm.find_matching_fido2_accounts_js(
+    JSON.stringify(vaultItems),
+    rpId,
+    origin,
+  );
+}

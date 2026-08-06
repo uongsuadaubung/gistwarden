@@ -1,22 +1,22 @@
 import { err, ok, Result } from "neverthrow";
 import type { TranslationKey } from "@/core/i18n.ts";
-import { VaultItemType } from "@gistwarden/domain";
+import {
+  findMatchingFido2AccountsWasm,
+  findMatchingFido2CredentialsWasm,
+  generatePasskeyAssertResponseWasm,
+  generatePasskeyRegisterResponseWasm,
+  VaultItemType,
+} from "@gistwarden/domain";
 import type { LoginVaultItem, VaultItem } from "@gistwarden/domain";
 import type { Fido2Credential } from "@gistwarden/domain";
-import { isMatchingDomain } from "@gistwarden/domain";
 
 import { saveItem } from "@/features/vault/vault-service.ts";
-import {
-  generatePasskeyAssertResponse,
-  generatePasskeyRegisterResponse,
-} from "@/features/passkey/passkey-crypto.ts";
 import { accountStore } from "@/core/store.ts";
 import {
   rejectFido2RequestRoute,
   resolveFido2RequestRoute,
 } from "@gistwarden/orchestrator";
 import { sendBackgroundMessage } from "@/core/messaging.ts";
-import { getBaseDomain } from "@/core/domain-utils.ts";
 
 export interface Fido2Request {
   success: boolean;
@@ -48,50 +48,54 @@ export interface MatchingPasskey {
   vaultItemId: string;
 }
 
+function isLoginVaultItem(item: unknown): item is LoginVaultItem {
+  return (
+    typeof item === "object" &&
+    item !== null &&
+    "type" in item &&
+    "login" in item
+  );
+}
+
+function isMatchingPasskey(item: unknown): item is MatchingPasskey {
+  return (
+    typeof item === "object" &&
+    item !== null &&
+    "credential" in item &&
+    "vaultItemId" in item
+  );
+}
+
 export function findMatchingFido2Accounts(
   vaultItems: VaultItem[],
   rpId: string,
   origin: string,
 ): LoginVaultItem[] {
-  const rpIdNormalized = rpId.toLowerCase().trim();
-
-  return vaultItems.filter((item): item is LoginVaultItem => {
-    if (item.type !== VaultItemType.Login || !item.login) return false;
-    return (
-      isMatchingDomain(item, rpIdNormalized) ||
-      isMatchingDomain(item, origin)
-    );
-  });
+  try {
+    const raw = findMatchingFido2AccountsWasm(vaultItems, rpId, origin);
+    if (Array.isArray(raw)) return raw.filter(isLoginVaultItem);
+  } catch (e) {
+    console.error("[FIDO2 WASM] findMatchingFido2Accounts error:", e);
+  }
+  return [];
 }
 
 export function findMatchingFido2Credentials(
   vaultItems: VaultItem[],
   rpId: string,
+  allowCredentials?: Array<{ id: string; type: string }>,
 ): MatchingPasskey[] {
-  const list: MatchingPasskey[] = [];
-  const targetRpId = rpId?.trim().toLowerCase() || "";
-  const targetBase = getBaseDomain(rpId);
-
-  vaultItems.forEach((item) => {
-    if (item.type !== VaultItemType.Login) return;
-    if (item.login.fido2Credentials) {
-      item.login.fido2Credentials.forEach((cred: Fido2Credential) => {
-        const credRpId = cred.rpId?.trim().toLowerCase() || "";
-        const credBase = getBaseDomain(cred.rpId || "");
-        const isMatch = credRpId === targetRpId ||
-          (Boolean(credBase) && credBase === targetBase);
-
-        if (isMatch) {
-          list.push({
-            vaultItemId: item.id,
-            vaultItemName: item.name,
-            credential: cred,
-          });
-        }
-      });
-    }
-  });
-  return list;
+  try {
+    const raw = findMatchingFido2CredentialsWasm(
+      vaultItems,
+      rpId,
+      allowCredentials || [],
+    );
+    if (Array.isArray(raw)) return raw.filter(isMatchingPasskey);
+  } catch (e) {
+    console.error("[FIDO2 WASM] findMatchingFido2Credentials error:", e);
+  }
+  return [];
 }
 
 export async function registerFido2Passkey(
@@ -107,21 +111,26 @@ export async function registerFido2Passkey(
     return err("fido2_error_create_failed");
   }
 
-  const generateRes = await generatePasskeyRegisterResponse(
-    {
-      ...req.options,
-      rp,
-      user,
-      challenge,
-    },
-    req.origin,
-  );
-
-  if (generateRes.isErr()) {
-    return err(generateRes.error);
+  let generateResVal: {
+    newCred: Fido2Credential;
+    result: Record<string, unknown>;
+  };
+  try {
+    generateResVal = generatePasskeyRegisterResponseWasm<Fido2Credential>(
+      {
+        ...req.options,
+        rp,
+        user,
+        challenge,
+      },
+      req.origin,
+    );
+  } catch (e) {
+    console.error("[FIDO2 WASM Register error]:", e);
+    return err("fido2_error_create_failed");
   }
 
-  const { newCred, result } = generateRes.value;
+  const { newCred, result } = generateResVal;
 
   let saveRes;
   const idx = selectedAccountIndex;
@@ -183,14 +192,27 @@ export async function assertFido2Passkey(
   selectedCredIndex: number,
 ): Promise<Result<void, TranslationKey>> {
   const selected = matchingCredentials[selectedCredIndex];
+  if (!selected) return err("fido2_error_assert_failed");
   const cred = selected.credential;
 
-  const nextCounter = Math.max(cred.counter + 1, 100000);
-
-  const updatedCred: Fido2Credential = {
-    ...cred,
-    counter: nextCounter,
+  let assertResVal: {
+    result: Record<string, unknown>;
+    nextCounter: number;
+    updatedCredential: Fido2Credential;
   };
+
+  try {
+    assertResVal = generatePasskeyAssertResponseWasm<Fido2Credential>(
+      req.options,
+      req.origin,
+      cred,
+    );
+  } catch (e) {
+    console.error("[FIDO2 WASM Assert error]:", e);
+    return err("fido2_error_assert_failed");
+  }
+
+  const { result, updatedCredential } = assertResVal;
 
   const originalItem = accountStore.vaultItems.find((v) =>
     v.id === selected.vaultItemId
@@ -209,7 +231,7 @@ export async function assertFido2Passkey(
       ...originalItem.login,
       fido2Credentials: (originalItem.login.fido2Credentials || []).map((
         c: Fido2Credential,
-      ) => c.credentialId === cred.credentialId ? updatedCred : c),
+      ) => c.credentialId === cred.credentialId ? updatedCredential : c),
     },
   };
 
@@ -217,19 +239,6 @@ export async function assertFido2Passkey(
   if (saveRes.isErr()) {
     return err("fido2_error_counter_update_failed");
   }
-
-  const assertRes = await generatePasskeyAssertResponse(
-    req.options,
-    req.origin,
-    cred,
-    nextCounter,
-  );
-
-  if (assertRes.isErr()) {
-    return err(assertRes.error);
-  }
-
-  const { result } = assertRes.value;
 
   await sendBackgroundMessage(resolveFido2RequestRoute, {
     result,

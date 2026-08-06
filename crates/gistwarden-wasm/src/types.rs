@@ -192,6 +192,31 @@ pub struct PasswordHistory {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
+pub struct Fido2Credential {
+    pub credential_id: String,
+    pub key_type: String,
+    pub key_algorithm: String,
+    pub key_curve: String,
+    pub key_value: String,
+    pub rp_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_handle: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<String>,
+    #[serde(default)]
+    pub counter: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rp_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub discoverable: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub creation_date: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct LoginDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
@@ -202,7 +227,7 @@ pub struct LoginDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uris: Option<Vec<LoginUri>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fido2_credentials: Option<Vec<serde_json::Value>>,
+    pub fido2_credentials: Option<Vec<Fido2Credential>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password_revision_date: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
