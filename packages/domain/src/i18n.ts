@@ -1157,6 +1157,22 @@ function isLangKey(key: string, dict: Partial<Lang>): key is keyof Lang {
   return Object.hasOwn(dict, key);
 }
 
+/**
+ * HTML-encode interpolation params before substitution.
+ * Locale templates may contain trusted static markup (<strong>, <br/>) rendered via
+ * SafeHtml/DOMParser; interpolated values are UNTRUSTED data (site-controlled rp names,
+ * usernames, domains...) and MUST be escaped so they can never inject markup or
+ * event-handler attributes into extension pages.
+ */
+export function escapeHtmlParam(value: unknown): string {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 export function t(
   key: TranslationKey,
   params?: Record<string, string | number>,
@@ -1165,7 +1181,8 @@ export function t(
   let msg = current[key] ?? key;
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
-      msg = msg.replaceAll(`{${k}}`, String(v));
+      // Security: escape interpolated values (see escapeHtmlParam).
+      msg = msg.replaceAll(`{${k}}`, escapeHtmlParam(v));
     });
   }
   if (msg.includes("{")) {
