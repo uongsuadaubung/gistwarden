@@ -20,8 +20,8 @@ import {
   type TranslationKey,
   type TrashVaultItem,
   type VaultItem,
-  type VaultItemId,
   VaultItemBuilder,
+  type VaultItemId,
   VaultItemType,
   VaultListSchema,
   type VaultPayload,
@@ -240,7 +240,10 @@ export async function saveItemUseCase(
     vaultMode,
     (payload) => {
       let updatedList: VaultItem[];
-      if (item.id) {
+      const isExisting = item.id
+        ? payload.items.some((v) => v.id === item.id)
+        : false;
+      if (item.id && isExisting) {
         updatedList = payload.items.map((v) => {
           if (v.id !== item.id) return v;
           return mergeVaultItem(v, item);

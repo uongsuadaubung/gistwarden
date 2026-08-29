@@ -102,7 +102,7 @@ const RouterSyncHandler: Component = () => {
   return null;
 };
 
-const MainLayout: Component<RouteSectionProps> = (props) => {
+export const MainLayout: Component<RouteSectionProps> = (props) => {
   return (
     <>
       <RouterSyncHandler />
@@ -224,7 +224,7 @@ const MainLayout: Component<RouteSectionProps> = (props) => {
   );
 };
 
-const App: Component = () => {
+export const App: Component = () => {
   onMount(async () => {
     const params = new URLSearchParams(window.location.search);
     const mode = params.get("mode");

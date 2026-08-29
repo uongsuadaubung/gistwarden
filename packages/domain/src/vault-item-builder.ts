@@ -3,14 +3,19 @@ import {
   asVaultItemId,
   type CardDetails,
   type CardVaultItem,
+  CardVaultItemSchema,
   type FolderId,
   type IdentityDetails,
   type IdentityVaultItem,
+  IdentityVaultItemSchema,
   type LoginUri,
   type LoginVaultItem,
+  LoginVaultItemSchema,
   type SecureNoteVaultItem,
+  SecureNoteVaultItemSchema,
   type SshKeyDetails,
   type SshKeyVaultItem,
+  SshKeyVaultItemSchema,
   UriMatchMode,
   type VaultField,
   type VaultItem,
@@ -176,7 +181,7 @@ export class LoginItemBuilder extends BaseVaultItemBuilder<
         passwordRevisionDate: this.passwordRevisionDate,
       },
     };
-    return VaultItemSchema.parse(raw) as LoginVaultItem;
+    return LoginVaultItemSchema.parse(raw);
   }
 }
 
@@ -213,7 +218,7 @@ export class CardItemBuilder extends BaseVaultItemBuilder<
       name: base.name || this.card.cardholderName || "New Card",
       card: this.card,
     };
-    return VaultItemSchema.parse(raw) as CardVaultItem;
+    return CardVaultItemSchema.parse(raw);
   }
 }
 
@@ -261,7 +266,7 @@ export class IdentityItemBuilder extends BaseVaultItemBuilder<
       name: base.name || fullName || this.identity.username || "New Identity",
       identity: this.identity,
     };
-    return VaultItemSchema.parse(raw) as IdentityVaultItem;
+    return IdentityVaultItemSchema.parse(raw);
   }
 }
 
@@ -276,7 +281,7 @@ export class NoteItemBuilder extends BaseVaultItemBuilder<
       type: VaultItemType.SecureNote,
       name: base.name || "Secure Note",
     };
-    return VaultItemSchema.parse(raw) as SecureNoteVaultItem;
+    return SecureNoteVaultItemSchema.parse(raw);
   }
 }
 
@@ -307,7 +312,7 @@ export class SshKeyItemBuilder extends BaseVaultItemBuilder<
       name: base.name || "SSH Key",
       sshKey: this.sshKey,
     };
-    return VaultItemSchema.parse(raw) as SshKeyVaultItem;
+    return SshKeyVaultItemSchema.parse(raw);
   }
 }
 

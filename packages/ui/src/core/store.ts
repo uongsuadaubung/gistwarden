@@ -199,6 +199,12 @@ export function resetUiStore(): void {
   });
 }
 
+export function resetSettingsStore(): void {
+  setSettingsStore({
+    ...initialExtensionSettings,
+  });
+}
+
 export async function loadAllStores(): Promise<void> {
   const extRes = await getExtensionSettings();
   if (extRes.isOk()) {

@@ -329,11 +329,17 @@ export function autoSubmitLogin(
 // ----------------------------------------------------
 
 interface UsernameExtractor {
-  extract(passwordField: HTMLInputElement, form: HTMLFormElement | null): HTMLInputElement | null;
+  extract(
+    passwordField: HTMLInputElement,
+    form: HTMLFormElement | null,
+  ): HTMLInputElement | null;
 }
 
 class FormPrecedingUsernameExtractor implements UsernameExtractor {
-  extract(passwordField: HTMLInputElement, form: HTMLFormElement | null): HTMLInputElement | null {
+  extract(
+    passwordField: HTMLInputElement,
+    form: HTMLFormElement | null,
+  ): HTMLInputElement | null {
     if (!form) return null;
     const textInputs = form.querySelectorAll(
       'input[type="text"], input[type="email"], input[type="tel"], input:not([type])',
@@ -364,7 +370,10 @@ class FormPrecedingUsernameExtractor implements UsernameExtractor {
 }
 
 class DomPrecedingUsernameExtractor implements UsernameExtractor {
-  extract(passwordField: HTMLInputElement, _form?: HTMLFormElement | null): HTMLInputElement | null {
+  extract(
+    passwordField: HTMLInputElement,
+    _form?: HTMLFormElement | null,
+  ): HTMLInputElement | null {
     const allInputs = Array.from(document.querySelectorAll("input"));
     const passIndex = allInputs.indexOf(passwordField);
     if (passIndex > 0) {
@@ -522,7 +531,8 @@ export function extractSubmittedCredentials(
   return {
     domain,
     url: currentUrl,
-    username: usernameInput && usernameInput.value ? usernameInput.value.trim() : "",
+    username:
+      usernameInput && usernameInput.value ? usernameInput.value.trim() : "",
     password: chosenPasswordInput.value,
   };
 }

@@ -1,4 +1,9 @@
-import { isExtension, logger, type TranslationKey } from "@gistwarden/domain";
+import {
+  isExtension,
+  isRecord,
+  logger,
+  type TranslationKey,
+} from "@gistwarden/domain";
 import { err, ok, type Result } from "neverthrow";
 import type { z } from "zod";
 
@@ -212,4 +217,16 @@ export async function sendMessageToTab(
     logger.messaging.warn("Failed to send message to tab:", e);
     return err("tab_error_send_message");
   }
+}
+
+export async function handleInMemoryMessage(
+  message: unknown,
+): Promise<unknown> {
+  if (isRecord(message) && typeof message.type === "string") {
+    const route = inMemoryRouteHandlers.get(message.type);
+    if (route) {
+      return await route(message);
+    }
+  }
+  return { success: false, error: "messaging_error_send_failed" };
 }

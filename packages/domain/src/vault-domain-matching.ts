@@ -1,12 +1,12 @@
 import { getBaseDomain, getHostname, toPunycodeUrl } from "./domain-utils.ts";
 import { UriMatchMode, type VaultItem } from "./vault-schemas.ts";
-import { isLoginItem, type VaultItemType } from "./vault-types.ts";
 import {
   DomainMatchSpec,
   filterVaultItemsBySpec,
   SearchQuerySpec,
   TypeMatchSpec,
 } from "./vault-specifications.ts";
+import { isLoginItem, type VaultItemType } from "./vault-types.ts";
 
 const URI_MATCH_STRATEGIES: Record<
   UriMatchMode,

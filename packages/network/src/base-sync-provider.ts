@@ -3,12 +3,12 @@ import {
   type GitHubAccessToken,
   type ISyncProvider,
   isRecord,
-  safeJsonParse,
   type SyncOptions,
   type SyncProviderId,
   type SyncResult,
   type SyncStatusResult,
   type SyncValidationResult,
+  safeJsonParse,
   type TranslationKey,
 } from "@gistwarden/domain";
 import type { Result } from "neverthrow";
