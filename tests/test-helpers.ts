@@ -23,6 +23,7 @@ import {
   executeVaultMutationUseCase,
   getSessionKey,
   getSyncProvider,
+  initializeWebRoutes,
   purgeTrashItemUseCase,
   registerInMemoryRoute,
   renameFolderUseCase,
@@ -82,6 +83,7 @@ export function setupTestDOM(mode: VaultMode = "local_storage"): Window {
   resetAccountStore();
   resetUiStore();
   setSettingsStore("vaultMode", mode);
+  initializeWebRoutes();
   return window;
 }
 

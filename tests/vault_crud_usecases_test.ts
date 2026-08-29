@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 import {
   asVaultItemId,
   createDefaultVaultItem,
@@ -10,7 +10,12 @@ import {
   saveItemUseCase,
   updateItemUseCase,
 } from "@gistwarden/orchestrator";
-import type { VaultMode } from "@gistwarden/repository";
+import {
+  DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG,
+  updateAccountSettings,
+  type VaultMode,
+} from "@gistwarden/repository";
+import { setupTestDOM } from "./test-helpers.ts";
 
 // Mock helper to generate dummy crypto key
 async function createMockKey(): Promise<CryptoKey> {
@@ -24,6 +29,19 @@ async function createMockKey(): Promise<CryptoKey> {
 describe("Vault CRUD Use Cases (createItemUseCase & updateItemUseCase)", () => {
   const salt = "test_salt_123";
   const mode: VaultMode = "local_storage";
+
+  beforeAll(async () => {
+    setupTestDOM("local_storage");
+    await updateAccountSettings(
+      {
+        masterPasswordConfig: {
+          ...DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG,
+          salt: "test_salt_123",
+        },
+      },
+      "local_storage",
+    );
+  });
 
   test("createItemUseCase adds new item when item has pre-assigned UUID from template", async () => {
     const key = await createMockKey();
