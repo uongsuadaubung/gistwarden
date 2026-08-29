@@ -8,28 +8,11 @@ import {
   reloadVaultItems,
   resetAccountStore,
   resetUiStore,
-  setActiveNavigator,
   settingsStore,
   uiStore,
 } from "@gistwarden/ui";
-import {
-  HashRouter,
-  MemoryRouter,
-  Route,
-  type RouteSectionProps,
-  useLocation,
-  useNavigate,
-} from "@solidjs/router";
-import {
-  type Component,
-  createEffect,
-  For,
-  Match,
-  onMount,
-  Show,
-  Switch,
-} from "solid-js";
-import { render } from "solid-js/web";
+import { type Component, Match, onMount, Show, Switch } from "solid-js";
+import { Dynamic, render } from "solid-js/web";
 import ConfirmModal from "@/components/ui/ConfirmModal.tsx";
 import RepromptModal from "@/components/ui/RepromptModal.tsx";
 import { RouteTransition } from "@/components/ui/RouteTransition.tsx";
@@ -44,7 +27,6 @@ import { notifyBackground, onExtensionMessage } from "@/core/messaging.ts";
 import { isRecord } from "@/core/storage.ts";
 import AccountSecurity from "@/features/auth/AccountSecurity.tsx";
 import ChangeMasterPassword from "@/features/auth/ChangeMasterPassword.tsx";
-// Import Views
 import LockScreen from "@/features/auth/LockScreen.tsx";
 import Login from "@/features/auth/Login.tsx";
 import Generator from "@/features/generator/Generator.tsx";
@@ -82,145 +64,158 @@ import {
   VaultIcon,
 } from "@/icons/svg/index.ts";
 
-const RouterSyncHandler: Component = () => {
-  const nav = useNavigate();
-  const location = useLocation();
-
-  onMount(() => {
-    setActiveNavigator((to, options) => {
-      nav(to, options);
-    });
-  });
-
-  createEffect(() => {
-    const targetPath = getViewPath(uiStore.view);
-    if (location.pathname !== targetPath) {
-      nav(targetPath, { replace: true });
-    }
-  });
-
-  return null;
+const VIEW_COMPONENTS: Record<View, Component> = {
+  [View.Vault]: Vault,
+  [View.ItemDetail]: ItemDetail,
+  [View.ItemEdit]: ItemEdit,
+  [View.Generator]: Generator,
+  [View.PasswordHistory]: PasswordHistory,
+  [View.Reports]: Reports,
+  [View.ReportExposed]: ReportExposed,
+  [View.ReportReused]: ReportReused,
+  [View.ReportWeak]: ReportWeak,
+  [View.ReportUnsecure]: ReportUnsecure,
+  [View.ReportInactive2FA]: ReportInactive2FA,
+  [View.ReportDataBreach]: ReportDataBreach,
+  [View.Settings]: Settings,
+  [View.Appearance]: Appearance,
+  [View.Language]: Language,
+  [View.Theme]: Theme,
+  [View.AccountSecurity]: AccountSecurity,
+  [View.ChangeMasterPassword]: ChangeMasterPassword,
+  [View.VaultOptions]: VaultOptions,
+  [View.ImportAccounts]: ImportAccounts,
+  [View.GoogleAuthTool]: GoogleMigrationPage,
+  [View.ExportAccounts]: ExportAccounts,
+  [View.Folders]: Folders,
+  [View.Trash]: Trash,
+  [View.AutofillOptions]: AutofillOptions,
+  [View.About]: About,
+  [View.Troubleshooting]: Troubleshooting,
+  [View.Guide]: Vault,
+  [View.Login]: Login,
+  [View.Welcome]: Welcome,
+  [View.Fido2Prompt]: Fido2Prompt,
 };
 
-const MainLayout: Component<RouteSectionProps> = (props) => {
+const MainLayout: Component = () => {
   return (
-    <>
-      <RouterSyncHandler />
-      <div class="app-root-wrapper">
-        <Switch>
-          {/* Loading initial store state */}
-          <Match when={!accountStore.isLoaded || !settingsStore.isLoaded}>
-            <div class="app-loading-container flex-center h-100" />
-          </Match>
+    <div class="app-root-wrapper">
+      <Switch>
+        {/* Loading initial store state */}
+        <Match when={!accountStore.isLoaded || !settingsStore.isLoaded}>
+          <div class="app-loading-container flex-center h-100" />
+        </Match>
 
-          {/* FIDO2/Passkey Prompt Window */}
-          <Match when={uiStore.view === View.Fido2Prompt}>
-            <Fido2Prompt />
-          </Match>
+        {/* FIDO2/Passkey Prompt Window */}
+        <Match when={uiStore.view === View.Fido2Prompt}>
+          <Fido2Prompt />
+        </Match>
 
-          {/* Regular vault locking/login */}
-          <Match when={accountStore.isLocked}>
-            <Switch>
-              <Match when={uiStore.view === View.Welcome}>
-                <Welcome />
-              </Match>
-              <Match when={accountStore.vaultConfigured}>
-                <LockScreen />
-              </Match>
-              <Match when={true}>
-                <Login />
-              </Match>
-            </Switch>
-          </Match>
+        {/* Regular vault locking/login */}
+        <Match when={accountStore.isLocked}>
+          <Switch>
+            <Match when={uiStore.view === View.Welcome}>
+              <Welcome />
+            </Match>
+            <Match when={accountStore.vaultConfigured}>
+              <LockScreen />
+            </Match>
+            <Match when={true}>
+              <Login />
+            </Match>
+          </Switch>
+        </Match>
 
-          {/* Main Application Shell when unlocked */}
-          <Match when={true}>
-            <div class="app-container">
-              <div class="flex-1 overflow-hidden pos-relative">
-                <RouteTransition>{props.children}</RouteTransition>
-              </div>
-
-              {/* Bottom Nav Bar */}
-              <Show
-                when={[
-                  View.Vault,
-                  View.Generator,
-                  View.Reports,
-                  View.Settings,
-                ].includes(uiStore.view)}
-              >
-                <nav class="app-nav">
-                  <div
-                    class={`nav-item ${
-                      uiStore.view === View.Vault ? "active" : ""
-                    }`}
-                    onClick={() => navigate(View.Vault)}
-                  >
-                    <VaultIcon />
-                    <span>{t("nav_vault")}</span>
-                  </div>
-                  <div
-                    class={`nav-item ${
-                      uiStore.view === View.Generator ? "active" : ""
-                    }`}
-                    onClick={() => navigate(View.Generator)}
-                  >
-                    <GeneratorIcon />
-                    <span>{t("nav_generator")}</span>
-                  </div>
-                  <div
-                    class={`nav-item ${
-                      uiStore.view === View.Reports ? "active" : ""
-                    }`}
-                    onClick={() => navigate(View.Reports)}
-                  >
-                    <ReportsIcon />
-                    <span>{t("nav_reports")}</span>
-                  </div>
-                  <div
-                    class={`nav-item ${
-                      uiStore.view === View.Settings ||
-                      uiStore.view === View.VaultOptions
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() => navigate(View.Settings)}
-                  >
-                    <SettingsIcon />
-                    <span>{t("nav_settings")}</span>
-                  </div>
-                </nav>
-              </Show>
+        {/* Main Application Shell when unlocked */}
+        <Match when={true}>
+          <div class="app-container">
+            <div class="flex-1 overflow-hidden pos-relative">
+              <RouteTransition currentPath={getViewPath(uiStore.view)}>
+                <Dynamic component={VIEW_COMPONENTS[uiStore.view] || Vault} />
+              </RouteTransition>
             </div>
-          </Match>
-        </Switch>
 
-        {/* Reusable Toast Notification */}
-        <Show when={uiStore.toastMessage}>
-          <div class={`toast-notification ${uiStore.toastType}`}>
-            {uiStore.toastMessage}
+            {/* Bottom Nav Bar */}
+            <Show
+              when={[
+                View.Vault,
+                View.Generator,
+                View.Reports,
+                View.Settings,
+              ].includes(uiStore.view)}
+            >
+              <nav class="app-nav">
+                <div
+                  class={`nav-item ${
+                    uiStore.view === View.Vault ? "active" : ""
+                  }`}
+                  onClick={() => navigate(View.Vault)}
+                >
+                  <VaultIcon />
+                  <span>{t("nav_vault")}</span>
+                </div>
+                <div
+                  class={`nav-item ${
+                    uiStore.view === View.Generator ? "active" : ""
+                  }`}
+                  onClick={() => navigate(View.Generator)}
+                >
+                  <GeneratorIcon />
+                  <span>{t("nav_generator")}</span>
+                </div>
+                <div
+                  class={`nav-item ${
+                    uiStore.view === View.Reports ? "active" : ""
+                  }`}
+                  onClick={() => navigate(View.Reports)}
+                >
+                  <ReportsIcon />
+                  <span>{t("nav_reports")}</span>
+                </div>
+                <div
+                  class={`nav-item ${
+                    uiStore.view === View.Settings ||
+                    uiStore.view === View.VaultOptions
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() => navigate(View.Settings)}
+                >
+                  <SettingsIcon />
+                  <span>{t("nav_settings")}</span>
+                </div>
+              </nav>
+            </Show>
           </div>
-        </Show>
+        </Match>
+      </Switch>
 
-        {/* Reusable Confirmation Modal */}
-        <ConfirmModal />
+      {/* Reusable Toast Notification */}
+      <Show when={uiStore.toastMessage}>
+        <div class={`toast-notification ${uiStore.toastType}`}>
+          {uiStore.toastMessage}
+        </div>
+      </Show>
 
-        {/* Master Password Reprompt Modal */}
-        <RepromptModal />
+      {/* Reusable Confirmation Modal */}
+      <ConfirmModal />
 
-        {/* Global Loading Overlay */}
-        <Show when={uiStore.globalLoading}>
-          <div class="global-loading-overlay">
-            <div class="global-loading-content">
-              <SyncIcon class="spinning" />
-              <div class="global-loading-text">
-                {uiStore.globalLoadingText || t("dialog_loading")}
-              </div>
+      {/* Master Password Reprompt Modal */}
+      <RepromptModal />
+
+      {/* Global Loading Overlay */}
+      <Show when={uiStore.globalLoading}>
+        <div class="global-loading-overlay">
+          <div class="global-loading-content">
+            <SyncIcon class="spinning" />
+            <div class="global-loading-text">
+              {uiStore.globalLoadingText || t("dialog_loading")}
             </div>
           </div>
-        </Show>
-      </div>
-    </>
+        </div>
+      </Show>
+    </div>
   );
 };
 
@@ -266,52 +261,6 @@ const App: Component = () => {
     window.addEventListener("keydown", resetTimeout);
   });
 
-  const isWebProtocol =
-    typeof window !== "undefined" &&
-    window.location.protocol.startsWith("http");
-
-  const routesConfig: Array<{ view: View; component: Component }> = [
-    { view: View.Vault, component: Vault },
-    { view: View.ItemDetail, component: ItemDetail },
-    { view: View.ItemEdit, component: ItemEdit },
-    { view: View.Generator, component: Generator },
-    { view: View.PasswordHistory, component: PasswordHistory },
-    { view: View.Reports, component: Reports },
-    { view: View.ReportExposed, component: ReportExposed },
-    { view: View.ReportReused, component: ReportReused },
-    { view: View.ReportWeak, component: ReportWeak },
-    { view: View.ReportUnsecure, component: ReportUnsecure },
-    { view: View.ReportInactive2FA, component: ReportInactive2FA },
-    { view: View.ReportDataBreach, component: ReportDataBreach },
-    { view: View.Settings, component: Settings },
-    { view: View.Appearance, component: Appearance },
-    { view: View.Language, component: Language },
-    { view: View.Theme, component: Theme },
-    { view: View.AccountSecurity, component: AccountSecurity },
-    { view: View.ChangeMasterPassword, component: ChangeMasterPassword },
-    { view: View.VaultOptions, component: VaultOptions },
-    { view: View.ImportAccounts, component: ImportAccounts },
-    { view: View.GoogleAuthTool, component: GoogleMigrationPage },
-    { view: View.ExportAccounts, component: ExportAccounts },
-    { view: View.Folders, component: Folders },
-    { view: View.Trash, component: Trash },
-    { view: View.AutofillOptions, component: AutofillOptions },
-    { view: View.About, component: About },
-    { view: View.Troubleshooting, component: Troubleshooting },
-  ];
-
-  const appRoutes = (
-    <>
-      <Route path="/" component={Vault} />
-      <For each={routesConfig}>
-        {(route) => (
-          <Route path={getViewPath(route.view)} component={route.component} />
-        )}
-      </For>
-      <Route path="*" component={Vault} />
-    </>
-  );
-
   return (
     <Show
       when={accountStore.isLoaded && settingsStore.isLoaded}
@@ -324,12 +273,7 @@ const App: Component = () => {
         </div>
       }
     >
-      <Show
-        when={isWebProtocol}
-        fallback={<MemoryRouter root={MainLayout}>{appRoutes}</MemoryRouter>}
-      >
-        <HashRouter root={MainLayout}>{appRoutes}</HashRouter>
-      </Show>
+      <MainLayout />
     </Show>
   );
 };

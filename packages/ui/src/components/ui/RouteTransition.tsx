@@ -1,18 +1,19 @@
-import { useLocation } from "@solidjs/router";
 import { type Component, createEffect, createSignal, type JSX } from "solid-js";
 import { getPathDepth } from "@/core/router.ts";
 import { settingsStore } from "@/core/store.ts";
 
-export const RouteTransition: Component<{ children: JSX.Element }> = (
-  props,
-) => {
-  const location = useLocation();
+export interface RouteTransitionProps {
+  children: JSX.Element;
+  currentPath: string;
+}
+
+export const RouteTransition: Component<RouteTransitionProps> = (props) => {
   const [toggle, setToggle] = createSignal(false);
   const [animClass, setAnimClass] = createSignal("");
-  let prevPath = location.pathname;
+  let prevPath = props.currentPath;
 
   createEffect(() => {
-    const currentPath = location.pathname;
+    const currentPath = props.currentPath;
     if (currentPath !== prevPath) {
       const oldDepth = getPathDepth(prevPath);
       const newDepth = getPathDepth(currentPath);

@@ -9,6 +9,7 @@ import type {
 import {
   addFolderUseCase,
   clearVaultUseCase,
+  createItemUseCase,
   deleteFolderUseCase,
   deleteVaultItemsUseCase,
   executeVaultMutationUseCase,
@@ -19,6 +20,7 @@ import {
   renameFolderUseCase,
   restoreVaultItemUseCase,
   saveItemUseCase,
+  updateItemUseCase,
   vaultSecurityContext,
 } from "@gistwarden/orchestrator";
 import { err, ok, type Result } from "neverthrow";
@@ -123,6 +125,48 @@ export async function deleteFolder(
     salt,
     settingsStore.vaultMode,
     id,
+  );
+  if (res.isErr()) {
+    handleGlobalApiError(res.error);
+    return err(res.error);
+  }
+  applyVaultPayloadToStore(res.value);
+  return ok();
+}
+
+export async function createItem(
+  item: Partial<VaultItem>,
+): Promise<Result<void, TranslationKey>> {
+  const { payload, key, salt } = await getOrBuildCurrentPayloadAndSalt();
+  if (!key) return err("login_title_locked");
+  const res = await createItemUseCase(
+    payload,
+    key,
+    salt,
+    settingsStore.vaultMode,
+    item,
+  );
+  if (res.isErr()) {
+    handleGlobalApiError(res.error);
+    return err(res.error);
+  }
+  applyVaultPayloadToStore(res.value);
+  return ok();
+}
+
+export async function updateItem(
+  id: VaultItemId,
+  patch: Partial<VaultItem>,
+): Promise<Result<void, TranslationKey>> {
+  const { payload, key, salt } = await getOrBuildCurrentPayloadAndSalt();
+  if (!key) return err("login_title_locked");
+  const res = await updateItemUseCase(
+    payload,
+    key,
+    salt,
+    settingsStore.vaultMode,
+    id,
+    patch,
   );
   if (res.isErr()) {
     handleGlobalApiError(res.error);

@@ -1,9 +1,11 @@
 import {
   asFolderId,
   type Fido2CredentialId,
+  getVaultItemFallbackName,
   VaultItemType,
 } from "@gistwarden/domain";
 import { confirm, setGlobalLoading, showToast } from "@gistwarden/ui";
+import type { Result } from "neverthrow";
 import { type Component, createSignal, onMount, Show } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import Button from "@/components/ui/Button.tsx";
@@ -13,7 +15,7 @@ import GuideHelpButton from "@/components/ui/GuideHelpButton.tsx";
 import Input from "@/components/ui/Input.tsx";
 import Select from "@/components/ui/Select.tsx";
 import { getHostname, safeParseUrl } from "@/core/domain-utils.ts";
-import { t } from "@/core/i18n.ts";
+import { type TranslationKey, t } from "@/core/i18n.ts";
 import { navigate, selectItem } from "@/core/navigation.ts";
 import { accountStore, uiStore } from "@/core/store.ts";
 import { captureVisibleTab, getCurrentTab } from "@/core/tabs.ts";
@@ -26,7 +28,7 @@ import {
   mapFormStateToVaultItem,
 } from "@/features/vault/item-edit/vault-edit-helper.ts";
 import { getVaultItemStrategy } from "@/features/vault/registry/vault-item-registry.ts";
-import { saveItem } from "@/features/vault/vault-service.ts";
+import { createItem, updateItem } from "@/features/vault/vault-service.ts";
 import {
   deleteVaultItemWithConfirm,
   getVaultItemTitle,
@@ -77,22 +79,38 @@ export const ItemEdit: Component = () => {
       setFormState(reconcile(getInitialFormState(item)));
     }
 
-    if (!item?.id) {
+    if (!isEdit()) {
       const tabRes = await getCurrentTab();
       if (tabRes.isOk() && tabRes.value?.url) {
         const url = tabRes.value.url;
-        if (
-          !url.startsWith("chrome://") &&
-          !url.startsWith("chrome-extension://") &&
-          !url.startsWith("about:") &&
-          !url.startsWith("edge://")
-        ) {
+        const isRestrictedUrl =
+          url.startsWith("chrome://") ||
+          url.startsWith("chrome-extension://") ||
+          url.startsWith("about:") ||
+          url.startsWith("edge://") ||
+          url.startsWith("devtools://") ||
+          url.startsWith("chrome-search://") ||
+          url.startsWith("view-source:");
+
+        if (!isRestrictedUrl) {
           if (formState.itemType === VaultItemType.Login) {
-            updateForm("uris", [{ uri: url }]);
+            const hasExistingUris = formState.uris.some(
+              (u) => u.uri && u.uri.trim() !== "",
+            );
+            if (!hasExistingUris) {
+              updateForm("uris", [{ uri: url }]);
+            }
           }
-          const hostname = getHostname(url);
-          if (hostname) {
-            updateForm("name", hostname);
+
+          const fallbackName = getVaultItemFallbackName(formState.itemType);
+          const currentName = formState.name.trim();
+          const shouldUpdateName = !currentName || currentName === fallbackName;
+
+          if (shouldUpdateName) {
+            const hostname = getHostname(url);
+            if (hostname) {
+              updateForm("name", hostname);
+            }
           }
         }
       }
@@ -140,7 +158,7 @@ export const ItemEdit: Component = () => {
   };
 
   const handleDelete = async () => {
-    if (!uiStore.selectedItem?.id) return;
+    if (!isEdit() || !uiStore.selectedItem) return;
     setError("");
     const success = await deleteVaultItemWithConfirm(uiStore.selectedItem);
     if (!success && uiStore.toastType === "error") {
@@ -176,14 +194,26 @@ export const ItemEdit: Component = () => {
 
     setGlobalLoading(true);
     const itemData = mapFormStateToVaultItem(formState, uiStore.selectedItem);
-    const res = await saveItem(itemData);
+    const editing = isEdit();
+    let res: Result<void, TranslationKey>;
+
+    if (editing) {
+      const id = uiStore.selectedItem?.id;
+      if (!id) {
+        setGlobalLoading(false);
+        return;
+      }
+      res = await updateItem(id, itemData);
+    } else {
+      res = await createItem(itemData);
+    }
     setGlobalLoading(false);
     if (res.isOk()) {
-      const msg = getVaultItemToastMsg(formState.itemType, isEdit());
+      const msg = getVaultItemToastMsg(formState.itemType, editing);
       showToast(msg, "success");
 
       // If was editing, return to detail view, else go back to vault
-      if (isEdit()) {
+      if (editing) {
         // Update selectedItem locally so the detail view shows updated content immediately
         const savedItem = accountStore.vaultItems.find(
           (v) => v.id === uiStore.selectedItem?.id,
@@ -321,7 +351,7 @@ export const ItemEdit: Component = () => {
         <div class="detail-footer-bar">
           <div class="d-flex gap-8">
             <Button type="submit" variant="primary">
-              {uiStore.selectedItem?.id ? t("btn_save") : t("btn_create")}
+              {isEdit() ? t("btn_save") : t("btn_create")}
             </Button>
             <Button type="button" variant="secondary" onClick={handleCancel}>
               {t("btn_cancel")}

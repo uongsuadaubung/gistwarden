@@ -54,7 +54,7 @@ import {
   deleteVaultItems,
   moveVaultItemsToFolder,
   renameFolder,
-  saveItem,
+  updateItem,
 } from "@/features/vault/vault-service.ts";
 import { deleteVaultItemWithConfirm } from "@/features/vault/vault-utils.ts";
 import {
@@ -412,12 +412,8 @@ export const Vault: Component = () => {
 
   const handleFavoriteItem = async (item: VaultItem, e: MouseEvent) => {
     e.stopPropagation();
-    const updated = {
-      ...item,
-      favorite: !item.favorite,
-    };
     setGlobalLoading(true);
-    const res = await saveItem(updated);
+    const res = await updateItem(item.id, { favorite: !item.favorite });
     setGlobalLoading(false);
     if (res.isOk()) {
       showToast(t("toast_success"), "success");

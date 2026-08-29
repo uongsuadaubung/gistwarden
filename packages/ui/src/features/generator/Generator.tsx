@@ -42,22 +42,6 @@ export const Generator: Component = () => {
   const [copied, setCopied] = createSignal(false);
   const [currentDomain, setCurrentDomain] = createSignal("");
 
-  onMount(async () => {
-    generate();
-    const tabRes = await getCurrentTab();
-    if (tabRes.isOk() && tabRes.value?.url) {
-      setCurrentDomain(extractDomainFromTabUrl(tabRes.value.url));
-    }
-  });
-
-  const generate = () => {
-    if (activeTab() === "password") {
-      handleGeneratePassword();
-    } else if (activeTab() === "passphrase") {
-      handleGeneratePassphrase();
-    }
-  };
-
   const handleGeneratePassword = () => {
     const finalLen = Number(length());
     if (Number.isNaN(finalLen) || finalLen < 9 || finalLen > 128) return;
@@ -97,6 +81,22 @@ export const Generator: Component = () => {
       setPassword(res.value);
     }
   };
+
+  const generate = () => {
+    if (activeTab() === "password") {
+      handleGeneratePassword();
+    } else if (activeTab() === "passphrase") {
+      handleGeneratePassphrase();
+    }
+  };
+
+  onMount(async () => {
+    generate();
+    const tabRes = await getCurrentTab();
+    if (tabRes.isOk() && tabRes.value?.url) {
+      setCurrentDomain(extractDomainFromTabUrl(tabRes.value.url));
+    }
+  });
 
   const handleCopy = async () => {
     const pwd = password();

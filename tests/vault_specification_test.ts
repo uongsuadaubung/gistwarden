@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
   DomainMatchSpec,
   FavoriteSpec,
-  filterVaultItemsBySpec,
   FolderMatchSpec,
+  filterVaultItemsBySpec,
   SearchQuerySpec,
   TypeMatchSpec,
   UriMatchMode,
@@ -65,7 +65,9 @@ describe("Vault Specification Pattern", () => {
     const folder1OrGitlabSpec = new FolderMatchSpec("folder-1").or(
       new DomainMatchSpec("https://gitlab.com"),
     );
-    expect(filterVaultItemsBySpec(allItems, folder1OrGitlabSpec)).toHaveLength(3);
+    expect(filterVaultItemsBySpec(allItems, folder1OrGitlabSpec)).toHaveLength(
+      3,
+    );
 
     const nonFavSpec = new FavoriteSpec().not();
     const nonFavs = filterVaultItemsBySpec(allItems, nonFavSpec);

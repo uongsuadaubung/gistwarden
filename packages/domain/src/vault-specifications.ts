@@ -1,11 +1,14 @@
-import { isLoginItem, VaultItemType } from "./vault-types.ts";
 import {
-  type FolderId,
-  type UriMatchMode,
-  type VaultItem,
-  type VaultItemId,
+  isExactDomainMatch,
+  isMatchingDomain,
+} from "./vault-domain-matching.ts";
+import type {
+  FolderId,
+  UriMatchMode,
+  VaultItem,
+  VaultItemId,
 } from "./vault-schemas.ts";
-import { isExactDomainMatch, isMatchingDomain } from "./vault-domain-matching.ts";
+import { isLoginItem, type VaultItemType } from "./vault-types.ts";
 
 export interface ISpecification<T> {
   isSatisfiedBy(candidate: T): boolean;

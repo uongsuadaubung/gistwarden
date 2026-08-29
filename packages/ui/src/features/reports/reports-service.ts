@@ -10,7 +10,7 @@ import {
   sendBackgroundMessage,
 } from "@gistwarden/orchestrator";
 import { t } from "@/core/i18n.ts";
-import { saveItem } from "@/features/vault/vault-service.ts";
+import { updateItem } from "@/features/vault/vault-service.ts";
 
 export function getUnsecureLoginItems(
   vaultItems?: VaultItem[] | null,
@@ -46,7 +46,7 @@ export async function upgradeLoginItemToHttps(
     },
   };
 
-  await saveItem(updatedItem);
+  await updateItem(item.id, updatedItem);
 }
 
 export function formatVaultItemUsername(item: LoginVaultItem): string {

@@ -20,8 +20,8 @@ import {
   type TranslationKey,
   type TrashVaultItem,
   type VaultItem,
-  type VaultItemId,
   VaultItemBuilder,
+  type VaultItemId,
   VaultItemType,
   VaultListSchema,
   type VaultPayload,
@@ -226,7 +226,7 @@ export async function deleteFolderUseCase(
   );
 }
 
-export async function saveItemUseCase(
+export async function createItemUseCase(
   currentPayload: VaultPayload,
   key: CryptoKey,
   salt: string,
@@ -239,22 +239,66 @@ export async function saveItemUseCase(
     salt,
     vaultMode,
     (payload) => {
-      let updatedList: VaultItem[];
-      if (item.id) {
-        updatedList = payload.items.map((v) => {
-          if (v.id !== item.id) return v;
-          return mergeVaultItem(v, item);
-        });
-      } else {
-        const newItem = createDefaultVaultItem(item);
-        updatedList = [...payload.items, newItem];
+      const newItem = createDefaultVaultItem(item);
+      return {
+        ...payload,
+        items: [...payload.items, newItem],
+      };
+    },
+  );
+}
+
+export async function updateItemUseCase(
+  currentPayload: VaultPayload,
+  key: CryptoKey,
+  salt: string,
+  vaultMode: VaultMode,
+  id: VaultItemId,
+  patch: Partial<VaultItem>,
+): Promise<Result<VaultPayload, TranslationKey>> {
+  return await executeVaultMutationUseCase(
+    currentPayload,
+    key,
+    salt,
+    vaultMode,
+    (payload) => {
+      const existingItem = payload.items.find((v) => v.id === id);
+      if (!existingItem) {
+        return payload;
       }
+      const updatedList = payload.items.map((v) =>
+        v.id === id ? mergeVaultItem(v, patch) : v,
+      );
       return {
         ...payload,
         items: updatedList,
       };
     },
   );
+}
+
+export async function saveItemUseCase(
+  currentPayload: VaultPayload,
+  key: CryptoKey,
+  salt: string,
+  vaultMode: VaultMode,
+  item: Partial<VaultItem>,
+): Promise<Result<VaultPayload, TranslationKey>> {
+  const isExisting = item.id
+    ? currentPayload.items.some((v) => v.id === item.id)
+    : false;
+
+  if (isExisting && item.id) {
+    return await updateItemUseCase(
+      currentPayload,
+      key,
+      salt,
+      vaultMode,
+      item.id,
+      item,
+    );
+  }
+  return await createItemUseCase(currentPayload, key, salt, vaultMode, item);
 }
 
 export async function deleteVaultItemsUseCase(

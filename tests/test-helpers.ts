@@ -4,15 +4,17 @@ import {
   asGitHubAccessToken,
   asVaultItemId,
   createDefaultVaultItem,
-  mergeVaultItem,
   SESSION_KEY_PENDING_SYNC_TOKEN,
   sessionManager,
+  type VaultItem,
+  type VaultItemId,
   VaultItemType,
   View,
 } from "@gistwarden/domain";
 import {
   addFolderUseCase,
   clearDerivedKey,
+  createItemUseCase,
   deleteFolderUseCase,
   deleteGistRoute,
   deleteLocalVaultRoute,
@@ -25,6 +27,7 @@ import {
   registerInMemoryRoute,
   renameFolderUseCase,
   restoreVaultItemUseCase,
+  updateItemUseCase,
   uploadToGistRoute,
   vaultSecurityContext,
 } from "@gistwarden/orchestrator";
@@ -462,72 +465,127 @@ export async function runMasterVaultE2EFlow(mode: VaultMode): Promise<void> {
     },
   });
 
-  const addMutationRes = await executeVaultMutationUseCase(
-    {
-      folders: accountStore.folders,
-      items: [loginItem, noteItem, cardItem, identityItem, sshKeyItem],
-      trash: accountStore.trashItems,
-    },
-    key,
-    salt,
-    mode,
-    (p) => p,
-  );
-  assert(addMutationRes.isOk(), "Adding items failed");
-  setAccountStore("vaultItems", addMutationRes.value.items);
+  // Step 4: Create ALL 5 Vault Item Types assigned to initial folders via createItemUseCase
+  let currentPayload = {
+    folders: accountStore.folders,
+    items: accountStore.vaultItems,
+    trash: accountStore.trashItems,
+  };
+
+  for (const item of [
+    loginItem,
+    noteItem,
+    cardItem,
+    identityItem,
+    sshKeyItem,
+  ]) {
+    const createRes = await createItemUseCase(
+      currentPayload,
+      key,
+      salt,
+      mode,
+      item,
+    );
+    assert(createRes.isOk(), `Creating item ${item.name} failed`);
+    currentPayload = createRes.value;
+  }
+
+  setAccountStore("vaultItems", currentPayload.items);
   assertEquals(accountStore.vaultItems.length, 5);
 
-  // Step 5: Edit Vault Items & MOVE ITEMS BETWEEN FOLDERS (Chuyển đổi Folder)
+  // Step 5: Edit Vault Items & MOVE ITEMS BETWEEN FOLDERS via updateItemUseCase
   const updatedLoginPassword = "UpdatedNewPassword999!";
   const updatedNoteText = "Recovery keys updated: XXXX-YYYY-ZZZZ";
   const updatedCardCvv = "888";
   const updatedIdentityPhone = "0987654321";
   const updatedSshFingerprint = "SHA256:updated9999ffff";
 
-  const updatedItems = accountStore.vaultItems.map((item) => {
-    if (item.type === VaultItemType.Login) {
-      return mergeVaultItem(item, {
-        folderId: personalFolderId,
-        login: { ...item.login, password: updatedLoginPassword },
-      });
-    }
-    if (item.type === VaultItemType.SecureNote) {
-      return mergeVaultItem(item, {
-        notes: updatedNoteText,
-      });
-    }
-    if (item.type === VaultItemType.Card) {
-      return mergeVaultItem(item, {
-        card: { ...item.card, code: updatedCardCvv },
-      });
-    }
-    if (item.type === VaultItemType.Identity) {
-      return mergeVaultItem(item, {
-        identity: { ...item.identity, phone: updatedIdentityPhone },
-      });
-    }
-    if (item.type === VaultItemType.SshKey) {
-      return mergeVaultItem(item, {
-        folderId: workFolderId,
-        sshKey: { ...item.sshKey, keyFingerprint: updatedSshFingerprint },
-      });
-    }
-    return item;
-  });
-
-  const editMutationRes = await executeVaultMutationUseCase(
+  const editPatches: Array<{ id: VaultItemId; patch: Partial<VaultItem> }> = [
     {
-      folders: accountStore.folders,
-      items: updatedItems,
-      trash: accountStore.trashItems,
+      id: loginItem.id,
+      patch: {
+        folderId: personalFolderId,
+        login: {
+          username: "dev_user@company.com",
+          password: updatedLoginPassword,
+          totp: "JBSWY3DPEHPK3PXP",
+          uris: [{ uri: "https://github.com/company", match: 1 }],
+          fido2Credentials: [],
+        },
+      },
     },
-    key,
-    salt,
-    mode,
-    (p) => p,
-  );
-  assert(editMutationRes.isOk(), "Editing items failed");
-  setAccountStore("vaultItems", editMutationRes.value.items);
+    {
+      id: noteItem.id,
+      patch: {
+        notes: updatedNoteText,
+      },
+    },
+    {
+      id: cardItem.id,
+      patch: {
+        card: {
+          cardholderName: "NGUYEN VAN A",
+          brand: "Visa",
+          number: "4111222233334444",
+          expMonth: "12",
+          expYear: "2028",
+          code: updatedCardCvv,
+        },
+      },
+    },
+    {
+      id: identityItem.id,
+      patch: {
+        identity: {
+          title: "Ông",
+          firstName: "Văn A",
+          middleName: "",
+          lastName: "Nguyễn",
+          username: "van_a_corp",
+          company: "Gistwarden Corp",
+          ssn: "0123456789",
+          passportNumber: "B1234567",
+          licenseNumber: "",
+          email: "ceo@company.com",
+          phone: updatedIdentityPhone,
+          address1: "123 Đường Lớn, Phường 1",
+          address2: "",
+          address3: "",
+          city: "TP Hồ Chí Minh",
+          state: "",
+          postalCode: "",
+          country: "VN",
+        },
+      },
+    },
+    {
+      id: sshKeyItem.id,
+      patch: {
+        folderId: workFolderId,
+        sshKey: {
+          publicKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... dev_key",
+          privateKey:
+            "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAA...\n-----END OPENSSH PRIVATE KEY-----",
+          keyFingerprint: updatedSshFingerprint,
+        },
+      },
+    },
+  ];
+
+  for (const { id, patch } of editPatches) {
+    const editRes = await updateItemUseCase(
+      currentPayload,
+      key,
+      salt,
+      mode,
+      id,
+      patch,
+    );
+    assert(editRes.isOk(), `Updating item ${id} failed`);
+    currentPayload = editRes.value;
+  }
+
+  setAccountStore("vaultItems", currentPayload.items);
 
   // Verify item folder movements
   const movedLogin = accountStore.vaultItems.find(

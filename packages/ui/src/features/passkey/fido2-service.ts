@@ -23,7 +23,7 @@ import {
   generatePasskeyAssertResponse,
   generatePasskeyRegisterResponse,
 } from "@/features/passkey/passkey-crypto.ts";
-import { saveItem } from "@/features/vault/vault-service.ts";
+import { createItem, updateItem } from "@/features/vault/vault-service.ts";
 
 export const Fido2RequestSchema = z
   .object({
@@ -173,7 +173,7 @@ export async function registerFido2Passkey(
         fido2Credentials: updatedCredentials,
       },
     };
-    saveRes = await saveItem(updatedItem);
+    saveRes = await updateItem(existingItem.id, updatedItem);
   } else {
     const newItem: Partial<VaultItem> = {
       name: rp.name || rp.id || "",
@@ -185,7 +185,7 @@ export async function registerFido2Passkey(
         fido2Credentials: [newCred],
       },
     };
-    saveRes = await saveItem(newItem);
+    saveRes = await createItem(newItem);
   }
 
   if (saveRes.isErr()) {
@@ -241,7 +241,7 @@ export async function assertFido2Passkey(
     },
   };
 
-  const saveRes = await saveItem(updatedItem);
+  const saveRes = await updateItem(originalItem.id, updatedItem);
   if (saveRes.isErr()) {
     return err(saveRes.error);
   }
