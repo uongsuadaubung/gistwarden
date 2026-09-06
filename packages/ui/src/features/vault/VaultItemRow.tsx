@@ -27,7 +27,6 @@ interface VaultItemRowProps {
   onCloneItem: (item: VaultItem, e: MouseEvent) => void;
   onDeleteItem: (item: VaultItem, e: MouseEvent) => void;
   isSuggested?: boolean;
-  onFillItem?: (item: VaultItem, e: MouseEvent) => void;
   isSelectMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (itemId: VaultItemId, e: MouseEvent) => void;
@@ -99,24 +98,6 @@ export const VaultItemRow: Component<VaultItemRowProps> = (props) => {
       {/* Options Copy Dropdown Button */}
       <Show when={!props.isSelectMode}>
         <div class="item-actions pos-relative">
-          <Show
-            when={
-              props.isSuggested &&
-              Number(props.item.type) === VaultItemType.Login
-            }
-          >
-            <button
-              type="button"
-              class="fill-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onFillItem?.(props.item, e);
-              }}
-            >
-              Fill
-            </button>
-          </Show>
-
           <Show when={getUri()}>
             {(uri) => (
               <button

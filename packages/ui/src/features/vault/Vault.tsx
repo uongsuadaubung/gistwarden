@@ -28,7 +28,6 @@ import FolderModal from "@/components/ui/FolderModal.tsx";
 import { Header } from "@/components/ui/Header.tsx";
 import { Input } from "@/components/ui/Input.tsx";
 import {
-  MSG_AUTOFILL_CREDENTIALS,
   SESSION_KEY_SELECTED_FILTER_TYPE,
   SESSION_KEY_SHOW_FILTER_PANEL,
   SESSION_KEY_VAULT_SEARCH_QUERY,
@@ -41,7 +40,7 @@ import {
   createSessionStorageSignal,
 } from "@/core/session-signal.ts";
 import { accountStore, settingsStore, uiStore } from "@/core/store.ts";
-import { getCurrentTab, sendMessageToTab } from "@/core/tabs.ts";
+import { getCurrentTab } from "@/core/tabs.ts";
 import { generateTotpSafe } from "@/core/totp-utils.ts";
 import { View } from "@/core/types.ts";
 import MoveToFolderModal from "@/features/vault/components/MoveToFolderModal.tsx";
@@ -63,12 +62,6 @@ import {
   ListCheckIcon,
   SearchIcon,
 } from "@/icons/svg/index.ts";
-
-const AutofillResponseSchema = z
-  .object({
-    success: z.boolean(),
-  })
-  .readonly();
 
 const VaultItemTypeSchema = z.enum(VaultItemType);
 
@@ -442,54 +435,6 @@ export const Vault: Component = () => {
     await deleteVaultItemWithConfirm(item, () => {});
   };
 
-  const handleFillItem = async (item: VaultItem, e: MouseEvent) => {
-    e.stopPropagation();
-    if (item.type !== VaultItemType.Login) return;
-
-    const username = item.login.username || "";
-    const password = item.login.password || "";
-
-    const activeTabRes = await getCurrentTab();
-    if (activeTabRes.isOk() && activeTabRes.value) {
-      const activeTab = activeTabRes.value;
-      if (activeTab.id !== undefined) {
-        const rawResponseRes = await sendMessageToTab(activeTab.id, {
-          type: MSG_AUTOFILL_CREDENTIALS,
-          username,
-          password,
-          totp: item.login.totp || "",
-          fields: item.fields || [],
-        });
-
-        if (rawResponseRes.isOk()) {
-          const parseResult = AutofillResponseSchema.safeParse(
-            rawResponseRes.value,
-          );
-          if (parseResult.success && parseResult.data.success) {
-            const rawSecret = item.login.totp || "";
-            if (rawSecret.trim() && settingsStore.autoCopyTotp) {
-              const generateTotpResult = generateTotpSafe(
-                rawSecret,
-                settingsStore.timeOffset,
-              );
-              if (generateTotpResult.isOk()) {
-                await copyToClipboardWithMessage(
-                  generateTotpResult.value,
-                  "toast_totp_copied",
-                );
-                return;
-              }
-            }
-            showToast(t("toast_success"), "success");
-          }
-        } else {
-          console.warn("Autofill failed:", rawResponseRes.error);
-          showToast(t(rawResponseRes.error), "error");
-        }
-      }
-    }
-  };
-
   const handleAddNewItem = (type: VaultItemType) => {
     selectItem(createDefaultVaultItem(type), View.ItemEdit);
   };
@@ -608,7 +553,6 @@ export const Vault: Component = () => {
                   onCloneItem={handleCloneItem}
                   onDeleteItem={handleDeleteItem}
                   isSuggested={true}
-                  onFillItem={handleFillItem}
                   isSelectMode={isSelectMode()}
                   isSelected={selectedItemIds().has(item.id)}
                   onToggleSelect={toggleSelectItem}

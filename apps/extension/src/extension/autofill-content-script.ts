@@ -8,7 +8,6 @@ import {
 } from "@gistwarden/orchestrator";
 import { writeClipboardText } from "@/core/clipboard-utils.ts";
 import {
-  MSG_AUTOFILL_CREDENTIALS,
   MSG_CREDENTIALS_SUBMITTED,
   MSG_SHOW_NOTIFICATION_BAR,
   STORAGE_KEY,
@@ -30,46 +29,8 @@ import {
 import { showNotificationBar } from "@/features/notification/index.ts";
 
 // Listen for messages from background script
-onExtensionMessage((message, _sender, sendResponse) => {
+onExtensionMessage((message) => {
   if (!isRecord(message)) return;
-
-  if (message.type === MSG_AUTOFILL_CREDENTIALS) {
-    const username =
-      typeof message.username === "string" ? message.username : undefined;
-    const password =
-      typeof message.password === "string" ? message.password : undefined;
-    const customFields = Array.isArray(message.fields)
-      ? message.fields
-      : undefined;
-    const totp = typeof message.totp === "string" ? message.totp : undefined;
-    const success = performAutofill(
-      username,
-      password,
-      false,
-      customFields,
-      totp,
-    );
-
-    if (totp) {
-      void (async () => {
-        const storageRes = await getLocalItem(STORAGE_KEY);
-        let autoCopy = true;
-        const raw = storageRes.isOk() ? storageRes.value : null;
-        if (isRecord(raw) && typeof raw.autoCopyTotp === "boolean") {
-          autoCopy = raw.autoCopyTotp;
-        }
-        if (autoCopy) {
-          const totpRes = generateTotpSafe(totp);
-          if (totpRes.isOk()) {
-            writeClipboardText(totpRes.value);
-          }
-        }
-      })();
-    }
-
-    sendResponse({ success });
-    return;
-  }
 
   if (message.type === MSG_SHOW_NOTIFICATION_BAR) {
     const parseRes = NotificationPayloadSchema.safeParse(message.payload);
