@@ -5,4 +5,6 @@ scratch/
 web_test_selfhost/data/
 *.tsbuildinfo
 *.d.ts
+.wrangler/
+.dev.vars
 

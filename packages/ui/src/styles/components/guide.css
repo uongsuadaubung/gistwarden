@@ -708,6 +708,20 @@ body.guide-body-native {
           }
         }
       }
+
+      &.success-callout {
+        background: var(--success-translucent-15);
+        border: var(--border-std-success-translucent);
+        border-left: var(--border-accent-lg-success);
+
+        .warning-icon {
+          color: var(--success);
+        }
+
+        .warning-content h4 {
+          color: var(--success);
+        }
+      }
     }
 
     .step-box {

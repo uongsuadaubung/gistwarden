@@ -56,7 +56,7 @@ flowchart TD
     
     %% OAuth Flow
     CheckAuthType -- OAuth 2.0 (Khuyên dùng) --> TriggerOAuth[Kích hoạt MSG_START_GITHUB_OAUTH]
-    TriggerOAuth --> OpenCloudflareWorker[Bật luồng xác thực qua Cloudflare Worker Worker URL]
+    TriggerOAuth --> OpenCloudflareWorker[Bật luồng xác thực qua Cloudflare Worker URL]
     OpenCloudflareWorker --> ExchangeToken[Nhận GitHub Personal Token từ OAuth Callback]
     
     %% Personal Access Token (PAT)

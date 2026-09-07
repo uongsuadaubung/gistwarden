@@ -49,6 +49,7 @@
   --border-accent-lg-warning-amber: var(--border-width-accent-lg) solid var(--warning-amber);
   --border-accent-lg-warning-fido: var(--border-width-accent-lg) solid var(--fido2-bg-warning);
   --border-accent-lg-error: var(--border-width-accent-lg) solid var(--error);
+  --border-accent-lg-success: var(--border-width-accent-lg) solid var(--success);
 
   /* Spacing System Tokens */
   --space-0-5: 2px;

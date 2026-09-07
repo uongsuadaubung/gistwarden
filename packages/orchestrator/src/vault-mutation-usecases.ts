@@ -1,7 +1,6 @@
 import {
   asFolderId,
   asGistId,
-  asVaultItemId,
   createDefaultVaultItem,
   decryptData,
   encryptData,
@@ -22,7 +21,6 @@ import {
   type VaultItem,
   VaultItemBuilder,
   type VaultItemId,
-  VaultItemType,
   VaultListSchema,
   type VaultPayload,
   VaultPayloadSchema,

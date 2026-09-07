@@ -47,6 +47,7 @@
     { "path": "./packages/orchestrator" },
     { "path": "./packages/ui" },
     { "path": "./apps/extension" },
-    { "path": "./apps/web" }
+    { "path": "./apps/web" },
+    { "path": "./apps/worker" }
   ]
 }

@@ -22,7 +22,8 @@ function getFilesRecursive(dir: string): string[] {
           file !== "dist" &&
           file !== ".git" &&
           file !== "scratch" &&
-          file !== "wasm"
+          file !== "wasm" &&
+          file !== "worker"
         ) {
           results.push(...getFilesRecursive(filePath));
         }

@@ -24,7 +24,7 @@ import {
 import { VaultItemType } from "./vault-types.ts";
 
 export abstract class BaseVaultItemBuilder<
-  TBuilder extends BaseVaultItemBuilder<TBuilder, TItem>,
+  _TBuilder extends BaseVaultItemBuilder<_TBuilder, TItem>,
   TItem extends VaultItem,
 > {
   protected id?: VaultItemId;
@@ -197,15 +197,8 @@ export class CardItemBuilder extends BaseVaultItemBuilder<
     code: "",
   };
 
-  setCardDetails(details: Partial<CardDetails>): this {
-    this.card = {
-      cardholderName: details.cardholderName ?? this.card.cardholderName,
-      brand: details.brand ?? this.card.brand,
-      number: details.number ?? this.card.number,
-      expMonth: details.expMonth ?? this.card.expMonth,
-      expYear: details.expYear ?? this.card.expYear,
-      code: details.code ?? this.card.code,
-    };
+  setCardDetails(card: Partial<CardDetails>): this {
+    this.card = { ...this.card, ...card };
     return this;
   }
 

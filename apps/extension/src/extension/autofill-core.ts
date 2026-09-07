@@ -136,7 +136,7 @@ function autofillCustomFields(
   const credContext: AutofillCredentialContext = { username, password, totp };
 
   for (const field of customFields) {
-    if (!field.name || !field.name.trim()) continue;
+    if (!field.name?.trim()) continue;
     if (field.type === CustomFieldType.Divider) continue;
 
     const fieldNameLower = field.name.trim().toLowerCase();
@@ -531,8 +531,7 @@ export function extractSubmittedCredentials(
   return {
     domain,
     url: currentUrl,
-    username:
-      usernameInput && usernameInput.value ? usernameInput.value.trim() : "",
+    username: usernameInput?.value ? usernameInput.value.trim() : "",
     password: chosenPasswordInput.value,
   };
 }

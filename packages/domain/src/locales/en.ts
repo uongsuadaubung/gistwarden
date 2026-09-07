@@ -674,7 +674,7 @@ export default {
     "{login_provider_self_hosted} Provider allows you to build or run your own personal server (VPS, Docker, Cloudflare Workers, NAS Synology...) to store and synchronize your encrypted vault safely.",
   guide_start_self_hosted_step1_title: "1. Enter Server Base URL",
   guide_start_self_hosted_step1_desc:
-    "Enter your server URL (e.g. https://abc.com or http://192.168.1.100:3000). {APP_NAME} will connect directly to your server endpoints.",
+    "Enter your server URL (or use the ready-to-use free Cloudflare Worker server at: https://gistwarden.uongsuadaubung.workers.dev). {APP_NAME} will connect directly to your server endpoints.",
   guide_start_self_hosted_step2_title: "2. Register or Login Server Account",
   guide_start_self_hosted_step2_desc:
     "Switch to Register tab to create a new server account (POST /auth/register) or Login (POST /auth/login) to receive your Access Token.",
@@ -730,10 +730,21 @@ export default {
   self_hosted_error_invalid_credentials: "Invalid server username or password.",
   self_hosted_error_network:
     "Connection error to Self-Hosted server. Please check the URL.",
+  self_hosted_error_username_too_short:
+    "Server username must be at least 2 characters.",
+  self_hosted_error_username_too_long:
+    "Server username must not exceed 64 characters.",
+  self_hosted_error_password_too_short:
+    "Server password must be at least 6 characters.",
+  self_hosted_error_missing_fields:
+    "Please enter both server username and password.",
 
   guide_self_hosted_why_title: "Why Are These REST APIs Needed?",
   guide_self_hosted_why_desc:
     "The {login_provider_self_hosted} API is designed with 6 standardized REST endpoints, empowering users to host their own private infrastructure (Private Cloud/VPS) independently of GitHub. All vault contents are end-to-end encrypted (E2EE) using AES-256-GCM on the client before being sent to the server.",
+  guide_self_hosted_public_server_title: "Free Ready-to-Use Cloudflare Server",
+  guide_self_hosted_public_server_desc:
+    "If you do not want to use GitHub Gist or Local Vault and don't have the resources to host your own server, you can directly use the official server provided at https://gistwarden.uongsuadaubung.workers.dev. Thanks to End-to-End Encryption (E2EE), your vault data is fully encrypted with your Master Password locally before reaching the server, ensuring absolute privacy.",
   guide_self_hosted_matrix_title:
     "1-to-1 API Feature Comparison Matrix vs GitHub API",
   guide_self_hosted_matrix_col_action: "App Operation",

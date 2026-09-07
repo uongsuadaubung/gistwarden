@@ -1,0 +1,13 @@
+{
+  "name": "@gistwarden/worker",
+  "version": "1.0.0",
+  "description": "GistWarden Unified API Worker (Hono + Cloudflare D1)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:init:local": "wrangler d1 execute gistwarden-db --local --file=migrations/0000_init.sql",
+    "d1:init:remote": "wrangler d1 execute gistwarden-db --remote --file=migrations/0000_init.sql"
+  }
+}

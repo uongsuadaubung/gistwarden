@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "gistwarden",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gistwarden-db",
+      "database_id": "dfa3441e-9da5-46c2-8bcf-adb2f413f4dc"
+    }
+  ],
+  "vars": {
+    "GITHUB_CLIENT_ID": "Ov23liRxwWqLXD5AOkNW"
+  }
+}

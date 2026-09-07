@@ -74,6 +74,21 @@ export const SelfHostedSetupForm: Component<SelfHostedSetupFormProps> = (
       return;
     }
 
+    if (authMode() === "register") {
+      if (authData.username.length < 2) {
+        setErrorMessage(t("self_hosted_error_username_too_short"));
+        return;
+      }
+      if (authData.username.length > 64) {
+        setErrorMessage(t("self_hosted_error_username_too_long"));
+        return;
+      }
+      if (authData.password.length < 6) {
+        setErrorMessage(t("self_hosted_error_password_too_short"));
+        return;
+      }
+    }
+
     // Step 2: ONLY AFTER Username & Password pass Zod validation: Check Server URL!
     const url = serverUrl().trim();
     if (!url) {

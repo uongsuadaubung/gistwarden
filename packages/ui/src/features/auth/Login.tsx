@@ -1,9 +1,5 @@
 import { SESSION_KEY_ENCRYPTED_VAULT } from "@gistwarden/domain";
-import {
-  checkVaultConfiguredUseCase,
-  checkVaultStatusUseCase,
-  startGithubOauthRoute,
-} from "@gistwarden/orchestrator";
+import { startGithubOauthRoute } from "@gistwarden/orchestrator";
 import {
   DEFAULT_MASTER_PASSWORD_SECURITY_CONFIG,
   DEFAULT_SYNC_CONFIG,
@@ -189,13 +185,28 @@ export const Login: Component = () => {
       if (!response.ok) {
         setGlobalLoading(false);
         setGistStatus("exists");
-        if (response.status === 409 || data.error === "user_already_exists") {
+        const errorCode = data.error || data.code;
+        if (response.status === 409 || errorCode === "user_already_exists") {
           setError(t("self_hosted_error_user_exists"));
         } else if (
           response.status === 401 ||
-          data.error === "invalid_credentials"
+          errorCode === "invalid_credentials"
         ) {
           setError(t("self_hosted_error_invalid_credentials"));
+        } else if (errorCode === "username_too_short") {
+          setError(t("self_hosted_error_username_too_short"));
+        } else if (errorCode === "username_too_long") {
+          setError(t("self_hosted_error_username_too_long"));
+        } else if (errorCode === "password_too_short") {
+          setError(t("self_hosted_error_password_too_short"));
+        } else if (
+          errorCode === "missing_fields" ||
+          errorCode === "empty_username" ||
+          errorCode === "empty_password"
+        ) {
+          setError(t("self_hosted_error_missing_fields"));
+        } else if (data.message && typeof data.message === "string") {
+          setError(data.message);
         } else {
           setError(t("self_hosted_error_network"));
         }

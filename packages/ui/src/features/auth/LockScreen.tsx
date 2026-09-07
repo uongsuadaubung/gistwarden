@@ -13,7 +13,6 @@ import { t } from "@/core/i18n.ts";
 import {
   accountStore,
   resetAccountStore,
-  setAccountStore,
   settingsStore,
 } from "@/core/store.ts";
 import {
@@ -117,7 +116,6 @@ export const LockScreen: Component = () => {
             ? `${accountStore.syncConfig.username}`
             : t("login_provider_self_hosted"),
         };
-      case "local_storage":
       default:
         return {
           icon: <VaultIcon size={14} />,

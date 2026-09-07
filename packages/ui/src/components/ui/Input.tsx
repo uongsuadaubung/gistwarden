@@ -16,7 +16,6 @@ export const Input: Component<InputProps> = (props) => {
   let inputRef: HTMLInputElement | undefined;
   const [isCapsLockOn, setIsCapsLockOn] = createSignal(false);
   const [showPassword, setShowPassword] = createSignal(false);
-  const wasPassword = props.type === "password";
 
   const handleStepUp = () => {
     if (inputRef && !props.disabled) {

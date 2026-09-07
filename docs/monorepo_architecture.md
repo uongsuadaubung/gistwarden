@@ -64,8 +64,10 @@ Hệ thống mã nguồn Gistwarden được chia thành 6 tầng rõ ràng vớ
 - **Vai trò**: Chứa các Component giao diện SolidJS, trạng thái UI (Store) và i18n.
 - **Quy tắc nghiêm ngặt**: **Chỉ được phép import từ Orchestrator (L4) và Domain (L1)**. Bị cấm hoàn toàn không được import trực tiếp Repository (L2) hoặc Network (L3).
 
-### Layer 6: Apps (`apps/extension`, `apps/web`)
-- **Vai trò**: Entrypoints đóng gói ứng dụng Extension (Service Worker, Content Scripts, Popup) và Web App độc lập.
+### Layer 6: Apps (`apps/extension`, `apps/web`, `apps/worker`)
+- **`apps/extension`**: Entrypoints đóng gói ứng dụng Extension Manifest V3 (Service Worker, Content Scripts, Popup, Guide, Autofill).
+- **`apps/web`**: Standalone Zero-Knowledge Web App chạy trực tiếp trên trình duyệt.
+- **`apps/worker`**: Cloudflare Edge API Worker xây dựng bằng Hono Framework kết hợp cơ sở dữ liệu Cloudflare D1 (Serverless SQLite), cung cấp backend đồng bộ két mật khẩu E2EE và proxy xác thực GitHub OAuth.
 
 ---
 
@@ -81,6 +83,7 @@ Mỗi package/app có file `tsconfig.json` riêng chứa cấu hình `"composite
 - `packages/network/tsconfig.json`: `"references": [{ "path": "../domain" }]`
 - `packages/orchestrator/tsconfig.json`: `"references": [{ "path": "../domain" }, { "path": "../repository" }, { "path": "../network" }]`
 - `packages/ui/tsconfig.json`: `"references": [{ "path": "../domain" }, { "path": "../orchestrator" }]` *(Không có L2/L3)*
+- `apps/worker/tsconfig.json`: `"composite": true` *(Độc lập, chạy trên môi trường Edge Runtime)*
 
 **Hiệu quả**: Khi bất kỳ file nào trong `packages/ui` cố tình import từ `@gistwarden/repository` hoặc `@gistwarden/network`, lệnh `bun run typecheck` (`tsc -b`) sẽ báo lỗi ngay lập tức:
 ```
@@ -96,18 +99,21 @@ error TS6307: File 'packages/repository/...' is not listed within the file list 
 
 ---
 
-## 4. 🚀 Quy trình Kiểm tra & Build (Verification Commands)
+## 4. 🚀 Quy trình Kiểm tra & Triển Khai (Verification & Deploy Commands)
 
 ```bash
-# 1. Kiểm tra Linter & AST Import Rules
+# 1. Kiểm tra Linter & AST Import Rules (256 file TS + 24 file CSS)
 bun run lint
 
 # 2. Kiểm tra Type-check với TypeScript Project References (Build Mode)
 bun run typecheck
 
-# 3. Chạy 55/55 Unit & E2E Tests
+# 3. Chạy 93 Unit & E2E Tests
 bun test tests/
 
-# 4. Đóng gói ứng dụng (Dev Mode)
+# 4. Đóng gói Extension & Web App (Dev Mode)
 bun run build
+
+# 5. Triển khai Cloudflare Worker Backend lên Edge
+bun run worker:deploy
 ```

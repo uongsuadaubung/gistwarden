@@ -18,7 +18,11 @@
     "biome:format": "biome format --write .",
     "biome:lint": "biome lint .",
     "build:readme": "bun run scripts/generate_readme.ts",
-    "bump-version": "bun run version.ts"
+    "bump-version": "bun run version.ts",
+    "worker:dev": "wrangler dev --config apps/worker/wrangler.json",
+    "worker:deploy": "wrangler deploy --config apps/worker/wrangler.json",
+    "worker:d1:init:local": "wrangler d1 execute gistwarden-db --local --file=apps/worker/migrations/0000_init.sql --config apps/worker/wrangler.json",
+    "worker:d1:init:remote": "wrangler d1 execute gistwarden-db --remote --file=apps/worker/migrations/0000_init.sql --config apps/worker/wrangler.json"
   },
   "dependencies": {
     "@solidjs/router": "^1.0.0",
@@ -29,6 +33,7 @@
     "fflate": "^0.8.3",
     "happy-dom": "^20.11.15",
     "hash-wasm": "^4.12.0",
+    "hono": "^4.7.0",
     "lucide-solid": "^1.37.0",
     "neverthrow": "^8.2.0",
     "otpauth": "^9.5.1",
@@ -40,11 +45,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.11",
+    "@cloudflare/workers-types": "^4.20250224.0",
     "@types/chrome": "^0.2.7",
     "@types/node": "^26.4.0",
     "@types/papaparse": "^5.5.2",
     "bun-plugin-solid": "^1.0.0",
     "bun-types": "^1.4.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "wrangler": "^3.114.0"
   }
 }

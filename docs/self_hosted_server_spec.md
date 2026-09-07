@@ -12,11 +12,12 @@
 2. [Chi Tiết Tất Cả Các REST API Endpoints](#2-chi-tiết-tất-cả-các-rest-api-endpoints)
    - [2.1 POST /auth/register](#21-post-authregister---đăng-ký-tài-khoản)
    - [2.2 POST /auth/login](#22-post-authlogin---đăng-nhập)
-   - [2.3 GET /vault](#23-get-vault---đọc-vault--kiểm-tra-trạng-thái)
-   - [2.4 POST /vault](#24-post-vault---lưu--cập-nhật-vault)
-   - [2.5 DELETE /vault](#25-delete-vault---xóa-vault)
+   - [2.3 GET /user](#23-get-user---xác-thực-token--lấy-thông-tin-người-dùng)
+   - [2.4 GET /vault](#24-get-vault---đọc-vault--kiểm-tra-trạng-thái-standard-vault-payload)
+   - [2.5 POST /vault](#25-post-vault---lưu--cập-nhật-vault-standard-vault-payload)
+   - [2.6 DELETE /vault](#26-delete-vault---xóa-vault)
 3. [Hướng Dẫn Chi Tiết Tất Cả Mã Trạng Thái HTTP (Status Codes Guide)](#3-hướng-dẫn-chi-tiết-tất-cả-mã-trạng-thái-http-status-codes-guide)
-4. [Ma Trận Phản Ứng Mã Lỗi Phía Client (Client Response Matrix)](#4-ma-trận-phản-ứng-mã-lỗi-phía-client-client-response-matrix)
+4. [Ma Trận Phản Ứng Mã Lỗi & Ánh Xạ i18n (Error Codes & Client Response Matrix)](#4-ma-trận-phản-ứng-mã-lỗi--ánh-xạ-i18n-error-codes--client-response-matrix)
 5. [Ví Dụ Triển Khai Server Hoàn Chỉnh (Node.js Reference Implementation)](#5-ví-dụ-triển-khai-server-hoàn-chỉnh-nodejs-reference-implementation)
 
 ---
@@ -34,6 +35,14 @@ Tính năng **Self-Hosted Server Provider** cho phép người dùng vận hành
   * `salt`: Chuỗi muối PBKDF2 (Base64).
   * `iv`: Vector khởi tạo ngẫu nhiên 12-bytes cho AES-GCM (Base64).
   * `ciphertext`: Dữ liệu mã hóa AES-256-GCM (Base64).
+
+### 1.3 ☁️ Máy Chủ Cloudflare Worker Sẵn Dùng (Ready-to-Use Public Server)
+Nếu bạn không muốn sử dụng GitHub Gist hay Local Storage, đồng thời không có điều kiện hoặc nhu cầu tự thuê VPS/vận hành máy chủ riêng, GistWarden đã triển khai sẵn một máy chủ **Cloudflare Worker + Cloudflare D1 (Serverless SQLite)** chính thức tại:
+
+* **Server Base URL**: `https://gistwarden.uongsuadaubung.workers.dev`
+* **Cơ chế lưu trữ**: Cloudflare D1 Database phân tán toàn cầu (Region APAC, latency cực thấp < 10ms).
+* **Bảo mật tuyệt đối**: Nhờ cơ chế **Mã hóa đầu cuối (E2EE)**, toàn bộ két mật khẩu được mã hóa bằng Master Password ngay trên trình duyệt của bạn trước khi đẩy lên máy chủ. Máy chủ và cơ sở dữ liệu chỉ lưu trữ các chuỗi Base64 mã hóa vô nghĩa (`salt`, `iv`, `ciphertext`), hoàn toàn không thể đọc hay biết được mật khẩu của bạn.
+* **Cách sử dụng ngay**: Tại giao diện GistWarden, chọn phương thức **Máy chủ cá nhân (Self-Hosted)** $\rightarrow$ Nhập URL `https://gistwarden.uongsuadaubung.workers.dev` $\rightarrow$ Đăng ký tài khoản và bắt đầu đồng bộ tức thì mà không cần bất kỳ thao tác cài đặt máy chủ nào.
 
 ```mermaid
 sequenceDiagram
@@ -71,8 +80,10 @@ sequenceDiagram
 
 ## 2. Chi Tiết Tất Cả Các REST API Endpoints
 
-**Base URL**: `https://<domain_hoac_ip>`  
+**Base URL**: `https://<domain_hoac_ip>` (hoặc `https://<domain_hoac_ip>/api`)  
 **Common Content-Type**: `application/json`
+
+> 💡 **Quy ước Tiền tố `/api`**: Máy chủ chính thức Cloudflare Worker và kiến trúc khuyến nghị hỗ trợ song hành cả cấu trúc có tiền tố `/api/...` (ví dụ `POST /api/auth/register`, `GET /api/user`, `GET /api/vault`) lẫn cấu trúc trực tiếp `/*`. Người dùng cấu hình Server URL trên GistWarden có đuôi `/api` hay không đều được hệ thống nhận diện chính xác.
 
 ### 🌐 Cấu Hình CORS (Cross-Origin Resource Sharing) Bắt Buộc
 
@@ -176,7 +187,7 @@ Tạo tài khoản người dùng mới trên máy chủ Self-Host.
 
 ---
 
-### 2.4 `POST /vault` — Lưu / Cập Nhật Vault (Standard Vault Payload)
+### 2.5 `POST /vault` — Lưu / Cập Nhật Vault (Standard Vault Payload)
 
 Tải lên/ghi đè chuỗi dữ liệu mã hóa Vault mới nhất từ Client.
 
@@ -200,7 +211,7 @@ Tải lên/ghi đè chuỗi dữ liệu mã hóa Vault mới nhất từ Client.
 
 ---
 
-### 2.5 `DELETE /vault` — Xóa Vault
+### 2.6 `DELETE /vault` — Xóa Vault
 
 Xóa toàn bộ dữ liệu Vault của người dùng khỏi máy chủ.
 
@@ -249,7 +260,23 @@ Dưới đây là chi tiết ý nghĩa và cách GistWarden Client phản ứng 
 
 ---
 
-## 4. Ma Trận Phản Ứng Mã Lỗi Phía Client (Client Response Matrix)
+## 4. Ma Trận Phản Ứng Mã Lỗi & Ánh Xạ i18n (Error Codes & Client Response Matrix)
+
+### 4.1 Bảng Mã Lỗi Chuẩn Hóa (Standardized Error Codes)
+GistWarden Client tự động phân tích trường `error` trong phản hồi JSON `{ "error": "<error_code>", "message": "<chi_tiet>" }` để hiển thị thông báo bản địa hóa đa ngôn ngữ (i18n):
+
+| Mã lỗi (`error`) | HTTP Code | API phát sinh | Thông báo Client hiển thị (i18n) |
+| :--- | :---: | :--- | :--- |
+| `missing_fields` | `400` | Register, Login, Vault | *"Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu máy chủ."* |
+| `username_too_short` | `400` | Register | *"Tên đăng nhập máy chủ phải có ít nhất 2 ký tự."* |
+| `username_too_long` | `400` | Register | *"Tên đăng nhập máy chủ không được vượt quá 64 ký tự."* |
+| `password_too_short` | `400` | Register | *"Mật khẩu máy chủ phải có ít nhất 6 ký tự."* |
+| `user_already_exists` | `409` | Register | *"Tên đăng nhập máy chủ đã tồn tại. Vui lòng chọn tên khác."* |
+| `invalid_credentials` | `401` | Login | *"Tên đăng nhập hoặc mật khẩu máy chủ không chính xác."* |
+| `vault_not_found` | `404` | GET /vault | Tự động coi là két mới $\rightarrow$ Chuyển sang form tạo Master Password |
+| `unauthorized` | `401` | /vault, /user | Phiên đăng nhập hết hạn $\rightarrow$ Yêu cầu đăng nhập lại |
+
+### 4.2 Ma Trận Xử Lý HTTP Status Phía Client
 
 | Status Code | API `POST /auth/register` | API `POST /auth/login` | API `GET /vault` | API `POST /vault` | API `DELETE /vault` |
 | :---: | :--- | :--- | :--- | :--- | :--- |

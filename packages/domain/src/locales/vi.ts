@@ -678,7 +678,7 @@ export default {
   guide_start_self_hosted_step1_title:
     "1. Nhập Địa chỉ Máy chủ (Server Base URL)",
   guide_start_self_hosted_step1_desc:
-    "Nhập URL máy chủ cá nhân của bạn (ví dụ: https://abc.com hoặc http://192.168.1.100:3000). {APP_NAME} sẽ tự động kết nối trực tiếp tới các Endpoint của máy chủ.",
+    "Nhập URL máy chủ cá nhân của bạn (hoặc sử dụng ngay máy chủ Cloudflare Worker miễn phí có sẵn tại: https://gistwarden.uongsuadaubung.workers.dev). {APP_NAME} sẽ tự động kết nối trực tiếp tới các Endpoint của máy chủ.",
   guide_start_self_hosted_step2_title:
     "2. Đăng ký hoặc Đăng nhập Tài khoản Máy chủ",
   guide_start_self_hosted_step2_desc:
@@ -736,10 +736,22 @@ export default {
     "Tên đăng nhập hoặc mật khẩu máy chủ không đúng.",
   self_hosted_error_network:
     "Lỗi kết nối tới máy chủ Self-Host. Vui lòng kiểm tra lại URL.",
+  self_hosted_error_username_too_short:
+    "Tên đăng nhập máy chủ phải có ít nhất 2 ký tự.",
+  self_hosted_error_username_too_long:
+    "Tên đăng nhập máy chủ không được vượt quá 64 ký tự.",
+  self_hosted_error_password_too_short:
+    "Mật khẩu máy chủ phải có ít nhất 6 ký tự.",
+  self_hosted_error_missing_fields:
+    "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu máy chủ.",
 
   guide_self_hosted_why_title: "Tại Sao Cần Bộ REST API Máy Chủ Cá Nhân Này?",
   guide_self_hosted_why_desc:
     "API {login_provider_self_hosted} được thiết kế tinh gọn với đúng 6 REST endpoints chuẩn hóa, giúp người dùng tự làm chủ hạ tầng đám mây riêng (Private Cloud/VPS) mà không cần phụ thuộc vào GitHub. Toàn bộ dữ liệu mật khẩu được mã hóa E2EE bằng AES-256-GCM tại Client trước khi gửi lên máy chủ.",
+  guide_self_hosted_public_server_title:
+    "Máy Chủ Cloudflare Sẵn Dùng Miễn Phí (Ready-to-Use)",
+  guide_self_hosted_public_server_desc:
+    "Nếu không muốn dùng GitHub Gist hay Local Vault và cũng không có điều kiện tự dựng máy chủ riêng, bạn hoàn toàn có thể sử dụng ngay máy chủ chính thức được cung cấp sẵn tại https://gistwarden.uongsuadaubung.workers.dev. Nhờ cơ chế mã hóa đầu cuối (E2EE), dữ liệu két của bạn được mã hóa hoàn toàn bằng Master Password tại máy của bạn trước khi gửi lên máy chủ, đảm bảo an toàn và riêng tư tuyệt đối.",
   guide_self_hosted_matrix_title:
     "Bảng So Sánh Tương Thích 1-to-1 Với GitHub API",
   guide_self_hosted_matrix_col_action: "Thao Tác Ứng Dụng",

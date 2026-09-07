@@ -34,7 +34,7 @@ export function mapCustomFields(
     const parsed = CustomFieldTypeSchema.safeParse(f.type);
     const rawLinkedId = f.linkedId;
     const linkedId =
-      typeof rawLinkedId === "number" && !isNaN(rawLinkedId)
+      typeof rawLinkedId === "number" && !Number.isNaN(rawLinkedId)
         ? rawLinkedId
         : undefined;
     return {
