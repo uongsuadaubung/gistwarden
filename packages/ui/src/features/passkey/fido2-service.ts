@@ -2,6 +2,7 @@ import {
   type Fido2Credential,
   Fido2CredentialSchema,
   isMatchingDomain,
+  isValidRpIdForOrigin,
   type LoginVaultItem,
   type RpId,
   RpIdSchema,
@@ -76,6 +77,14 @@ export function findMatchingFido2Accounts(
   rpId: RpId,
   origin: string,
 ): LoginVaultItem[] {
+  // Security: rpId must be a valid domain suffix for origin (W3C WebAuthn Section 5.1.4)
+  if (rpId && origin && !isValidRpIdForOrigin(rpId, origin)) {
+    console.warn(
+      `[FIDO2 Security] rpId '${rpId}' is not valid for origin '${origin}'`,
+    );
+    return [];
+  }
+
   const rpIdNormalized = rpId.toLowerCase().trim();
 
   return vaultItems.filter((item): item is LoginVaultItem => {
@@ -89,7 +98,16 @@ export function findMatchingFido2Accounts(
 export function findMatchingFido2Credentials(
   vaultItems: VaultItem[],
   rpId: RpId,
+  origin?: string,
 ): MatchingPasskey[] {
+  // Security: rpId must be a valid domain suffix for origin (W3C WebAuthn Section 5.1.4)
+  if (rpId && origin && !isValidRpIdForOrigin(rpId, origin)) {
+    console.warn(
+      `[FIDO2 Security] rpId '${rpId}' is not valid for origin '${origin}'`,
+    );
+    return [];
+  }
+
   const list: MatchingPasskey[] = [];
   const targetRpId = rpId?.trim().toLowerCase() || "";
   const targetBase = getBaseDomain(rpId);

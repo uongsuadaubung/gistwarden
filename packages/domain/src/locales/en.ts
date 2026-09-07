@@ -541,6 +541,8 @@ export default {
   fido2_error_load_failed: "Failed to load authentication request",
   fido2_error_create_failed: "Failed to create Passkey",
   fido2_error_assert_failed: "Passkey authentication failed",
+  fido2_error_domain_mismatch:
+    "Security Warning: The website origin does not match the requested Relying Party domain.",
   fido2_register_title: "Register New Passkey",
   fido2_register_subtitle_new:
     "App <strong>{rp}</strong> wants to save a Passkey for account <strong>{user}</strong>. {APP_NAME} will create a new account to store this Passkey.",

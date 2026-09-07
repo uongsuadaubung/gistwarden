@@ -543,6 +543,8 @@ export default {
   fido2_error_load_failed: "Lỗi tải yêu cầu xác thực",
   fido2_error_create_failed: "Lỗi tạo Passkey",
   fido2_error_assert_failed: "Lỗi xác thực Passkey",
+  fido2_error_domain_mismatch:
+    "Cảnh báo bảo mật: Trang web đang mở không khớp với tên miền Passkey được yêu cầu.",
   fido2_register_title: "Đăng ký Passkey mới",
   fido2_register_subtitle_new:
     "Ứng dụng <strong>{rp}</strong> muốn lưu Passkey cho tài khoản <strong>{user}</strong>. {APP_NAME} sẽ tạo một tài khoản mới để lưu trữ Passkey này.",

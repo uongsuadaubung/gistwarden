@@ -4,6 +4,53 @@ import type { AppContext } from "../types";
 export const oauthRouter = new Hono<AppContext>();
 
 /**
+ * Kiểm tra xem URL đích trong tham số state có thuộc về các nguồn an toàn được cấp phép hay không.
+ * Chống lỗ hổng Open Redirect và đánh cắp token OAuth của người dùng.
+ */
+export function isValidOauthRedirectUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    // Chỉ chấp nhận http cho localhost / 127.0.0.1 khi thử nghiệm cục bộ
+    if (parsed.protocol === "http:") {
+      return (
+        parsed.hostname === "localhost" ||
+        parsed.hostname === "127.0.0.1" ||
+        parsed.hostname === "[::1]"
+      );
+    }
+    if (parsed.protocol !== "https:") {
+      return false;
+    }
+
+    const hostname = parsed.hostname.toLowerCase();
+    // 1. Chrome Extension WebAuthFlow (https://<app-id>.chromiumapp.org/...)
+    if (hostname.endsWith(".chromiumapp.org")) {
+      return true;
+    }
+    // 2. Firefox Extension WebAuthFlow (https://<id>.extensions.allizom.org/...)
+    if (hostname.endsWith(".extensions.allizom.org")) {
+      return true;
+    }
+    // 3. Official GitHub Pages Web App
+    if (hostname === "uongsuadaubung.github.io") {
+      return true;
+    }
+    // 4. Localhost HTTPS
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "[::1]"
+    ) {
+      return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Helper: Xử lý logic trao đổi OAuth code lấy access_token từ GitHub
  * và chuyển hướng về Extension / Web app dựa trên phân tích state thông minh.
  */
@@ -65,22 +112,42 @@ async function handleOauthCallback(c: Context<AppContext>) {
       );
     }
 
-    // PHÂN TÍCH STATE THÔNG MINH - ĐỀ PHÒNG CẢ CACHE PHIÊN BẢN CŨ
+
+    // PHÂN TÍCH STATE THÔNG MINH - ĐỀ PHÒNG CẢ CACHE PHIÊN BẢN CŨ & CHỐNG OPEN REDIRECT
     let redirectUrl = "";
 
     if (state.includes("://")) {
       // 1. Nếu là URL đầy đủ (ví dụ: https://...)
+      if (!isValidOauthRedirectUrl(state)) {
+        return c.text(
+          "Security Error: Invalid or untrusted redirect URI in state parameter.",
+          400,
+        );
+      }
       const targetUrl = new URL(state);
       targetUrl.searchParams.set("token", accessToken);
       redirectUrl = targetUrl.toString();
     } else if (state.includes(".")) {
       // 2. Nếu là ID Firefox tạm thời có dạng tên miền (chứa dấu chấm)
-      // Xóa dấu gạch chéo cuối nếu có rồi redirect trực tiếp
       const cleanState = state.replace(/\/$/, "");
+      const candidateUrl = `https://${cleanState}/`;
+      if (!isValidOauthRedirectUrl(candidateUrl)) {
+        return c.text(
+          "Security Error: Invalid or untrusted redirect domain in state parameter.",
+          400,
+        );
+      }
       redirectUrl = `https://${cleanState}/?token=${accessToken}`;
     } else {
       // 3. Nếu là ID Chrome trơn (không có dấu chấm)
-      redirectUrl = `https://${state}.chromiumapp.org/oauth2?token=${accessToken}`;
+      const sanitizedAppId = state.replace(/[^a-zA-Z0-9]/g, "");
+      if (!sanitizedAppId) {
+        return c.text(
+          "Security Error: Invalid Chrome Extension App ID in state parameter.",
+          400,
+        );
+      }
+      redirectUrl = `https://${sanitizedAppId}.chromiumapp.org/oauth2?token=${accessToken}`;
     }
 
     return c.redirect(redirectUrl, 302);

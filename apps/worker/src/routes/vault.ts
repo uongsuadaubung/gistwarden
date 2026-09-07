@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { requireAuth } from "../middleware/auth";
 import type { AppContext, VaultRow } from "../types";
 
+// Giới hạn kích thước payload két sắt tối đa 5MB để chống DoS tràn bộ nhớ / dung lượng D1
+const MAX_VAULT_PAYLOAD_BYTES = 5 * 1024 * 1024;
+
 export const vaultRouter = new Hono<AppContext>();
 
 // Apply authentication to all vault routes
@@ -86,6 +89,16 @@ vaultRouter.post("/", async (c) => {
         message: "Các trường salt, iv và ciphertext là bắt buộc",
       },
       400,
+    );
+  }
+
+  if (ciphertext.length > MAX_VAULT_PAYLOAD_BYTES) {
+    return c.json(
+      {
+        error: "payload_too_large",
+        message: "Dữ liệu két sắt vượt quá dung lượng tối đa cho phép (5MB)",
+      },
+      413,
     );
   }
 

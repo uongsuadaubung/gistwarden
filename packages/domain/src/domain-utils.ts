@@ -1,5 +1,5 @@
 import { err, ok, type Result } from "neverthrow";
-import { getDomain, getHostname as tldtsGetHostname } from "tldts";
+import { getDomain, getHostname as tldtsGetHostname, parse } from "tldts";
 import type { TranslationKey } from "./i18n.ts";
 import type { VaultItem } from "./vault-schemas.ts";
 import { isLoginItem } from "./vault-types.ts";
@@ -117,4 +117,100 @@ export function getDomainFromItem(item: VaultItem): string | null {
 export function extractDomainFromTabUrl(url?: string | null): string {
   if (!url) return "";
   return getHostname(url);
+}
+
+/**
+ * Thẩm định xem Relying Party ID (rpId) có hợp lệ đối với origin đang gọi WebAuthn hay không.
+ * Thực hiện chính xác theo đặc tả W3C WebAuthn Section 5.1.4:
+ * - Origin phải sử dụng giao thức HTTPS (ngoại trừ localhost / 127.0.0.1)
+ * - Cả rpId và origin phải là tên miền hợp lệ (từ chối IP addresses, trừ localhost / 127.0.0.1)
+ * - Cả hai phải có cùng registrable domain (eTLD+1)
+ * - Origin phải khớp chính xác với rpId hoặc là subdomain của rpId
+ * - Từ chối single-label domain (như TLD trần) trừ khi là localhost
+ *
+ * @see https://www.w3.org/TR/webauthn-2/#rp-id
+ */
+export function isValidRpIdForOrigin(rpId: string, origin: string): boolean {
+  if (!rpId || !origin) {
+    return false;
+  }
+
+  const cleanRpId = rpId.trim().toLowerCase();
+  const parsedOrigin = parse(origin, { allowPrivateDomains: true });
+  const parsedRpId = parse(cleanRpId, { allowPrivateDomains: true });
+
+  if (!parsedRpId || !parsedOrigin) {
+    return false;
+  }
+
+  // Localhost hoặc 127.0.0.1: hợp lệ khi cả 2 đều là localhost / 127.0.0.1
+  const isLocalOrigin =
+    parsedOrigin.hostname === "localhost" ||
+    parsedOrigin.hostname === "127.0.0.1";
+  const isLocalRpId =
+    parsedRpId.hostname === "localhost" || parsedRpId.hostname === "127.0.0.1";
+
+  if (isLocalOrigin && isLocalRpId) {
+    return true;
+  }
+
+  // Origin phải có scheme https:// (ngoại trừ localhost)
+  if (!origin.startsWith("https://") && !isLocalOrigin) {
+    return false;
+  }
+
+  // Từ chối địa chỉ IP (cả 2 phải là tên miền)
+  if (parsedRpId.isIp || parsedOrigin.isIp) {
+    return false;
+  }
+
+  // Từ chối domain 1 nhãn (TLDs) trừ localhost
+  if (cleanRpId !== "localhost" && !cleanRpId.includes(".")) {
+    return false;
+  }
+
+  if (
+    parsedOrigin.hostname != null &&
+    parsedOrigin.hostname !== "localhost" &&
+    !parsedOrigin.hostname.includes(".")
+  ) {
+    return false;
+  }
+
+  // Cùng registrable domain (eTLD+1)
+  if (parsedRpId.domain !== parsedOrigin.domain) {
+    return false;
+  }
+
+  // Khớp chính xác
+  if (parsedOrigin.hostname === cleanRpId) {
+    return true;
+  }
+
+  // Origin là subdomain của rpId (ví dụ: auth.example.com kết thúc bằng .example.com)
+  if (
+    parsedOrigin.hostname != null &&
+    parsedOrigin.hostname.endsWith("." + cleanRpId)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Trích xuất rpId hiệu lực theo chuẩn W3C WebAuthn Section 5.1.4.
+ * Nếu website không khai báo rp.id (hoặc rpId), mặc định lấy hostname của origin.
+ * TUYỆT ĐỐI KHÔNG lấy rp.name làm rpId vì rp.name chỉ là tên hiển thị (ví dụ: "GitHub" hay "Google, Inc.").
+ */
+export function getEffectiveRpId(
+  declaredRpId: string | undefined | null,
+  origin: string,
+): string {
+  if (declaredRpId && declaredRpId.trim()) {
+    return declaredRpId.trim().toLowerCase();
+  }
+
+  const parsed = parse(origin, { allowPrivateDomains: true });
+  return (parsed?.hostname || origin).toLowerCase();
 }

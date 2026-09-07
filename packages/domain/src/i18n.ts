@@ -494,6 +494,7 @@ const LangSchema = z.object({
   fido2_error_load_failed: z.string(),
   fido2_error_create_failed: z.string(),
   fido2_error_assert_failed: z.string(),
+  fido2_error_domain_mismatch: z.string(),
   fido2_register_title: z.string(),
   fido2_register_subtitle_new: z.string(),
   fido2_register_subtitle_choose: z.string(),

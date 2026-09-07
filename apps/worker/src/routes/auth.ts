@@ -3,8 +3,6 @@ import { requireAuth } from "../middleware/auth";
 import type { AppContext, UserRow } from "../types";
 import { createJwtToken, hashPassword, verifyPassword } from "../utils/crypto";
 
-const DEFAULT_SECRET = "gistwarden-default-secure-jwt-key-2026";
-
 export const authRouter = new Hono<AppContext>();
 
 /**
@@ -97,7 +95,16 @@ authRouter.post("/register", async (c) => {
     .run();
 
   // Create JWT Bearer token
-  const secret = c.env.JWT_SECRET || DEFAULT_SECRET;
+  const secret = c.env.JWT_SECRET;
+  if (!secret) {
+    return c.json(
+      {
+        error: "server_error",
+        message: "Máy chủ chưa cấu hình JWT_SECRET trong biến môi trường",
+      },
+      500,
+    );
+  }
   const accessToken = await createJwtToken(
     { userId, username: rawUsername },
     secret,
@@ -171,7 +178,16 @@ authRouter.post("/login", async (c) => {
   }
 
   // Generate new JWT Token
-  const secret = c.env.JWT_SECRET || DEFAULT_SECRET;
+  const secret = c.env.JWT_SECRET;
+  if (!secret) {
+    return c.json(
+      {
+        error: "server_error",
+        message: "Máy chủ chưa cấu hình JWT_SECRET trong biến môi trường",
+      },
+      500,
+    );
+  }
   const accessToken = await createJwtToken(
     { userId: user.id, username: user.username },
     secret,

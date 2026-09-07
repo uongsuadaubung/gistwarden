@@ -89,7 +89,17 @@ Wrangler sẽ tự động:
 - Đóng gói toàn bộ code TypeScript trong `apps/worker/src`.
 - Tối ưu hóa bundle và upload lên mạng lưới Cloudflare.
 - In ra đường dẫn Worker của bạn, ví dụ:
-  `https://gistwarden-api.<your-subdomain>.workers.dev`
+  `https://gistwarden.<your-subdomain>.workers.dev`
+
+---
+
+### Bước 5: Cấu hình Khóa Bí Mật JWT (JWT_SECRET) [Bắt buộc cho Production]
+
+Để đảm bảo token đăng nhập của người dùng được mã hóa và ký bằng khóa riêng biệt, chạy lệnh sau:
+```bash
+bunx wrangler secret put JWT_SECRET --config apps/worker/wrangler.json
+```
+*(Nhập một chuỗi ký tự ngẫu nhiên dài >= 32 ký tự rồi nhấn Enter)*.
 
 ---
 
@@ -189,6 +199,6 @@ Tất cả các endpoint xác thực trả về mã lỗi JSON có định dạn
 
 1. Mở GistWarden $\rightarrow$ Vào **Settings** (Cài đặt) $\rightarrow$ Mục **Sync & Backup** (Đồng bộ).
 2. Chọn **Provider**: `Self-Hosted Server`.
-3. Điền **Server URL**: URL Worker của bạn (ví dụ `https://gistwarden-api.<your-subdomain>.workers.dev` hoặc `http://localhost:8787` khi test dev).
+3. Điền **Server URL**: URL Worker của bạn (ví dụ `https://gistwarden.<your-subdomain>.workers.dev` hoặc `http://localhost:8787` khi test dev).
 4. Nhập Username & Server Password $\rightarrow$ Nhấn **Register** hoặc **Login**.
 5. Két mật khẩu sẽ được tự động đồng bộ lên Cloudflare D1 an toàn và tức thì!

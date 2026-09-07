@@ -81,8 +81,26 @@ test("fido2-service: findMatchingFido2Credentials matches rpId", () => {
   const creds = findMatchingFido2Credentials(
     mockVaultItems,
     asRpId("github.com"),
+    "https://github.com",
   );
   assertEquals(creds.length, 1);
   assert(creds[0]);
   assertEquals(creds[0].credential.credentialId, "cred1");
+});
+
+test("fido2-service: rejects cross-origin phishing attempt in findMatchingFido2Accounts & findMatchingFido2Credentials", () => {
+  // Website evil.com tries to request credentials for github.com
+  const accounts = findMatchingFido2Accounts(
+    mockVaultItems,
+    asRpId("github.com"),
+    "https://evil.com",
+  );
+  assertEquals(accounts.length, 0);
+
+  const creds = findMatchingFido2Credentials(
+    mockVaultItems,
+    asRpId("github.com"),
+    "https://evil.com",
+  );
+  assertEquals(creds.length, 0);
 });

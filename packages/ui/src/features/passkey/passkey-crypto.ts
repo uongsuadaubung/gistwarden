@@ -3,11 +3,11 @@ import {
   asRpId,
   type Fido2Credential,
   type Fido2CredentialId,
+  getEffectiveRpId,
 } from "@gistwarden/domain";
 import { err, ok, type Result } from "neverthrow";
 import { z } from "zod";
 import { packAttestationObject } from "@/core/cbor-utils.ts";
-import { safeParseUrl } from "@/core/domain-utils.ts";
 import type { TranslationKey } from "@/core/i18n.ts";
 import { getCoseAlgorithmStrategy } from "./cose-strategy.ts";
 
@@ -319,7 +319,7 @@ export async function generateAssertionSignature(
   return ok(derRes.value);
 }
 
-// Convert Bitwarden-style credentialId (UUID or b64.) or raw base64url into raw Uint8Array
+// Convert UUID string (36-char) or raw base64url into raw Uint8Array
 export function getRawCredentialId(
   credId: Fido2CredentialId | string,
 ): Result<Uint8Array, TranslationKey> {
@@ -430,6 +430,8 @@ export async function generatePasskeyRegisterResponse(
   const creationDate = new Date().toISOString();
 
   // 5. Build Gistwarden Fido2Credential object
+  const effectiveRpId = getEffectiveRpId(options.rp.id, origin);
+
   const newCred: Fido2Credential = {
     credentialId: asFido2CredentialId(credentialIdStr),
     keyType: "public-key",
@@ -437,7 +439,7 @@ export async function generatePasskeyRegisterResponse(
     keyAlgorithm: "ECDSA",
     keyCurve: "P-256",
     keyValue: pkcs8Base64Url,
-    rpId: asRpId(options.rp.id || options.rp.name),
+    rpId: asRpId(effectiveRpId),
     userHandle:
       typeof options.user.id === "string"
         ? options.user.id
@@ -454,7 +456,7 @@ export async function generatePasskeyRegisterResponse(
 
   // 6. Generate authData and CBOR attestationObject
   const authDataRes = await generateAuthData({
-    rpId: options.rp.id || options.rp.name,
+    rpId: effectiveRpId,
     credentialId: credentialIdBytes,
     counter: 0,
     userPresent: true,
@@ -536,11 +538,7 @@ export async function generatePasskeyAssertResponse(
   // Lay tuy chon yeu cau xac thuc tu options. Mac dinh la true do nguoi dung da mo khoa bang Master Password
   const userVerified = options.userVerification !== "discouraged";
 
-  let rpId = options.rpId || origin;
-  if (!options.rpId) {
-    const parseResult = safeParseUrl(origin);
-    rpId = parseResult.map((u) => u.hostname).unwrapOr(origin);
-  }
+  const rpId = getEffectiveRpId(options.rpId, origin);
 
   const authDataRes = await generateAuthData({
     rpId,

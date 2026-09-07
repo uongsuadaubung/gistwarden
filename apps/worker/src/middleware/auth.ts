@@ -2,8 +2,6 @@ import type { MiddlewareHandler } from "hono";
 import type { AppContext } from "../types";
 import { verifyJwtToken } from "../utils/crypto";
 
-const DEFAULT_SECRET = "gistwarden-default-secure-jwt-key-2026";
-
 /**
  * Authentication Middleware: validates Bearer token and attaches user context.
  */
@@ -30,7 +28,16 @@ export const requireAuth: MiddlewareHandler<AppContext> = async (c, next) => {
     );
   }
 
-  const secret = c.env.JWT_SECRET || DEFAULT_SECRET;
+  const secret = c.env.JWT_SECRET;
+  if (!secret) {
+    return c.json(
+      {
+        error: "server_error",
+        message: "Máy chủ chưa cấu hình JWT_SECRET trong biến môi trường",
+      },
+      500,
+    );
+  }
   const payload = await verifyJwtToken(token, secret);
 
   if (!payload) {

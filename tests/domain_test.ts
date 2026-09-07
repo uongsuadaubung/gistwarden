@@ -1,9 +1,11 @@
 import {
   createDefaultVaultItem,
   getBaseDomain,
+  getEffectiveRpId,
   getHostname,
   isLoginItem,
   isSingleUriMatch,
+  isValidRpIdForOrigin,
   type LoginVaultItem,
   mergeVaultItem,
   toPunycodeHostname,
@@ -128,4 +130,97 @@ test("Vault Item Utils - mergeVaultItem preserves existing TOTP key when patch o
   } else {
     throw new Error("Item type mismatch");
   }
+});
+
+test("Domain Utils - isValidRpIdForOrigin (W3C WebAuthn Section 5.1.4)", () => {
+  // Valid matching cases
+  assertEquals(isValidRpIdForOrigin("google.com", "https://google.com"), true);
+  assertEquals(
+    isValidRpIdForOrigin("google.com", "https://login.google.com"),
+    true,
+  );
+  assertEquals(
+    isValidRpIdForOrigin("google.com", "https://sub.auth.google.com/path"),
+    true,
+  );
+  assertEquals(
+    isValidRpIdForOrigin("google.com.vn", "https://login.google.com.vn"),
+    true,
+  );
+  assertEquals(
+    isValidRpIdForOrigin("localhost", "http://localhost:3000/login"),
+    true,
+  );
+  assertEquals(
+    isValidRpIdForOrigin("127.0.0.1", "http://127.0.0.1:8080"),
+    true,
+  );
+
+  // Scheme must be HTTPS (except localhost)
+  assertEquals(isValidRpIdForOrigin("google.com", "http://google.com"), false);
+
+  // Reject IP addresses as domains
+  assertEquals(
+    isValidRpIdForOrigin("192.168.1.1", "https://192.168.1.1"),
+    false,
+  );
+
+  // rpId cannot be more specific / narrow than caller origin
+  assertEquals(
+    isValidRpIdForOrigin("auth.google.com", "https://google.com"),
+    false,
+  );
+
+  // Public suffix (eTLD) alone cannot be rpId
+  assertEquals(isValidRpIdForOrigin("co.uk", "https://example.co.uk"), false);
+
+  // Single-label domain rejected (unless localhost)
+  assertEquals(isValidRpIdForOrigin("com", "https://google.com"), false);
+  assertEquals(
+    isValidRpIdForOrigin("mycompany", "https://mycompany.com"),
+    false,
+  );
+
+  // Phishing / cross-origin attempts
+  assertEquals(isValidRpIdForOrigin("google.com", "https://evil.com"), false);
+  assertEquals(
+    isValidRpIdForOrigin("google.com", "https://notgoogle.com"),
+    false,
+  );
+  assertEquals(
+    isValidRpIdForOrigin("google.com", "https://google.com.evil.com"),
+    false,
+  );
+  assertEquals(isValidRpIdForOrigin("", "https://google.com"), false);
+  assertEquals(isValidRpIdForOrigin("google.com", ""), false);
+});
+
+test("Domain Utils - getEffectiveRpId defaults to origin hostname", () => {
+  assertEquals(
+    getEffectiveRpId("github.com", "https://github.com"),
+    "github.com",
+  );
+  assertEquals(
+    getEffectiveRpId("github.com", "https://sub.auth.github.com"),
+    "github.com",
+  );
+  assertEquals(
+    getEffectiveRpId("  GITHUB.COM  ", "https://github.com"),
+    "github.com",
+  );
+
+  // When declared rpId is omitted/empty/null/undefined -> defaults to origin hostname
+  assertEquals(
+    getEffectiveRpId(undefined, "https://github.com/login"),
+    "github.com",
+  );
+  assertEquals(
+    getEffectiveRpId(null, "https://auth.google.com:8080"),
+    "auth.google.com",
+  );
+  assertEquals(getEffectiveRpId("", "https://my-bank.vn/auth"), "my-bank.vn");
+  assertEquals(
+    getEffectiveRpId(undefined, "http://localhost:3000"),
+    "localhost",
+  );
 });

@@ -1,8 +1,9 @@
 import {
   asRpId,
+  getEffectiveRpId,
+  isValidRpIdForOrigin,
   type LoginVaultItem,
   type RpId,
-  safeParseUrl,
 } from "@gistwarden/domain";
 import { getPendingFido2RequestRoute } from "@gistwarden/orchestrator";
 import { setGlobalLoading } from "@gistwarden/ui";
@@ -99,15 +100,11 @@ export const Fido2Prompt: Component = () => {
     const items = accountStore.vaultItems;
     if (!accountStore.isLocked && req) {
       if (req.type === "get") {
-        let rpId: RpId | undefined = req.options.rpId;
-        if (!rpId) {
-          const parsed = safeParseUrl(req.origin);
-          rpId = asRpId(parsed.isOk() ? parsed.value.hostname : req.origin);
-        }
-        const list = findMatchingFido2Credentials(items, rpId);
+        const rpId = asRpId(getEffectiveRpId(req.options.rpId, req.origin));
+        const list = findMatchingFido2Credentials(items, rpId, req.origin);
         setMatchingCredentials(list);
       } else if (req.type === "create") {
-        const rpId = asRpId(req.options.rp?.id || req.options.rp?.name || "");
+        const rpId = asRpId(getEffectiveRpId(req.options.rp?.id, req.origin));
         const matches = findMatchingFido2Accounts(items, rpId, req.origin);
         setMatchingAccounts(matches);
         const firstMatch = matches[0];
@@ -165,21 +162,27 @@ export const Fido2Prompt: Component = () => {
     const res = sendResult.value;
 
     if (res?.type && res.options && res.origin) {
+      // Security: Validate that declared rpId matches caller's origin (W3C WebAuthn Section 5.1.4)
+      const effectiveRpId =
+        res.type === "get"
+          ? getEffectiveRpId(res.options.rpId, res.origin)
+          : getEffectiveRpId(res.options.rp?.id, res.origin);
+
+      if (!isValidRpIdForOrigin(effectiveRpId, res.origin)) {
+        setError(t("fido2_error_domain_mismatch"));
+        return;
+      }
+
       setPendingReq({
         success: res.success,
         type: res.type,
         options: res.options,
         origin: res.origin,
       });
+      const rpId = asRpId(effectiveRpId);
       if (res.type === "get") {
-        let rpId: RpId | undefined = res.options.rpId;
-        if (!rpId) {
-          const parsed = safeParseUrl(res.origin);
-          rpId = asRpId(parsed.isOk() ? parsed.value.hostname : res.origin);
-        }
-        findMatchingPasskeys(rpId);
+        findMatchingPasskeys(rpId, res.origin);
       } else if (res.type === "create") {
-        const rpId = asRpId(res.options.rp?.id || res.options.rp?.name || "");
         findMatchingAccounts(rpId, res.origin);
       }
     } else {
@@ -187,8 +190,12 @@ export const Fido2Prompt: Component = () => {
     }
   };
 
-  const findMatchingPasskeys = (rpId: RpId) => {
-    const list = findMatchingFido2Credentials(accountStore.vaultItems, rpId);
+  const findMatchingPasskeys = (rpId: RpId, origin?: string) => {
+    const list = findMatchingFido2Credentials(
+      accountStore.vaultItems,
+      rpId,
+      origin,
+    );
     setMatchingCredentials(list);
   };
 
@@ -277,7 +284,7 @@ export const Fido2Prompt: Component = () => {
 
   return (
     <div class="fido2-prompt-container">
-      {/* Bitwarden Brand Header */}
+      {/* Brand Header */}
       <div class="fido2-header">
         <ShieldIcon class="fido2-logo" fill="var(--white)" />
         <span class="fido2-header-title">{APP_NAME}</span>
