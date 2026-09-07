@@ -35,14 +35,14 @@ export const Fido2RequestSchema = z
       rp: z
         .object({
           id: RpIdSchema.optional(),
-          name: z.string(),
+          name: z.string().max(200),
         })
         .optional(),
       user: z
         .object({
-          id: z.string(),
-          name: z.string(),
-          displayName: z.string().optional(),
+          id: z.string().max(2048),
+          name: z.string().max(320),
+          displayName: z.string().max(320).optional(),
         })
         .optional(),
       challenge: z.string(),
