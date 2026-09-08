@@ -8,7 +8,7 @@ import Checkbox from "@/components/ui/Checkbox.tsx";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import Input from "@/components/ui/Input.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { setSettingsStore, settingsStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { PlusIcon, TrashIcon } from "@/icons/svg/index.ts";
@@ -17,7 +17,7 @@ export const AutofillOptions: Component = () => {
   const [newDomain, setNewDomain] = createSignal("");
 
   const handleBack = () => {
-    navigate(View.Settings);
+    goBack(View.Settings);
   };
 
   const handleAutoSubmitToggle = async (checked: boolean) => {

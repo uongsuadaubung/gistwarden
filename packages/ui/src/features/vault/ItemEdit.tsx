@@ -16,7 +16,7 @@ import Input from "@/components/ui/Input.tsx";
 import Select from "@/components/ui/Select.tsx";
 import { getHostname, safeParseUrl } from "@/core/domain-utils.ts";
 import { type TranslationKey, t } from "@/core/i18n.ts";
-import { navigate, selectItem } from "@/core/navigation.ts";
+import { goBack, navigate, selectItem } from "@/core/navigation.ts";
 import { accountStore, uiStore } from "@/core/store.ts";
 import { captureVisibleTab, getCurrentTab } from "@/core/tabs.ts";
 import { safeDecodeQr } from "@/core/totp-utils.ts";
@@ -221,10 +221,10 @@ export const ItemEdit: Component = () => {
         if (savedItem) {
           selectItem(savedItem);
         } else {
-          navigate(View.Vault);
+          goBack(View.Vault);
         }
       } else {
-        navigate(View.Vault);
+        goBack(View.Vault);
       }
     } else {
       setError(t(res.error));
@@ -233,10 +233,10 @@ export const ItemEdit: Component = () => {
 
   const handleCancel = () => {
     if (isEdit()) {
-      navigate(View.ItemDetail);
+      goBack(View.ItemDetail);
     } else {
       selectItem(null);
-      navigate(View.Vault);
+      goBack(View.Vault);
     }
   };
 

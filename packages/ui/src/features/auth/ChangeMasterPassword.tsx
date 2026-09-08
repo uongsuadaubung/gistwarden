@@ -5,7 +5,7 @@ import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import Input from "@/components/ui/Input.tsx";
 import PasswordStrengthMeter from "@/components/ui/PasswordStrengthMeter.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { View } from "@/core/types.ts";
 import { changeMasterPassword } from "@/features/auth/master-password-service.ts";
 
@@ -16,7 +16,7 @@ export const ChangeMasterPassword: Component = () => {
   const [confirmPassword, setConfirmPassword] = createSignal("");
 
   const handleBack = () => {
-    navigate(View.AccountSecurity);
+    goBack(View.AccountSecurity);
   };
 
   const handleChangePassword = async (e: Event) => {
@@ -40,7 +40,7 @@ export const ChangeMasterPassword: Component = () => {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      navigate(View.AccountSecurity);
+      goBack(View.AccountSecurity);
     } else {
       setError(t(result.error));
     }

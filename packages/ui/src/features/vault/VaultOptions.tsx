@@ -9,7 +9,7 @@ import {
   STORE_KEY_SYNCING,
 } from "@/core/constants.ts";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { handlePopout, isPopout } from "@/core/popout-utils.ts";
 import { isExtension, isFirefox } from "@/core/runtime.ts";
 import { accountStore, setUiStore } from "@/core/store.ts";
@@ -31,7 +31,7 @@ export const VaultOptions: Component = () => {
   const [showClearModal, setShowClearModal] = createSignal(false);
 
   const handleBack = () => {
-    navigate(View.Settings);
+    goBack(View.Settings);
   };
 
   const handleSync = async () => {

@@ -56,15 +56,78 @@ const viewToPathMap = new Map<View, string>(
   Array.from(pathToViewMap.entries()).map(([path, view]) => [view, path]),
 );
 
+export function normalizeHashRoute(rawRoute: string): string {
+  let clean = rawRoute.trim();
+  if (clean.startsWith("#")) {
+    clean = clean.substring(1).trim();
+  }
+  const qIdx = clean.indexOf("?");
+  if (qIdx !== -1) {
+    clean = clean.substring(0, qIdx);
+  }
+  if (!clean.startsWith("/")) {
+    clean = `/${clean}`;
+  }
+  if (clean.length > 1 && clean.endsWith("/")) {
+    clean = clean.slice(0, -1);
+  }
+  return clean;
+}
+
+export function getViewHash(view: View): string {
+  const path = getViewPath(view);
+  return `#${path}`;
+}
+
 export function getViewPath(view: View): string {
   return viewToPathMap.get(view) ?? "/vault";
 }
 
-export function getPathView(path: string): View {
-  if (path.startsWith("/guide")) {
+export function getPathView(pathOrHash: string): View {
+  const normalized = normalizeHashRoute(pathOrHash);
+  if (normalized.startsWith("/guide")) {
     return View.Guide;
   }
-  return pathToViewMap.get(path) ?? View.Vault;
+  return pathToViewMap.get(normalized) ?? View.Vault;
+}
+
+const parentViewMap = new Map<View, View>([
+  // Vault
+  [View.ItemDetail, View.Vault],
+  [View.ItemEdit, View.Vault],
+
+  // Generator
+  [View.PasswordHistory, View.Generator],
+
+  // Reports
+  [View.ReportExposed, View.Reports],
+  [View.ReportReused, View.Reports],
+  [View.ReportWeak, View.Reports],
+  [View.ReportUnsecure, View.Reports],
+  [View.ReportInactive2FA, View.Reports],
+  [View.ReportDataBreach, View.Reports],
+
+  // Settings
+  [View.Appearance, View.Settings],
+  [View.AccountSecurity, View.Settings],
+  [View.VaultOptions, View.Settings],
+  [View.AutofillOptions, View.Settings],
+  [View.About, View.Settings],
+
+  // Sub-settings
+  [View.Language, View.Appearance],
+  [View.Theme, View.Appearance],
+  [View.ChangeMasterPassword, View.AccountSecurity],
+  [View.ImportAccounts, View.VaultOptions],
+  [View.GoogleAuthTool, View.VaultOptions],
+  [View.ExportAccounts, View.VaultOptions],
+  [View.Folders, View.VaultOptions],
+  [View.Trash, View.VaultOptions],
+  [View.Troubleshooting, View.About],
+]);
+
+export function getParentView(view: View): View {
+  return parentViewMap.get(view) ?? View.Vault;
 }
 
 const baseRouteDepths: Record<string, number> = {
@@ -77,7 +140,8 @@ const baseRouteDepths: Record<string, number> = {
   "/fido2-prompt": 5,
 };
 
-export function getPathDepth(path: string): number {
+export function getPathDepth(pathOrHash: string): number {
+  const path = normalizeHashRoute(pathOrHash);
   const depth = baseRouteDepths[path];
   if (depth !== undefined) {
     return depth;

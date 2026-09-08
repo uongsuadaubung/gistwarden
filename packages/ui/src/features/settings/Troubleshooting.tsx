@@ -2,13 +2,13 @@ import { setGlobalLoading, showToast, syncTimeOffset } from "@gistwarden/ui";
 import type { Component } from "solid-js";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { View } from "@/core/types.ts";
 import { ChevronRightIcon, SyncIcon } from "@/icons/svg/index.ts";
 
 export const Troubleshooting: Component = () => {
   const handleBack = () => {
-    navigate(View.About);
+    goBack(View.About);
   };
 
   return (

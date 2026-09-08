@@ -14,7 +14,7 @@ import Button from "@/components/ui/Button.tsx";
 import Checkbox from "@/components/ui/Checkbox.tsx";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { formatDateTime, t } from "@/core/i18n.ts";
-import { navigate, selectItem } from "@/core/navigation.ts";
+import { goBack, navigate, selectItem } from "@/core/navigation.ts";
 import { accountStore, uiStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { getVaultItemStrategy } from "@/features/vault/registry/vault-item-registry.ts";
@@ -49,7 +49,7 @@ export const ItemDetail: Component = () => {
     const item = uiStore.selectedItem;
     if (!item || !accountStore.vaultItems.some((v) => v.id === item.id)) {
       selectItem(null);
-      navigate(View.Vault);
+      goBack(View.Vault);
       return;
     }
     setNotes(item.notes || "");
@@ -75,7 +75,7 @@ export const ItemDetail: Component = () => {
 
   const handleBackToVault = () => {
     selectItem(null);
-    navigate(View.Vault);
+    goBack(View.Vault);
   };
 
   const handleGoToEdit = () => {

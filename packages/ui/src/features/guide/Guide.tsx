@@ -1,4 +1,3 @@
-import { View } from "@gistwarden/domain";
 import { init, updateLanguage } from "@gistwarden/ui";
 import {
   type Component,
@@ -12,17 +11,12 @@ import Button from "@/components/ui/Button.tsx";
 import Select from "@/components/ui/Select.tsx";
 import { APP_NAME } from "@/core/constants.ts";
 import { onLanguageChange, t } from "@/core/i18n.ts";
-import { navigate as navigateApp } from "@/core/navigation.ts";
-import { getAppVersion, getAssetUrl, isWeb } from "@/core/runtime.ts";
+import { getAppVersion, getAssetUrl } from "@/core/runtime.ts";
 import { accountStore, settingsStore } from "@/core/store.ts";
 import { GuideContentRenderer } from "@/features/guide/components/GuideContentRenderer.tsx";
 import { GuideTreeSidebar } from "@/features/guide/components/GuideTreeSidebar.tsx";
 import { useGuideRoute } from "@/features/guide/guide-router.ts";
-import {
-  ArrowLeftIcon,
-  ExternalLinkIcon,
-  GlobeIcon,
-} from "@/icons/svg/index.ts";
+import { ExternalLinkIcon, GlobeIcon } from "@/icons/svg/index.ts";
 
 const LANG_OPTIONS = [
   { value: "en", label: "English" },
@@ -69,16 +63,6 @@ export const Guide: Component = () => {
             {/* Top Header Bar */}
             <header class="guide-header">
               <div class="guide-header-left">
-                <Show when={isWeb()}>
-                  <button
-                    type="button"
-                    class="guide-back-btn"
-                    title={t("settings_vault_options_label")}
-                    onClick={() => navigateApp(View.Vault)}
-                  >
-                    <ArrowLeftIcon size={18} />
-                  </button>
-                </Show>
                 <div class="logo-area">
                   <img
                     src={getAssetUrl("icons/icon-48.png")}

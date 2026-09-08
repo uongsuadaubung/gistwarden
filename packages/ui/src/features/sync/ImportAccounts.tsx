@@ -2,7 +2,7 @@ import { setGlobalLoading, showToast } from "@gistwarden/ui";
 import { type Component, createSignal, For, Show } from "solid-js";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { View } from "@/core/types.ts";
 import { importVaultData } from "@/features/sync/import-service.ts";
 import { ChevronRightIcon, UploadIcon } from "@/icons/svg/index.ts";
@@ -16,7 +16,7 @@ export const ImportAccounts: Component = () => {
   let fileInputRef: HTMLInputElement | undefined;
 
   const handleBack = () => {
-    navigate(View.VaultOptions);
+    goBack(View.VaultOptions);
   };
 
   const handleStrategyClick = (strategy: ImportStrategy) => {

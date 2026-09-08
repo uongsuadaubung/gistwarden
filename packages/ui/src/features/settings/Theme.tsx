@@ -2,14 +2,14 @@ import { updateTheme } from "@gistwarden/ui";
 import { type Component, Show } from "solid-js";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { settingsStore } from "@/core/store.ts";
 import { ThemeMode, View } from "@/core/types.ts";
 import { MoonIcon, SunIcon } from "@/icons/svg/index.ts";
 
 export const Theme: Component = () => {
   const handleBack = () => {
-    navigate(View.Appearance);
+    goBack(View.Appearance);
   };
 
   return (
@@ -23,7 +23,7 @@ export const Theme: Component = () => {
             class="setting-row"
             onClick={() => {
               updateTheme(ThemeMode.Dark);
-              navigate(View.Appearance);
+              goBack(View.Appearance);
             }}
           >
             <div class="setting-row-left d-flex align-center gap-8">
@@ -50,7 +50,7 @@ export const Theme: Component = () => {
             class="setting-row"
             onClick={() => {
               updateTheme(ThemeMode.Light);
-              navigate(View.Appearance);
+              goBack(View.Appearance);
             }}
           >
             <div class="setting-row-left d-flex align-center gap-8">

@@ -2,7 +2,7 @@ import type { Component } from "solid-js";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { APP_NAME, FIREFOX_ADDON_SLUG } from "@/core/constants.ts";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import {
   getAppVersion,
   getExtensionId,
@@ -19,7 +19,7 @@ import {
 
 export const About: Component = () => {
   const handleBack = () => {
-    navigate(View.Settings);
+    goBack(View.Settings);
   };
 
   const appVersion = getAppVersion();

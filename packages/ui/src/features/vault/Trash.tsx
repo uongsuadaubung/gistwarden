@@ -8,7 +8,7 @@ import {
 import { type Component, createSignal, For, Show } from "solid-js";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { accountStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { getVaultItemStrategy } from "@/features/vault/registry/vault-item-registry.ts";
@@ -23,7 +23,7 @@ export const Trash: Component = () => {
   const [error, setError] = createSignal("");
 
   const handleBack = () => {
-    navigate(View.VaultOptions);
+    goBack(View.VaultOptions);
   };
 
   const handleRestore = async (id: VaultItemId) => {

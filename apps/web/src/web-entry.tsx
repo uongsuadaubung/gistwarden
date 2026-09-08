@@ -8,6 +8,7 @@ import {
   accountStore,
   getViewPath,
   init,
+  initHashHistory,
   lock,
   navigate,
   reloadVaultItems,
@@ -18,6 +19,7 @@ import {
 } from "@gistwarden/ui";
 import { type Component, Match, onMount, Show, Switch } from "solid-js";
 import { Dynamic, render } from "solid-js/web";
+import { DesktopSidebar } from "@/components/layout/DesktopSidebar.tsx";
 import ConfirmModal from "@/components/ui/ConfirmModal.tsx";
 import RepromptModal from "@/components/ui/RepromptModal.tsx";
 import { RouteTransition } from "@/components/ui/RouteTransition.tsx";
@@ -121,79 +123,101 @@ const MainLayout: Component = () => {
 
         {/* Regular vault locking/login */}
         <Match when={accountStore.isLocked && uiStore.view !== View.Guide}>
-          <Switch>
-            <Match when={uiStore.view === View.Welcome}>
-              <Welcome />
-            </Match>
-            <Match when={accountStore.vaultConfigured}>
-              <LockScreen />
-            </Match>
-            <Match when={true}>
-              <Login />
-            </Match>
-          </Switch>
+          <div class="auth-layout-container">
+            <Switch>
+              <Match when={uiStore.view === View.Welcome}>
+                <Welcome />
+              </Match>
+              <Match when={accountStore.vaultConfigured}>
+                <LockScreen />
+              </Match>
+              <Match when={true}>
+                <Login />
+              </Match>
+            </Switch>
+          </div>
         </Match>
 
-        {/* Main Application Shell when unlocked */}
+        {/* Main Application Shell when unlocked or viewing Guide */}
         <Match when={true}>
-          <div class="app-container">
-            <div class="flex-1 overflow-hidden pos-relative">
-              <RouteTransition currentPath={getViewPath(uiStore.view)}>
-                <Dynamic component={VIEW_COMPONENTS[uiStore.view] || Vault} />
-              </RouteTransition>
-            </div>
+          <div class="app-layout-wrapper">
+            <DesktopSidebar />
+            <main class="app-main-viewport">
+              <Show
+                when={uiStore.view === View.Guide}
+                fallback={
+                  <div class="app-centered-card">
+                    <div class="app-container">
+                      <div class="flex-1 overflow-hidden pos-relative">
+                        <RouteTransition
+                          currentPath={getViewPath(uiStore.view)}
+                        >
+                          <Dynamic
+                            component={VIEW_COMPONENTS[uiStore.view] || Vault}
+                          />
+                        </RouteTransition>
+                      </div>
 
-            {/* Bottom Nav Bar */}
-            <Show
-              when={[
-                View.Vault,
-                View.Generator,
-                View.Reports,
-                View.Settings,
-              ].includes(uiStore.view)}
-            >
-              <nav class="app-nav">
-                <div
-                  class={`nav-item ${
-                    uiStore.view === View.Vault ? "active" : ""
-                  }`}
-                  onClick={() => navigate(View.Vault)}
-                >
-                  <VaultIcon />
-                  <span>{t("nav_vault")}</span>
+                      {/* Bottom Nav Bar */}
+                      <Show
+                        when={[
+                          View.Vault,
+                          View.Generator,
+                          View.Reports,
+                          View.Settings,
+                        ].includes(uiStore.view)}
+                      >
+                        <nav class="app-nav">
+                          <div
+                            class={`nav-item ${
+                              uiStore.view === View.Vault ? "active" : ""
+                            }`}
+                            onClick={() => navigate(View.Vault)}
+                          >
+                            <VaultIcon />
+                            <span>{t("nav_vault")}</span>
+                          </div>
+                          <div
+                            class={`nav-item ${
+                              uiStore.view === View.Generator ? "active" : ""
+                            }`}
+                            onClick={() => navigate(View.Generator)}
+                          >
+                            <GeneratorIcon />
+                            <span>{t("nav_generator")}</span>
+                          </div>
+                          <div
+                            class={`nav-item ${
+                              uiStore.view === View.Reports ? "active" : ""
+                            }`}
+                            onClick={() => navigate(View.Reports)}
+                          >
+                            <ReportsIcon />
+                            <span>{t("nav_reports")}</span>
+                          </div>
+                          <div
+                            class={`nav-item ${
+                              uiStore.view === View.Settings ||
+                              uiStore.view === View.VaultOptions
+                                ? "active"
+                                : ""
+                            }`}
+                            onClick={() => navigate(View.Settings)}
+                          >
+                            <SettingsIcon />
+                            <span>{t("nav_settings")}</span>
+                          </div>
+                        </nav>
+                      </Show>
+                    </div>
+                  </div>
+                }
+              >
+                <div class="guide-viewport-container">
+                  <Guide />
                 </div>
-                <div
-                  class={`nav-item ${
-                    uiStore.view === View.Generator ? "active" : ""
-                  }`}
-                  onClick={() => navigate(View.Generator)}
-                >
-                  <GeneratorIcon />
-                  <span>{t("nav_generator")}</span>
-                </div>
-                <div
-                  class={`nav-item ${
-                    uiStore.view === View.Reports ? "active" : ""
-                  }`}
-                  onClick={() => navigate(View.Reports)}
-                >
-                  <ReportsIcon />
-                  <span>{t("nav_reports")}</span>
-                </div>
-                <div
-                  class={`nav-item ${
-                    uiStore.view === View.Settings ||
-                    uiStore.view === View.VaultOptions
-                      ? "active"
-                      : ""
-                  }`}
-                  onClick={() => navigate(View.Settings)}
-                >
-                  <SettingsIcon />
-                  <span>{t("nav_settings")}</span>
-                </div>
-              </nav>
-            </Show>
+              </Show>
+            </main>
           </div>
         </Match>
       </Switch>
@@ -230,6 +254,7 @@ const WebApp: Component = () => {
   onMount(async () => {
     // Mode responsive cho giao diện Web rộng rãi
     document.documentElement.classList.add("mode-responsive");
+    initHashHistory();
     await init();
 
     onExtensionMessage((message) => {

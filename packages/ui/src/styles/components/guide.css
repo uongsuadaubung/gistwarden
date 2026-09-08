@@ -25,10 +25,12 @@ body.guide-body-native {
 .guide-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
   color: var(--text);
   box-sizing: border-box;
+  overflow: hidden;
 
   .guide-header {
     display: flex;

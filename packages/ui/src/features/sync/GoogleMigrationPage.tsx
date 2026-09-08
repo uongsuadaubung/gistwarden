@@ -30,7 +30,7 @@ import GuideHelpButton from "@/components/ui/GuideHelpButton.tsx";
 import Input from "@/components/ui/Input.tsx";
 import Select from "@/components/ui/Select.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import {
   accountStore,
   applyVaultPayloadToStore,
@@ -124,7 +124,7 @@ export const GoogleMigrationPage: Component = () => {
   });
 
   const handleBack = () => {
-    navigate(View.VaultOptions);
+    goBack(View.VaultOptions);
   };
 
   const handleFormSubmit = (e: Event) => {

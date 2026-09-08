@@ -3,14 +3,14 @@ import type { Component } from "solid-js";
 import Checkbox from "@/components/ui/Checkbox.tsx";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { setSettingsStore, settingsStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { ChevronRightIcon, GlobeIcon, ThemeIcon } from "@/icons/svg/index.ts";
 
 export const Appearance: Component = () => {
   const handleBack = () => {
-    navigate(View.Settings);
+    goBack(View.Settings);
   };
 
   const handleAnimationChange = async (checked: boolean) => {

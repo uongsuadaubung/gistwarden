@@ -2,7 +2,7 @@ import { requestReprompt, showToast } from "@gistwarden/ui";
 import { type Component, createSignal, For, Show } from "solid-js";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { accountStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { ChevronRightIcon, DownloadIcon } from "@/icons/svg/index.ts";
@@ -15,7 +15,7 @@ export const ExportAccounts: Component = () => {
   const [error, setError] = createSignal("");
 
   const handleBack = () => {
-    navigate(View.VaultOptions);
+    goBack(View.VaultOptions);
   };
 
   const handleExportClick = async (formatId: string) => {

@@ -7,7 +7,7 @@ import { confirm, copyToClipboardWithMessage } from "@gistwarden/ui";
 import { type Component, createSignal, For, onMount, Show } from "solid-js";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { formatDateTime, t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { View } from "@/core/types.ts";
 import { CopyIcon, TrashIcon } from "@/icons/svg/index.ts";
 
@@ -50,7 +50,7 @@ export const PasswordHistory: Component = () => {
       <div class="app-body">
         <DetailHeader
           title={t("history_title")}
-          onBack={() => navigate(View.Generator)}
+          onBack={() => goBack(View.Generator)}
         />
 
         <Show

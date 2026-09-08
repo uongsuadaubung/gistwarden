@@ -4,7 +4,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import Checkbox from "@/components/ui/Checkbox.tsx";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { isExtension } from "@/core/runtime.ts";
 import type {
   VaultTimeoutAction,
@@ -23,7 +23,7 @@ export const AccountSecurity: Component = () => {
   const [error, setError] = createSignal("");
 
   const handleBack = () => {
-    navigate(View.Settings);
+    goBack(View.Settings);
   };
 
   const handlePinToggle = async (checked: boolean) => {

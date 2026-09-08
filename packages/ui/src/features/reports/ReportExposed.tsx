@@ -75,8 +75,7 @@ export const ReportExposed: Component = () => {
   };
 
   const handleEditItem = (item: LoginVaultItem) => {
-    selectItem(item);
-    navigate(View.ItemEdit);
+    selectItem(item, View.ItemEdit);
   };
 
   return (

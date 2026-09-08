@@ -2,7 +2,7 @@ import { View } from "@gistwarden/domain";
 import { createEffect, For, type JSX, Show } from "solid-js";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { type TranslationKey, t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { DownloadIcon, SyncIcon } from "@/icons/svg/index.ts";
 
 export interface ReportLayoutProps<T> {
@@ -110,7 +110,7 @@ export function ReportLayout<T>(props: ReportLayoutProps<T>): JSX.Element {
 
   return (
     <div class="page-container report-detail-view">
-      <DetailHeader title={title()} onBack={() => navigate(View.Reports)} />
+      <DetailHeader title={title()} onBack={() => goBack(View.Reports)} />
 
       <p class="page-subtitle text-muted mt-2 mb-3">{t(props.descKey)}</p>
 

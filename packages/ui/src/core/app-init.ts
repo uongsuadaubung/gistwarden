@@ -47,6 +47,7 @@ import {
   setUiStore,
   uiStore,
 } from "./store.ts";
+import { getPathView } from "./router.ts";
 
 async function handleBrowserRestartCleanup(
   vaultTimeoutAction: string,
@@ -110,14 +111,48 @@ async function resolveSavedViewAndItem(
   let targetView = isFido2Prompt ? View.Fido2Prompt : View.Vault;
   let selectedItem: VaultItem | undefined;
 
-  const itemId = params.get("itemId");
-  if (itemId && !isFido2Prompt) {
-    const foundItem = items.find((i) => i.id === itemId);
+  // 1. Check window.location.hash first (e.g. #/settings/appearance, #/reports/weak, #/vault/detail?itemId=...)
+  let hashTargetView: View | null = null;
+  let hashItemId: string | null = null;
+
+  if (typeof window !== "undefined" && window.location.hash) {
+    const rawHash = window.location.hash.trim();
+    if (
+      rawHash &&
+      rawHash !== "#" &&
+      rawHash !== "#/" &&
+      rawHash !== "#/vault"
+    ) {
+      hashTargetView = getPathView(rawHash);
+      const qIdx = rawHash.indexOf("?");
+      if (qIdx !== -1) {
+        const searchParams = new URLSearchParams(rawHash.substring(qIdx + 1));
+        hashItemId = searchParams.get("itemId");
+      }
+    }
+  }
+
+  const effectiveItemId = hashItemId || params.get("itemId");
+  if (effectiveItemId && !isFido2Prompt) {
+    const foundItem = items.find((i) => i.id === effectiveItemId);
     if (foundItem) {
       selectedItem = foundItem;
-      targetView = View.ItemDetail;
+      targetView = hashTargetView ?? View.ItemDetail;
+      return { targetView, selectedItem };
     }
-  } else if (!isFido2Prompt) {
+  }
+
+  if (
+    hashTargetView &&
+    !isFido2Prompt &&
+    hashTargetView !== View.Login &&
+    hashTargetView !== View.Welcome
+  ) {
+    targetView = hashTargetView;
+    return { targetView, selectedItem };
+  }
+
+  if (!isFido2Prompt) {
     const sessionDataRes = await getSessionItems([
       SESSION_KEY_LAST_VIEW,
       SESSION_KEY_LAST_SELECTED_ITEM_ID,
@@ -253,6 +288,17 @@ export async function init(): Promise<void> {
 
   if (isFido2Prompt) {
     setUiStore(STORE_KEY_VIEW, View.Fido2Prompt);
+  }
+
+  // Detect public Guide view from hash immediately so locked check won't overwrite it
+  if (typeof window !== "undefined" && window.location.hash) {
+    const rawHash = window.location.hash.trim();
+    if (rawHash && rawHash !== "#" && rawHash !== "#/") {
+      const hashView = getPathView(rawHash);
+      if (hashView === View.Guide) {
+        setUiStore(STORE_KEY_VIEW, View.Guide);
+      }
+    }
   }
 
   if (vaultConfigured && key && accountStore.masterPasswordConfig.salt) {

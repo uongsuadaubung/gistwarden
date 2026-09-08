@@ -5,7 +5,7 @@ import Button from "@/components/ui/Button.tsx";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import FolderModal from "@/components/ui/FolderModal.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { accountStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import {
@@ -20,7 +20,7 @@ export const Folders: Component = () => {
   const [editingFolder, setEditingFolder] = createSignal<Folder | null>(null);
 
   const handleBack = () => {
-    navigate(View.VaultOptions);
+    goBack(View.VaultOptions);
   };
 
   const handleOpenEditFolder = (folder: Folder) => {

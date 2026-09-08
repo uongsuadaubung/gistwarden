@@ -2,14 +2,14 @@ import { updateLanguage } from "@gistwarden/ui";
 import { type Component, Show } from "solid-js";
 import DetailHeader from "@/components/ui/DetailHeader.tsx";
 import { t } from "@/core/i18n.ts";
-import { navigate } from "@/core/navigation.ts";
+import { goBack, navigate } from "@/core/navigation.ts";
 import { settingsStore } from "@/core/store.ts";
 import { View } from "@/core/types.ts";
 import { EnIcon, ViIcon } from "@/icons/svg/index.ts";
 
 export const Language: Component = () => {
   const handleBack = () => {
-    navigate(View.Appearance);
+    goBack(View.Appearance);
   };
 
   return (
@@ -26,7 +26,7 @@ export const Language: Component = () => {
             class="setting-row"
             onClick={() => {
               updateLanguage("en");
-              navigate(View.Appearance);
+              goBack(View.Appearance);
             }}
           >
             <div class="setting-row-left d-flex align-center gap-8">
@@ -53,7 +53,7 @@ export const Language: Component = () => {
             class="setting-row"
             onClick={() => {
               updateLanguage("vi");
-              navigate(View.Appearance);
+              goBack(View.Appearance);
             }}
           >
             <div class="setting-row-left d-flex align-center gap-8">

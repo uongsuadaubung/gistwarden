@@ -18,11 +18,12 @@ export const GuideHelpButton: Component<GuideHelpButtonProps> = (props) => {
     if (isExtension()) {
       openTab(getAssetUrl(`guide.html#${props.route || ""}`));
     } else {
-      const baseUrl = window.location.origin + window.location.pathname;
-      const targetUrl = props.route
-        ? `${baseUrl}#/guide/${props.route}`
-        : `${baseUrl}#/guide`;
-      openTab(targetUrl);
+      const cleanRoute = (props.route || "").replace(/^\/+/, "");
+      const targetHash = cleanRoute ? `#/guide/${cleanRoute}` : `#/guide`;
+      const targetUrl = new URL(window.location.href);
+      targetUrl.search = "";
+      targetUrl.hash = targetHash;
+      openTab(targetUrl.toString());
     }
   };
 

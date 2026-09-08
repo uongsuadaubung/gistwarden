@@ -19,8 +19,7 @@ export const ReportInactive2FA: Component = () => {
   });
 
   const handleEditItem = (item: LoginVaultItem) => {
-    selectItem(item);
-    navigate(View.ItemEdit);
+    selectItem(item, View.ItemEdit);
   };
 
   return (
