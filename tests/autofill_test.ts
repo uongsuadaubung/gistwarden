@@ -1,6 +1,9 @@
 import { FieldType } from "@gistwarden/domain";
 import { Window } from "happy-dom";
-import { performAutofill } from "../apps/extension/src/extension/autofill-core.ts";
+import {
+  isUntrustedIframe,
+  performAutofill,
+} from "../apps/extension/src/extension/autofill-core.ts";
 import { assertEquals, test } from "./assert.ts";
 
 function setupDOM(html: string) {
@@ -539,4 +542,61 @@ test("Autofill - Notification onFill with autoCopyTotp disabled does not copy TO
     "",
     "Clipboard should remain empty when autoCopyTotp is false",
   );
+});
+
+test("Autofill - isUntrustedIframe security checks", () => {
+  const originalWindow = globalThis.window;
+
+  // 1. Top window: window.top === window -> false (trusted)
+  const topWindowObj: {
+    location: { href: string; ancestorOrigins: string[] };
+    top?: unknown;
+  } = {
+    location: { href: "https://example.com/login", ancestorOrigins: [] },
+  };
+  topWindowObj.top = topWindowObj;
+
+  Object.assign(globalThis, { window: topWindowObj });
+  assertEquals(isUntrustedIframe(), false);
+
+  // 2. Embedded in untrusted cross-origin iframe with Chromium ancestorOrigins
+  const crossOriginIframeObj = {
+    location: {
+      href: "https://example.com/embed",
+      ancestorOrigins: ["https://evil-tracker.com"],
+    },
+    top: {},
+  };
+  Object.assign(globalThis, { window: crossOriginIframeObj });
+  assertEquals(isUntrustedIframe(), true);
+
+  // 3. Embedded in same-domain / sub-domain iframe with ancestorOrigins
+  const sameSiteIframeObj = {
+    location: {
+      href: "https://auth.example.com/embed",
+      ancestorOrigins: ["https://example.com"],
+    },
+    top: {},
+  };
+  Object.assign(globalThis, { window: sameSiteIframeObj });
+  assertEquals(isUntrustedIframe(), false);
+
+  // 4. Firefox cross-origin: accessing window.top.location.origin throws error
+  const firefoxCrossIframeObj = {
+    location: {
+      href: "https://example.com/embed",
+      ancestorOrigins: undefined,
+    },
+    top: {
+      get location(): never {
+        throw new Error(
+          "SecurityError: Permission denied to access property 'location'",
+        );
+      },
+    },
+  };
+  Object.assign(globalThis, { window: firefoxCrossIframeObj });
+  assertEquals(isUntrustedIframe(), true);
+
+  Object.assign(globalThis, { window: originalWindow });
 });

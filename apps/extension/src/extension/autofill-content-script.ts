@@ -21,6 +21,7 @@ import {
 import { getLocalItem, isRecord } from "@/core/storage.ts";
 import { generateTotpSafe } from "@/core/totp-utils.ts";
 import {
+  isUntrustedIframe,
   performAutofill,
   type SubmittedCredentials,
   setupAutofillFocusMonitoring,
@@ -40,13 +41,15 @@ onExtensionMessage((message) => {
   }
 });
 
-// Setup monitoring for form submit
-setupFormSubmitMonitoring((creds: SubmittedCredentials) => {
-  notifyBackground({
-    type: MSG_CREDENTIALS_SUBMITTED,
-    credentials: creds,
+// Setup monitoring for form submit (skip untrusted cross-origin frames)
+if (!isUntrustedIframe()) {
+  setupFormSubmitMonitoring((creds: SubmittedCredentials) => {
+    notifyBackground({
+      type: MSG_CREDENTIALS_SUBMITTED,
+      credentials: creds,
+    });
   });
-});
+}
 
 // Setup monitoring for focus on login input fields to show Autofill Suggestion Toast (when unlocked)
 let autofillDismissedForTab = false;
@@ -55,7 +58,12 @@ const currentDomain =
   window.location.hostname || getBaseDomain(window.location.href);
 
 setupAutofillFocusMonitoring(async () => {
-  if (autofillDismissedForTab || isProgrammaticAutofilling) return;
+  if (
+    isUntrustedIframe() ||
+    autofillDismissedForTab ||
+    isProgrammaticAutofilling
+  )
+    return;
 
   const storageRes = await getLocalItem(STORAGE_KEY);
   let showSuggestions = true;

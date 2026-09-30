@@ -687,3 +687,54 @@ export function setupAutofillFocusMonitoring(
 
   document.addEventListener("focusin", handleFocus, true);
 }
+
+/**
+ * Detects whether the current execution context is within an untrusted / cross-origin iframe.
+ * Prevents autofill prompt injection and clickjacking credential harvesting.
+ */
+export function isUntrustedIframe(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    if (window.top === window) {
+      return false;
+    }
+  } catch {
+    return true;
+  }
+
+  const currentHref = window.location.href;
+  const currentBaseDomain = getBaseDomain(currentHref);
+  if (!currentBaseDomain) {
+    return true;
+  }
+
+  // 1. Chromium ancestorOrigins check (standard across all modern Chromium builds)
+  const ancestorOrigins = window.location.ancestorOrigins;
+  if (ancestorOrigins && ancestorOrigins.length > 0) {
+    for (let i = 0; i < ancestorOrigins.length; i++) {
+      const ancestorOrigin = ancestorOrigins[i];
+      if (!ancestorOrigin) return true;
+      const ancestorBaseDomain = getBaseDomain(ancestorOrigin);
+      if (ancestorBaseDomain !== currentBaseDomain) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // 2. Cross-origin boundary inspection (Firefox & standard Web APIs)
+  try {
+    const topOrigin = window.top?.location?.origin;
+    if (topOrigin) {
+      return getBaseDomain(topOrigin) !== currentBaseDomain;
+    }
+  } catch {
+    // Accessing window.top.location was blocked by Same-Origin Policy
+    return true;
+  }
+
+  return true;
+}

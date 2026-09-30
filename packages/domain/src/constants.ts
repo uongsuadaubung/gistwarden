@@ -53,6 +53,7 @@ export const STORAGE_KEY_UNAPPROVED_PENDING_LOGINS =
 export const SESSION_KEY_VAULT_SEARCH_QUERY = "vault_search_query";
 export const SESSION_KEY_SHOW_FILTER_PANEL = "showFilterPanel";
 export const SESSION_KEY_SELECTED_FILTER_TYPE = "selectedFilterType";
+export const SESSION_KEY_SELECTED_FOLDER_ID = "selectedFolderId";
 
 // Local Vault Storage Keys & IPC Messages
 export const STORAGE_KEY_LOCAL_VAULT_PAYLOAD = `${APP_NAME.toLowerCase()}_local_vault_payload`;

@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import {
   asVaultItemId,
   createDefaultVaultItem,
+  SESSION_KEY_SELECTED_FOLDER_ID,
   VaultItemType,
   type VaultPayload,
 } from "@gistwarden/domain";
@@ -193,5 +194,19 @@ describe("Vault CRUD Use Cases (createItemUseCase & updateItemUseCase)", () => {
       expect(payload.items[0]?.name).toBe("Visa Card");
       expect(payload.items[0]?.id).toBe(asVaultItemId("new_generated_uuid"));
     }
+  });
+
+  test("Vault Filter Memory - preserves selectedFolderId key in session storage", () => {
+    window.sessionStorage.setItem(
+      SESSION_KEY_SELECTED_FOLDER_ID,
+      "folder_uuid_123",
+    );
+    expect(window.sessionStorage.getItem(SESSION_KEY_SELECTED_FOLDER_ID)).toBe(
+      "folder_uuid_123",
+    );
+    window.sessionStorage.removeItem(SESSION_KEY_SELECTED_FOLDER_ID);
+    expect(
+      window.sessionStorage.getItem(SESSION_KEY_SELECTED_FOLDER_ID),
+    ).toBeNull();
   });
 });

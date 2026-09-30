@@ -1,11 +1,13 @@
-import type {
-  CheckAutofillSuggestionMsg,
-  CheckAutofillSuggestionResponse,
-  CheckPendingNotificationMsg,
-  CheckPendingNotificationResponse,
-  CredentialsSubmittedMsg,
-  SaveCredentialActionMsg,
-  SaveCredentialActionResponse,
+import {
+  type CheckAutofillSuggestionMsg,
+  type CheckAutofillSuggestionResponse,
+  type CheckPendingNotificationMsg,
+  type CheckPendingNotificationResponse,
+  type CredentialsSubmittedMsg,
+  type SaveCredentialActionMsg,
+  type SaveCredentialActionResponse,
+  getBaseDomain,
+  isRecord,
 } from "@gistwarden/domain";
 import {
   checkAutofillSuggestionRoute,
@@ -31,7 +33,27 @@ export async function handleSaveCredentialAction(
 
 export async function handleCheckAutofillSuggestion(
   payload: CheckAutofillSuggestionMsg,
+  context?: MessageContext,
 ): Promise<CheckAutofillSuggestionResponse> {
+  if (!payload.domain) {
+    return { success: false, reason: "invalid_domain" };
+  }
+
+  if (context && !context.isExtensionSender) {
+    const senderUrl = context.sender.url || context.sender.tab?.url;
+    if (!senderUrl) {
+      return { success: false, reason: "invalid_domain" };
+    }
+    const senderBaseDomain = getBaseDomain(senderUrl);
+    const requestedBaseDomain = getBaseDomain(payload.domain);
+    if (!senderBaseDomain || senderBaseDomain !== requestedBaseDomain) {
+      console.warn(
+        `[Autofill] Rejected domain spoofing attempt: sender=${senderBaseDomain}, requested=${requestedBaseDomain}`,
+      );
+      return { success: false, reason: "invalid_domain" };
+    }
+  }
+
   return await checkAutofillSuggestionUseCase(payload.domain);
 }
 
@@ -65,6 +87,24 @@ export async function handleCredentialsSubmitted(
   context: MessageContext,
 ): Promise<SimpleSuccessResponse> {
   if (context.sender.tab && context.sender.tab.id !== undefined) {
+    if (!context.isExtensionSender && isRecord(payload.credentials)) {
+      const senderUrl = context.sender.url || context.sender.tab.url;
+      if (senderUrl) {
+        const senderBaseDomain = getBaseDomain(senderUrl);
+        const credsDomain =
+          typeof payload.credentials.domain === "string"
+            ? getBaseDomain(payload.credentials.domain)
+            : typeof payload.credentials.url === "string"
+              ? getBaseDomain(payload.credentials.url)
+              : "";
+        if (!senderBaseDomain || senderBaseDomain !== credsDomain) {
+          console.warn(
+            `[Autofill] Rejected mismatched credentials submitted: sender=${senderBaseDomain}, creds=${credsDomain}`,
+          );
+          return { success: true };
+        }
+      }
+    }
     await processSubmittedCredentialsUseCase(
       payload.credentials,
       context.sender.tab.id,

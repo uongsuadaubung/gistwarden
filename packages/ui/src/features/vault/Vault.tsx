@@ -29,6 +29,7 @@ import { Header } from "@/components/ui/Header.tsx";
 import { Input } from "@/components/ui/Input.tsx";
 import {
   SESSION_KEY_SELECTED_FILTER_TYPE,
+  SESSION_KEY_SELECTED_FOLDER_ID,
   SESSION_KEY_SHOW_FILTER_PANEL,
   SESSION_KEY_VAULT_SEARCH_QUERY,
 } from "@/core/constants.ts";
@@ -95,9 +96,11 @@ export const Vault: Component = () => {
     return parsed.success ? parsed.data : "all";
   });
 
-  const [selectedFolderId, setSelectedFolderId] = createSignal<
+  const [selectedFolderId, setSelectedFolderId] = createSessionStorageSignal<
     FolderId | "no_folder"
-  >("no_folder");
+  >(SESSION_KEY_SELECTED_FOLDER_ID, "no_folder", String, (raw) =>
+    raw && raw !== "no_folder" ? asFolderId(raw) : "no_folder",
+  );
 
   const [showFolderModal, setShowFolderModal] = createSignal(false);
   const [editingFolder, setEditingFolder] = createSignal<Folder | null>(null);

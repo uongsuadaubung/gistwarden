@@ -1,5 +1,7 @@
+import { isRecord } from "@gistwarden/domain";
 import { defineRoute } from "@gistwarden/orchestrator";
 import { z } from "zod";
+import { registerAutofillRoutes } from "../apps/extension/src/extension/handlers/autofill-handlers.ts";
 import {
   createCommand,
   MessageRouter,
@@ -140,4 +142,47 @@ test("MessageRouter - internalOnly authorization check", async () => {
   );
   assertEquals(resAuth.handled, true);
   assertEquals(resAuth.response, { success: true });
+});
+
+test("MessageRouter - Autofill domain spoofing protection", async () => {
+  const router = new MessageRouter();
+  router.use(registerAutofillRoutes);
+
+  // 1. External sender attempting to spoof domain (sender is evil.com, requesting google.com)
+  const attackerSender: chrome.runtime.MessageSender = {
+    url: "https://evil.com/phishing",
+  };
+  const spoofRes = await router.handleMessage(
+    { type: "CHECK_AUTOFILL_SUGGESTION", domain: "google.com" },
+    attackerSender,
+  );
+  assertEquals(spoofRes.handled, true);
+  assertEquals(spoofRes.response, {
+    success: false,
+    reason: "invalid_domain",
+  });
+
+  // 2. External sender with empty or missing domain
+  const emptyRes = await router.handleMessage(
+    { type: "CHECK_AUTOFILL_SUGGESTION" },
+    attackerSender,
+  );
+  assertEquals(emptyRes.handled, true);
+  assertEquals(emptyRes.response, {
+    success: false,
+    reason: "invalid_domain",
+  });
+
+  // 3. External sender with legitimate matching domain
+  const legitSender: chrome.runtime.MessageSender = {
+    url: "https://login.example.com/auth",
+  };
+  const legitRes = await router.handleMessage(
+    { type: "CHECK_AUTOFILL_SUGGESTION", domain: "example.com" },
+    legitSender,
+  );
+  assertEquals(legitRes.handled, true);
+  if (isRecord(legitRes.response)) {
+    assertEquals(legitRes.response.reason !== "invalid_domain", true);
+  }
 });
