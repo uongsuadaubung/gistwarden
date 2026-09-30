@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%"
+  height="100%">
+  <!-- Nền hình vuông bo góc màu xanh tối (Dark Slate Blue - Giữ nguyên từ icon gốc) -->
+  <rect x="0" y="0" width="512" height="512" rx="100" fill="#0c1527" />
+
+  <!-- Dây khung hình khiên 3D màu đỏ rực (thay cho màu xanh dương gốc) -->
+  <g stroke="#ef4444" stroke-width="18" stroke-linecap="round"
+    stroke-linejoin="round" fill="none">
+    <!-- Đường viền Khiên ngoài -->
+    <path id="outer-shield"
+      d="M 256,96 L 394,142 C 394,270 324,370 256,432 C 188,370 118,270 118,142 Z" />
+
+    <!-- Đường viền Khiên trong -->
+    <path id="inner-shield"
+      d="M 256,142 L 350,175 C 350,265 300,340 256,388 C 212,340 162,265 162,175 Z" />
+
+    <!-- Các đường nối tạo hiệu ứng vát cạnh 3D (Bevel lines) -->
+    <path d="M 256,96 L 256,142" />
+    <!-- Đỉnh giữa -->
+    <path d="M 394,142 L 350,175" />
+    <!-- Góc trên bên phải -->
+    <path d="M 118,142 L 162,175" />
+    <!-- Góc trên bên trái -->
+    <path d="M 256,432 L 256,388" />
+    <!-- Đáy khiên -->
+  </g>
+
+  <!-- Lỗ khóa màu trắng ở chính giữa tâm khiên -->
+  <g fill="#ffffff">
+    <!-- Đầu lỗ khóa hình tròn -->
+    <circle cx="256" cy="235" r="32" />
+    <!-- Chân lỗ khóa hình thang -->
+    <path d="M 242,255 L 270,255 L 278,320 L 234,320 Z" />
+  </g>
+</svg>
