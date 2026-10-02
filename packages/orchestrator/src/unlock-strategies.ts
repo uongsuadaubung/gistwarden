@@ -67,140 +67,89 @@ export class LocalStorageUnlockStrategy implements UnlockVaultStrategy {
   }
 }
 
-export class GithubGistUnlockStrategy implements UnlockVaultStrategy {
-  readonly mode: VaultMode = "github_gist";
+async function executeRemoteUnlock(
+  mode: "github_gist" | "self_hosted_server",
+  context: UnlockVaultContext,
+): Promise<Result<UnlockVaultResult, TranslationKey>> {
+  let activeSalt =
+    context.accSettings.masterPasswordConfig.salt || context.secSalt;
+  if (!activeSalt) return err("vault_error_not_found");
 
-  async execute(
-    context: UnlockVaultContext,
-  ): Promise<Result<UnlockVaultResult, TranslationKey>> {
-    let activeSalt =
-      context.accSettings.masterPasswordConfig.salt || context.secSalt;
-    if (!activeSalt) return err("vault_error_not_found");
+  const keyRes = await getOrDeriveKey(context.password, activeSalt);
+  if (keyRes.isErr() || !keyRes.value) return err("login_error_wrong_mp");
+  let key = keyRes.value;
 
-    const keyRes = await getOrDeriveKey(context.password, activeSalt);
-    if (keyRes.isErr() || !keyRes.value) return err("login_error_wrong_mp");
-    let key = keyRes.value;
-
-    let token: ReturnType<typeof asGitHubAccessToken> | undefined;
-    if (
-      context.accSettings.syncConfig.syncTokenEncrypted &&
-      context.accSettings.syncConfig.syncTokenIv
-    ) {
-      const decTokenRes = await decryptData(
-        context.accSettings.syncConfig.syncTokenEncrypted,
-        context.accSettings.syncConfig.syncTokenIv,
-        key,
-      );
-      if (decTokenRes.isErr()) return err("login_error_wrong_mp");
-      token = asGitHubAccessToken(decTokenRes.value);
-    } else {
-      const fallbackToken = await getSyncToken("github_gist");
-      if (fallbackToken) token = fallbackToken;
-    }
-
-    let content = "";
-    if (context.downloadVault) {
-      const dlRes = await context.downloadVault();
-      if (dlRes.isOk() && dlRes.value) {
-        content = dlRes.value;
-      }
-    }
-
-    if (!content) {
-      const provider = getSyncProvider(this.mode);
-      const downloadRes = await provider.download({
-        gistId: context.accSettings.syncConfig.gistId,
-        token,
-      });
-      if (downloadRes.isErr() || !downloadRes.value.content) {
-        return err(
-          downloadRes.isErr() ? downloadRes.error : "vault_error_not_found",
-        );
-      }
-      content = downloadRes.value.content;
-    }
-
-    const payloadJsonRes = safeJsonParse(content);
-    if (payloadJsonRes.isOk()) {
-      const parsed = GistPayloadSchema.safeParse(payloadJsonRes.value);
-      if (
-        parsed.success &&
-        parsed.data.salt &&
-        parsed.data.salt !== activeSalt
-      ) {
-        activeSalt = parsed.data.salt;
-        const reDeriveRes = await getOrDeriveKey(context.password, activeSalt);
-        if (reDeriveRes.isOk() && reDeriveRes.value) {
-          key = reDeriveRes.value;
-        }
-      }
-    }
-
-    return ok({ content, salt: activeSalt, key });
+  let tokenStr = "";
+  if (
+    context.accSettings.syncConfig.syncTokenEncrypted &&
+    context.accSettings.syncConfig.syncTokenIv
+  ) {
+    const decTokenRes = await decryptData(
+      context.accSettings.syncConfig.syncTokenEncrypted,
+      context.accSettings.syncConfig.syncTokenIv,
+      key,
+    );
+    if (decTokenRes.isErr()) return err("login_error_wrong_mp");
+    tokenStr = decTokenRes.value;
+  } else {
+    const fallbackToken = await getSyncToken(mode);
+    if (fallbackToken) tokenStr = fallbackToken;
   }
-}
+  const token = asGitHubAccessToken(tokenStr);
 
-export class SelfHostedUnlockStrategy implements UnlockVaultStrategy {
-  readonly mode: VaultMode = "self_hosted_server";
-
-  async execute(
-    context: UnlockVaultContext,
-  ): Promise<Result<UnlockVaultResult, TranslationKey>> {
-    let activeSalt =
-      context.accSettings.masterPasswordConfig.salt || context.secSalt;
-    if (!activeSalt) return err("vault_error_not_found");
-
-    const keyRes = await getOrDeriveKey(context.password, activeSalt);
-    if (keyRes.isErr() || !keyRes.value) return err("login_error_wrong_mp");
-    let key = keyRes.value;
-
-    let token = "";
-    if (
-      context.accSettings.syncConfig.syncTokenEncrypted &&
-      context.accSettings.syncConfig.syncTokenIv
-    ) {
-      const decTokenRes = await decryptData(
-        context.accSettings.syncConfig.syncTokenEncrypted,
-        context.accSettings.syncConfig.syncTokenIv,
-        key,
-      );
-      if (decTokenRes.isErr()) return err("login_error_wrong_mp");
-      token = decTokenRes.value;
-    } else {
-      const fallbackToken = await getSyncToken("self_hosted_server");
-      if (fallbackToken) token = fallbackToken;
+  let content = "";
+  if (context.downloadVault) {
+    const dlRes = await context.downloadVault();
+    if (dlRes.isOk() && dlRes.value) {
+      content = dlRes.value;
     }
+  }
 
-    const provider = getSyncProvider(this.mode);
-    const downloadRes = await provider.download({
-      serverUrl: context.accSettings.syncConfig.serverUrl,
-      token: asGitHubAccessToken(token),
-    });
+  if (!content) {
+    const provider = getSyncProvider(mode);
+    const downloadOpts =
+      mode === "github_gist"
+        ? { gistId: context.accSettings.syncConfig.gistId, token }
+        : { serverUrl: context.accSettings.syncConfig.serverUrl, token };
+    const downloadRes = await provider.download(downloadOpts);
     if (downloadRes.isErr() || !downloadRes.value.content) {
       return err(
         downloadRes.isErr() ? downloadRes.error : "vault_error_not_found",
       );
     }
+    content = downloadRes.value.content;
+  }
 
-    const content = downloadRes.value.content;
-
-    const payloadJsonRes = safeJsonParse(content);
-    if (payloadJsonRes.isOk()) {
-      const parsed = GistPayloadSchema.safeParse(payloadJsonRes.value);
-      if (
-        parsed.success &&
-        parsed.data.salt &&
-        parsed.data.salt !== activeSalt
-      ) {
-        activeSalt = parsed.data.salt;
-        const reDeriveRes = await getOrDeriveKey(context.password, activeSalt);
-        if (reDeriveRes.isOk() && reDeriveRes.value) {
-          key = reDeriveRes.value;
-        }
+  const payloadJsonRes = safeJsonParse(content);
+  if (payloadJsonRes.isOk()) {
+    const parsed = GistPayloadSchema.safeParse(payloadJsonRes.value);
+    if (parsed.success && parsed.data.salt && parsed.data.salt !== activeSalt) {
+      activeSalt = parsed.data.salt;
+      const reDeriveRes = await getOrDeriveKey(context.password, activeSalt);
+      if (reDeriveRes.isOk() && reDeriveRes.value) {
+        key = reDeriveRes.value;
       }
     }
+  }
 
-    return ok({ content, salt: activeSalt, key });
+  return ok({ content, salt: activeSalt, key });
+}
+
+export class GithubGistUnlockStrategy implements UnlockVaultStrategy {
+  readonly mode: VaultMode = "github_gist";
+  execute(
+    context: UnlockVaultContext,
+  ): Promise<Result<UnlockVaultResult, TranslationKey>> {
+    return executeRemoteUnlock("github_gist", context);
+  }
+}
+
+export class SelfHostedUnlockStrategy implements UnlockVaultStrategy {
+  readonly mode: VaultMode = "self_hosted_server";
+  execute(
+    context: UnlockVaultContext,
+  ): Promise<Result<UnlockVaultResult, TranslationKey>> {
+    return executeRemoteUnlock("self_hosted_server", context);
   }
 }
 

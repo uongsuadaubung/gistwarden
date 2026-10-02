@@ -17,77 +17,8 @@ export type {
 } from "@/extension/message-command.ts";
 export { createCommand } from "@/extension/message-command.ts";
 
-export type MiddlewareContext = {
-  rawMessage: unknown;
-  sender: chrome.runtime.MessageSender;
-  command: MessageCommand<unknown, unknown>;
-  isExtensionSender: boolean;
-  validatedPayload: unknown;
-};
-
-export type MessageMiddleware = (
-  ctx: MiddlewareContext,
-  next: () => Promise<unknown>,
-) => Promise<unknown>;
-
-export class ExtensionMessagePipeline {
-  private middlewares: MessageMiddleware[] = [];
-
-  use(middleware: MessageMiddleware): void {
-    this.middlewares.push(middleware);
-  }
-
-  async execute(ctx: MiddlewareContext): Promise<unknown> {
-    let index = 0;
-    const next = async (): Promise<unknown> => {
-      if (index < this.middlewares.length) {
-        const middleware = this.middlewares[index++];
-        if (middleware) {
-          return await middleware(ctx, next);
-        }
-      }
-      return await ctx.command.execute(ctx.validatedPayload, {
-        sender: ctx.sender,
-        isExtensionSender: ctx.isExtensionSender,
-      });
-    };
-    return await next();
-  }
-}
-
 export class MessageRouter {
   private commands = new Map<string, MessageCommand<unknown, unknown>>();
-  private pipeline = new ExtensionMessagePipeline();
-
-  constructor() {
-    // 1. Authorization Middleware Stage
-    this.pipeline.use(async (ctx, next) => {
-      if (ctx.command.internalOnly && !ctx.isExtensionSender) {
-        console.warn(
-          `[MessageRouter] Unauthorized message from sender:`,
-          ctx.sender.url || ctx.sender.id,
-        );
-        return { success: false, error: "Unauthorized sender context" };
-      }
-      return await next();
-    });
-
-    // 2. Payload Validation Middleware Stage
-    this.pipeline.use(async (ctx, next) => {
-      if (ctx.command.payloadSchema) {
-        const parseRes = ctx.command.payloadSchema.safeParse(ctx.rawMessage);
-        if (!parseRes.success) {
-          console.warn(
-            `[MessageRouter] Schema validation failed:`,
-            parseRes.error,
-          );
-          return { success: false, error: "Invalid message payload" };
-        }
-        ctx.validatedPayload = parseRes.data;
-      }
-      return await next();
-    });
-  }
 
   registerCommand<TPayload, TResponse>(
     command: MessageCommand<TPayload, TResponse>,
@@ -178,15 +109,39 @@ export class MessageRouter {
     );
     const isExtensionSender = isExtensionUrl || isExtensionRuntime;
 
-    const ctx: MiddlewareContext = {
-      rawMessage,
-      sender,
-      command,
-      isExtensionSender,
-      validatedPayload: rawMessage,
-    };
+    // 1. Authorization check
+    if (command.internalOnly && !isExtensionSender) {
+      console.warn(
+        `[MessageRouter] Unauthorized message from sender:`,
+        sender.url || sender.id,
+      );
+      return {
+        handled: true,
+        response: { success: false, error: "Unauthorized sender context" },
+      };
+    }
 
-    const response = await this.pipeline.execute(ctx);
+    // 2. Payload Validation check
+    let validatedPayload: unknown = rawMessage;
+    if (command.payloadSchema) {
+      const parseRes = command.payloadSchema.safeParse(rawMessage);
+      if (!parseRes.success) {
+        console.warn(
+          `[MessageRouter] Schema validation failed:`,
+          parseRes.error,
+        );
+        return {
+          handled: true,
+          response: { success: false, error: "Invalid message payload" },
+        };
+      }
+      validatedPayload = parseRes.data;
+    }
+
+    const response = await command.execute(validatedPayload, {
+      sender,
+      isExtensionSender,
+    });
     return { handled: true, response };
   }
 }

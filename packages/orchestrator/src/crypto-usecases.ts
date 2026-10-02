@@ -8,7 +8,7 @@ import {
   safeJsonParse,
   type TranslationKey,
 } from "@gistwarden/domain";
-import { fetchBlob, fetchText } from "@gistwarden/network";
+import { fetchText } from "@gistwarden/network";
 import {
   getAccountSettings,
   getSessionItem,
@@ -126,8 +126,4 @@ export async function syncTimeOffsetUseCase(): Promise<
   }
 
   return err("settings_sync_time_error");
-}
-
-export async function fetchBlobUseCase(url: string, init?: RequestInit) {
-  return await fetchBlob(url, init);
 }

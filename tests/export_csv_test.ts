@@ -5,12 +5,15 @@ import {
   type VaultItem,
   VaultItemType,
 } from "@gistwarden/domain";
-import {
-  exportToBitwardenCsv,
-  exportToBrowserCsv,
-} from "../packages/ui/src/features/sync/csv-export.ts";
+import { bitwardenCsvExportStrategy } from "../packages/ui/src/features/sync/strategies/bitwarden-csv-export-strategy.ts";
+import { browserCsvExportStrategy } from "../packages/ui/src/features/sync/strategies/browser-csv-export-strategy.ts";
 import { jsonExportStrategy } from "../packages/ui/src/features/sync/strategies/json-export-strategy.ts";
 import { assert, assertEquals, test } from "./assert.ts";
+
+const exportToBrowserCsv = (items: VaultItem[]) =>
+  browserCsvExportStrategy.export(items).fileContent;
+const exportToBitwardenCsv = (items: VaultItem[], folders: any[] = []) =>
+  bitwardenCsvExportStrategy.export(items, folders).fileContent;
 
 test("Export CSV - Browser CSV format", () => {
   const items: VaultItem[] = [

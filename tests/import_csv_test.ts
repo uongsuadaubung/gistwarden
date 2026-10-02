@@ -7,13 +7,26 @@ import {
   type VaultItem,
   VaultItemType,
 } from "@gistwarden/domain";
-import {
-  parseAndValidateBitwardenCsv,
-  parseAndValidateBrowserCsv,
-} from "../packages/ui/src/features/sync/csv-import.ts";
+import { bitwardenCsvImportStrategy } from "../packages/ui/src/features/sync/strategies/bitwarden-csv-import-strategy.ts";
+import { browserCsvImportStrategy } from "../packages/ui/src/features/sync/strategies/browser-csv-import-strategy.ts";
 import { jsonExportStrategy } from "../packages/ui/src/features/sync/strategies/json-export-strategy.ts";
 import { jsonImportStrategy } from "../packages/ui/src/features/sync/strategies/json-import-strategy.ts";
 import { assert, assertEquals, test } from "./assert.ts";
+
+const parseAndValidateBrowserCsv = (
+  csvString: string,
+  existingItems: VaultItem[],
+) => browserCsvImportStrategy.parseAndValidate(csvString, existingItems);
+const parseAndValidateBitwardenCsv = (
+  csvString: string,
+  existingItems: VaultItem[],
+  existingFolders: any[] = [],
+) =>
+  bitwardenCsvImportStrategy.parseAndValidate(
+    csvString,
+    existingItems,
+    existingFolders,
+  );
 
 test("CSV Parser - RFC 4180 parsing", () => {
   // 1. Simple parsing

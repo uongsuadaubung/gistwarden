@@ -1,4 +1,3 @@
-import { fetchBlobUseCase } from "@gistwarden/orchestrator";
 import {
   type Component,
   createEffect,
@@ -72,17 +71,24 @@ export const Favicon: Component<{ domain: string; fallback: JSX.Element }> = (
       domain,
     )}&sz=32`;
 
-    fetchBlobUseCase(faviconUrl, { cache: "force-cache" }).then((res) => {
-      if (res.isOk()) {
-        const objectUrl = URL.createObjectURL(res.value);
-        faviconCache.set(domain, objectUrl);
-        setIconUrl(objectUrl);
-        setHasError(false);
-      } else {
+    fetch(faviconUrl, { cache: "force-cache" })
+      .then((res) => {
+        if (!res.ok) {
+          faviconFailedSet.add(domain);
+          setHasError(true);
+          return;
+        }
+        return res.blob().then((blob) => {
+          const objectUrl = URL.createObjectURL(blob);
+          faviconCache.set(domain, objectUrl);
+          setIconUrl(objectUrl);
+          setHasError(false);
+        });
+      })
+      .catch(() => {
         faviconFailedSet.add(domain);
         setHasError(true);
-      }
-    });
+      });
   });
 
   return (
